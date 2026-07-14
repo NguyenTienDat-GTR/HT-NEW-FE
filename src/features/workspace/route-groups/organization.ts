@@ -1,0 +1,52 @@
+import { Buildings } from "@phosphor-icons/react";
+import { route, type RouteGroup } from "../route-config";
+
+export const organizationRouteGroup: RouteGroup = {
+    moduleName: "organization",
+    label: "Tổ chức",
+    icon: Buildings,
+    children: [
+      route({
+        path: "/organization/dioceses",
+        moduleName: "organization.diocese",
+        title: "Giáo phận",
+        subtitle: "Quản lý thông tin giáo phận và liên đoàn.",
+        endpoint: "/dioceses",
+        kind: "dioceses",
+        icon: Buildings,
+        columns: ["name", "unionName", "chaplain", "phoneNumber", "email", "status"],
+        permissionPrefixes: ["organization.diocese.read."],
+        actionPermissionPrefixes: ["organization.diocese.create.", "organization.diocese.update."],
+        primaryActionLabel: "Thêm giáo phận",
+        filterLabels: ["Trạng thái", "Ngày thành lập"],
+      }),
+      route({
+        path: "/organization/deaneries",
+        moduleName: "organization.deanery",
+        title: "Giáo hạt",
+        subtitle: "Quản lý giáo hạt theo giáo phận được phân quyền.",
+        endpoint: "/deaneries",
+        kind: "deaneries",
+        icon: Buildings,
+        columns: ["name", "associationName", "dioceseId", "chaplain", "status"],
+        permissionPrefixes: ["organization.deanery.read."],
+        actionPermissionPrefixes: ["organization.deanery.create.", "organization.deanery.update."],
+        primaryActionLabel: "Thêm giáo hạt",
+        filterLabels: ["Giáo phận", "Trạng thái"],
+      }),
+      route({
+        path: "/organization/parishes",
+        moduleName: "organization.parish",
+        title: "Giáo xứ",
+        subtitle: "Quản lý giáo xứ và xứ đoàn theo giáo hạt.",
+        endpoint: "/parishes",
+        kind: "parishes",
+        icon: Buildings,
+        columns: ["name", "chapterName", "deaneryId", "chaplain", "status"],
+        permissionPrefixes: ["organization.parish.read."],
+        actionPermissionPrefixes: ["organization.parish.create.", "organization.parish.update."],
+        primaryActionLabel: "Thêm giáo xứ",
+        filterLabels: ["Giáo hạt", "Trạng thái"],
+      }),
+    ],
+  };

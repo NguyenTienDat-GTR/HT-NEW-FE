@@ -6,6 +6,7 @@
 - For UI tasks, reread `D:\quan-li-ht-new\FE\DESIGN.md`.
 - FE changes, architecture, routes, components, auth client, permission UI, data flow, design tokens, animation, responsive behavior, FE tests, done items, and FE remaining work are recorded here.
 - BE changes are recorded only in `D:\quan-li-ht-new\BE\project.md`.
+- BẮT BUỘC chia nhỏ code theo từng module, feature, component để tái sử dụng; tránh để một file code thủ công quá dài hoặc gom nhiều trách nhiệm không cùng phạm vi.
 
 ## FE architecture
 
@@ -67,6 +68,12 @@
 - `FE/src/features/workspace/app-shell.tsx`: refreshed grouped module sidebar, topbar search placeholder, user summary, notification entry, mobile drawer, and 1400px workspace width.
 - `FE/src/features/workspace/workspace-page.tsx`: cleaned UTF-8 not-found copy after route registry refresh.
 - `FE/src/features/resources/resource-view.tsx`: redesigned generic resource screens with module chip headers, permission-aware primary actions, filter chips, status selector, richer table cells, avatars, badges, row actions, loading skeletons, empty state, and contextual errors.
+- `FE/src/features/workspace/route-config.ts` and `FE/src/features/workspace/route-groups/*`: split route metadata by dashboard, organization, leader, executive-board, training, training-workflow, certificate, and system modules; `routes.ts` now only aggregates groups and exports lookup helpers.
+- `FE/src/features/resources/resource-format.tsx`, `resource-toolbar.tsx`, `resource-table.tsx`, `resource-pagination.tsx`, and `use-resource-query-state.ts`: split generic resource screen formatting, filters/header, table rows, pagination, and URL query-state logic into reusable components/hooks; `resource-view.tsx` is now an orchestration shell.
+- `FE/src/features/resources/resource-pagination.tsx` and `use-resource-query-state.ts`: pagination footer now lets users choose page size and jump to a specific page, keeps first/previous/next/last navigation, and validates URL-derived `page`/`size` defaults before serializing `BaseSearchRequest`.
+- `FE/src/features/resources/resource-pagination.tsx`: page selection now uses clickable page-number buttons with compact ellipsis ranges instead of a numeric page input.
+- `FE/src/features/resources/use-resource-query-state.ts`: search debounce now updates URL only when the search term differs from the URL search value, so pagination changes no longer get reset back to page 0.
+- `FE/src/features/resources/use-resource-query-state.ts`: resource list URL `page` is now one-based for users while `BaseSearchRequest.page` remains zero-based internally for backend calls.
 - `FE/src/features/analytics/dashboard-view.tsx`: redesigned dashboard with KPI cards, trend chart, work-queue shortcuts, scope/filter/data insight cards, and clean Vietnamese copy.
 - `FE/src/features/analytics/analytics-view.tsx` and `FE/src/features/analytics/types.ts`: refreshed analytics tabs and restored UTF-8 metric labels.
 - `FE/src/lib/api/client.ts`: restored UTF-8 Vietnamese fallback messages while preserving refresh/retry and typed envelope behavior.
@@ -106,6 +113,33 @@
 - `npm.cmd run test`: passed after moving unit tests to `tests/unit`, 8 files and 10 tests.
 - `rg --files src | rg "(test|spec)\.(ts|tsx)$|^src/test/"`: no results, confirming tests are out of `src`.
 - `npm.cmd run build`: passed with Next.js 16 production build.
+- FE modular-refactor preflight reread the DOCX guide, `BE/project.md`, `FE/agent.md`, and `FE/DESIGN.md`.
+- Mandatory modularization rule added to this agent file: split code by module, feature, and component for reuse; avoid oversized manual files with mixed responsibilities.
+- Route/resource modular refactor line-count check: `routes.ts` reduced to 24 lines, `resource-view.tsx` reduced to 63 lines; generated `schema.d.ts` remains intentionally untouched.
+- `npm.cmd run typecheck`: passed after splitting route groups and resource components/hooks.
+- `npm.cmd run lint`: passed after the modular refactor.
+- `npm.cmd run test`: passed after the modular refactor, 8 files and 10 tests.
+- `npm.cmd run build`: passed after the modular refactor with Next.js 16 production build.
+- Resource pagination enhancement preflight reread the DOCX guide, `BE/project.md`, `FE/agent.md`, and `FE/DESIGN.md`.
+- `npm.cmd run typecheck`: passed after adding page jump and page-size controls to the reusable resource pagination footer.
+- `npm.cmd run lint`: passed after the resource pagination enhancement.
+- `npm.cmd run test`: passed after the resource pagination enhancement, 8 files and 10 tests.
+- `npm.cmd run build`: passed after the resource pagination enhancement with Next.js 16 production build.
+- Resource page-button pagination correction preflight reread the DOCX guide, `BE/project.md`, `FE/agent.md`, and `FE/DESIGN.md`.
+- `npm.cmd run typecheck`: passed after replacing the page number input with clickable page buttons.
+- `npm.cmd run lint`: passed after replacing the page number input with clickable page buttons.
+- `npm.cmd run test`: passed after replacing the page number input with clickable page buttons, 8 files and 10 tests.
+- `npm.cmd run build`: passed after replacing the page number input with clickable page buttons with Next.js 16 production build.
+- Resource pagination page-change fix preflight reread the DOCX guide, `BE/project.md`, `FE/agent.md`, and `FE/DESIGN.md`.
+- `npm.cmd run typecheck`: passed after preventing the search debounce from resetting page changes.
+- `npm.cmd run lint`: passed after preventing the search debounce from resetting page changes.
+- `npm.cmd run test`: passed after preventing the search debounce from resetting page changes, 8 files and 10 tests.
+- `npm.cmd run build`: passed after preventing the search debounce from resetting page changes with Next.js 16 production build.
+- Resource user-facing page URL fix preflight reread the DOCX guide, `BE/project.md`, `FE/agent.md`, and `FE/DESIGN.md`.
+- `npm.cmd run typecheck`: passed after making URL page one-based while keeping API page zero-based.
+- `npm.cmd run lint`: passed after making URL page one-based while keeping API page zero-based.
+- `npm.cmd run test`: passed after making URL page one-based while keeping API page zero-based, 8 files and 10 tests.
+- `npm.cmd run build`: passed after making URL page one-based while keeping API page zero-based with Next.js 16 production build.
 
 ## Remaining FE work
 
