@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { toast } from "sonner";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { apiFetch } from "@/lib/api/client";
-import { LoginView } from "./login-view";
+import { LoginView } from "@/features/auth/login-view";
 
 const replaceMock = vi.hoisted(() => vi.fn());
 

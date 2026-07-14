@@ -6,6 +6,7 @@
 - For UI tasks, reread `D:\quan-li-ht-new\FE\DESIGN.md`.
 - FE changes, architecture, routes, components, auth client, permission UI, data flow, design tokens, animation, responsive behavior, FE tests, done items, and FE remaining work are recorded here.
 - BE changes are recorded only in `D:\quan-li-ht-new\BE\project.md`.
+- BẮT BUỘC chia nhỏ code theo từng module, feature, component để tái sử dụng; tránh để một file code thủ công quá dài hoặc gom nhiều trách nhiệm không cùng phạm vi.
 
 ## FE architecture
 
@@ -19,6 +20,9 @@
 
 - `/login` and `/change-password` render dedicated auth forms with React Hook Form and Zod.
 - `/dashboard`, `/analytics`, `/notifications`, organization, training, certificate, and system routes render through the App Router workspace catch-all and route registry.
+- Current UI design branch is `feature/management-ui-design`, created from up-to-date `main` on 2026-07-14.
+- Sidebar menu is grouped by module name: dashboard, organization, leader, executive-board, training, training-workflow, certificate, and system.
+- Ban điều hành routes now use `/executive-board/positions` and `/executive-board/assignments`; workflow aliases exist for `/training/registrations`, `/training/approvals`, `/training/scores`, `/certificates/approvals`, and `/leaders/profiles`.
 - Auth state uses Zustand memory only. Refresh and protected calls use `credentials: "include"`, Bearer access token, single-flight refresh, and retry once.
 - Tables sync `page`, `size`, `search`, `sortBy`, and `sortDirection` to URL with 300ms debounce. BaseSearchRequest serializes `filters` as `JSON.stringify`.
 - Notifications hydrate from REST and invalidate cache from STOMP `/user/queue/notifications` after connect or message.
@@ -26,6 +30,7 @@
 ## Design system and animation
 
 - Light-only design uses Inter via `next/font`, violet `#6C47FF`, 44px targets, 240px/72px sidebar, 1100px content max, 48px data rows, 10px buttons, 8px inputs, and 12px panels/charts.
+- 2026-07-14 management UI refresh keeps the Clerk-style light surface but widens the workspace to 1400px, uses grouped navigation, module chips, richer table badges, workflow hints, empty/error/loading states, and dashboard work-queue shortcuts.
 - Button variants implemented: `primary`, `secondary`, `outline`, `ghost`, `destructive`, and `icon`; loading keeps width stable and disables double submit.
 - KPI `AnimatedMetric` uses Motion `useMotionValue`, `useSpring`, and `useReducedMotion`; visual number is `aria-hidden` while final value is exposed by accessible label.
 - Chart primitives include `ChartFrame`, `ChartHeader`, `ChartLegend`, `ChartTooltip`, `ChartSkeleton`, `ChartEmpty`, `ChartError`, and `ChartDataTable`.
@@ -50,7 +55,7 @@
 - `FE/src/features/auth/*`: login and change-password screens.
 - `FE/src/features/workspace/*`: app shell, auth gate, route registry, realtime notification subscription, and workspace renderer.
 - `FE/src/features/analytics/*`: KPI, chart primitives, dashboard, analytics adapters, and analytics screens.
-- `FE/src/features/resources/resource-view.tsx`: generic permission-first resource table shell for V1 modules.
+- `FE/src/features/resources/resource-list-page.tsx` plus `resource-toolbar.tsx` and `resource-table.tsx`: generic permission-first resource list/table shell for V1 modules.
 - `FE/src/**/*.test.*` and `FE/e2e/login.spec.ts`: unit/integration and E2E coverage.
 - `FE/src/components/ui/button.tsx`: fixed Radix Slot `asChild` behavior so the Slot receives exactly one child element and no loading wrapper overlay.
 - `FE/src/components/ui/button.test.tsx`: added regression coverage for `Button asChild` with `next/link` and kept loading double-submit coverage UTF-8 safe.
@@ -59,6 +64,29 @@
 - `FE/src/features/auth/change-password-view.tsx`: catches submit errors after mutation toast and writes the message into form state instead of leaking the rejection.
 - `FE/src/features/auth/login-view.test.tsx` and `FE/src/lib/api/client.test.ts`: cover server-message propagation and login-form toast handling.
 - `FE/src/features/workspace/app-shell.tsx`: logout now calls `/auth/logout` with the in-memory Bearer token and refresh cookie through `apiFetch`, treats the server call as best-effort, clears TanStack Query cache, clears Zustand auth memory, disables duplicate logout clicks while pending, and routes back to `/login`.
+- `FE/src/features/workspace/routes.ts`: rebuilt route metadata around module names, grouped sidebar sections, corrected executive-board paths, and added workflow/detail aliases for leader profiles, registration, approval, scoring, and certificate approval screens.
+- `FE/src/features/workspace/app-shell.tsx`: refreshed grouped module sidebar, topbar search placeholder, user summary, notification entry, mobile drawer, and 1400px workspace width.
+- `FE/src/features/workspace/workspace-page.tsx`: cleaned UTF-8 not-found copy after route registry refresh.
+- `FE/src/features/resources/resource-list-page.tsx`: redesigned generic resource screens with module chip headers, permission-aware primary actions, filter chips, status selector, richer table cells, avatars, badges, row actions, loading skeletons, empty state, and contextual errors.
+- `FE/src/features/workspace/route-config.ts` and `FE/src/features/workspace/route-groups/*`: split route metadata by dashboard, organization, leader, executive-board, training, training-workflow, certificate, and system modules; `routes.ts` now only aggregates groups and exports lookup helpers.
+- `FE/src/features/resources/resource-format.tsx`, `resource-list-page.tsx`, `resource-toolbar.tsx`, `resource-table.tsx`, `resource-pagination.tsx`, and `use-resource-query-state.ts`: split generic resource screen formatting, filters/header, table rows, pagination, and URL query-state logic into reusable components/hooks.
+- `FE/src/features/resources/resource-pagination.tsx` and `use-resource-query-state.ts`: pagination footer now lets users choose page size and jump to a specific page, keeps first/previous/next/last navigation, and validates URL-derived `page`/`size` defaults before serializing `BaseSearchRequest`.
+- `FE/src/features/resources/resource-pagination.tsx`: page selection now uses clickable page-number buttons with compact ellipsis ranges instead of a numeric page input.
+- `FE/src/features/resources/use-resource-query-state.ts`: search debounce now updates URL only when the search term differs from the URL search value, so pagination changes no longer get reset back to page 0.
+- `FE/src/features/resources/use-resource-query-state.ts`: resource list URL `page` is now one-based for users while `BaseSearchRequest.page` remains zero-based internally for backend calls.
+- `FE/src/features/analytics/dashboard-view.tsx`: redesigned dashboard with KPI cards, trend chart, work-queue shortcuts, scope/filter/data insight cards, and clean Vietnamese copy.
+- `FE/src/features/analytics/analytics-view.tsx` and `FE/src/features/analytics/types.ts`: refreshed analytics tabs and restored UTF-8 metric labels.
+- `FE/src/lib/api/client.ts`: restored UTF-8 Vietnamese fallback messages while preserving refresh/retry and typed envelope behavior.
+- `FE/tests/unit/**/*`: unit tests moved out of `FE/src` into `FE/tests/unit`; `FE/src` no longer contains `*.test.*` or `src/test`.
+- `FE/vitest.config.ts`: Vitest now includes `tests/unit/**/*.test.ts(x)` and uses `tests/unit/test/setup.ts`.
+- `FE/src/components/brand/brand-mark.tsx`: added the shared HT brand mark used by login and workspace shell.
+- `FE/src/features/resources/resource-list-page.tsx`: replaced the old one-file generic resource screen with a reusable data/list primitive that module screens compose.
+- `FE/src/features/leader/leader-resource-view.tsx`, `FE/src/features/organization/organization-resource-view.tsx`, `FE/src/features/executive-board/executive-board-resource-view.tsx`, `FE/src/features/training/training-resource-view.tsx`, `FE/src/features/training-workflow/training-workflow-resource-view.tsx`, `FE/src/features/certificate/certificate-resource-view.tsx`, and `FE/src/features/system/system-resource-view.tsx`: added module-owned resource screens with their own summary cards, workflow hints, side panels, and tone.
+- `FE/src/features/workspace/module-resource-renderer.tsx` and `FE/src/features/workspace/workspace-page.tsx`: route resource pages through module-owned views instead of `ResourceView`; `FE/src/features/resources/resource-view.tsx` was removed.
+- `FE/src/features/workspace/app-shell.tsx`, `FE/src/features/auth/login-view.tsx`, `FE/src/features/auth/change-password-view.tsx`, `FE/src/features/resources/resource-toolbar.tsx`, `FE/src/features/resources/resource-table.tsx`, `FE/src/features/resources/resource-format.tsx`, `FE/src/features/analytics/dashboard-view.tsx`, and `FE/src/features/analytics/animated-metric.tsx`: refreshed UI from the provided visual references with a light violet system, white panels, lavender active navigation, centered auth card, module summary cards, icon row actions, and stable table controls.
+- `FE/src/features/workspace/app-shell.tsx`: revised the sidebar to match the reference layout more closely with per-module accordion collapse, default-open Organization and Leader groups, icon-only full-sidebar collapse, and visible Organization children for Diocese/Deanery/Parish.
+- `FE/src/features/resources/resource-list-page.tsx`: simplified module list pages to a table-first layout with compact breadcrumb/title/action, one full-width filter panel, and full-width table/pagination; summary cards and side panels no longer shrink the list.
+- `FE/src/features/resources/resource-toolbar.tsx`: removed duplicate status filter chips and kept a single status select plus filter button to match the reference list screens.
 
 ## Validation
 
@@ -86,6 +114,56 @@
 - `npm.cmd run typecheck`: passed after the FE logout update.
 - `npm.cmd run lint`: passed after the FE logout update.
 - `npm.cmd run test`: passed after the FE logout update, 8 files and 10 tests.
+- Management UI design preflight reread the DOCX guide, `BE/project.md`, `FE/agent.md`, and `FE/DESIGN.md`.
+- `git fetch origin` and `git pull --ff-only origin main`: local `main` was up to date before creating `feature/management-ui-design`.
+- `npm.cmd run typecheck`: passed after the grouped menu/resource/dashboard refresh and test relocation.
+- `npm.cmd run lint`: passed after removing the unused dashboard import and avoiding raw `<img>` in the generic table avatar.
+- `npm.cmd run test`: passed after moving unit tests to `tests/unit`, 8 files and 10 tests.
+- `rg --files src | rg "(test|spec)\.(ts|tsx)$|^src/test/"`: no results, confirming tests are out of `src`.
+- `npm.cmd run build`: passed with Next.js 16 production build.
+- FE modular-refactor preflight reread the DOCX guide, `BE/project.md`, `FE/agent.md`, and `FE/DESIGN.md`.
+- Mandatory modularization rule added to this agent file: split code by module, feature, and component for reuse; avoid oversized manual files with mixed responsibilities.
+- Route/resource modular refactor line-count check: `routes.ts` reduced to 24 lines, `resource-view.tsx` reduced to 63 lines; generated `schema.d.ts` remains intentionally untouched.
+- `npm.cmd run typecheck`: passed after splitting route groups and resource components/hooks.
+- `npm.cmd run lint`: passed after the modular refactor.
+- `npm.cmd run test`: passed after the modular refactor, 8 files and 10 tests.
+- `npm.cmd run build`: passed after the modular refactor with Next.js 16 production build.
+- Resource pagination enhancement preflight reread the DOCX guide, `BE/project.md`, `FE/agent.md`, and `FE/DESIGN.md`.
+- `npm.cmd run typecheck`: passed after adding page jump and page-size controls to the reusable resource pagination footer.
+- `npm.cmd run lint`: passed after the resource pagination enhancement.
+- `npm.cmd run test`: passed after the resource pagination enhancement, 8 files and 10 tests.
+- `npm.cmd run build`: passed after the resource pagination enhancement with Next.js 16 production build.
+- Resource page-button pagination correction preflight reread the DOCX guide, `BE/project.md`, `FE/agent.md`, and `FE/DESIGN.md`.
+- `npm.cmd run typecheck`: passed after replacing the page number input with clickable page buttons.
+- `npm.cmd run lint`: passed after replacing the page number input with clickable page buttons.
+- `npm.cmd run test`: passed after replacing the page number input with clickable page buttons, 8 files and 10 tests.
+- `npm.cmd run build`: passed after replacing the page number input with clickable page buttons with Next.js 16 production build.
+- Resource pagination page-change fix preflight reread the DOCX guide, `BE/project.md`, `FE/agent.md`, and `FE/DESIGN.md`.
+- `npm.cmd run typecheck`: passed after preventing the search debounce from resetting page changes.
+- `npm.cmd run lint`: passed after preventing the search debounce from resetting page changes.
+- `npm.cmd run test`: passed after preventing the search debounce from resetting page changes, 8 files and 10 tests.
+- `npm.cmd run build`: passed after preventing the search debounce from resetting page changes with Next.js 16 production build.
+- Resource user-facing page URL fix preflight reread the DOCX guide, `BE/project.md`, `FE/agent.md`, and `FE/DESIGN.md`.
+- `npm.cmd run typecheck`: passed after making URL page one-based while keeping API page zero-based.
+- `npm.cmd run lint`: passed after making URL page one-based while keeping API page zero-based.
+- `npm.cmd run test`: passed after making URL page one-based while keeping API page zero-based, 8 files and 10 tests.
+- `npm.cmd run build`: passed after making URL page one-based while keeping API page zero-based with Next.js 16 production build.
+- Reference-image UI refresh preflight reread the DOCX guide, `BE/project.md`, `FE/agent.md`, and `FE/DESIGN.md`.
+- `npm.cmd run typecheck`: passed after replacing `ResourceView` with module-owned resource screens.
+- `npm.cmd run lint`: passed after the module-owned UI refresh.
+- `npm.cmd run test`: passed after the module-owned UI refresh, 8 files and 10 tests.
+- `npm.cmd run build`: passed after the module-owned UI refresh with Next.js 16 production build.
+- `npm.cmd run test:e2e`: passed after the login redesign at 1440px, 1024px, and 390px.
+- Reference-alignment correction preflight reread the DOCX guide, `BE/project.md`, `FE/agent.md`, and `FE/DESIGN.md`.
+- Manual Playwright mock opened `/leaders` with mocked `/auth/me` and `/leaders`, confirming sidebar shows Organization with Giáo phận/Giáo hạt/Giáo xứ and separate Huynh trưởng group, while the list table stays full-width.
+- Admin-diocese real-login menu gap traced to BE `/api/auth/me.permissions`, not FE route rendering: FE keeps menu visibility permission-prefix based, while BE branch `fix/admin-diocese-menu-permissions` seeds missing scoped organization/leader grants and adds `organization.leader.read.diocese/deanery`.
+- Organization action rule from BE: scoped admin roles read descendant organization lists, update only their own managed unit, and may create/toggle only direct-child units. FE hides create buttons through route `primaryActionPermissionPrefixes`, so `ADMIN_DIOCESE` does not see "Thêm giáo phận", can see "Thêm giáo hạt", and does not see "Thêm giáo xứ".
+- `npm.cmd run typecheck`: passed after the direct-child organization action permission correction.
+- `npm.cmd run typecheck`: passed after the accordion sidebar and table-first list correction.
+- `npm.cmd run lint`: passed after the accordion sidebar and table-first list correction.
+- `npm.cmd run test`: passed after the accordion sidebar and table-first list correction, 8 files and 10 tests.
+- `npm.cmd run build`: passed after the accordion sidebar and table-first list correction with Next.js 16 production build.
+- `npm.cmd run test:e2e`: passed after the correction at 1440px, 1024px, and 390px.
 
 ## Remaining FE work
 

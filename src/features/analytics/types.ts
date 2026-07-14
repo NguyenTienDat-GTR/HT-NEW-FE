@@ -26,20 +26,27 @@ export type AnalyticsResponse = {
 
 export function metricLabel(key: string) {
   const labels: Record<string, string> = {
-    totalDioceses: "Giáo phận",
-    totalDeaneries: "Giáo hạt",
-    totalParishes: "Giáo xứ",
-    totalLeaders: "Huynh trưởng",
     activeLeaders: "Đang hoạt động",
-    inactiveLeaders: "Tạm ngưng",
-    totalCourses: "Khóa học",
-    registrations: "Đăng ký",
-    completed: "Hoàn thành",
-    passed: "Đạt",
-    totalCertificates: "Chứng chỉ",
     approved: "Đã duyệt",
+    averageApprovalHours: "Giờ duyệt TB",
+    averageScore: "Điểm TB",
+    cancelled: "Đã hủy",
+    completed: "Hoàn thành",
+    conversionRate: "Tỷ lệ chuyển đổi",
+    exceptionApproved: "Duyệt ngoại lệ",
+    inactiveLeaders: "Tạm ngưng",
+    passed: "Đạt",
     pending: "Chờ duyệt",
+    pendingApproval: "Chờ duyệt",
+    registrations: "Đăng ký",
     rejected: "Từ chối",
+    systemSuggested: "Hệ thống gợi ý",
+    totalCertificates: "Chứng nhận",
+    totalCourses: "Khóa học",
+    totalDeaneries: "Giáo hạt",
+    totalDioceses: "Giáo phận",
+    totalLeaders: "Huynh trưởng",
+    totalParishes: "Giáo xứ",
   };
   return labels[key] ?? key.replace(/([A-Z])/g, " $1").trim();
 }

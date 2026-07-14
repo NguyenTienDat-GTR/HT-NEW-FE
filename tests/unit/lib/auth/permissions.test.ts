@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canSeeAnalyticsDetail, hasPermissionPrefix, isSuperAdmin } from "./permissions";
+import { canSeeAnalyticsDetail, hasPermissionPrefix, isSuperAdmin } from "@/lib/auth/permissions";
 
 describe("permission matcher", () => {
   it("matches permission prefixes and keeps SUPER_ADMIN out of detailed analytics", () => {

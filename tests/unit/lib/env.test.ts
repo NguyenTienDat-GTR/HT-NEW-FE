@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { clientEnv, serverEnv } from "./env";
+import { clientEnv, serverEnv } from "@/lib/env";
 
 describe("env validation", () => {
   it("exposes only the public websocket URL to client env", () => {

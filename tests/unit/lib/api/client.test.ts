@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { useAuthStore } from "@/lib/auth/auth-store";
-import { apiFetch } from "./client";
+import { apiFetch } from "@/lib/api/client";
 
 describe("apiFetch", () => {
   afterEach(() => {
