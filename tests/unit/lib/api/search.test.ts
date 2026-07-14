@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { serializeBaseSearch } from "./search";
+import { serializeBaseSearch } from "@/lib/api/search";
 
 describe("serializeBaseSearch", () => {
   it("serializes filters as JSON and keeps paging constraints in query shape", () => {

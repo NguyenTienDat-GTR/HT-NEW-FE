@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import Link from "next/link";
 import { describe, expect, it, vi } from "vitest";
-import { Button } from "./button";
+import { Button } from "@/components/ui/button";
 
 describe("Button", () => {
   it("keeps loading button disabled to avoid double submit", async () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { metricLabel, toChartRows, toKpiList } from "./types";
+import { metricLabel, toChartRows, toKpiList } from "@/features/analytics/types";
 
 describe("analytics adapters", () => {
   it("maps KPI and trend data without inventing labels from backend", () => {

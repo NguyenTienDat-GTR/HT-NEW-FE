@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { AnimatedMetric } from "./animated-metric";
+import { AnimatedMetric } from "@/features/analytics/animated-metric";
 
 describe("AnimatedMetric", () => {
   it("announces the final value immediately for assistive technology", () => {

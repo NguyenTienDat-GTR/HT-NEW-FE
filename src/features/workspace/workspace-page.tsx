@@ -1,11 +1,12 @@
 "use client";
 
-import { AuthGate } from "./auth-gate";
-import { AppShell } from "./app-shell";
-import { findRoute } from "./routes";
 import { DashboardView } from "@/features/analytics/dashboard-view";
 import { AnalyticsView } from "@/features/analytics/analytics-view";
 import { ResourceView } from "@/features/resources/resource-view";
+import type React from "react";
+import { AuthGate } from "./auth-gate";
+import { AppShell } from "./app-shell";
+import { findRoute } from "./routes";
 
 export function WorkspacePage({ segments }: { segments: string[] }) {
   const path = `/${segments.join("/")}`;
@@ -14,9 +15,7 @@ export function WorkspacePage({ segments }: { segments: string[] }) {
     return (
       <AuthGate>
         <AppShell>
-          <div className="rounded-[12px] border border-border bg-white p-6 shadow-[var(--shadow-card)]">
-            Không tìm thấy màn hình
-          </div>
+          <div className="rounded-xl border border-border bg-white p-6 shadow-(--shadow-card)">Không tìm thấy màn hình</div>
         </AppShell>
       </AuthGate>
     );
