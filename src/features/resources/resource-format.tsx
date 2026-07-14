@@ -103,13 +103,17 @@ function Avatar({ name, src }: { name: string; src: unknown }) {
     return (
       <span
         aria-label={name || "Ảnh đại diện"}
-        className="inline-flex h-9 w-9 rounded-full border border-border bg-cover bg-center"
+        className="inline-flex h-10 w-10 rounded-full border border-border bg-cover bg-center shadow-sm"
         role="img"
         style={{ backgroundImage: `url(${src})` }}
       />
     );
   }
-  return <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-primary text-sm font-semibold text-white">{initial}</span>;
+  return (
+    <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[linear-gradient(135deg,#6c47ff,#8f7cff)] text-sm font-semibold text-white shadow-[0_10px_24px_rgb(108_71_255_/_0.24)]">
+      {initial}
+    </span>
+  );
 }
 
 function StatusBadge({ active }: { active: boolean }) {
@@ -140,7 +144,7 @@ function Badge({ children, tone = "neutral" }: { children: React.ReactNode; tone
   return (
     <span
       className={cn(
-        "inline-flex h-7 items-center rounded-full border px-2.5 text-xs font-semibold",
+        "inline-flex h-7 items-center rounded-[7px] border px-2.5 text-xs font-semibold",
         tone === "neutral" && "border-border bg-surface-1 text-muted",
         tone === "success" && "border-success/25 bg-success/10 text-success",
         tone === "danger" && "border-danger/25 bg-danger/10 text-danger",

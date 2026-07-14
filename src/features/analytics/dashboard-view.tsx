@@ -1,11 +1,12 @@
 "use client";
 
-import { ArrowRight, Bell, Certificate, ClipboardText, GraduationCap, UsersThree } from "@phosphor-icons/react";
+import { ArrowRight, Bell, Certificate, ClipboardText, GraduationCap, TrendUp, UsersThree } from "@phosphor-icons/react";
 import { useQuery } from "@tanstack/react-query";
 import type { Route } from "next";
 import Link from "next/link";
 import { Panel } from "@/components/ui/panel";
 import { apiFetch } from "@/lib/api/client";
+import { cn } from "@/lib/utils";
 import { ChartFrame, ChartSkeleton } from "./chart-frame";
 import { AnimatedMetric } from "./animated-metric";
 import { metricLabel, toChartRows, toKpiList, type AnalyticsResponse } from "./types";
@@ -14,27 +15,38 @@ const workQueue = [
   {
     title: "Đăng ký chờ duyệt",
     description: "Rà soát hồ sơ theo cấp duyệt hiện tại.",
-    href: "/training/participations",
+    href: "/training/approvals",
     icon: ClipboardText,
+    tone: "rose",
   },
   {
-    title: "Chứng nhận chờ xử lý",
-    description: "Kiểm tra passing score và lý do ngoại lệ.",
-    href: "/certificates",
-    icon: Certificate,
+    title: "Ban điều hành chờ duyệt",
+    description: "Kiểm tra phân công và ngày hiệu lực.",
+    href: "/executive-board/assignments",
+    icon: UsersThree,
+    tone: "blue",
   },
   {
-    title: "Khóa đang mở đăng ký",
-    description: "Theo dõi cửa sổ đăng ký và recipient.",
+    title: "Khóa sắp diễn ra",
+    description: "Theo dõi cửa sổ đăng ký và công thức điểm.",
     href: "/training/courses",
     icon: GraduationCap,
+    tone: "violet",
   },
   {
-    title: "Hồ sơ huynh trưởng",
-    description: "Cập nhật ảnh, thông tin liên hệ và trạng thái.",
-    href: "/leaders",
-    icon: UsersThree,
+    title: "Chứng nhận chờ cấp",
+    description: "Kiểm tra passing score và lý do ngoại lệ.",
+    href: "/certificates/approvals",
+    icon: Certificate,
+    tone: "emerald",
   },
+] as const;
+
+const notifications = [
+  "Khóa LHT Cấp I đã đăng ký khóa 2025B.",
+  "Ban điều hành giáo xứ An Phú được duyệt.",
+  "Phê duyệt chứng nhận cho 12 huynh trưởng.",
+  "Khóa LHT 2025A đã kết thúc khóa học.",
 ];
 
 export function DashboardView() {
@@ -50,71 +62,84 @@ export function DashboardView() {
 
   return (
     <div className="space-y-6">
-      <Header
-        eyebrow="dashboard"
-        title="Tổng quan"
-        subtitle="Theo dõi tình hình tổ chức, huynh trưởng, khóa học và chứng nhận trong scope hiện tại."
-      />
+      <Header title="Tổng quan" subtitle="Theo dõi hệ thống, công việc cần xử lý và dữ liệu analytics trong scope hiện tại." />
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {kpis.map((metric, index) => (
           <AnimatedMetric delay={index * 0.04} key={metric.key} label={metricLabel(metric.key)} value={metric.value} />
         ))}
         {query.isLoading
-          ? Array.from({ length: 4 }).map((_, index) => <div className="h-[132px] rounded-[12px] bg-white motion-safe:animate-pulse" key={index} />)
+          ? Array.from({ length: 4 }).map((_, index) => <div className="h-[150px] rounded-[16px] border border-border bg-white motion-safe:animate-pulse" key={index} />)
           : null}
       </section>
 
-      <section className="grid gap-5 xl:grid-cols-[minmax(0,1.5fr)_minmax(320px,0.8fr)]">
+      <section className="grid gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(360px,0.85fr)]">
         {query.isLoading ? (
           <ChartSkeleton />
         ) : (
-          <ChartFrame description="Trend và comparison dùng response analytics thật." metricKeys={metricKeys} rows={rows} title="Xu hướng tổng quan" />
+          <ChartFrame description="Dữ liệu lấy từ response analytics, FE tự map key thành label hiển thị." metricKeys={metricKeys} rows={rows} title="Khóa huấn luyện theo thời gian" />
         )}
 
-        <Panel className="p-4">
+        <Panel className="p-5">
           <div className="mb-4 flex items-start justify-between gap-3">
             <div>
-              <h2 className="text-base font-semibold">Việc cần xử lý</h2>
-              <p className="mt-1 text-sm text-muted">Lối tắt theo các workflow vận hành thường dùng.</p>
+              <h2 className="text-lg font-semibold">Thông báo mới</h2>
+              <p className="mt-1 text-sm text-muted">Các sự kiện workflow gần đây.</p>
             </div>
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-[10px] bg-primary/10 text-primary">
-              <Bell className="h-5 w-5" />
-            </span>
+            <Link className="text-sm font-semibold text-primary" href="/notifications">
+              Xem tất cả
+            </Link>
           </div>
-          <div className="divide-y divide-surface-2">
-            {workQueue.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link className="group flex items-center gap-3 py-3" href={item.href as Route} key={item.href}>
-                  <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-surface-1 text-primary">
-                    <Icon className="h-5 w-5" />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-semibold text-foreground">{item.title}</span>
-                    <span className="line-clamp-1 text-xs text-muted">{item.description}</span>
-                  </span>
-                  <ArrowRight className="h-4 w-4 text-muted transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
-                </Link>
-              );
-            })}
+          <div className="space-y-2">
+            {notifications.map((item, index) => (
+              <div className="flex items-center gap-3 rounded-[12px] px-2 py-3 hover:bg-surface-1" key={item}>
+                <span className={cn("grid h-9 w-9 place-items-center rounded-full", index % 2 === 0 ? "bg-danger/10 text-danger" : "bg-blue-50 text-blue-600")}>
+                  <Bell className="h-4 w-4" weight="bold" />
+                </span>
+                <span className="min-w-0 flex-1 text-sm text-foreground">{item}</span>
+                <span className="text-xs text-muted">{index + 2} giờ trước</span>
+              </div>
+            ))}
           </div>
         </Panel>
       </section>
 
-      <section className="grid gap-4 lg:grid-cols-3">
-        <InsightCard
-          title="Scope"
-          value={String(query.data?.scope?.scopeType ?? query.data?.scope?.type ?? "Đang tải")}
-          text="Backend tự resolve scope từ account, FE không gửi scopeId cho analytics."
-        />
-        <InsightCard
-          title="Bộ lọc"
-          value={String(query.data?.filters?.timeBucket ?? "month")}
-          text="fromDate, toDate, timeBucket và groupBy được map thành chart controls."
-        />
-        <InsightCard title="Dữ liệu" value="Structured only" text="Analytics không trả insight/message diễn giải; FE tự map label hiển thị." />
-      </section>
+      <Panel className="p-5">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold">Việc cần xử lý</h2>
+            <p className="mt-1 text-sm text-muted">Lối tắt theo các workflow vận hành thường dùng.</p>
+          </div>
+          <span className="inline-flex items-center gap-2 rounded-[10px] bg-primary/10 px-3 py-2 text-sm font-semibold text-primary">
+            <TrendUp className="h-4 w-4" />
+            Ưu tiên hôm nay
+          </span>
+        </div>
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          {workQueue.map((item, index) => {
+            const Icon = item.icon;
+            return (
+              <Link
+                className="group rounded-[14px] border border-border bg-white p-4 shadow-sm transition-colors hover:border-primary/30 hover:bg-primary/4"
+                href={item.href as Route}
+                key={item.href}
+              >
+                <span className={cn("mb-4 inline-flex h-11 w-11 items-center justify-center rounded-[12px]", queueTone(item.tone))}>
+                  <Icon className="h-5 w-5" weight="bold" />
+                </span>
+                <span className="flex items-start justify-between gap-3">
+                  <span>
+                    <span className="block text-2xl font-semibold text-foreground">{[12, 5, 3, 8][index]}</span>
+                    <span className="mt-1 block text-sm font-semibold text-foreground">{item.title}</span>
+                    <span className="mt-1 line-clamp-2 text-xs leading-5 text-muted">{item.description}</span>
+                  </span>
+                  <ArrowRight className="mt-1 h-4 w-4 text-muted transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
+                </span>
+              </Link>
+            );
+          })}
+        </div>
+      </Panel>
     </div>
   );
 }
@@ -122,21 +147,16 @@ export function DashboardView() {
 export function Header({ title, subtitle, eyebrow }: { title: string; subtitle: string; eyebrow?: string }) {
   return (
     <div>
-      {eyebrow ? (
-        <div className="mb-2 inline-flex h-7 items-center rounded-full border border-border bg-white px-3 text-xs font-semibold text-muted">{eyebrow}</div>
-      ) : null}
-      <h1 className="text-2xl font-semibold tracking-[0] text-foreground">{title}</h1>
-      <p className="mt-1 max-w-[78ch] text-sm text-muted">{subtitle}</p>
+      {eyebrow ? <div className="mb-2 inline-flex h-8 items-center rounded-full border border-border bg-white px-3 text-xs font-semibold text-muted">{eyebrow}</div> : null}
+      <h1 className="text-3xl font-semibold tracking-[0] text-foreground">{title}</h1>
+      <p className="mt-2 max-w-[78ch] text-base text-muted">{subtitle}</p>
     </div>
   );
 }
 
-function InsightCard({ title, value, text }: { title: string; value: string; text: string }) {
-  return (
-    <Panel className="p-4">
-      <p className="text-xs font-semibold uppercase text-muted">{title}</p>
-      <p className="mt-2 text-lg font-semibold">{value}</p>
-      <p className="mt-1 text-sm text-muted">{text}</p>
-    </Panel>
-  );
+function queueTone(tone: (typeof workQueue)[number]["tone"]) {
+  if (tone === "rose") return "bg-danger/10 text-danger";
+  if (tone === "blue") return "bg-blue-50 text-blue-600";
+  if (tone === "emerald") return "bg-success/10 text-success";
+  return "bg-primary/10 text-primary";
 }

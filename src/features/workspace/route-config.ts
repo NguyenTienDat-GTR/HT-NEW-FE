@@ -32,6 +32,7 @@ export type RouteConfig = {
   endpoint?: string;
   permissionPrefixes: string[];
   actionPermissionPrefixes?: string[];
+  primaryActionPermissionPrefixes?: string[];
   kind: ResourceKind;
   icon: Icon;
   columns: string[];

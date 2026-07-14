@@ -1,12 +1,13 @@
 "use client";
 
-import { Bell, CaretLeft, List, MagnifyingGlass, SignOut } from "@phosphor-icons/react";
+import { Bell, CaretDown, CaretLeft, List, MagnifyingGlass, SignOut } from "@phosphor-icons/react";
 import { useQueryClient } from "@tanstack/react-query";
 import type { Route } from "next";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import type React from "react";
 import { useMemo, useState } from "react";
+import { BrandMark } from "@/components/brand/brand-mark";
 import { Button } from "@/components/ui/button";
 import { TooltipIconButton } from "@/components/ui/tooltip-icon-button";
 import { apiFetch } from "@/lib/api/client";
@@ -14,7 +15,13 @@ import { useAuthStore, type AuthUser } from "@/lib/auth/auth-store";
 import { hasPermissionPrefix } from "@/lib/auth/permissions";
 import { cn } from "@/lib/utils";
 import { useNotificationsSocket } from "./notifications-socket";
-import { routeGroups, type RouteConfig } from "./routes";
+import { routeGroups, type RouteConfig, type RouteGroup } from "./routes";
+
+const defaultOpenGroups: Record<string, boolean> = {
+  dashboard: true,
+  organization: true,
+  leader: true,
+};
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -22,7 +29,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const queryClient = useQueryClient();
   const user = useAuthStore((state) => state.user);
   const clear = useAuthStore((state) => state.clear);
-  const [collapsed, setCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(defaultOpenGroups);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   useNotificationsSocket();
@@ -38,7 +46,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     [user],
   );
 
-  const activeRoute = visibleGroups.flatMap((group) => group.children).find((route) => route.path === pathname);
+  const flatRoutes = visibleGroups.flatMap((group) => group.children);
+  const activeRoute = flatRoutes.find((route) => route.path === pathname);
+  const activeGroup = visibleGroups.find((group) => group.children.some((route) => route.path === pathname));
 
   async function logout() {
     if (isLoggingOut) return;
@@ -46,8 +56,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     try {
       await apiFetch<null>("/auth/logout", { method: "POST" });
     } catch {
-      // Logout is best-effort on the client. The backend clears/revokes the current
-      // session when tokens are present, while the client must always drop memory auth.
+      // Logout is best-effort on the client. The server revokes the current
+      // session when valid tokens exist, while the client always clears memory.
     } finally {
       queryClient.clear();
       clear();
@@ -57,77 +67,44 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   const nav = (
-    <nav className="flex flex-1 flex-col gap-5 overflow-y-auto px-3 py-4">
-      {visibleGroups.map((group) => {
-        const GroupIcon = group.icon;
-        return (
-          <div className="space-y-1" key={group.moduleName}>
-            {!collapsed ? (
-              <div className="flex h-8 items-center gap-2 px-3 text-[11px] font-semibold uppercase text-muted">
-                <GroupIcon className="h-4 w-4" />
-                <span className="truncate">{group.label}</span>
-              </div>
-            ) : null}
-            {group.children.map((route) => {
-              const active = pathname === route.path;
-              const Icon = route.icon;
-              const content = (
-                <Link
-                  className={cn(
-                    "group flex h-11 items-center gap-3 rounded-[10px] px-3 text-sm font-medium text-muted transition-colors hover:bg-surface-1 hover:text-foreground",
-                    active && "bg-primary text-white shadow-[0_10px_22px_rgb(108_71_255_/_0.18)] hover:bg-primary hover:text-white",
-                    collapsed && "justify-center px-0",
-                  )}
-                  href={route.path as Route}
-                  onClick={() => setMobileOpen(false)}
-                >
-                  <Icon size={20} weight={active ? "fill" : "regular"} />
-                  {!collapsed ? <span className="truncate">{route.title}</span> : null}
-                </Link>
-              );
-              return collapsed ? (
-                <div key={route.path} title={`${group.label}: ${route.title}`}>
-                  {content}
-                </div>
-              ) : (
-                <div key={route.path}>{content}</div>
-              );
-            })}
-          </div>
-        );
-      })}
-    </nav>
+    <SidebarNav
+      groups={visibleGroups}
+      openGroups={openGroups}
+      pathname={pathname}
+      sidebarCollapsed={sidebarCollapsed}
+      toggleGroup={(groupName) => setOpenGroups((current) => ({ ...current, [groupName]: !current[groupName] }))}
+      onNavigate={() => setMobileOpen(false)}
+    />
   );
 
   return (
-    <div className="min-h-[100dvh] bg-surface-1 text-foreground">
+    <div className="min-h-[100dvh] bg-[#f7f8fb] text-foreground">
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-40 hidden border-r border-border bg-white transition-[width] duration-200 lg:flex lg:flex-col",
-          collapsed ? "w-[72px]" : "w-[260px]",
+          "fixed inset-y-0 left-0 z-40 hidden border-r border-border bg-white shadow-[18px_0_45px_rgb(31_35_48_/_0.04)] transition-[width] duration-200 lg:flex lg:flex-col",
+          sidebarCollapsed ? "w-[80px]" : "w-[280px]",
         )}
       >
-        <div className="flex h-16 items-center justify-between border-b border-border px-3">
-          {!collapsed ? (
-            <div>
-              <span className="text-sm font-semibold">HT Management</span>
-              <p className="text-xs text-muted">Quản lý Huynh trưởng</p>
-            </div>
-          ) : null}
-          <TooltipIconButton label={collapsed ? "Mở rộng menu" : "Thu gọn menu"} onClick={() => setCollapsed((value) => !value)}>
-            <CaretLeft className={cn("h-5 w-5 transition-transform", collapsed && "rotate-180")} />
+        <div className="flex h-18 items-center justify-between border-b border-border px-4">
+          <BrandMark compact={sidebarCollapsed} />
+          <TooltipIconButton label={sidebarCollapsed ? "Mở rộng menu" : "Thu gọn menu"} onClick={() => setSidebarCollapsed((value) => !value)}>
+            <CaretLeft className={cn("h-5 w-5 transition-transform", sidebarCollapsed && "rotate-180")} />
           </TooltipIconButton>
         </div>
         {nav}
+        {!sidebarCollapsed ? (
+          <div className="border-t border-border p-4 text-xs leading-5 text-muted">
+            <p className="font-medium text-foreground">© 2026 HT Management</p>
+            <p>Thống nhất để phục vụ.</p>
+          </div>
+        ) : null}
       </aside>
+
       {mobileOpen ? (
-        <div className="fixed inset-0 z-50 bg-black/30 lg:hidden" onClick={() => setMobileOpen(false)}>
-          <aside className="h-full w-[300px] bg-white" onClick={(event) => event.stopPropagation()}>
-            <div className="flex h-16 items-center justify-between border-b border-border px-4">
-              <div>
-                <span className="text-sm font-semibold">HT Management</span>
-                <p className="text-xs text-muted">Menu module</p>
-              </div>
+        <div className="fixed inset-0 z-50 bg-[#111827]/40 backdrop-blur-sm lg:hidden" onClick={() => setMobileOpen(false)}>
+          <aside className="h-full w-[312px] bg-white" onClick={(event) => event.stopPropagation()}>
+            <div className="flex h-18 items-center justify-between border-b border-border px-4">
+              <BrandMark />
               <TooltipIconButton label="Đóng menu" onClick={() => setMobileOpen(false)}>
                 <CaretLeft className="h-5 w-5" />
               </TooltipIconButton>
@@ -136,32 +113,41 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </aside>
         </div>
       ) : null}
-      <div className={cn("transition-[padding] duration-200 lg:pl-[260px]", collapsed && "lg:pl-[72px]")}>
-        <header className="sticky top-0 z-30 border-b border-border bg-white/95 backdrop-blur">
-          <div className="mx-auto flex h-16 max-w-[1400px] items-center justify-between gap-4 px-4">
+
+      <div className={cn("transition-[padding] duration-200 lg:pl-[280px]", sidebarCollapsed && "lg:pl-[80px]")}>
+        <header className="sticky top-0 z-30 border-b border-border bg-white/92 backdrop-blur-xl">
+          <div className="mx-auto flex h-18 max-w-[1480px] items-center justify-between gap-4 px-4">
             <div className="flex min-w-0 items-center gap-3">
               <TooltipIconButton className="lg:hidden" label="Mở menu" onClick={() => setMobileOpen(true)}>
                 <List className="h-5 w-5" />
               </TooltipIconButton>
-              <div className="hidden h-10 w-[320px] items-center gap-2 rounded-[10px] border border-border bg-surface-1 px-3 text-sm text-muted md:flex">
-                <MagnifyingGlass className="h-4 w-4" />
-                <span className="truncate">Tìm nhanh hồ sơ, khóa học, tài khoản...</span>
-              </div>
-              <div className="min-w-0 md:hidden">
-                <p className="truncate text-sm font-semibold">{activeRoute?.title ?? "HT Management"}</p>
-                <p className="truncate text-xs text-muted">{activeRoute?.moduleName ?? "workspace"}</p>
+              <div className="hidden min-w-0 sm:block">
+                <p className="truncate text-sm font-semibold text-foreground">{activeRoute?.title ?? "HT Management"}</p>
+                <p className="truncate text-xs text-muted">{activeGroup?.label ?? "workspace"}</p>
               </div>
             </div>
+
+            <label className="hidden h-11 w-full max-w-[460px] items-center gap-3 rounded-[12px] border border-border bg-surface-1 px-3 text-sm text-muted md:flex">
+              <MagnifyingGlass className="h-5 w-5" />
+              <span className="truncate">Tìm kiếm nhanh...</span>
+            </label>
+
             <div className="flex min-w-0 items-center gap-2">
-              <Button asChild variant="ghost">
-                <Link href="/notifications">
-                  <Bell size={18} />
-                  Thông báo
+              <Button asChild className="relative px-3" variant="ghost">
+                <Link href="/notifications" aria-label="Thông báo">
+                  <Bell size={20} />
+                  <span className="absolute right-1 top-1 grid h-5 min-w-5 place-items-center rounded-full bg-danger px-1 text-[11px] font-bold text-white">3</span>
                 </Link>
               </Button>
-              <div className="hidden min-w-0 border-l border-border pl-3 sm:block">
-                <p className="truncate text-sm font-semibold">{user?.username ?? "Đang tải"}</p>
-                <p className="truncate text-xs text-muted">{user?.roles.join(", ") || "Chưa có vai trò"}</p>
+              <div className="hidden min-w-0 items-center gap-3 rounded-[14px] border border-border bg-white px-3 py-2 shadow-sm sm:flex">
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/12 text-sm font-semibold text-primary">
+                  {(user?.username ?? "HT").slice(0, 2).toUpperCase()}
+                </span>
+                <span className="min-w-0">
+                  <span className="block truncate text-sm font-semibold text-foreground">{user?.username ?? "Đang tải"}</span>
+                  <span className="block truncate text-xs text-muted">{user?.roles.join(", ") || "Chưa có vai trò"}</span>
+                </span>
+                <CaretDown className="h-4 w-4 text-muted" />
               </div>
               <TooltipIconButton label="Đăng xuất" loading={isLoggingOut} onClick={logout}>
                 <SignOut className="h-5 w-5" />
@@ -169,9 +155,101 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </div>
           </div>
         </header>
-        <main className="mx-auto max-w-[1400px] px-4 py-6">{children}</main>
+        <main className="mx-auto max-w-[1480px] px-4 py-6 lg:px-6">{children}</main>
       </div>
     </div>
+  );
+}
+
+function SidebarNav({
+  groups,
+  onNavigate,
+  openGroups,
+  pathname,
+  sidebarCollapsed,
+  toggleGroup,
+}: {
+  groups: RouteGroup[];
+  onNavigate: () => void;
+  openGroups: Record<string, boolean>;
+  pathname: string;
+  sidebarCollapsed: boolean;
+  toggleGroup: (groupName: string) => void;
+}) {
+  if (sidebarCollapsed) {
+    return (
+      <nav className="flex flex-1 flex-col items-center gap-2 overflow-y-auto px-3 py-4">
+        {groups.flatMap((group) =>
+          group.children.map((route) => {
+            const active = pathname === route.path;
+            const Icon = route.icon;
+            return (
+              <Link
+                aria-label={route.title}
+                className={cn(
+                  "grid h-12 w-12 place-items-center rounded-[12px] text-[#566078] transition-colors hover:bg-primary/8 hover:text-primary",
+                  active && "bg-primary/12 text-primary",
+                )}
+                href={route.path as Route}
+                key={route.path}
+                onClick={onNavigate}
+                title={route.title}
+              >
+                <Icon size={21} weight={active ? "fill" : "regular"} />
+              </Link>
+            );
+          }),
+        )}
+      </nav>
+    );
+  }
+
+  return (
+    <nav className="flex flex-1 flex-col gap-2 overflow-y-auto px-3 py-4">
+      {groups.map((group) => {
+        const GroupIcon = group.icon;
+        const groupActive = group.children.some((route) => route.path === pathname);
+        const open = (openGroups[group.moduleName] ?? false) || groupActive;
+        return (
+          <div className="space-y-1" key={group.moduleName}>
+            <button
+              className={cn(
+                "flex h-11 w-full items-center gap-3 rounded-[12px] px-3 text-left text-sm font-semibold text-[#283044] transition-colors hover:bg-primary/6 hover:text-primary",
+                groupActive && "bg-primary/8 text-primary",
+              )}
+              onClick={() => toggleGroup(group.moduleName)}
+              type="button"
+            >
+              <GroupIcon className="h-5 w-5 shrink-0" weight={groupActive ? "fill" : "regular"} />
+              <span className="min-w-0 flex-1 truncate">{group.label}</span>
+              <CaretDown className={cn("h-4 w-4 shrink-0 transition-transform", open && "rotate-180")} />
+            </button>
+            {open ? (
+              <div className="space-y-1 pl-4">
+                {group.children.map((route) => {
+                  const active = pathname === route.path;
+                  const Icon = route.icon;
+                  return (
+                    <Link
+                      className={cn(
+                        "flex h-10 items-center gap-3 rounded-[10px] px-3 text-sm font-medium text-[#566078] transition-colors hover:bg-primary/6 hover:text-primary",
+                        active && "bg-primary/12 text-primary shadow-[inset_3px_0_0_#6c47ff]",
+                      )}
+                      href={route.path as Route}
+                      key={route.path}
+                      onClick={onNavigate}
+                    >
+                      <Icon size={18} weight={active ? "fill" : "regular"} />
+                      <span className="truncate">{route.title}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            ) : null}
+          </div>
+        );
+      })}
+    </nav>
   );
 }
 
