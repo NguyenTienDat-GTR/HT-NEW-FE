@@ -5,8 +5,9 @@ import { AnalyticsView } from "@/features/analytics/analytics-view";
 import { ResourceFormPage } from "@/features/forms/resource-form-page";
 import type React from "react";
 import { Panel } from "@/components/ui/panel";
+import type { AuthUser } from "@/lib/auth/auth-store";
 import { useAuthStore } from "@/lib/auth/auth-store";
-import { hasPermissionPrefix } from "@/lib/auth/permissions";
+import { hasPermissionPrefix, isSuperAdmin } from "@/lib/auth/permissions";
 import { AuthGate } from "./auth-gate";
 import { AppShell } from "./app-shell";
 import { ModuleResourceRenderer } from "./module-resource-renderer";
@@ -26,7 +27,9 @@ export function WorkspacePage({ segments }: { segments: string[] }) {
     );
   }
   const route = match.route;
-  const canReadRoute = !route.permissionPrefixes.length || route.permissionPrefixes.some((prefix) => hasPermissionPrefix(user, prefix));
+  const canReadRoute =
+    !isHiddenForSuperAdmin(route, user) &&
+    (!route.permissionPrefixes.length || route.permissionPrefixes.some((prefix) => hasPermissionPrefix(user, prefix)));
 
   let content: React.ReactNode;
   if (!canReadRoute && match.type === "list") {
@@ -47,5 +50,16 @@ export function WorkspacePage({ segments }: { segments: string[] }) {
     <AuthGate>
       <AppShell>{content}</AppShell>
     </AuthGate>
+  );
+}
+
+function isHiddenForSuperAdmin(route: { moduleName: string }, user: AuthUser | null) {
+  if (!isSuperAdmin(user)) return false;
+  return (
+    route.moduleName.startsWith("leader.") ||
+    route.moduleName.startsWith("executive-board.") ||
+    route.moduleName.startsWith("training.") ||
+    route.moduleName.startsWith("training-workflow.") ||
+    route.moduleName.startsWith("certificate.")
   );
 }

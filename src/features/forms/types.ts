@@ -1,13 +1,15 @@
 import type { ResourceKind } from "@/features/workspace/routes";
+import type { AuthUser } from "@/lib/auth/auth-store";
 
 export type Option = {
   value: string;
   label: string;
+  group?: string;
   disabled?: boolean;
   disabledReason?: string;
 };
 
-export type FieldType = "text" | "email" | "url" | "number" | "date" | "datetime" | "textarea" | "select" | "multiselect" | "radio";
+export type FieldType = "text" | "email" | "url" | "number" | "date" | "datetime" | "textarea" | "select" | "multiselect" | "checkbox-list" | "radio";
 
 export type FormFieldSpec = {
   name: string;
@@ -18,10 +20,13 @@ export type FormFieldSpec = {
   placeholder?: string;
   options?: Option[];
   optionsEndpoint?: string;
+  buildOptionsEndpoint?: (values: Record<string, unknown>) => string | undefined;
   optionValue?: string;
   optionLabel?: string;
   createOnly?: boolean;
   editOnly?: boolean;
+  visibleWhen?: (values: Record<string, unknown>, mode: ResourceFormMode) => boolean;
+  requiredWhen?: (values: Record<string, unknown>, mode: ResourceFormMode) => boolean;
   readOnlyOnCreate?: boolean;
   readOnlyOnEdit?: boolean;
   clearable?: boolean;
@@ -40,7 +45,8 @@ export type ResourceFormSpec = {
   description?: string;
   endpoint?: string;
   buildEndpoint?: (values: Record<string, unknown>, id?: string) => string;
-  getInitialValues?: (user: { username: string; leaderId?: string | null; dioceseId?: string | null; deaneryId?: string | null; parishId?: string | null } | null) => Record<string, unknown>;
+  superAdminOnly?: boolean;
+  getInitialValues?: (user: AuthUser | null) => Record<string, unknown>;
   method?: "POST" | "PUT" | "PATCH";
   submitLabel?: string;
   fields: FormFieldSpec[];
