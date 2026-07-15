@@ -114,10 +114,12 @@ export function ResourceListPage({ route, moduleLabel, moduleDescription, childr
 
       <Panel className="overflow-hidden">
         <ResourceFilters
+          filterValues={queryState.filterValues}
           route={route}
           search={queryState.search}
           setSearch={queryState.setSearch}
           status={queryState.status}
+          updateFilter={queryState.updateFilter}
           updateParam={queryState.updateParam}
         />
         <ResourceTable

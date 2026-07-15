@@ -1,6 +1,6 @@
 "use client";
 
-import { CaretDown, CheckCircle, DotsThreeVertical, Eye, PencilSimple } from "@phosphor-icons/react";
+import { CaretDown, CheckCircle, Eye, PencilSimple, Trash } from "@phosphor-icons/react";
 import type { Route } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -131,20 +131,28 @@ function RowActions({ route, row }: { route: RouteConfig; row: Record<string, un
           </Link>
         </Button>
       ) : null}
-      {canToggle ? (
-        <Button asChild aria-label="Đổi trạng thái" size="icon" variant="ghost">
-          <Link href={`${route.path}?toggle=${encodeURIComponent(id)}` as Route}>
-            <DotsThreeVertical size={20} weight="bold" />
-          </Link>
-        </Button>
-      ) : null}
+      {canToggle ? <StatusSwitch active={row.status === true} href={`${route.path}?toggle=${encodeURIComponent(id)}` as Route} /> : null}
       {canDelete ? (
         <Button asChild aria-label="Xóa" size="icon" variant="ghost">
           <Link href={`${route.path}?delete=${encodeURIComponent(id)}` as Route}>
-            <DotsThreeVertical size={20} weight="bold" />
+            <Trash size={16} />
           </Link>
         </Button>
       ) : null}
     </div>
+  );
+}
+
+function StatusSwitch({ active, href }: { active: boolean; href: Route }) {
+  return (
+    <Link
+      aria-label={active ? "Tắt trạng thái" : "Bật trạng thái"}
+      className={`inline-flex h-7 w-12 items-center rounded-full border px-0.5 transition-colors ${
+        active ? "border-emerald-500 bg-emerald-500/15 justify-end" : "border-slate-300 bg-slate-200/70 justify-start"
+      }`}
+      href={href}
+    >
+      <span className={`block h-5 w-5 rounded-full shadow-sm ${active ? "bg-emerald-600" : "bg-white"}`} />
+    </Link>
   );
 }

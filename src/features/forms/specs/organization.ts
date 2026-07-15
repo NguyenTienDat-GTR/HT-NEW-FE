@@ -33,6 +33,7 @@ export const organizationFormSpecs: ResourceFormSpec[] = [
         optionsEndpoint: "/dioceses",
         optionValue: "id",
         optionLabel: "name",
+        readOnlyOnCreate: true,
         readOnlyOnEdit: true,
         section: "Phạm vi",
       },
@@ -42,6 +43,7 @@ export const organizationFormSpecs: ResourceFormSpec[] = [
       { name: "patronSaintDay", label: "Ngày bổn mạng", type: "date", section: "Mốc thời gian" },
       { name: "establishmentDate", label: "Ngày thành lập", type: "date", section: "Mốc thời gian" },
     ],
+    getInitialValues: (user) => (user?.dioceseId ? { dioceseId: user.dioceseId } : {}),
     mapSubmit: compactPayload,
   },
   {

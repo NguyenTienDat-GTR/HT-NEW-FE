@@ -31,7 +31,7 @@ export const organizationRouteGroup: RouteGroup = {
         idField: "id",
         kind: "deaneries",
         icon: Buildings,
-        columns: ["name", "associationName", "dioceseId", "chaplain", "status"],
+        columns: ["name", "associationName", "chaplain", "status"],
         permissionPrefixes: ["organization.deanery.read."],
         actionPermissionPrefixes: ["organization.deanery.create.", "organization.deanery.update.", "organization.deanery.delete.", "organization.deanery.toggle."],
         primaryActionPermissionPrefixes: ["organization.deanery.create."],

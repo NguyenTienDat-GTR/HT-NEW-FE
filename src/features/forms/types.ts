@@ -22,6 +22,7 @@ export type FormFieldSpec = {
   optionLabel?: string;
   createOnly?: boolean;
   editOnly?: boolean;
+  readOnlyOnCreate?: boolean;
   readOnlyOnEdit?: boolean;
   clearable?: boolean;
   section?: string;
@@ -39,6 +40,7 @@ export type ResourceFormSpec = {
   description?: string;
   endpoint?: string;
   buildEndpoint?: (values: Record<string, unknown>, id?: string) => string;
+  getInitialValues?: (user: { username: string; leaderId?: string | null; dioceseId?: string | null; deaneryId?: string | null; parishId?: string | null } | null) => Record<string, unknown>;
   method?: "POST" | "PUT" | "PATCH";
   submitLabel?: string;
   fields: FormFieldSpec[];

@@ -44,7 +44,8 @@ export function ResourceFormPage({
 
   const [values, setValues] = useState<Record<string, unknown>>({});
   const initialValues = useMemo(() => detailQuery.data ?? {}, [detailQuery.data]);
-  const mergedValues = mode === "edit" ? { ...initialValues, ...values } : values;
+  const createDefaults = useMemo(() => (mode === "create" ? spec?.getInitialValues?.(user) ?? {} : {}), [mode, spec, user]);
+  const mergedValues = mode === "edit" ? { ...initialValues, ...values } : { ...createDefaults, ...values };
 
   const visibleFields = (spec?.fields ?? []).filter((field) => (mode === "create" ? !field.editOnly : !field.createOnly));
   const [errors, setErrors] = useState<Record<string, string>>({});

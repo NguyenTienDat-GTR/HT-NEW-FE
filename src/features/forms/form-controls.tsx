@@ -19,7 +19,7 @@ type FieldProps = {
 };
 
 export function FormField({ field, value, mode, onChange, error }: FieldProps) {
-  const readonly = mode === "edit" && field.readOnlyOnEdit;
+  const readonly = (mode === "create" && field.readOnlyOnCreate && value !== undefined && value !== null && value !== "") || (mode === "edit" && field.readOnlyOnEdit);
   const type = field.type ?? "text";
   const id = `field-${field.name}`;
   const clearing = value === "__CLEAR__";

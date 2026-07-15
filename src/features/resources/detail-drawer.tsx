@@ -15,7 +15,7 @@ export function DetailDrawer({ id, onClose, route }: { id?: string | null; onClo
     queryFn: () => apiFetch<Record<string, unknown>>(`${route.endpoint}/${encodeURIComponent(String(id))}`),
   });
   const row = query.data;
-  const keys = row ? Object.keys(row).filter((key) => row[key] !== undefined) : route.columns;
+  const keys = row ? Object.keys(row).filter((key) => shouldRenderKey(row, key)) : route.columns;
 
   return (
     <Dialog.Root open={Boolean(id)} onOpenChange={(open) => (!open ? onClose() : undefined)}>
@@ -53,4 +53,13 @@ export function DetailDrawer({ id, onClose, route }: { id?: string | null; onClo
       </Dialog.Portal>
     </Dialog.Root>
   );
+}
+
+function shouldRenderKey(row: Record<string, unknown>, key: string) {
+  if (row[key] === undefined) return false;
+  if (key === "dioceseId" && typeof row.dioceseName === "string") return false;
+  if (key === "deaneryId" && typeof row.deaneryName === "string") return false;
+  if (key === "parishId" && typeof row.parishName === "string") return false;
+  if (key === "unitId" && typeof row.unitName === "string") return false;
+  return true;
 }
