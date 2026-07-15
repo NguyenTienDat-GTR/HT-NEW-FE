@@ -1,15 +1,21 @@
 "use client";
 
-import { CaretDown, DotsThreeVertical, Eye, PencilSimple } from "@phosphor-icons/react";
+import { CaretDown, CheckCircle, Eye, PencilSimple, Trash } from "@phosphor-icons/react";
+import type { Route } from "next";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { columnLabels, ResourceCell } from "./resource-format";
-import type { ResourcePageSize } from "./use-resource-query-state";
 import type { RouteConfig } from "@/features/workspace/routes";
+import { useAuthStore } from "@/lib/auth/auth-store";
+import { canUseAction } from "@/lib/auth/permissions";
+import { columnLabels, ResourceCell } from "./resource-format";
+import { fillRoute, getResourceId } from "./resource-actions";
+import type { ResourcePageSize } from "./use-resource-query-state";
 
 export function ResourceTable({
   columns,
   isLoading,
   rows,
+  route,
   size,
   sort,
   sortBy,
@@ -18,6 +24,7 @@ export function ResourceTable({
   columns: RouteConfig["columns"];
   isLoading: boolean;
   rows: Record<string, unknown>[];
+  route: RouteConfig;
   size: ResourcePageSize;
   sort: (column: string) => void;
   sortBy?: string;
@@ -44,7 +51,7 @@ export function ResourceTable({
             <th className="h-13 border-b border-border px-4 text-right font-semibold text-foreground">Thao tác</th>
           </tr>
         </thead>
-        <tbody>{isLoading ? <ResourceTableSkeleton columns={columns} size={size} /> : <ResourceRows columns={columns} rows={rows} />}</tbody>
+        <tbody>{isLoading ? <ResourceTableSkeleton columns={columns} size={size} /> : <ResourceRows columns={columns} route={route} rows={rows} />}</tbody>
       </table>
     </div>
   );
@@ -65,7 +72,7 @@ function ResourceTableSkeleton({ columns, size }: { columns: string[]; size: Res
   ));
 }
 
-function ResourceRows({ columns, rows }: { columns: string[]; rows: Record<string, unknown>[] }) {
+function ResourceRows({ columns, route, rows }: { columns: string[]; route: RouteConfig; rows: Record<string, unknown>[] }) {
   return rows.map((row, rowIndex) => (
     <tr className="group bg-white transition-colors hover:bg-primary/4" key={String(row.id ?? row.username ?? row.certificateCode ?? rowIndex)}>
       {columns.map((column) => (
@@ -74,18 +81,78 @@ function ResourceRows({ columns, rows }: { columns: string[]; rows: Record<strin
         </td>
       ))}
       <td className="h-16 border-b border-surface-2 px-4 text-right">
-        <div className="inline-flex items-center gap-1">
-          <Button size="icon" variant="icon" aria-label="Xem chi tiết">
-            <Eye size={16} />
-          </Button>
-          <Button size="icon" variant="icon" aria-label="Sửa">
-            <PencilSimple size={16} />
-          </Button>
-          <Button aria-label="Mở thêm thao tác" size="icon" variant="ghost">
-            <DotsThreeVertical size={20} weight="bold" />
-          </Button>
-        </div>
+        <RowActions route={route} row={row} />
       </td>
     </tr>
   ));
+}
+
+function RowActions({ route, row }: { route: RouteConfig; row: Record<string, unknown> }) {
+  const user = useAuthStore((state) => state.user);
+  const id = getResourceId(route, row);
+  if (!id) return <span className="text-xs text-muted">-</span>;
+
+  const editHref = fillRoute(route.editPath, { id });
+  const scoreHref = fillRoute(route.actions?.score?.route, { id });
+  const canView = canUseAction(user, route.actions?.view);
+  const canEdit = canUseAction(user, route.actions?.edit);
+  const canToggle = canUseAction(user, route.actions?.toggle);
+  const canDelete = canUseAction(user, route.actions?.delete);
+  const canScore = canUseAction(user, route.actions?.score);
+  const canApprove = canUseAction(user, route.actions?.approve);
+
+  return (
+    <div className="inline-flex items-center gap-1">
+      {canView ? (
+        <Button asChild aria-label="Xem chi tiết" size="icon" variant="icon">
+          <Link href={`${route.path}?detail=${encodeURIComponent(id)}` as Route}>
+            <Eye size={16} />
+          </Link>
+        </Button>
+      ) : null}
+      {canEdit && editHref ? (
+        <Button asChild aria-label="Sửa" size="icon" variant="icon">
+          <Link href={editHref as Route}>
+            <PencilSimple size={16} />
+          </Link>
+        </Button>
+      ) : null}
+      {canScore && scoreHref ? (
+        <Button asChild aria-label="Chấm điểm" size="icon" variant="icon">
+          <Link href={scoreHref as Route}>
+            <PencilSimple size={16} />
+          </Link>
+        </Button>
+      ) : null}
+      {canApprove ? (
+        <Button asChild aria-label="Duyệt" size="icon" variant="icon">
+          <Link href={`${route.path}?approve=${encodeURIComponent(id)}` as Route}>
+            <CheckCircle size={16} />
+          </Link>
+        </Button>
+      ) : null}
+      {canToggle ? <StatusSwitch active={row.status === true} href={`${route.path}?toggle=${encodeURIComponent(id)}` as Route} /> : null}
+      {canDelete ? (
+        <Button asChild aria-label="Xóa" size="icon" variant="ghost">
+          <Link href={`${route.path}?delete=${encodeURIComponent(id)}` as Route}>
+            <Trash size={16} />
+          </Link>
+        </Button>
+      ) : null}
+    </div>
+  );
+}
+
+function StatusSwitch({ active, href }: { active: boolean; href: Route }) {
+  return (
+    <Link
+      aria-label={active ? "Tắt trạng thái" : "Bật trạng thái"}
+      className={`inline-flex h-7 w-12 items-center rounded-full border px-0.5 transition-colors ${
+        active ? "border-emerald-500 bg-emerald-500/15 justify-end" : "border-slate-300 bg-slate-200/70 justify-start"
+      }`}
+      href={href}
+    >
+      <span className={`block h-5 w-5 rounded-full shadow-sm ${active ? "bg-emerald-600" : "bg-white"}`} />
+    </Link>
+  );
 }

@@ -165,9 +165,21 @@
 - `npm.cmd run build`: passed after the accordion sidebar and table-first list correction with Next.js 16 production build.
 - `npm.cmd run test:e2e`: passed after the correction at 1440px, 1024px, and 390px.
 
+### All-module form workflow rollout 2026-07-15
+
+- Branch `feature/all-module-form-workflows` starts from `origin/main` and stays local until a separate commit/push request.
+- Workspace route registry now carries dynamic create/edit/score/matrix route metadata, `idField`, and per-action permission metadata.
+- Corrected FE permission prefixes for training participation workflow, system account manage, system role CRUD, account-role assign, role-permission assign/revoke, account-permission manage, and SUPER_ADMIN-only permission writes.
+- Public mutation routes use `/new` and `/:id/edit`; workflow exceptions include `/training/registrations/new` and `/training/participations/:id/score`.
+- Shared form primitives live under `src/features/forms`, with module-owned specs split across organization, personnel, training/certificate, workflow, and system files. Runtime forms call real APIs; MSW remains test-only.
+- Resource list actions are no longer unconditional: detail uses `?detail=`, edit uses the configured edit path, toggle/delete/approve open dialogs, and assignment has no delete action.
+- Dashboard notifications now read `/api/system/notifications`; work queue reads `/api/analytics/work-queue`; analytics filters send `fromDate`, `toDate`, `timeBucket`, and `groupBy`.
+- Nullable edit fields use an explicit clear checkbox that maps to `clearFields`, while empty values continue to mean no change.
+- Verification run in this session: `npm.cmd run typecheck`, `npm.cmd run lint`, `npm.cmd run test`, and `npm.cmd run build` passed.
+
 ## Remaining FE work
 
-- Replace generic resource forms with domain-specific create/update dialogs for every module.
+- Expand form specs with richer domain-specific option/context endpoints when backend adds the remaining context APIs.
 - Add live smoke with real E2E credentials from ignored env when available.
 - Expand visual audit beyond login to authenticated dashboard, analytics, table, form, modal, empty/error/loading states once a seeded test account is available.
 - Add richer tests for chart reduced-motion toggling and STOMP reconnect payload behavior with MSW/browser mocks.

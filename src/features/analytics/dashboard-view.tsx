@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Bell, Certificate, ClipboardText, GraduationCap, TrendUp, UsersThree } from "@phosphor-icons/react";
+import { ArrowRight, Bell, Certificate, ClipboardText, GraduationCap, TrendUp } from "@phosphor-icons/react";
 import { useQuery } from "@tanstack/react-query";
 import type { Route } from "next";
 import Link from "next/link";
@@ -11,49 +11,38 @@ import { ChartFrame, ChartSkeleton } from "./chart-frame";
 import { AnimatedMetric } from "./animated-metric";
 import { metricLabel, toChartRows, toKpiList, type AnalyticsResponse } from "./types";
 
-const workQueue = [
-  {
-    title: "Đăng ký chờ duyệt",
-    description: "Rà soát hồ sơ theo cấp duyệt hiện tại.",
-    href: "/training/approvals",
-    icon: ClipboardText,
-    tone: "rose",
-  },
-  {
-    title: "Ban điều hành chờ duyệt",
-    description: "Kiểm tra phân công và ngày hiệu lực.",
-    href: "/executive-board/assignments",
-    icon: UsersThree,
-    tone: "blue",
-  },
-  {
-    title: "Khóa sắp diễn ra",
-    description: "Theo dõi cửa sổ đăng ký và công thức điểm.",
-    href: "/training/courses",
-    icon: GraduationCap,
-    tone: "violet",
-  },
-  {
-    title: "Chứng nhận chờ cấp",
-    description: "Kiểm tra passing score và lý do ngoại lệ.",
-    href: "/certificates/approvals",
-    icon: Certificate,
-    tone: "emerald",
-  },
-] as const;
+type NotificationItem = {
+  id: string;
+  title: string;
+  message?: string | null;
+  readAt?: string | null;
+  createdAt?: string | null;
+};
 
-const notifications = [
-  "Khóa LHT Cấp I đã đăng ký khóa 2025B.",
-  "Ban điều hành giáo xứ An Phú được duyệt.",
-  "Phê duyệt chứng nhận cho 12 huynh trưởng.",
-  "Khóa LHT 2025A đã kết thúc khóa học.",
-];
+type WorkQueueItem = {
+  key: string;
+  title: string;
+  description: string;
+  href: string;
+  count: number;
+  icon: "registrations" | "scoring" | "courses" | "certificates";
+  tone: "rose" | "blue" | "violet" | "emerald";
+};
 
 export function DashboardView() {
   const query = useQuery({
     queryKey: ["analytics", "overview"],
     queryFn: () => apiFetch<AnalyticsResponse>("/analytics/overview"),
   });
+  const notificationsQuery = useQuery({
+    queryKey: ["system", "notifications", "dashboard"],
+    queryFn: () => apiFetch<NotificationItem[]>("/system/notifications"),
+  });
+  const workQueueQuery = useQuery({
+    queryKey: ["analytics", "work-queue"],
+    queryFn: () => apiFetch<WorkQueueItem[]>("/analytics/work-queue"),
+  });
+
   const rows = toChartRows(query.data);
   const metricKeys = Object.keys(rows[0] ?? {})
     .filter((key) => key !== "period")
@@ -68,9 +57,7 @@ export function DashboardView() {
         {kpis.map((metric, index) => (
           <AnimatedMetric delay={index * 0.04} key={metric.key} label={metricLabel(metric.key)} value={metric.value} />
         ))}
-        {query.isLoading
-          ? Array.from({ length: 4 }).map((_, index) => <div className="h-[150px] rounded-[16px] border border-border bg-white motion-safe:animate-pulse" key={index} />)
-          : null}
+        {query.isLoading ? Array.from({ length: 4 }).map((_, index) => <div className="h-[150px] rounded-[16px] border border-border bg-white motion-safe:animate-pulse" key={index} />) : null}
       </section>
 
       <section className="grid gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(360px,0.85fr)]">
@@ -91,15 +78,16 @@ export function DashboardView() {
             </Link>
           </div>
           <div className="space-y-2">
-            {notifications.map((item, index) => (
-              <div className="flex items-center gap-3 rounded-[12px] px-2 py-3 hover:bg-surface-1" key={item}>
+            {(notificationsQuery.data ?? []).slice(0, 4).map((item, index) => (
+              <div className="flex items-center gap-3 rounded-[12px] px-2 py-3 hover:bg-surface-1" key={item.id}>
                 <span className={cn("grid h-9 w-9 place-items-center rounded-full", index % 2 === 0 ? "bg-danger/10 text-danger" : "bg-blue-50 text-blue-600")}>
                   <Bell className="h-4 w-4" weight="bold" />
                 </span>
-                <span className="min-w-0 flex-1 text-sm text-foreground">{item}</span>
-                <span className="text-xs text-muted">{index + 2} giờ trước</span>
+                <span className="min-w-0 flex-1 text-sm text-foreground">{item.title}</span>
+                <span className="text-xs text-muted">{item.readAt ? "Đã đọc" : "Mới"}</span>
               </div>
             ))}
+            {!notificationsQuery.isLoading && !notificationsQuery.data?.length ? <p className="rounded-[10px] bg-surface-1 p-3 text-sm text-muted">Chưa có thông báo mới.</p> : null}
           </div>
         </Panel>
       </section>
@@ -116,20 +104,16 @@ export function DashboardView() {
           </span>
         </div>
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          {workQueue.map((item, index) => {
-            const Icon = item.icon;
+          {(workQueueQuery.data ?? []).map((item) => {
+            const Icon = queueIcon(item.icon);
             return (
-              <Link
-                className="group rounded-[14px] border border-border bg-white p-4 shadow-sm transition-colors hover:border-primary/30 hover:bg-primary/4"
-                href={item.href as Route}
-                key={item.href}
-              >
+              <Link className="group rounded-[14px] border border-border bg-white p-4 shadow-sm transition-colors hover:border-primary/30 hover:bg-primary/4" href={item.href as Route} key={item.key}>
                 <span className={cn("mb-4 inline-flex h-11 w-11 items-center justify-center rounded-[12px]", queueTone(item.tone))}>
                   <Icon className="h-5 w-5" weight="bold" />
                 </span>
                 <span className="flex items-start justify-between gap-3">
                   <span>
-                    <span className="block text-2xl font-semibold text-foreground">{[12, 5, 3, 8][index]}</span>
+                    <span className="block text-2xl font-semibold text-foreground">{item.count}</span>
                     <span className="mt-1 block text-sm font-semibold text-foreground">{item.title}</span>
                     <span className="mt-1 line-clamp-2 text-xs leading-5 text-muted">{item.description}</span>
                   </span>
@@ -138,6 +122,7 @@ export function DashboardView() {
               </Link>
             );
           })}
+          {!workQueueQuery.isLoading && !workQueueQuery.data?.length ? <p className="text-sm text-muted">Không có việc cần xử lý theo scope hiện tại.</p> : null}
         </div>
       </Panel>
     </div>
@@ -154,7 +139,13 @@ export function Header({ title, subtitle, eyebrow }: { title: string; subtitle: 
   );
 }
 
-function queueTone(tone: (typeof workQueue)[number]["tone"]) {
+function queueIcon(icon: WorkQueueItem["icon"]) {
+  if (icon === "certificates") return Certificate;
+  if (icon === "courses") return GraduationCap;
+  return ClipboardText;
+}
+
+function queueTone(tone: WorkQueueItem["tone"]) {
   if (tone === "rose") return "bg-danger/10 text-danger";
   if (tone === "blue") return "bg-blue-50 text-blue-600";
   if (tone === "emerald") return "bg-success/10 text-success";

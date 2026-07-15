@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Panel } from "@/components/ui/panel";
 import { apiFetch } from "@/lib/api/client";
 import { ChartFrame, ChartSkeleton } from "./chart-frame";
@@ -19,9 +19,17 @@ const tabs = [
 
 export function AnalyticsView() {
   const [tab, setTab] = useState<(typeof tabs)[number][0]>("organization");
+  const [filters, setFilters] = useState({ fromDate: "", toDate: "", timeBucket: "MONTH", groupBy: "" });
+  const queryString = useMemo(() => {
+    const params = new URLSearchParams();
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value) params.set(key, value);
+    });
+    return params.toString();
+  }, [filters]);
   const query = useQuery({
-    queryKey: ["analytics", tab],
-    queryFn: () => apiFetch<AnalyticsResponse>(`/analytics/${tab}`),
+    queryKey: ["analytics", tab, queryString],
+    queryFn: () => apiFetch<AnalyticsResponse>(`/analytics/${tab}${queryString ? `?${queryString}` : ""}`),
   });
   const rows = toChartRows(query.data);
   const metricKeys = useMemo(
@@ -35,15 +43,12 @@ export function AnalyticsView() {
 
   return (
     <div className="space-y-6">
-      <Header eyebrow="analytics" title="Phân tích" subtitle="Các biểu đồ dùng dữ liệu cấu trúc từ backend, FE tự map label theo type/key/metric." />
+      <Header eyebrow="analytics" title="Phân tích" subtitle="Các biểu đồ dùng dữ liệu cấu trúc từ backend, có filter ngày, bucket và groupBy thật." />
       <Panel className="p-2">
         <div className="grid gap-2 lg:grid-cols-4">
           {tabs.map(([value, label, description]) => (
             <button
-              className={[
-                "rounded-[10px] border p-3 text-left transition-colors",
-                tab === value ? "border-primary bg-primary text-white" : "border-transparent text-foreground hover:bg-surface-1",
-              ].join(" ")}
+              className={["rounded-[10px] border p-3 text-left transition-colors", tab === value ? "border-primary bg-primary text-white" : "border-transparent text-foreground hover:bg-surface-1"].join(" ")}
               key={value}
               onClick={() => setTab(value)}
               type="button"
@@ -55,16 +60,34 @@ export function AnalyticsView() {
         </div>
       </Panel>
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-lg font-semibold">{currentTab?.[1]}</h2>
-          <p className="mt-1 text-sm text-muted">{currentTab?.[2]}</p>
+      <Panel className="p-4">
+        <div className="grid gap-3 md:grid-cols-4">
+          <label>
+            <span className="mb-2 block text-xs font-semibold text-foreground">Từ ngày</span>
+            <Input type="date" value={filters.fromDate} onChange={(event) => setFilters((current) => ({ ...current, fromDate: event.target.value }))} />
+          </label>
+          <label>
+            <span className="mb-2 block text-xs font-semibold text-foreground">Đến ngày</span>
+            <Input type="date" value={filters.toDate} onChange={(event) => setFilters((current) => ({ ...current, toDate: event.target.value }))} />
+          </label>
+          <label>
+            <span className="mb-2 block text-xs font-semibold text-foreground">Bucket</span>
+            <select className="h-11 w-full rounded-[8px] border border-border bg-white px-3 text-sm" value={filters.timeBucket} onChange={(event) => setFilters((current) => ({ ...current, timeBucket: event.target.value }))}>
+              <option value="MONTH">MONTH</option>
+              <option value="QUARTER">QUARTER</option>
+              <option value="YEAR">YEAR</option>
+            </select>
+          </label>
+          <label>
+            <span className="mb-2 block text-xs font-semibold text-foreground">Group by</span>
+            <Input placeholder="VD: courseType" value={filters.groupBy} onChange={(event) => setFilters((current) => ({ ...current, groupBy: event.target.value }))} />
+          </label>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline">Tháng</Button>
-          <Button variant="outline">Quý</Button>
-          <Button variant="outline">Năm</Button>
-        </div>
+      </Panel>
+
+      <div>
+        <h2 className="text-lg font-semibold">{currentTab?.[1]}</h2>
+        <p className="mt-1 text-sm text-muted">{currentTab?.[2]}</p>
       </div>
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -73,22 +96,10 @@ export function AnalyticsView() {
           .map((metric, index) => (
             <AnimatedMetric delay={index * 0.04} key={metric.key} label={metricLabel(metric.key)} value={metric.value} />
           ))}
-        {query.isLoading
-          ? Array.from({ length: 4 }).map((_, index) => <div className="h-[132px] rounded-[12px] bg-white motion-safe:animate-pulse" key={index} />)
-          : null}
+        {query.isLoading ? Array.from({ length: 4 }).map((_, index) => <div className="h-[132px] rounded-[12px] bg-white motion-safe:animate-pulse" key={index} />) : null}
       </section>
 
-      {query.isLoading ? (
-        <ChartSkeleton />
-      ) : (
-        <ChartFrame
-          description="Animation chạy khi chart vào viewport và tắt khi reduced motion."
-          metricKeys={metricKeys}
-          rows={rows}
-          title="So sánh theo kỳ"
-          type="bar"
-        />
-      )}
+      {query.isLoading ? <ChartSkeleton /> : <ChartFrame description="Animation chạy khi chart vào viewport và tắt khi reduced motion." metricKeys={metricKeys} rows={rows} title="So sánh theo kỳ" type="bar" />}
     </div>
   );
 }

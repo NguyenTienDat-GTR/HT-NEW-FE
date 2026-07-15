@@ -16,8 +16,10 @@ export const columnLabels: Record<string, string> = {
   courseType: "Loại khóa",
   createdAt: "Ngày tạo",
   deaneryId: "Giáo hạt",
+  deaneryName: "Giáo hạt",
   description: "Mô tả",
   dioceseId: "Giáo phận",
+  dioceseName: "Giáo phận",
   displayOrder: "Thứ tự",
   email: "Email",
   endDate: "Ngày kết thúc",
@@ -40,6 +42,7 @@ export const columnLabels: Record<string, string> = {
   moduleCode: "Module",
   name: "Tên",
   parishId: "Giáo xứ",
+  parishName: "Giáo xứ",
   passed: "Kết quả",
   passingScore: "Điểm đạt",
   permissionCode: "Mã quyền",
@@ -91,10 +94,26 @@ export function ResourceCell({ column, row, value }: { column: string; row: Reco
   if (column === "passed" && typeof value === "boolean") return <Badge tone={value ? "success" : "danger"}>{value ? "Đạt" : "Chưa đạt"}</Badge>;
   if (column === "locked" && typeof value === "boolean") return <Badge tone={value ? "warning" : "neutral"}>{value ? "Đã khóa" : "Có thể sửa"}</Badge>;
   if (column.toLowerCase().includes("status") && typeof value === "string") return <WorkflowBadge value={value} />;
+  if (typeof value === "string" || typeof value === "number") {
+    const relatedValue = resolveRelatedDisplayValue(column, row);
+    if (relatedValue !== undefined) return <span className="line-clamp-1 max-w-[260px]">{relatedValue}</span>;
+  }
   if (typeof value === "boolean") return <Badge tone={value ? "success" : "neutral"}>{value ? "Có" : "Không"}</Badge>;
   if (value === null || value === undefined || value === "") return <span className="text-muted">Chưa có</span>;
   if (typeof value === "number") return viNumber.format(value);
   return <span className="line-clamp-1 max-w-[260px]">{String(value)}</span>;
+}
+
+function resolveRelatedDisplayValue(column: string, row: Record<string, unknown>) {
+  const relatedField =
+    column === "deaneryId" ? "deaneryName"
+    : column === "dioceseId" ? "dioceseName"
+    : column === "parishId" ? "parishName"
+    : column === "unitId" ? "unitName"
+    : undefined;
+  const relatedValue = relatedField ? row[relatedField] : undefined;
+  if (typeof relatedValue === "string" && relatedValue.trim()) return relatedValue;
+  return undefined;
 }
 
 function Avatar({ name, src }: { name: string; src: unknown }) {

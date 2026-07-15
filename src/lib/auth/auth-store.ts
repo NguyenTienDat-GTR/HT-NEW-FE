@@ -5,6 +5,9 @@ import { create } from "zustand";
 export type AuthUser = {
   username: string;
   leaderId?: string | null;
+  dioceseId?: string | null;
+  deaneryId?: string | null;
+  parishId?: string | null;
   roles: string[];
   permissions: string[];
   mustChangePassword?: boolean;

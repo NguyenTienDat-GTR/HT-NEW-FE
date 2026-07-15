@@ -20,6 +20,15 @@ export function useResourceQueryState(route: RouteConfig) {
   const status = searchParams.get("status") ?? "all";
   const sortBy = searchParams.get("sortBy") ?? undefined;
   const sortDirection = (searchParams.get("sortDirection") as "ASC" | "DESC" | null) ?? "ASC";
+  const filterValues = useMemo(
+    () =>
+      Object.fromEntries(
+        (route.filters ?? [])
+          .filter((filter) => filter.key !== "status")
+          .map((filter) => [filter.key, searchParams.get(filter.key) ?? ""]),
+      ),
+    [route.filters, searchParams],
+  );
 
   useEffect(() => {
     if (search === urlSearch) return;
@@ -40,11 +49,16 @@ export function useResourceQueryState(route: RouteConfig) {
       size,
       search,
       status: status === "all" ? undefined : status === "active",
+      filters: Object.fromEntries(
+        (route.filters ?? [])
+          .filter((filter) => filter.key !== "status")
+          .map((filter) => [filter.key, normalizeFilterValue(filterValues[filter.key], filter.type)]),
+      ),
       searchFields: route.searchFields,
       sortBy,
       sortDirection,
     }).toString();
-  }, [page, route.searchFields, search, size, sortBy, sortDirection, status]);
+  }, [filterValues, page, route.filters, route.searchFields, search, size, sortBy, sortDirection, status]);
 
   function updateParam(key: string, value: string) {
     const next = new URLSearchParams(searchParams);
@@ -66,6 +80,14 @@ export function useResourceQueryState(route: RouteConfig) {
     router.replace(`${pathname}?${next.toString()}` as Route);
   }
 
+  function updateFilter(key: string, value: string) {
+    const next = new URLSearchParams(searchParams);
+    if (value) next.set(key, value);
+    else next.delete(key);
+    next.set("page", "1");
+    router.replace(`${pathname}?${next.toString()}` as Route);
+  }
+
   function sort(column: string) {
     const next = new URLSearchParams(searchParams);
     next.set("sortBy", column);
@@ -83,8 +105,10 @@ export function useResourceQueryState(route: RouteConfig) {
     sortBy,
     sortDirection,
     status,
+    filterValues,
     updatePage,
     updatePageSize,
+    updateFilter,
     updateParam,
   };
 }
@@ -99,4 +123,10 @@ function parsePageSize(value: string | null): ResourcePageSize {
   const size = Number(value ?? 10);
   if (size === 20 || size === 50 || size === 100) return size;
   return 10;
+}
+
+function normalizeFilterValue(value: string | undefined, type?: "text" | "select" | "boolean") {
+  if (!value) return undefined;
+  if (type === "boolean") return value === "true";
+  return value;
 }

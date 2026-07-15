@@ -2,16 +2,21 @@
 
 import { DashboardView } from "@/features/analytics/dashboard-view";
 import { AnalyticsView } from "@/features/analytics/analytics-view";
+import { ResourceFormPage } from "@/features/forms/resource-form-page";
 import type React from "react";
+import { Panel } from "@/components/ui/panel";
+import { useAuthStore } from "@/lib/auth/auth-store";
+import { hasPermissionPrefix } from "@/lib/auth/permissions";
 import { AuthGate } from "./auth-gate";
 import { AppShell } from "./app-shell";
 import { ModuleResourceRenderer } from "./module-resource-renderer";
-import { findRoute } from "./routes";
+import { matchRoute } from "./routes";
 
 export function WorkspacePage({ segments }: { segments: string[] }) {
+  const user = useAuthStore((state) => state.user);
   const path = `/${segments.join("/")}`;
-  const route = findRoute(path);
-  if (!route) {
+  const match = matchRoute(path);
+  if (!match) {
     return (
       <AuthGate>
         <AppShell>
@@ -20,9 +25,21 @@ export function WorkspacePage({ segments }: { segments: string[] }) {
       </AuthGate>
     );
   }
+  const route = match.route;
+  const canReadRoute = !route.permissionPrefixes.length || route.permissionPrefixes.some((prefix) => hasPermissionPrefix(user, prefix));
 
   let content: React.ReactNode;
-  if (route.kind === "dashboard") content = <DashboardView />;
+  if (!canReadRoute && match.type === "list") {
+    content = (
+      <Panel className="p-6">
+        <h1 className="text-2xl font-semibold text-foreground">403</h1>
+        <p className="mt-2 text-sm text-muted">Bạn không có quyền truy cập màn hình này.</p>
+      </Panel>
+    );
+  } else if (match.type === "create") content = <ResourceFormPage mode="create" route={route} />;
+  else if (match.type === "edit") content = <ResourceFormPage id={match.params.id} mode="edit" route={route} />;
+  else if (match.type === "score") content = <ResourceFormPage actionType="score" id={match.params.id} mode="edit" route={route} />;
+  else if (route.kind === "dashboard") content = <DashboardView />;
   else if (route.kind === "analytics") content = <AnalyticsView />;
   else content = <ModuleResourceRenderer route={route} />;
 
