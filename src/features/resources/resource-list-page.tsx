@@ -2,7 +2,6 @@
 
 import { Plus } from "@phosphor-icons/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type React from "react";
 import type { Route } from "next";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -10,9 +9,10 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Panel } from "@/components/ui/panel";
 import { apiFetch, apiMutation, getApiErrorMessage, type PageResponse } from "@/lib/api/client";
-import { useAuthStore } from "@/lib/auth/auth-store";
-import { canUseAction } from "@/lib/auth/permissions";
+import { useAuthStore, type AuthUser } from "@/lib/auth/auth-store";
+import { canUseAction, isSuperAdmin } from "@/lib/auth/permissions";
 import type { RouteConfig } from "@/features/workspace/routes";
+import { resolveRouteForUser } from "@/features/workspace/super-admin-route-overrides";
 import { ConfirmActionDialog } from "./confirm-action-dialog";
 import { ApprovalDialog } from "./approval-dialog";
 import { DetailDrawer } from "./detail-drawer";
@@ -25,21 +25,11 @@ import { useResourceQueryState } from "./use-resource-query-state";
 
 type Tone = "violet" | "blue" | "emerald" | "amber" | "rose";
 
-type SummaryItem = {
-  label: string;
-  value: string;
-  caption?: string;
-  tone?: Tone;
-};
-
 type ResourceListPageProps = {
   route: RouteConfig;
   moduleLabel: string;
   moduleDescription: string;
   tone?: Tone;
-  buildSummary?: (data?: PageResponse<Record<string, unknown>>) => SummaryItem[];
-  sidePanel?: React.ReactNode;
-  children?: React.ReactNode;
 };
 
 function asPageResponse(data: PageResponse<Record<string, unknown>> | Record<string, unknown>[] | undefined, size: number): PageResponse<Record<string, unknown>> | undefined {
@@ -56,19 +46,20 @@ function asPageResponse(data: PageResponse<Record<string, unknown>> | Record<str
   };
 }
 
-export function ResourceListPage({ route, moduleLabel, moduleDescription, children }: ResourceListPageProps) {
+export function ResourceListPage({ route, moduleLabel, moduleDescription }: ResourceListPageProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const user = useAuthStore((state) => state.user);
-  const queryState = useResourceQueryState(route);
+  const effectiveRoute = resolveRouteForUser(route, user);
+  const queryState = useResourceQueryState(effectiveRoute);
   const query = useQuery({
-    queryKey: ["resource", route.endpoint, queryState.queryString],
-    enabled: Boolean(route.endpoint),
-    queryFn: () => apiFetch<PageResponse<Record<string, unknown>> | Record<string, unknown>[]>(`${route.endpoint}?${queryState.queryString}`),
+    queryKey: ["resource", effectiveRoute.endpoint, queryState.queryString],
+    enabled: Boolean(effectiveRoute.endpoint),
+    queryFn: () => apiFetch<PageResponse<Record<string, unknown>> | Record<string, unknown>[]>(`${effectiveRoute.endpoint}?${queryState.queryString}`),
   });
 
-  const canCreate = canUseAction(user, route.actions?.create);
+  const canCreate = canUseAction(user, effectiveRoute.actions?.create) && canCreateRoute(effectiveRoute, user);
   const pageData = asPageResponse(query.data, queryState.size);
   const rows = rowsFromResponse(query.data);
   const detailId = searchParams.get("detail");
@@ -76,17 +67,17 @@ export function ResourceListPage({ route, moduleLabel, moduleDescription, childr
   const deleteId = searchParams.get("delete");
   const approveId = searchParams.get("approve");
 
-  const closeQueryDialog = () => router.push(route.path as Route);
+  const closeQueryDialog = () => router.push(effectiveRoute.path as Route);
   const actionMutation = useMutation({
     mutationFn: ({ action, id, note }: { action: "toggle" | "delete" | "approve"; id: string; note?: string }) => {
-      if (action === "toggle") return apiMutation(`${route.endpoint}/${encodeURIComponent(id)}/toggle-status`, "PATCH", { confirmationText: "Xác nhận" });
-      if (action === "approve") return apiMutation(buildApprovePath(route, rows, id), "POST", buildApproveBody(route, note));
-      return apiMutation(`${route.endpoint}/${encodeURIComponent(id)}`, "DELETE");
+      if (action === "toggle") return apiMutation(`${effectiveRoute.endpoint}/${encodeURIComponent(id)}/toggle-status`, "PATCH", { confirmationText: "Xác nhận" });
+      if (action === "approve") return apiMutation(buildApprovePath(effectiveRoute, rows, id), "POST", buildApproveBody(effectiveRoute, note));
+      return apiMutation(`${effectiveRoute.endpoint}/${encodeURIComponent(id)}`, "DELETE");
     },
     onSuccess: async (_data, variables) => {
       toast.success(variables.action === "toggle" ? "Đổi trạng thái thành công" : variables.action === "approve" ? "Duyệt thành công" : "Xóa thành công");
       closeQueryDialog();
-      await queryClient.invalidateQueries({ queryKey: ["resource", route.endpoint] });
+      await queryClient.invalidateQueries({ queryKey: ["resource", effectiveRoute.endpoint] });
     },
   });
 
@@ -99,14 +90,14 @@ export function ResourceListPage({ route, moduleLabel, moduleDescription, childr
             <span aria-hidden>›</span>
             <span>{moduleLabel}</span>
           </div>
-          <h1 className="text-3xl font-semibold tracking-[0] text-foreground">{route.title}</h1>
-          <p className="mt-2 max-w-[82ch] text-sm leading-6 text-muted">{route.subtitle || moduleDescription}</p>
+          <h1 className="text-3xl font-semibold tracking-[0] text-foreground">{effectiveRoute.title}</h1>
+          <p className="mt-2 max-w-[82ch] text-sm leading-6 text-muted">{effectiveRoute.subtitle || moduleDescription}</p>
         </div>
-        {route.primaryActionLabel && route.createPath && canCreate ? (
+        {effectiveRoute.primaryActionLabel && effectiveRoute.createPath && canCreate ? (
           <Button asChild title={canCreate ? undefined : "Tài khoản hiện tại chưa có quyền tạo/cập nhật"}>
-            <Link href={route.createPath as Route}>
+            <Link href={effectiveRoute.createPath as Route}>
               <Plus size={18} />
-              {route.primaryActionLabel}
+              {effectiveRoute.primaryActionLabel}
             </Link>
           </Button>
         ) : null}
@@ -115,7 +106,7 @@ export function ResourceListPage({ route, moduleLabel, moduleDescription, childr
       <Panel className="overflow-hidden">
         <ResourceFilters
           filterValues={queryState.filterValues}
-          route={route}
+          route={effectiveRoute}
           search={queryState.search}
           setSearch={queryState.setSearch}
           status={queryState.status}
@@ -123,9 +114,9 @@ export function ResourceListPage({ route, moduleLabel, moduleDescription, childr
           updateParam={queryState.updateParam}
         />
         <ResourceTable
-          columns={route.columns}
+          columns={effectiveRoute.columns}
           isLoading={query.isLoading}
-          route={route}
+          route={effectiveRoute}
           rows={rows}
           size={queryState.size}
           sort={queryState.sort}
@@ -133,7 +124,7 @@ export function ResourceListPage({ route, moduleLabel, moduleDescription, childr
           sortDirection={queryState.sortDirection}
         />
 
-        {!query.isLoading && rows.length === 0 ? <EmptyState route={route} /> : null}
+        {!query.isLoading && rows.length === 0 ? <EmptyState route={effectiveRoute} /> : null}
 
         {query.isError ? (
           <div className="mx-4 mb-4 rounded-[10px] border border-danger/30 bg-danger/5 p-3 text-sm text-danger">
@@ -150,7 +141,7 @@ export function ResourceListPage({ route, moduleLabel, moduleDescription, childr
         />
       </Panel>
 
-      <DetailDrawer id={detailId} onClose={closeQueryDialog} route={route} />
+      <DetailDrawer id={detailId} onClose={closeQueryDialog} route={effectiveRoute} />
       <ConfirmActionDialog
         action="toggle"
         loading={actionMutation.isPending}
@@ -173,10 +164,13 @@ export function ResourceListPage({ route, moduleLabel, moduleDescription, childr
         onConfirm={(note) => approveId && actionMutation.mutate({ action: "approve", id: approveId, note })}
         open={Boolean(approveId)}
       />
-
-      {children}
     </div>
   );
+}
+
+function canCreateRoute(route: RouteConfig, user: AuthUser | null) {
+  if (!isSuperAdmin(user)) return true;
+  return route.kind !== "deaneries" && route.kind !== "parishes";
 }
 
 function buildApprovePath(route: RouteConfig, rows: Record<string, unknown>[], id: string) {
@@ -190,16 +184,6 @@ function buildApprovePath(route: RouteConfig, rows: Record<string, unknown>[], i
 function buildApproveBody(route: RouteConfig, note?: string) {
   if (route.kind === "certificates") return { approvalReason: note || undefined };
   return { approved: true, review: note || undefined };
-}
-
-export function ModuleSidePanel(_props: {
-  title?: string;
-  description?: string;
-  items?: Array<{ label: string; value: string }>;
-  tone?: Tone;
-}) {
-  void _props;
-  return null;
 }
 
 function EmptyState({ route }: { route: RouteConfig }) {

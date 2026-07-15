@@ -183,3 +183,17 @@
 - Add live smoke with real E2E credentials from ignored env when available.
 - Expand visual audit beyond login to authenticated dashboard, analytics, table, form, modal, empty/error/loading states once a seeded test account is available.
 - Add richer tests for chart reduced-motion toggling and STOMP reconnect payload behavior with MSW/browser mocks.
+
+### SUPER_ADMIN RBAC scope rollout 2026-07-15
+
+- Branch `feature/super-admin-rbac-scope` starts from `origin/main` and implements SUPER_ADMIN-specific sidebar, organization, account, role, role-permission, and account-permission UX.
+- SUPER_ADMIN sidebar hides `leader`, `executive-board`, `training`, `training-workflow`, and `certificate`; direct URL access to those resource routes is also blocked client-side.
+- Organization resource actions for SUPER_ADMIN are read-first: dioceses can still be created and toggled, dioceses cannot be edited/deleted, and deaneries/parishes are read-only.
+- SUPER_ADMIN account list/filter is applied as a runtime overlay only for SUPER_ADMIN: it shows `SUPER_ADMIN` and `ADMIN_DIOCESE`, removes deanery/parish filters, and displays `dioceseName`. Admin unit accounts keep the normal account UI with role, diocese, deanery, and parish scope filters.
+- Account create has a SUPER_ADMIN-only form spec that exposes only `SUPER_ADMIN` and `ADMIN_DIOCESE`; normal admin unit account creation keeps the dynamic `/system/roles` selector and scope/leader fields.
+- Role list overlay for SUPER_ADMIN exposes system roles plus custom roles created by `super-admin`; non-SUPER_ADMIN role UI remains governed by the existing scoped role read behavior.
+- Role-permission and account-permission bulk checkbox forms are SUPER_ADMIN-only form specs. Non-SUPER_ADMIN users keep the single-permission assignment forms and status columns from the shared admin UI.
+- Role-permission and account-permission SUPER_ADMIN tables no longer display `status`; UX treats `effect` as the active allow/deny signal for those SUPER_ADMIN screens.
+- Bulk role/account permission forms use checkbox lists with search, grouping, per-group select/clear, and selected counters, posting to `/api/system/role-permissions/bulk` and `/api/system/account-permissions/bulk`.
+- Resource list/form summary panels were removed from module screens; table, filter, pagination, dialogs, and primary actions remain the main workflow.
+- Follow-up correction in this session restored Vietnamese accents in the changed FE files and separated SUPER_ADMIN overlays from admin unit UI.

@@ -5,8 +5,8 @@ import type { Route } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import type { RouteConfig } from "@/features/workspace/routes";
-import { useAuthStore } from "@/lib/auth/auth-store";
-import { canUseAction } from "@/lib/auth/permissions";
+import { useAuthStore, type AuthUser } from "@/lib/auth/auth-store";
+import { canUseAction, isSuperAdmin } from "@/lib/auth/permissions";
 import { columnLabels, ResourceCell } from "./resource-format";
 import { fillRoute, getResourceId } from "./resource-actions";
 import type { ResourcePageSize } from "./use-resource-query-state";
@@ -95,9 +95,9 @@ function RowActions({ route, row }: { route: RouteConfig; row: Record<string, un
   const editHref = fillRoute(route.editPath, { id });
   const scoreHref = fillRoute(route.actions?.score?.route, { id });
   const canView = canUseAction(user, route.actions?.view);
-  const canEdit = canUseAction(user, route.actions?.edit);
-  const canToggle = canUseAction(user, route.actions?.toggle);
-  const canDelete = canUseAction(user, route.actions?.delete);
+  const canEdit = canUseAction(user, route.actions?.edit) && canEditRow(route, user);
+  const canToggle = canUseAction(user, route.actions?.toggle) && canToggleRow(route, row, user);
+  const canDelete = canUseAction(user, route.actions?.delete) && canDeleteRow(route, row, user);
   const canScore = canUseAction(user, route.actions?.score);
   const canApprove = canUseAction(user, route.actions?.approve);
 
@@ -141,6 +141,23 @@ function RowActions({ route, row }: { route: RouteConfig; row: Record<string, un
       ) : null}
     </div>
   );
+}
+
+function canEditRow(route: RouteConfig, user: AuthUser | null) {
+  if (!isSuperAdmin(user)) return true;
+  return route.kind !== "dioceses" && route.kind !== "deaneries" && route.kind !== "parishes";
+}
+
+function canToggleRow(route: RouteConfig, row: Record<string, unknown>, user: AuthUser | null) {
+  if (route.kind === "roles" && row.isSystem === true) return false;
+  if (!isSuperAdmin(user)) return true;
+  return route.kind === "dioceses";
+}
+
+function canDeleteRow(route: RouteConfig, row: Record<string, unknown>, user: AuthUser | null) {
+  if (route.kind === "roles" && row.isSystem === true) return false;
+  if (!isSuperAdmin(user)) return true;
+  return route.kind !== "dioceses" && route.kind !== "deaneries" && route.kind !== "parishes";
 }
 
 function StatusSwitch({ active, href }: { active: boolean; href: Route }) {

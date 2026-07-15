@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { TooltipIconButton } from "@/components/ui/tooltip-icon-button";
 import { apiFetch } from "@/lib/api/client";
 import { useAuthStore, type AuthUser } from "@/lib/auth/auth-store";
-import { hasPermissionPrefix } from "@/lib/auth/permissions";
+import { hasPermissionPrefix, isSuperAdmin } from "@/lib/auth/permissions";
 import { cn } from "@/lib/utils";
 import { useNotificationsSocket } from "./notifications-socket";
 import { routeGroups, type RouteConfig, type RouteGroup } from "./routes";
@@ -255,5 +255,16 @@ function SidebarNav({
 
 function canSeeRoute(route: RouteConfig, user: AuthUser | null) {
   if (route.path === "/notifications") return true;
+  if (isSuperAdmin(user) && isHiddenForSuperAdmin(route)) return false;
   return route.permissionPrefixes.length === 0 || route.permissionPrefixes.some((prefix) => hasPermissionPrefix(user, prefix));
+}
+
+function isHiddenForSuperAdmin(route: RouteConfig) {
+  return (
+    route.moduleName.startsWith("leader.") ||
+    route.moduleName.startsWith("executive-board.") ||
+    route.moduleName.startsWith("training.") ||
+    route.moduleName.startsWith("training-workflow.") ||
+    route.moduleName.startsWith("certificate.")
+  );
 }
