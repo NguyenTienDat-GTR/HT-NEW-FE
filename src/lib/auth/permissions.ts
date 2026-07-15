@@ -1,4 +1,5 @@
 import type { AuthUser } from "./auth-store";
+import type { ResourceActionConfig } from "@/features/workspace/route-config";
 
 export function hasPermission(user: AuthUser | null | undefined, permission: string) {
   if (!user) return false;
@@ -17,6 +18,20 @@ export function hasPermissionPrefix(user: AuthUser | null | undefined, prefix: s
 
 export function isSuperAdmin(user: AuthUser | null | undefined) {
   return Boolean(user?.roles.some((role) => role === "SUPER_ADMIN" || role === "ROLE_SUPER_ADMIN"));
+}
+
+export function hasAnyRole(user: AuthUser | null | undefined, roles: string[] | undefined) {
+  if (!roles?.length) return true;
+  if (!user) return false;
+  return roles.some((role) => user.roles.includes(role));
+}
+
+export function canUseAction(user: AuthUser | null | undefined, action: ResourceActionConfig | undefined) {
+  if (!action) return false;
+  if (!hasAnyRole(user, action.requiredRoles)) return false;
+  const prefixes = action.permissionPrefixes ?? [];
+  if (!prefixes.length) return true;
+  return prefixes.some((prefix) => hasPermissionPrefix(user, prefix));
 }
 
 export function canSeeAnalyticsDetail(user: AuthUser | null | undefined) {
