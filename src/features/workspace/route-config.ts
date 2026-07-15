@@ -85,7 +85,9 @@ export type RouteGroup = {
 export function route(config: RouteConfig): RouteConfig {
   const createPermissionPrefixes =
     config.primaryActionPermissionPrefixes ??
-    config.actionPermissionPrefixes?.filter((prefix) => prefix.includes(".create.") || prefix.includes(".manage.") || prefix.includes(".submit."));
+    config.actionPermissionPrefixes?.filter(
+      (prefix) => prefix.includes(".create.") || prefix.includes(".manage.") || prefix.includes(".submit.") || prefix.includes(".assign."),
+    );
   const updatePermissionPrefixes =
     config.actionPermissionPrefixes?.filter((prefix) => prefix.includes(".update.") || prefix.includes(".manage.") || prefix.includes(".assign."));
   const togglePermissionPrefixes = config.actionPermissionPrefixes?.filter((prefix) => prefix.includes(".toggle.") || prefix.includes(".update.") || prefix.includes(".manage."));

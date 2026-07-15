@@ -20,6 +20,7 @@ export type FormFieldSpec = {
   placeholder?: string;
   options?: Option[];
   optionsEndpoint?: string;
+  buildOptionsEndpoint?: (values: Record<string, unknown>) => string | undefined;
   optionValue?: string;
   optionLabel?: string;
   createOnly?: boolean;

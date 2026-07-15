@@ -52,7 +52,11 @@ export function ResourceFormPage({
   const visibleFields = (spec?.fields ?? [])
     .filter((field) => (mode === "create" ? !field.editOnly : !field.createOnly))
     .filter((field) => field.visibleWhen?.(mergedValues, mode) ?? true)
-    .map((field) => ({ ...field, required: field.requiredWhen?.(mergedValues, mode) ?? field.required }));
+    .map((field) => ({
+      ...field,
+      optionsEndpoint: field.buildOptionsEndpoint?.(mergedValues) ?? field.optionsEndpoint,
+      required: field.requiredWhen?.(mergedValues, mode) ?? field.required,
+    }));
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const mutation = useMutation({
@@ -90,28 +94,28 @@ export function ResourceFormPage({
   const sections = groupFields(visibleFields);
 
   return (
-    <div className="space-y-5 pb-24">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+    <div className="space-y-4 pb-20">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <Link className="mb-3 inline-flex items-center gap-2 text-sm font-semibold text-primary" href={effectiveRoute.path as Route}>
+          <Link className="mb-2 inline-flex items-center gap-2 text-xs font-semibold text-primary" href={effectiveRoute.path as Route}>
             <ArrowLeft size={16} />
             Quay lại danh sách
           </Link>
-          <h1 className="text-3xl font-semibold tracking-[0] text-foreground">{title}</h1>
-          <p className="mt-2 max-w-[78ch] text-sm leading-6 text-muted">{spec.description ?? effectiveRoute.subtitle}</p>
+          <h1 className="text-2xl font-semibold tracking-[0] text-foreground">{title}</h1>
+          <p className="mt-1 max-w-[72ch] text-sm leading-5 text-muted">{spec.description ?? effectiveRoute.subtitle}</p>
         </div>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-3">
         {detailQuery.isLoading ? (
           <Panel className="h-72 animate-pulse" />
         ) : (
           sections.map(([section, fields]) => (
-            <Panel className="p-5" key={section}>
-              <h2 className="mb-4 text-lg font-semibold text-foreground">{section}</h2>
-              <div className="grid gap-4 md:grid-cols-2">
+            <Panel className="p-4" key={section}>
+              <h2 className="mb-3 text-sm font-semibold uppercase tracking-[0.04em] text-muted">{section}</h2>
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                 {fields.map((field) => (
-                  <div className={field.type === "textarea" || field.type === "multiselect" || field.type === "checkbox-list" || field.type === "radio" ? "md:col-span-2" : undefined} key={field.name}>
+                  <div className={fieldLayoutClass(field)} key={field.name}>
                     <FormField
                       error={errors[field.name]}
                       field={field}
@@ -127,7 +131,7 @@ export function ResourceFormPage({
         )}
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-white/95 px-4 py-3 backdrop-blur">
+      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-white/95 px-4 py-2.5 backdrop-blur">
         <div className="mx-auto flex max-w-[1180px] justify-end gap-3">
           <Button asChild variant="outline">
             <Link href={effectiveRoute.path as Route}>
@@ -152,6 +156,12 @@ function groupFields(fields: FormFieldSpec[]) {
     groups.set(section, [...(groups.get(section) ?? []), field]);
   });
   return Array.from(groups.entries());
+}
+
+function fieldLayoutClass(field: FormFieldSpec) {
+  if (field.type === "checkbox-list") return "md:col-span-2 xl:col-span-3";
+  if (field.type === "textarea" || field.type === "multiselect") return "md:col-span-2";
+  return undefined;
 }
 
 function validateFields(fields: FormFieldSpec[], values: Record<string, unknown>) {

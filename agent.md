@@ -197,3 +197,16 @@
 - Bulk role/account permission forms use checkbox lists with search, grouping, per-group select/clear, and selected counters, posting to `/api/system/role-permissions/bulk` and `/api/system/account-permissions/bulk`.
 - Resource list/form summary panels were removed from module screens; table, filter, pagination, dialogs, and primary actions remain the main workflow.
 - Follow-up correction in this session restored Vietnamese accents in the changed FE files and separated SUPER_ADMIN overlays from admin unit UI.
+
+### Account-role and role-permission assignment correction 2026-07-15
+
+- The shared route helper now treats `.assign.` permissions as valid primary create actions, so `/system/account-roles` and `/system/role-permissions` show their assignment buttons for any actor with the matching assign permission prefix.
+- `/system/account-roles/new` now uses a bulk checkbox form: select one managed account, tick multiple roles from `/system/account-roles/assignable-roles`, optionally choose a primary role, and submit once to `/system/account-roles/bulk`.
+- `/system/role-permissions/new` now uses the bulk checkbox form for all actors with `system.role_permission.assign.*`, not only SUPER_ADMIN, and submits `{roleCode, permissionCodes, effect, conditions?, assignedAt?, expiresAt?}` to `/system/role-permissions/bulk`.
+- Role-permission and account-role filters use role dropdowns instead of free-text role entry where the backend exposes option endpoints.
+- Verification run in this session: `npm.cmd run typecheck`, `npm.cmd run lint`, `npm.cmd run test`, and `npm.cmd run build` passed.
+- Follow-up filtering correction: account-role, role-permission, and account-permission bulk checkbox fields now build option endpoints from the selected target and only show roles/permissions that are not already assigned. Changing the target prunes stale selected checkbox values before submit.
+- `/system/account-roles` is not SUPER_ADMIN-only; it is visible to any actor whose `/auth/me.permissions` contains `system.account_role.assign.*`, including `ADMIN_DIOCESE`, `ADMIN_DEANERY`, and `ADMIN_PARISH` with their scoped assign permission.
+- `/auth/me` now reloads the effective principal from the backend database, so sidebar/menu visibility follows current RBAC rows instead of stale permission claims embedded in an older token snapshot.
+- Real-world admin-diocese menu gap root cause: a direct account-permission `DENY` on `system.account_role.assign.diocese` overrides the role-level `ALLOW`, so the sidebar hides `Gán vai trò` even when `role_permission` looks correct. The backend now removes stale denies for required admin-unit assignment permissions and rejects recreating them.
+- Re-enabling a role does not recreate its permission matrix. If a custom role like `LD_TRUONG` has zero `role_permission` rows, users assigned to that role still resolve zero effective permissions after login and will not regain screen access until the role is granted permissions again.

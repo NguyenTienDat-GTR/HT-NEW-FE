@@ -10,7 +10,7 @@ export const systemRouteGroup: RouteGroup = {
       path: "/system/accounts",
       moduleName: "system.account",
       title: "Tài khoản",
-      subtitle: "Account, scope, primary role và trạng thái đăng nhập.",
+      subtitle: "Account, scope, vai trò chính và trạng thái đăng nhập.",
       endpoint: "/system/accounts",
       idField: "username",
       kind: "accounts",
@@ -69,8 +69,37 @@ export const systemRouteGroup: RouteGroup = {
       columns: ["username", "roleCode", "isPrimary", "assignedAt", "expiresAt", "status"],
       permissionPrefixes: ["system.account_role.assign."],
       actionPermissionPrefixes: ["system.account_role.assign."],
-      primaryActionLabel: "Gán vai trò",
+      primaryActionLabel: "Gán nhiều vai trò",
       filterLabels: ["Vai trò", "Trạng thái", "Hết hạn"],
+      filters: [
+        {
+          key: "role.roleCode",
+          label: "Vai trò",
+          type: "select",
+          optionsEndpoint: "/system/roles",
+          optionValue: "roleCode",
+          optionLabel: "roleName",
+        },
+        {
+          key: "isPrimary",
+          label: "Vai trò chính",
+          type: "boolean",
+          options: [
+            { value: "true", label: "Chính" },
+            { value: "false", label: "Phụ" },
+          ],
+        },
+        {
+          key: "status",
+          label: "Trạng thái",
+          type: "select",
+          options: [
+            { value: "all", label: "Tất cả" },
+            { value: "active", label: "Đang hoạt động" },
+            { value: "inactive", label: "Tạm ngưng" },
+          ],
+        },
+      ],
     }),
     route({
       path: "/system/role-permissions",
@@ -91,8 +120,24 @@ export const systemRouteGroup: RouteGroup = {
           route: "/system/role-permissions/manage/:roleCode",
         },
       },
-      primaryActionLabel: "Gán quyền",
+      primaryActionLabel: "Gán nhiều quyền",
       filterLabels: ["Vai trò", "Module", "Effect"],
+      filters: [
+        {
+          key: "role.roleCode",
+          label: "Vai trò",
+          type: "select",
+          optionsEndpoint: "/system/roles",
+          optionValue: "roleCode",
+          optionLabel: "roleName",
+        },
+        {
+          key: "effect",
+          label: "Hiệu lực",
+          type: "select",
+          options: ["ALLOW", "DENY"].map((value) => ({ value, label: value })),
+        },
+      ],
     }),
     route({
       path: "/system/account-permissions",
