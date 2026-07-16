@@ -100,7 +100,7 @@ export function ResourceFormPage({
   const compactAccountForm = effectiveRoute.kind === "accounts";
 
   return (
-    <div className={"mx-auto max-w-[860px]space-y-4 pb-20"}>
+    <div className="mx-auto max-w-[860px] space-y-4 pb-20">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <Link className="mb-2 inline-flex items-center gap-2 text-xs font-semibold text-primary" href={effectiveRoute.path as Route}>
@@ -139,7 +139,7 @@ export function ResourceFormPage({
         )}
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-white/95 px-4 py-2.5 backdrop-blur">
+      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-white/95 px-4 py-2.5 shadow-[0_-14px_32px_rgb(31_35_48_/_0.08)] backdrop-blur">
         <div className="mx-auto flex max-w-[1180px] justify-end gap-3">
           <Button asChild variant="outline">
             <Link href={effectiveRoute.path as Route}>

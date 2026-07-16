@@ -78,14 +78,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <div className="min-h-[100dvh] bg-[#f7f8fb] text-foreground">
+    <div className="min-h-[100dvh] bg-app-canvas text-foreground">
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-40 hidden border-r border-border bg-white shadow-[18px_0_45px_rgb(31_35_48_/_0.04)] transition-[width] duration-200 lg:flex lg:flex-col",
-          sidebarCollapsed ? "w-[80px]" : "w-[280px]",
+          "fixed inset-y-0 left-0 z-40 hidden border-r border-border bg-white shadow-[16px_0_40px_rgb(31_35_48_/_0.06)] transition-[width] duration-200 lg:flex lg:flex-col",
+          sidebarCollapsed ? "w-[76px]" : "w-[264px]",
         )}
       >
-        <div className="flex h-18 items-center justify-between border-b border-border px-4">
+        <div className="flex h-[72px] items-center justify-between border-b border-border px-4">
           <BrandMark compact={sidebarCollapsed} />
           <TooltipIconButton label={sidebarCollapsed ? "Mở rộng menu" : "Thu gọn menu"} onClick={() => setSidebarCollapsed((value) => !value)}>
             <CaretLeft className={cn("h-5 w-5 transition-transform", sidebarCollapsed && "rotate-180")} />
@@ -102,8 +102,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {mobileOpen ? (
         <div className="fixed inset-0 z-50 bg-[#111827]/40 backdrop-blur-sm lg:hidden" onClick={() => setMobileOpen(false)}>
-          <aside className="h-full w-[312px] bg-white" onClick={(event) => event.stopPropagation()}>
-            <div className="flex h-18 items-center justify-between border-b border-border px-4">
+          <aside className="h-full w-[312px] bg-white shadow-[var(--shadow-elevated)]" onClick={(event) => event.stopPropagation()}>
+            <div className="flex h-[72px] items-center justify-between border-b border-border px-4">
               <BrandMark />
               <TooltipIconButton label="Đóng menu" onClick={() => setMobileOpen(false)}>
                 <CaretLeft className="h-5 w-5" />
@@ -114,9 +114,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       ) : null}
 
-      <div className={cn("transition-[padding] duration-200 lg:pl-[280px]", sidebarCollapsed && "lg:pl-[80px]")}>
-        <header className="sticky top-0 z-30 border-b border-border bg-white/92 backdrop-blur-xl">
-          <div className="mx-auto flex h-18 max-w-[1480px] items-center justify-between gap-4 px-4">
+      <div className={cn("transition-[padding] duration-200 lg:pl-[264px]", sidebarCollapsed && "lg:pl-[76px]")}>
+        <header className="sticky top-0 z-30 border-b border-border bg-white/88 backdrop-blur-xl">
+          <div className="mx-auto flex h-[72px] max-w-[1480px] items-center justify-between gap-4 px-4 lg:px-6">
             <div className="flex min-w-0 items-center gap-3">
               <TooltipIconButton className="lg:hidden" label="Mở menu" onClick={() => setMobileOpen(true)}>
                 <List className="h-5 w-5" />
@@ -127,7 +127,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </div>
             </div>
 
-            <label className="hidden h-11 w-full max-w-[460px] items-center gap-3 rounded-[12px] border border-border bg-surface-1 px-3 text-sm text-muted md:flex">
+            <label className="hidden h-11 w-full max-w-[460px] items-center gap-3 rounded-[12px] border border-border bg-surface-1 px-3 text-sm text-muted shadow-inner md:flex">
               <MagnifyingGlass className="h-5 w-5" />
               <span className="truncate">Tìm kiếm nhanh...</span>
             </label>
@@ -139,7 +139,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   <span className="absolute right-1 top-1 grid h-5 min-w-5 place-items-center rounded-full bg-danger px-1 text-[11px] font-bold text-white">3</span>
                 </Link>
               </Button>
-              <div className="hidden min-w-0 items-center gap-3 rounded-[14px] border border-border bg-white px-3 py-2 shadow-sm sm:flex">
+              <div className="hidden min-w-0 items-center gap-3 rounded-[12px] border border-border bg-white px-3 py-2 shadow-sm sm:flex">
                 <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/12 text-sm font-semibold text-primary">
                   {(user?.username ?? "HT").slice(0, 2).toUpperCase()}
                 </span>
@@ -155,7 +155,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </div>
           </div>
         </header>
-        <main className="mx-auto max-w-[1480px] px-4 py-6 lg:px-6">{children}</main>
+        <main className="mx-auto max-w-[1480px] px-4 py-5 lg:px-6 lg:py-6">{children}</main>
       </div>
     </div>
   );
@@ -187,8 +187,8 @@ function SidebarNav({
               <Link
                 aria-label={route.title}
                 className={cn(
-                  "grid h-12 w-12 place-items-center rounded-[12px] text-[#566078] transition-colors hover:bg-primary/8 hover:text-primary",
-                  active && "bg-primary/12 text-primary",
+                  "grid h-11 w-11 place-items-center rounded-[10px] text-[#566078] transition-colors hover:bg-primary-soft hover:text-primary",
+                  active && "bg-primary-soft text-primary shadow-[inset_0_0_0_1px_rgb(108_71_255_/_0.16)]",
                 )}
                 href={route.path as Route}
                 key={route.path}
@@ -214,8 +214,8 @@ function SidebarNav({
           <div className="space-y-1" key={group.moduleName}>
             <button
               className={cn(
-                "flex h-11 w-full items-center gap-3 rounded-[12px] px-3 text-left text-sm font-semibold text-[#283044] transition-colors hover:bg-primary/6 hover:text-primary",
-                groupActive && "bg-primary/8 text-primary",
+                "flex h-10 w-full cursor-pointer items-center gap-3 rounded-[10px] px-3 text-left text-sm font-semibold text-[#283044] transition-colors hover:bg-primary-soft hover:text-primary",
+                groupActive && "bg-primary-soft text-primary",
               )}
               onClick={() => toggleGroup(group.moduleName)}
               type="button"
@@ -225,15 +225,15 @@ function SidebarNav({
               <CaretDown className={cn("h-4 w-4 shrink-0 transition-transform", open && "rotate-180")} />
             </button>
             {open ? (
-              <div className="space-y-1 pl-4">
+              <div className="space-y-1 pl-3">
                 {group.children.map((route) => {
                   const active = pathname === route.path;
                   const Icon = route.icon;
                   return (
                     <Link
                       className={cn(
-                        "flex h-10 items-center gap-3 rounded-[10px] px-3 text-sm font-medium text-[#566078] transition-colors hover:bg-primary/6 hover:text-primary",
-                        active && "bg-primary/12 text-primary shadow-[inset_3px_0_0_#6c47ff]",
+                        "flex h-9 items-center gap-3 rounded-[8px] px-3 text-sm font-medium text-[#566078] transition-colors hover:bg-primary-soft hover:text-primary",
+                        active && "bg-primary-soft text-primary shadow-[inset_3px_0_0_#6c47ff]",
                       )}
                       href={route.path as Route}
                       key={route.path}

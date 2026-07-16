@@ -6,6 +6,8 @@ playwright-report/
 test-results/
 *.tsbuildinfo
 *.log
+__pycache__/
+*.pyc
 
 .env
 .env.*

@@ -61,7 +61,7 @@ export function ResourceFilters({
             </Dialog.Trigger>
             <Dialog.Portal>
               <Dialog.Overlay className="fixed inset-0 z-40 bg-slate-950/30 backdrop-blur-sm" />
-              <Dialog.Content className="fixed bottom-0 right-0 top-0 z-50 flex w-full max-w-[420px] flex-col border-l border-border bg-white shadow-2xl focus:outline-none">
+              <Dialog.Content className="fixed bottom-0 right-0 top-0 z-50 flex w-full max-w-[440px] flex-col border-l border-border bg-white shadow-[var(--shadow-elevated)] focus:outline-none">
                 <div className="flex items-start justify-between gap-4 border-b border-border p-5">
                   <div>
                     <Dialog.Title className="text-xl font-semibold text-foreground">Bộ lọc</Dialog.Title>
@@ -83,7 +83,7 @@ export function ResourceFilters({
                     />
                   ))}
                 </div>
-                <div className="flex justify-end gap-3 border-t border-border p-4">
+                <div className="flex justify-end gap-3 border-t border-border bg-surface-1/60 p-4">
                   <Button onClick={resetFilters} type="button" variant="outline">
                     Xóa lọc
                   </Button>
@@ -132,7 +132,7 @@ function FilterControl({
     <label>
       <span className="mb-2 block text-xs font-semibold text-foreground">{filter.label}</span>
       <select
-        className="h-11 w-full rounded-[10px] border border-border bg-white px-3 text-sm text-foreground shadow-sm"
+        className="h-11 w-full rounded-[10px] border border-border bg-white px-3 text-sm text-foreground shadow-sm transition-[border-color,box-shadow] focus:border-primary focus:outline-none focus:ring-4 focus:ring-[var(--primary-ring)]"
         disabled={query.isLoading}
         onChange={(event) => onChange(event.target.value)}
         value={value}

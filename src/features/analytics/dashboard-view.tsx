@@ -50,14 +50,14 @@ export function DashboardView() {
   const kpis = toKpiList(query.data).slice(0, 4);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <Header title="Tổng quan" subtitle="Theo dõi hệ thống, công việc cần xử lý và dữ liệu analytics trong scope hiện tại." />
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {kpis.map((metric, index) => (
           <AnimatedMetric delay={index * 0.04} key={metric.key} label={metricLabel(metric.key)} value={metric.value} />
         ))}
-        {query.isLoading ? Array.from({ length: 4 }).map((_, index) => <div className="h-[150px] rounded-[16px] border border-border bg-white motion-safe:animate-pulse" key={index} />) : null}
+        {query.isLoading ? Array.from({ length: 4 }).map((_, index) => <div className="h-[150px] rounded-[12px] border border-border bg-white motion-safe:animate-pulse" key={index} />) : null}
       </section>
 
       <section className="grid gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(360px,0.85fr)]">
@@ -79,7 +79,7 @@ export function DashboardView() {
           </div>
           <div className="space-y-2">
             {(notificationsQuery.data ?? []).slice(0, 4).map((item, index) => (
-              <div className="flex items-center gap-3 rounded-[12px] px-2 py-3 hover:bg-surface-1" key={item.id}>
+              <div className="flex items-center gap-3 rounded-[10px] px-2 py-3 transition-colors hover:bg-primary-soft" key={item.id}>
                 <span className={cn("grid h-9 w-9 place-items-center rounded-full", index % 2 === 0 ? "bg-danger/10 text-danger" : "bg-blue-50 text-blue-600")}>
                   <Bell className="h-4 w-4" weight="bold" />
                 </span>
@@ -107,8 +107,8 @@ export function DashboardView() {
           {(workQueueQuery.data ?? []).map((item) => {
             const Icon = queueIcon(item.icon);
             return (
-              <Link className="group rounded-[14px] border border-border bg-white p-4 shadow-sm transition-colors hover:border-primary/30 hover:bg-primary/4" href={item.href as Route} key={item.key}>
-                <span className={cn("mb-4 inline-flex h-11 w-11 items-center justify-center rounded-[12px]", queueTone(item.tone))}>
+              <Link className="group rounded-[12px] border border-border bg-white p-4 shadow-sm transition-colors hover:border-primary/30 hover:bg-primary/4" href={item.href as Route} key={item.key}>
+                <span className={cn("mb-4 inline-flex h-11 w-11 items-center justify-center rounded-[10px]", queueTone(item.tone))}>
                   <Icon className="h-5 w-5" weight="bold" />
                 </span>
                 <span className="flex items-start justify-between gap-3">

@@ -73,7 +73,7 @@ function renderControl({
   if (type === "textarea") {
     return (
       <textarea
-        className="min-h-20 w-full rounded-[8px] border border-border bg-white px-3 py-2 text-sm text-foreground shadow-sm transition-colors placeholder:text-muted focus:border-primary focus:outline-none disabled:cursor-not-allowed disabled:bg-surface-1 disabled:opacity-70"
+        className="min-h-20 w-full rounded-[8px] border border-border bg-white px-3 py-2 text-sm text-foreground shadow-sm transition-[border-color,box-shadow] placeholder:text-muted focus:border-primary focus:outline-none focus:ring-4 focus:ring-[var(--primary-ring)] disabled:cursor-not-allowed disabled:bg-surface-1 disabled:opacity-70"
         disabled={readonly}
         id={id}
         onChange={(event) => onChange(event.target.value)}
@@ -210,7 +210,7 @@ function OptionControl({
 
   return (
     <select
-      className="h-10 w-full rounded-[8px] border border-border bg-white px-3 text-sm text-foreground shadow-sm focus:border-primary focus:outline-none disabled:cursor-not-allowed disabled:bg-surface-1 disabled:opacity-70"
+      className="h-10 w-full rounded-[8px] border border-border bg-white px-3 text-sm text-foreground shadow-sm focus:border-primary focus:outline-none focus:ring-4 focus:ring-[var(--primary-ring)] disabled:cursor-not-allowed disabled:bg-surface-1 disabled:opacity-70"
       disabled={readonly || query.isLoading}
       id={id}
       multiple={multiple}
@@ -357,7 +357,7 @@ function CheckboxList({
   }
 
   return (
-    <div className="rounded-[8px] border border-border bg-white">
+    <div className="rounded-[8px] border border-border bg-white shadow-sm">
       <div className="flex flex-col gap-2 border-b border-border p-2 sm:flex-row sm:items-center sm:justify-between">
         <Input className="h-10" disabled={readonly} onChange={(event) => setSearch(event.target.value)} placeholder="Tìm theo mã hoặc tên" value={search} />
         <span className="shrink-0 rounded-[8px] bg-primary/8 px-2.5 py-1.5 text-xs font-semibold text-primary">{selected.size} đã chọn</span>

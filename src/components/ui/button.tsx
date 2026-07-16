@@ -7,17 +7,17 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "relative inline-flex h-11 min-w-11 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-[10px] px-4 text-sm font-semibold transition-[background-color,border-color,color,box-shadow,transform] duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:pointer-events-none disabled:opacity-55 motion-safe:hover:-translate-y-px motion-safe:hover:scale-[1.015] motion-safe:active:translate-y-0 motion-safe:active:scale-[0.98] disabled:motion-safe:hover:translate-y-0 disabled:motion-safe:hover:scale-100",
+  "relative inline-flex h-11 min-w-11 shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-[10px] px-4 text-sm font-semibold transition-[background-color,border-color,color,box-shadow,transform] duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-55 motion-safe:active:translate-y-px",
   {
     variants: {
       variant: {
         primary:
-          "border border-primary bg-primary text-white shadow-[inset_0_1px_0_rgb(255_255_255_/_0.22),0_10px_22px_rgb(108_71_255_/_0.22)] hover:bg-primary-hover",
-        secondary: "border border-surface-2 bg-surface-2 text-foreground hover:bg-border",
-        outline: "border border-border bg-white text-foreground hover:border-primary hover:text-primary",
-        ghost: "border border-transparent bg-transparent text-foreground hover:bg-surface-1",
-        destructive: "border border-danger bg-danger text-white shadow-[0_10px_22px_rgb(239_68_68_/_0.18)]",
-        icon: "border border-border bg-white p-0 text-foreground hover:border-primary hover:text-primary",
+          "border border-primary bg-primary text-white shadow-[inset_0_1px_0_rgb(255_255_255_/_0.22),0_10px_22px_rgb(108_71_255_/_0.20)] hover:border-primary-hover hover:bg-primary-hover hover:shadow-[inset_0_1px_0_rgb(255_255_255_/_0.18),0_12px_26px_rgb(108_71_255_/_0.24)]",
+        secondary: "border border-surface-2 bg-surface-2 text-foreground hover:border-border hover:bg-border",
+        outline: "border border-border bg-white text-foreground shadow-sm hover:border-primary hover:bg-primary-soft hover:text-primary",
+        ghost: "border border-transparent bg-transparent text-foreground hover:bg-primary-soft hover:text-primary",
+        destructive: "border border-danger bg-danger text-white shadow-[0_10px_22px_rgb(239_68_68_/_0.18)] hover:bg-[#dc2626]",
+        icon: "border border-border bg-white p-0 text-foreground shadow-sm hover:border-primary hover:bg-primary-soft hover:text-primary",
       },
       size: {
         default: "h-11 px-4",

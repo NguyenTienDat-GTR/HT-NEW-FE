@@ -21,7 +21,7 @@ export function DetailDrawer({ id, onClose, route }: { id?: string | null; onClo
     <Dialog.Root open={Boolean(id)} onOpenChange={(open) => (!open ? onClose() : undefined)}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-40 bg-slate-950/30 backdrop-blur-sm" />
-        <Dialog.Content className="fixed bottom-0 right-0 top-0 z-50 flex w-full max-w-[520px] flex-col border-l border-border bg-white shadow-2xl focus:outline-none">
+        <Dialog.Content className="fixed bottom-0 right-0 top-0 z-50 flex w-full max-w-[540px] flex-col border-l border-border bg-white shadow-[var(--shadow-elevated)] focus:outline-none">
           <div className="flex items-start justify-between gap-4 border-b border-border p-5">
             <div>
               <Dialog.Title className="text-xl font-semibold text-foreground">{route.title}</Dialog.Title>
@@ -33,13 +33,13 @@ export function DetailDrawer({ id, onClose, route }: { id?: string | null; onClo
               </Button>
             </Dialog.Close>
           </div>
-          <div className="min-h-0 flex-1 overflow-y-auto p-5">
-            {query.isLoading ? <div className="h-40 rounded-[12px] bg-surface-1 motion-safe:animate-pulse" /> : null}
+          <div className="min-h-0 flex-1 overflow-y-auto bg-app-canvas/50 p-5">
+            {query.isLoading ? <div className="h-40 rounded-[12px] border border-border bg-white motion-safe:animate-pulse" /> : null}
             {query.isError ? <div className="rounded-[10px] border border-danger/30 bg-danger/5 p-3 text-sm text-danger">{getApiErrorMessage(query.error)}</div> : null}
             {row ? (
               <dl className="space-y-3">
                 {keys.map((key) => (
-                  <div className="rounded-[10px] border border-border p-3" key={key}>
+                  <div className="rounded-[10px] border border-border bg-white p-3 shadow-sm" key={key}>
                     <dt className="text-xs font-semibold uppercase tracking-[0.04em] text-muted">{detailLabel(route, key)}</dt>
                     <dd className="mt-1 break-words text-sm text-foreground">
                       <ResourceCell column={key} row={row} value={row[key]} />

@@ -31,13 +31,13 @@ export function ResourceTable({
   sortDirection: "ASC" | "DESC";
 }) {
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-[1040px] border-separate border-spacing-0 text-left text-xs">
+    <div className="max-w-full overflow-x-auto">
+      <table className="w-full min-w-[1080px] border-separate border-spacing-0 text-left text-xs">
         <thead>
-          <tr className="bg-surface-1/80">
+          <tr className="bg-surface-1/90">
             {columns.map((column) => (
-              <th className="h-10 border-b border-border px-3 font-semibold text-foreground" key={column}>
-                <button className="inline-flex h-8 items-center gap-1 rounded-[8px] px-1 hover:text-primary" onClick={() => sort(column)} type="button">
+              <th className="sticky top-0 z-10 h-10 border-b border-border bg-surface-1/95 px-3 font-semibold text-foreground" key={column}>
+                <button className="inline-flex h-8 cursor-pointer items-center gap-1 rounded-[8px] px-1 transition-colors hover:text-primary" onClick={() => sort(column)} type="button">
                   {columnLabels[column] ?? column}
                   {sortBy === column ? (
                     <span className="inline-flex items-center gap-0.5 text-xs text-primary">
@@ -65,7 +65,7 @@ function ResourceTableSkeleton({ columns, size }: { columns: string[]; size: Res
           <span className="block h-3 w-24 rounded bg-surface-2 motion-safe:animate-pulse" />
         </td>
       ))}
-      <td className="h-12 border-b border-surface-2 px-3 text-right">
+      <td className="sticky right-0 h-12 border-b border-surface-2 bg-white px-3 text-right shadow-[-10px_0_18px_rgb(31_35_48_/_0.02)]">
         <span className="ml-auto block h-8 w-20 rounded bg-surface-2 motion-safe:animate-pulse" />
       </td>
     </tr>
@@ -80,7 +80,7 @@ function ResourceRows({ columns, route, rows }: { columns: string[]; route: Rout
           <ResourceCell column={column} row={row} value={row[column]} />
         </td>
       ))}
-      <td className="h-12 border-b border-surface-2 px-3 text-right">
+      <td className="sticky right-0 h-12 border-b border-surface-2 bg-white px-3 text-right shadow-[-10px_0_18px_rgb(31_35_48_/_0.02)] transition-colors group-hover:bg-[#fbfaff]">
         <RowActions route={route} row={row} />
       </td>
     </tr>
@@ -175,12 +175,12 @@ function StatusSwitch({ active, href }: { active: boolean; href: Route }) {
   return (
     <Link
       aria-label={active ? "Tắt trạng thái" : "Bật trạng thái"}
-      className={`inline-flex h-7 w-12 items-center rounded-full border px-0.5 transition-colors ${
-        active ? "border-emerald-500 bg-emerald-500/15 justify-end" : "border-slate-300 bg-slate-200/70 justify-start"
+      className={`inline-flex h-7 w-12 items-center rounded-full border px-0.5 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
+        active ? "justify-end border-success bg-success/15 hover:bg-success/20" : "justify-start border-slate-300 bg-slate-200/70 hover:bg-slate-200"
       }`}
       href={href}
     >
-      <span className={`block h-5 w-5 rounded-full shadow-sm ${active ? "bg-emerald-600" : "bg-white"}`} />
+      <span className={`block h-5 w-5 rounded-full shadow-sm ${active ? "bg-success" : "bg-white"}`} />
     </Link>
   );
 }

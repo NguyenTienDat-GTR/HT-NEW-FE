@@ -82,7 +82,7 @@ export function ResourceListPage({ route, moduleLabel, moduleDescription }: Reso
   });
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <section className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div className="min-w-0">
           <div className="mb-2 flex items-center gap-2 text-sm text-muted">
@@ -90,7 +90,7 @@ export function ResourceListPage({ route, moduleLabel, moduleDescription }: Reso
             <span aria-hidden>›</span>
             <span>{moduleLabel}</span>
           </div>
-          <h1 className="text-3xl font-semibold tracking-[0] text-foreground">{effectiveRoute.title}</h1>
+          <h1 className="text-2xl font-semibold tracking-[0] text-foreground md:text-3xl">{effectiveRoute.title}</h1>
           <p className="mt-2 max-w-[82ch] text-sm leading-6 text-muted">{effectiveRoute.subtitle || moduleDescription}</p>
         </div>
         {effectiveRoute.primaryActionLabel && effectiveRoute.createPath && canCreate ? (
@@ -128,7 +128,7 @@ export function ResourceListPage({ route, moduleLabel, moduleDescription }: Reso
         {!query.isLoading && rows.length === 0 ? <EmptyState route={effectiveRoute} /> : null}
 
         {query.isError ? (
-          <div className="mx-4 mb-4 rounded-[10px] border border-danger/30 bg-danger/5 p-3 text-sm text-danger">
+          <div className="mx-4 mb-4 rounded-[10px] border border-danger/30 bg-danger/5 p-3 text-sm font-medium text-danger">
             {getApiErrorMessage(query.error)}
           </div>
         ) : null}
@@ -189,7 +189,7 @@ function buildApproveBody(route: RouteConfig, note?: string) {
 
 function EmptyState({ route }: { route: RouteConfig }) {
   return (
-    <div className="grid min-h-[220px] place-items-center px-4 text-center">
+    <div className="grid min-h-[240px] place-items-center border-t border-surface-2 px-4 text-center">
       <div>
         <p className="text-base font-semibold text-foreground">Chưa có dữ liệu phù hợp</p>
         <p className="mt-1 max-w-[48ch] text-sm leading-6 text-muted">Thử đổi bộ lọc hoặc từ khóa tìm kiếm để tải lại danh sách {route.title.toLowerCase()}.</p>

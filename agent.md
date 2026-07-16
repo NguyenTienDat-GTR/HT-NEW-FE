@@ -4,6 +4,7 @@
 
 - Before each implementation or test task, reread the full DOCX guide paragraphs and tables, `D:\quan-li-ht-new\BE\project.md`, and this file.
 - For UI tasks, reread `D:\quan-li-ht-new\FE\DESIGN.md`.
+- When creating or changing UI, follow the local UIPro skill from `D:\quan-li-ht-new\FE\.codex\skills\ui-ux-pro-max`: start with its design-system search, synthesize the result with `DESIGN.md`, and keep the output in a professional SaaS/admin style.
 - FE changes, architecture, routes, components, auth client, permission UI, data flow, design tokens, animation, responsive behavior, FE tests, done items, and FE remaining work are recorded here.
 - BE changes are recorded only in `D:\quan-li-ht-new\BE\project.md`.
 - BẮT BUỘC chia nhỏ code theo từng module, feature, component để tái sử dụng; tránh để một file code thủ công quá dài hoặc gom nhiều trách nhiệm không cùng phạm vi.
@@ -176,6 +177,12 @@
 - Dashboard notifications now read `/api/system/notifications`; work queue reads `/api/analytics/work-queue`; analytics filters send `fromDate`, `toDate`, `timeBucket`, and `groupBy`.
 - Nullable edit fields use an explicit clear checkbox that maps to `clearFields`, while empty values continue to mean no change.
 - Verification run in this session: `npm.cmd run typecheck`, `npm.cmd run lint`, `npm.cmd run test`, and `npm.cmd run build` passed.
+
+### SaaS UI optimization rollout 2026-07-17
+
+- UI creation and UI changes must use the local UIPro skill as a design input, then reconcile the output with `FE/DESIGN.md` and the existing Next.js/Tailwind/Phosphor stack.
+- SaaS/admin UI pass refreshed global tokens, app shell, buttons, inputs, resource tables, filters, pagination, detail drawers, forms, dashboard cards, and analytics charts without changing API endpoints, permissions, route flow, query state, or mutation behavior.
+- Verification run in this session: `npm.cmd run typecheck`, `npm.cmd run lint`, `npm.cmd run test`, `npm.cmd run build`, `npm.cmd run test:e2e`, and `git diff --check` passed.
 
 ## Remaining FE work
 

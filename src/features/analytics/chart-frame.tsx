@@ -33,9 +33,9 @@ export function ChartFrame({ title, description, rows, metricKeys, type = "area"
   if (!rows.length || !metricKeys.length) return <ChartEmpty title={title} description={description} />;
 
   return (
-    <Panel ref={ref} className="p-4">
+    <Panel ref={ref} className="p-5">
       <ChartHeader title={title} description={description} />
-      <div className="mt-4 h-[320px]">
+      <div className="mt-4 h-[320px] rounded-[10px] bg-white">
         <ResponsiveContainer height="100%" width="100%">
           {type === "bar" ? (
             <BarChart data={rows}>
@@ -88,7 +88,7 @@ export function ChartFrame({ title, description, rows, metricKeys, type = "area"
 export function ChartHeader({ title, description }: { title: string; description: string }) {
   return (
     <div>
-      <h2 className="text-base font-semibold">{title}</h2>
+      <h2 className="text-base font-semibold text-foreground">{title}</h2>
       <p className="mt-1 text-sm text-muted">{description}</p>
     </div>
   );
@@ -164,7 +164,7 @@ export function ChartDataTable({ rows, metricKeys }: { rows: Record<string, unkn
 }
 
 export function ChartSkeleton() {
-  return <Panel className="h-[420px] p-4 motion-safe:animate-pulse" />;
+  return <Panel className="h-[420px] p-5 motion-safe:animate-pulse" />;
 }
 
 export function ChartEmpty({ title, description, className }: { title: string; description: string; className?: string }) {

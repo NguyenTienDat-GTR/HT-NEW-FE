@@ -42,13 +42,13 @@ export function AnalyticsView() {
   const currentTab = tabs.find(([value]) => value === tab);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <Header eyebrow="analytics" title="Phân tích" subtitle="Các biểu đồ dùng dữ liệu cấu trúc từ backend, có filter ngày, bucket và groupBy thật." />
       <Panel className="p-2">
         <div className="grid gap-2 lg:grid-cols-4">
           {tabs.map(([value, label, description]) => (
             <button
-              className={["rounded-[10px] border p-3 text-left transition-colors", tab === value ? "border-primary bg-primary text-white" : "border-transparent text-foreground hover:bg-surface-1"].join(" ")}
+              className={["cursor-pointer rounded-[10px] border p-3 text-left transition-colors", tab === value ? "border-primary bg-primary text-white shadow-[0_10px_22px_rgb(108_71_255_/_0.18)]" : "border-transparent text-foreground hover:bg-primary-soft hover:text-primary"].join(" ")}
               key={value}
               onClick={() => setTab(value)}
               type="button"
@@ -72,7 +72,7 @@ export function AnalyticsView() {
           </label>
           <label>
             <span className="mb-2 block text-xs font-semibold text-foreground">Bucket</span>
-            <select className="h-11 w-full rounded-[8px] border border-border bg-white px-3 text-sm" value={filters.timeBucket} onChange={(event) => setFilters((current) => ({ ...current, timeBucket: event.target.value }))}>
+            <select className="h-11 w-full rounded-[8px] border border-border bg-white px-3 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-4 focus:ring-[var(--primary-ring)]" value={filters.timeBucket} onChange={(event) => setFilters((current) => ({ ...current, timeBucket: event.target.value }))}>
               <option value="MONTH">MONTH</option>
               <option value="QUARTER">QUARTER</option>
               <option value="YEAR">YEAR</option>
