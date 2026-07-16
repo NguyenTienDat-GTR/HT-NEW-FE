@@ -51,6 +51,7 @@ export function ResourceFormPage({
 
   const visibleFields = (spec?.fields ?? [])
     .filter((field) => (mode === "create" ? !field.editOnly : !field.createOnly))
+    .filter((field) => !(effectiveRoute.kind === "roles" && field.name === "roleCode"))
     .filter((field) => field.visibleWhen?.(mergedValues, mode) ?? true)
     .map((field) => ({
       ...field,

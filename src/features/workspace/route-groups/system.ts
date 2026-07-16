@@ -51,11 +51,32 @@ export const systemRouteGroup: RouteGroup = {
       idField: "roleCode",
       kind: "roles",
       icon: LockKey,
-      columns: ["roleCode", "roleName", "description", "displayOrder", "status"],
+      columns: ["roleCode", "roleName", "displayOrder", "isSystem", "status"],
       permissionPrefixes: ["system.role.read."],
-      actionPermissionPrefixes: ["system.role.create.", "system.role.update.", "system.role.delete."],
+      actionPermissionPrefixes: ["system.role.create.", "system.role.update.", "system.role.toggle."],
+      filters: [
+        {
+          key: "isSystem",
+          label: "Loại vai trò",
+          type: "boolean",
+          options: [
+            { value: "true", label: "Vai trò hệ thống" },
+            { value: "false", label: "Vai trò tự tạo" },
+          ],
+        },
+        {
+          key: "status",
+          label: "Trạng thái",
+          type: "select",
+          options: [
+            { value: "all", label: "Tất cả" },
+            { value: "active", label: "Đang hoạt động" },
+            { value: "inactive", label: "Tạm ngưng" },
+          ],
+        },
+      ],
       primaryActionLabel: "Thêm vai trò",
-      filterLabels: ["Trạng thái"],
+      filterLabels: ["Loại vai trò", "Trạng thái"],
     }),
     route({
       path: "/system/permissions",

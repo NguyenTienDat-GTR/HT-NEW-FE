@@ -110,9 +110,9 @@ export const systemFormSpecs: ResourceFormSpec[] = [
       { name: "description", label: "Mô tả", type: "textarea", clearable: true, section: "Thông tin vai trò" },
       { name: "displayOrder", label: "Thứ tự hiển thị", type: "number", section: "Hiển thị" },
     ],
-    mapSubmit: (values, mode) => {
+    mapSubmit: (values) => {
       const payload = compactPayload(values);
-      if (mode === "edit") delete payload.roleCode;
+      delete payload.roleCode;
       return payload;
     },
   },

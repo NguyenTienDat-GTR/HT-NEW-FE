@@ -66,6 +66,7 @@ export function ResourceListPage({ route, moduleLabel, moduleDescription }: Reso
   const toggleId = searchParams.get("toggle");
   const deleteId = searchParams.get("delete");
   const approveId = searchParams.get("approve");
+  const deleteDialogOpen = Boolean(deleteId && effectiveRoute.actions?.delete);
 
   const closeQueryDialog = () => router.push(effectiveRoute.path as Route);
   const actionMutation = useMutation({
@@ -156,7 +157,7 @@ export function ResourceListPage({ route, moduleLabel, moduleDescription }: Reso
         loading={actionMutation.isPending}
         onClose={closeQueryDialog}
         onConfirm={() => deleteId && actionMutation.mutate({ action: "delete", id: deleteId })}
-        open={Boolean(deleteId)}
+        open={deleteDialogOpen}
         title="Xóa bản ghi"
       />
       <ApprovalDialog

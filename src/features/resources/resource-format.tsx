@@ -3,25 +3,33 @@ import { cn, viNumber } from "@/lib/utils";
 
 export const columnLabels: Record<string, string> = {
   action: "Hành động",
-  actionCode: "Action",
-  approvalStatus: "Duyệt",
+  actionCode: "Thao tác",
+  approvalReason: "Lý do duyệt",
+  approvalReasonRequired: "Cần lý do duyệt",
+  approvalStatus: "Trạng thái duyệt",
   assignedAt: "Ngày gán",
-  certificateApprovalStatus: "Chứng nhận",
+  assignedBy: "Người gán",
+  authProvider: "Nguồn đăng nhập",
+  certificateApprovalStatus: "Duyệt chứng nhận",
   certificateCode: "Mã chứng nhận",
   chaplain: "Tuyên úy",
   chapterName: "Xứ đoàn",
   code: "Mã",
+  conditions: "Điều kiện",
   courseCode: "Mã khóa",
   courseName: "Khóa",
   courseType: "Loại khóa",
   createdAt: "Ngày tạo",
+  createdBy: "Người tạo",
+  deaneryApprovalStatus: "Duyệt giáo hạt",
   deaneryId: "Giáo hạt",
   deaneryName: "Giáo hạt",
   description: "Mô tả",
+  dioceseApprovalStatus: "Duyệt giáo phận",
   dioceseId: "Giáo phận",
   dioceseName: "Giáo phận",
   displayOrder: "Thứ tự",
-  effect: "Effect",
+  effect: "Hiệu lực",
   email: "Email",
   endDate: "Ngày kết thúc",
   eventType: "Sự kiện",
@@ -33,9 +41,10 @@ export const columnLabels: Record<string, string> = {
   hostYear: "Năm",
   imageUrl: "Ảnh",
   ipAddress: "IP",
-  isPrimary: "Chính",
-  isSystem: "Hệ thống",
+  isPrimary: "Vai trò chính",
+  isSystem: "Vai trò hệ thống",
   leaderFullName: "Huynh trưởng",
+  leaderId: "Huynh trưởng",
   leaderLevel: "Cấp HT",
   location: "Địa điểm",
   locked: "Khóa",
@@ -45,6 +54,7 @@ export const columnLabels: Record<string, string> = {
   name: "Tên",
   parishId: "Giáo xứ",
   parishName: "Giáo xứ",
+  participationStatus: "Trạng thái tham dự",
   passed: "Kết quả",
   passingScore: "Điểm đạt",
   permissionCode: "Mã quyền",
@@ -53,8 +63,9 @@ export const columnLabels: Record<string, string> = {
   positionCode: "Mã chức vụ",
   positionName: "Chức vụ",
   positionType: "Cấp áp dụng",
-  primaryRoleCode: "Vai trò",
-  primaryRoleName: "Vai trò",
+  primaryRoleCode: "Vai trò chính",
+  primaryRoleName: "Vai trò chính",
+  providerId: "Mã nhà cung cấp",
   readAt: "Đã đọc",
   reason: "Lý do",
   registrationEndAt: "Hết đăng ký",
@@ -62,21 +73,25 @@ export const columnLabels: Record<string, string> = {
   requiredMinAge: "Tuổi tối thiểu",
   requirementCode: "Mã điều kiện",
   requirementName: "Điều kiện",
-  resourceCode: "Resource",
+  resourceCode: "Đối tượng",
   resourceType: "Đối tượng",
+  result: "Kết quả",
   roleCode: "Mã vai trò",
   roleCodes: "Mã vai trò",
-  roleNames: "Vai trò",
   roleName: "Vai trò",
+  roleNames: "Vai trò",
+  scopeCode: "Phạm vi",
   secondaryRoleNames: "Vai trò phụ",
-  scopeCode: "Scope",
   startDate: "Ngày bắt đầu",
   status: "Trạng thái",
   title: "Tiêu đề",
   totalScore: "Tổng điểm",
   unionName: "Liên đoàn",
   unitId: "Đơn vị",
+  unitName: "Đơn vị",
   unitType: "Loại đơn vị",
+  updatedAt: "Ngày cập nhật",
+  updatedBy: "Người cập nhật",
   username: "Tài khoản",
 };
 
@@ -92,7 +107,15 @@ const levelLabels: Record<string, string> = {
   HLV_III: "HLV cấp III",
 };
 
-export function ResourceCell({ column, row, value }: { column: string; row: Record<string, unknown>; value: unknown }) {
+type ResourceCellProps = {
+  column: string;
+  row: Record<string, unknown>;
+  value: unknown;
+  displayMode?: "table" | "detail";
+};
+
+export function ResourceCell({ column, row, value, displayMode = "table" }: ResourceCellProps) {
+  const full = displayMode === "detail";
   if (column === "imageUrl") return <Avatar name={String(row.fullName ?? row.leaderFullName ?? row.username ?? "")} src={value} />;
   if (column === "status" && typeof value === "boolean") return <StatusBadge active={value} />;
   if (column === "effect" && typeof value === "string") return <EffectBadge effect={value} />;
@@ -103,12 +126,16 @@ export function ResourceCell({ column, row, value }: { column: string; row: Reco
   if (Array.isArray(value)) return <ArrayValue values={value} />;
   if (typeof value === "string" || typeof value === "number") {
     const relatedValue = resolveRelatedDisplayValue(column, row);
-    if (relatedValue !== undefined) return <span className="line-clamp-1 max-w-[260px]">{relatedValue}</span>;
+    if (relatedValue !== undefined) return <TextValue full={full}>{relatedValue}</TextValue>;
   }
   if (typeof value === "boolean") return <Badge tone={value ? "success" : "neutral"}>{value ? "Có" : "Không"}</Badge>;
   if (value === null || value === undefined || value === "") return <span className="text-muted">Chưa có</span>;
   if (typeof value === "number") return viNumber.format(value);
-  return <span className="line-clamp-1 max-w-[260px]">{String(value)}</span>;
+  return <TextValue full={full}>{String(value)}</TextValue>;
+}
+
+function TextValue({ children, full }: { children: React.ReactNode; full: boolean }) {
+  return <span className={full ? "whitespace-pre-wrap break-words" : "line-clamp-1 max-w-[260px]"}>{children}</span>;
 }
 
 function ArrayValue({ values }: { values: unknown[] }) {
@@ -148,7 +175,7 @@ function Avatar({ name, src }: { name: string; src: unknown }) {
     );
   }
   return (
-    <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[linear-gradient(135deg,#6c47ff,#8f7cff)] text-sm font-semibold text-white shadow-[0_10px_24px_rgb(108_71_255_/_0.24)]">
+    <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-primary text-sm font-semibold text-white shadow-[0_10px_24px_rgb(108_71_255_/_0.24)]">
       {initial}
     </span>
   );
@@ -159,7 +186,7 @@ function StatusBadge({ active }: { active: boolean }) {
 }
 
 function EffectBadge({ effect }: { effect: string }) {
-  return <Badge tone={effect === "DENY" ? "danger" : "success"}>{effect}</Badge>;
+  return <Badge tone={effect === "DENY" ? "danger" : "success"}>{effect === "DENY" ? "Từ chối" : "Cho phép"}</Badge>;
 }
 
 function WorkflowBadge({ value }: { value: string }) {
@@ -182,7 +209,7 @@ function Badge({ children, tone = "neutral" }: { children: React.ReactNode; tone
   return (
     <span
       className={cn(
-        "inline-flex h-7 items-center rounded-[7px] border px-2.5 text-xs font-semibold",
+        "inline-flex min-h-7 items-center rounded-[7px] border px-2.5 py-1 text-xs font-semibold",
         tone === "neutral" && "border-border bg-surface-1 text-muted",
         tone === "success" && "border-success/25 bg-success/10 text-success",
         tone === "danger" && "border-danger/25 bg-danger/10 text-danger",

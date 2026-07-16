@@ -48,7 +48,7 @@ export function resolveRouteForUser(route: RouteConfig, user: AuthUser | null): 
       return {
         ...route,
         subtitle: "Vai trò hệ thống và vai trò custom do super-admin tạo.",
-        columns: ["roleCode", "roleName", "description", "displayOrder", "isSystem", "status"],
+        columns: ["roleCode", "roleName", "displayOrder", "isSystem", "status"],
       };
     case "role-permissions":
       return {
