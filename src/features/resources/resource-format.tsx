@@ -54,6 +54,7 @@ export const columnLabels: Record<string, string> = {
   positionName: "Chức vụ",
   positionType: "Cấp áp dụng",
   primaryRoleCode: "Vai trò",
+  primaryRoleName: "Vai trò",
   readAt: "Đã đọc",
   reason: "Lý do",
   registrationEndAt: "Hết đăng ký",
@@ -64,7 +65,10 @@ export const columnLabels: Record<string, string> = {
   resourceCode: "Resource",
   resourceType: "Đối tượng",
   roleCode: "Mã vai trò",
+  roleCodes: "Mã vai trò",
+  roleNames: "Vai trò",
   roleName: "Vai trò",
+  secondaryRoleNames: "Vai trò phụ",
   scopeCode: "Scope",
   startDate: "Ngày bắt đầu",
   status: "Trạng thái",
@@ -96,6 +100,7 @@ export function ResourceCell({ column, row, value }: { column: string; row: Reco
   if (column === "passed" && typeof value === "boolean") return <Badge tone={value ? "success" : "danger"}>{value ? "Đạt" : "Chưa đạt"}</Badge>;
   if (column === "locked" && typeof value === "boolean") return <Badge tone={value ? "warning" : "neutral"}>{value ? "Đã khóa" : "Có thể sửa"}</Badge>;
   if (column.toLowerCase().includes("status") && typeof value === "string") return <WorkflowBadge value={value} />;
+  if (Array.isArray(value)) return <ArrayValue values={value} />;
   if (typeof value === "string" || typeof value === "number") {
     const relatedValue = resolveRelatedDisplayValue(column, row);
     if (relatedValue !== undefined) return <span className="line-clamp-1 max-w-[260px]">{relatedValue}</span>;
@@ -104,6 +109,18 @@ export function ResourceCell({ column, row, value }: { column: string; row: Reco
   if (value === null || value === undefined || value === "") return <span className="text-muted">Chưa có</span>;
   if (typeof value === "number") return viNumber.format(value);
   return <span className="line-clamp-1 max-w-[260px]">{String(value)}</span>;
+}
+
+function ArrayValue({ values }: { values: unknown[] }) {
+  const labels = values.map((value) => String(value)).filter((value) => value.trim());
+  if (!labels.length) return <span className="text-muted">Không có</span>;
+  return (
+    <span className="flex flex-wrap gap-1.5">
+      {labels.map((label) => (
+        <Badge key={label}>{label}</Badge>
+      ))}
+    </span>
+  );
 }
 
 function resolveRelatedDisplayValue(column: string, row: Record<string, unknown>) {

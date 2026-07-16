@@ -15,11 +15,31 @@ export const systemRouteGroup: RouteGroup = {
       idField: "username",
       kind: "accounts",
       icon: ShieldCheck,
-      columns: ["username", "leaderFullName", "primaryRoleCode", "dioceseId", "deaneryId", "parishId", "status"],
+      columns: ["username", "primaryRoleName", "deaneryName", "parishName", "status"],
       permissionPrefixes: ["system.account.manage."],
       actionPermissionPrefixes: ["system.account.manage."],
       primaryActionLabel: "Tạo tài khoản",
-      filterLabels: ["Vai trò", "Scope", "Trạng thái"],
+      filterLabels: ["Vai trò", "Trạng thái"],
+      filters: [
+        {
+          key: "roleCode",
+          label: "Vai trò",
+          type: "select",
+          optionsEndpoint: "/system/roles",
+          optionValue: "roleCode",
+          optionLabel: "roleName",
+        },
+        {
+          key: "status",
+          label: "Trạng thái",
+          type: "select",
+          options: [
+            { value: "all", label: "Tất cả" },
+            { value: "active", label: "Đang hoạt động" },
+            { value: "inactive", label: "Tạm ngưng" },
+          ],
+        },
+      ],
       workflowHint: "FE không gửi username/password/avatarUrl; backend tự sinh credential.",
     }),
     route({

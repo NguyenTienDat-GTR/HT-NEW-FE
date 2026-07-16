@@ -112,6 +112,7 @@ export function ResourceListPage({ route, moduleLabel, moduleDescription }: Reso
           status={queryState.status}
           updateFilter={queryState.updateFilter}
           updateParam={queryState.updateParam}
+          resetFilters={queryState.resetFilters}
         />
         <ResourceTable
           columns={effectiveRoute.columns}

@@ -15,7 +15,7 @@ export function DetailDrawer({ id, onClose, route }: { id?: string | null; onClo
     queryFn: () => apiFetch<Record<string, unknown>>(`${route.endpoint}/${encodeURIComponent(String(id))}`),
   });
   const row = query.data;
-  const keys = row ? Object.keys(row).filter((key) => shouldRenderKey(row, key)) : route.columns;
+  const keys = row ? detailKeys(route, row) : route.columns;
 
   return (
     <Dialog.Root open={Boolean(id)} onOpenChange={(open) => (!open ? onClose() : undefined)}>
@@ -40,7 +40,7 @@ export function DetailDrawer({ id, onClose, route }: { id?: string | null; onClo
               <dl className="space-y-3">
                 {keys.map((key) => (
                   <div className="rounded-[10px] border border-border p-3" key={key}>
-                    <dt className="text-xs font-semibold uppercase tracking-[0.04em] text-muted">{columnLabels[key] ?? key}</dt>
+                    <dt className="text-xs font-semibold uppercase tracking-[0.04em] text-muted">{detailLabel(route, key)}</dt>
                     <dd className="mt-1 break-words text-sm text-foreground">
                       <ResourceCell column={key} row={row} value={row[key]} />
                     </dd>
@@ -55,8 +55,23 @@ export function DetailDrawer({ id, onClose, route }: { id?: string | null; onClo
   );
 }
 
-function shouldRenderKey(row: Record<string, unknown>, key: string) {
+function detailKeys(route: RouteConfig, row: Record<string, unknown>) {
+  if (route.kind === "accounts") {
+    return ["username", "primaryRoleName", "secondaryRoleNames", "dioceseName", "authProvider", "providerId", "status"].filter((key) => shouldRenderKey(route, row, key));
+  }
+  return Object.keys(row).filter((key) => shouldRenderKey(route, row, key));
+}
+
+function detailLabel(route: RouteConfig, key: string) {
+  if (route.kind === "accounts" && key === "primaryRoleName") return "Vai trò chính";
+  if (route.kind === "accounts" && key === "secondaryRoleNames") return "Vai trò phụ";
+  return columnLabels[key] ?? key;
+}
+
+function shouldRenderKey(route: RouteConfig, row: Record<string, unknown>, key: string) {
   if (row[key] === undefined) return false;
+  if (route.kind === "accounts" && ["leaderId", "leaderFullName", "primaryRoleCode", "roleCodes", "roleNames", "deaneryId", "deaneryName", "parishId", "parishName"].includes(key)) return false;
+  if (route.kind === "accounts" && key === "secondaryRoleNames" && Array.isArray(row[key]) && row[key].length === 0) return false;
   if (key === "dioceseId" && typeof row.dioceseName === "string") return false;
   if (key === "deaneryId" && typeof row.deaneryName === "string") return false;
   if (key === "parishId" && typeof row.parishName === "string") return false;

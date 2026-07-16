@@ -1,9 +1,17 @@
 import type { AuthUser } from "@/lib/auth/auth-store";
-import { isSuperAdmin } from "@/lib/auth/permissions";
+import { hasPermissionPrefix, isSuperAdmin } from "@/lib/auth/permissions";
 import type { RouteConfig } from "./routes";
+import type { RouteFilterConfig } from "./route-config";
 
 export function resolveRouteForUser(route: RouteConfig, user: AuthUser | null): RouteConfig {
-  if (!isSuperAdmin(user)) return route;
+  if (!isSuperAdmin(user)) {
+    if (route.kind !== "accounts") return route;
+    return {
+      ...route,
+      filterLabels: ["Vai trò", "Scope", "Trạng thái"],
+      filters: accountFiltersForUser(user),
+    };
+  }
 
   switch (route.kind) {
     case "accounts":
@@ -11,7 +19,7 @@ export function resolveRouteForUser(route: RouteConfig, user: AuthUser | null): 
         ...route,
         title: "Tài khoản",
         subtitle: "SUPER_ADMIN chỉ quản lý tài khoản SUPER_ADMIN và ADMIN_DIOCESE.",
-        columns: ["username", "leaderFullName", "primaryRoleCode", "dioceseName", "status"],
+        columns: ["username", "primaryRoleName", "dioceseName", "status"],
         filterLabels: ["Vai trò", "Giáo phận", "Trạng thái"],
         filters: [
           {
@@ -25,7 +33,7 @@ export function resolveRouteForUser(route: RouteConfig, user: AuthUser | null): 
             ],
           },
           {
-            key: "primaryRoleCode",
+            key: "roleCode",
             label: "Vai trò",
             type: "select",
             options: [
@@ -33,7 +41,7 @@ export function resolveRouteForUser(route: RouteConfig, user: AuthUser | null): 
               { value: "ADMIN_DIOCESE", label: "Admin giáo phận" },
             ],
           },
-          { key: "diocese.id", label: "Giáo phận", type: "select", optionsEndpoint: "/dioceses", optionValue: "id", optionLabel: "name" },
+          { key: "dioceseId", label: "Giáo phận", type: "select", optionsEndpoint: "/dioceses", optionValue: "id", optionLabel: "name" },
         ],
       };
     case "roles":
@@ -77,4 +85,53 @@ export function resolveRouteForUser(route: RouteConfig, user: AuthUser | null): 
     default:
       return route;
   }
+}
+
+function accountFiltersForUser(user: AuthUser | null): RouteFilterConfig[] {
+  const filters: RouteFilterConfig[] = [roleFilter()];
+  if (hasPermissionPrefix(user, "system.account.manage.all") || hasPermissionPrefix(user, "system.account.manage.diocese")) {
+    filters.push(dioceseFilter(), deaneryFilter(), parishFilter());
+  } else if (hasPermissionPrefix(user, "system.account.manage.deanery")) {
+    filters.push(deaneryFilter(), parishFilter());
+  } else if (hasPermissionPrefix(user, "system.account.manage.parish")) {
+    filters.push(parishFilter());
+  }
+  filters.push(statusFilter());
+  return filters;
+}
+
+function roleFilter(): RouteFilterConfig {
+  return {
+    key: "roleCode",
+    label: "Vai trò",
+    type: "select",
+    optionsEndpoint: "/system/roles",
+    optionValue: "roleCode",
+    optionLabel: "roleName",
+  };
+}
+
+function dioceseFilter(): RouteFilterConfig {
+  return { key: "dioceseId", label: "Giáo phận", type: "select", optionsEndpoint: "/dioceses", optionValue: "id", optionLabel: "name" };
+}
+
+function deaneryFilter(): RouteFilterConfig {
+  return { key: "deaneryId", label: "Giáo hạt", type: "select", optionsEndpoint: "/deaneries", optionValue: "id", optionLabel: "name" };
+}
+
+function parishFilter(): RouteFilterConfig {
+  return { key: "parishId", label: "Giáo xứ", type: "select", optionsEndpoint: "/parishes", optionValue: "id", optionLabel: "name" };
+}
+
+function statusFilter(): RouteFilterConfig {
+  return {
+    key: "status",
+    label: "Trạng thái",
+    type: "select",
+    options: [
+      { value: "all", label: "Tất cả" },
+      { value: "active", label: "Đang hoạt động" },
+      { value: "inactive", label: "Tạm ngưng" },
+    ],
+  };
 }
