@@ -32,12 +32,12 @@ export function ResourceTable({
 }) {
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[1040px] border-separate border-spacing-0 text-left text-sm">
+      <table className="w-full min-w-[1040px] border-separate border-spacing-0 text-left text-xs">
         <thead>
           <tr className="bg-surface-1/80">
             {columns.map((column) => (
-              <th className="h-13 border-b border-border px-4 font-semibold text-foreground" key={column}>
-                <button className="inline-flex h-10 items-center gap-1 rounded-[8px] px-1 hover:text-primary" onClick={() => sort(column)} type="button">
+              <th className="h-10 border-b border-border px-3 font-semibold text-foreground" key={column}>
+                <button className="inline-flex h-8 items-center gap-1 rounded-[8px] px-1 hover:text-primary" onClick={() => sort(column)} type="button">
                   {columnLabels[column] ?? column}
                   {sortBy === column ? (
                     <span className="inline-flex items-center gap-0.5 text-xs text-primary">
@@ -48,7 +48,7 @@ export function ResourceTable({
                 </button>
               </th>
             ))}
-            <th className="h-13 border-b border-border px-4 text-right font-semibold text-foreground">Thao tác</th>
+            <th className="h-10 border-b border-border px-3 text-right font-semibold text-foreground">Thao tác</th>
           </tr>
         </thead>
         <tbody>{isLoading ? <ResourceTableSkeleton columns={columns} size={size} /> : <ResourceRows columns={columns} route={route} rows={rows} />}</tbody>
@@ -61,12 +61,12 @@ function ResourceTableSkeleton({ columns, size }: { columns: string[]; size: Res
   return Array.from({ length: size }).map((_, rowIndex) => (
     <tr key={rowIndex}>
       {columns.map((column) => (
-        <td className="h-16 border-b border-surface-2 px-4" key={column}>
-          <span className="block h-4 w-28 rounded bg-surface-2 motion-safe:animate-pulse" />
+        <td className="h-12 border-b border-surface-2 px-3" key={column}>
+          <span className="block h-3 w-24 rounded bg-surface-2 motion-safe:animate-pulse" />
         </td>
       ))}
-      <td className="h-16 border-b border-surface-2 px-4 text-right">
-        <span className="ml-auto block h-10 w-24 rounded bg-surface-2 motion-safe:animate-pulse" />
+      <td className="h-12 border-b border-surface-2 px-3 text-right">
+        <span className="ml-auto block h-8 w-20 rounded bg-surface-2 motion-safe:animate-pulse" />
       </td>
     </tr>
   ));
@@ -76,11 +76,11 @@ function ResourceRows({ columns, route, rows }: { columns: string[]; route: Rout
   return rows.map((row, rowIndex) => (
     <tr className="group bg-white transition-colors hover:bg-primary/4" key={String(row.id ?? row.username ?? row.certificateCode ?? rowIndex)}>
       {columns.map((column) => (
-        <td className="h-16 border-b border-surface-2 px-4 align-middle" key={column}>
+        <td className="h-12 border-b border-surface-2 px-3 align-middle" key={column}>
           <ResourceCell column={column} row={row} value={row[column]} />
         </td>
       ))}
-      <td className="h-16 border-b border-surface-2 px-4 text-right">
+      <td className="h-12 border-b border-surface-2 px-3 text-right">
         <RowActions route={route} row={row} />
       </td>
     </tr>
@@ -95,7 +95,7 @@ function RowActions({ route, row }: { route: RouteConfig; row: Record<string, un
   const editHref = fillRoute(route.editPath, { id });
   const scoreHref = fillRoute(route.actions?.score?.route, { id });
   const canView = canUseAction(user, route.actions?.view);
-  const canEdit = canUseAction(user, route.actions?.edit) && canEditRow(route, user);
+  const canEdit = canUseAction(user, route.actions?.edit) && canEditRow(route, row, user);
   const canToggle = canUseAction(user, route.actions?.toggle) && canToggleRow(route, row, user);
   const canDelete = canUseAction(user, route.actions?.delete) && canDeleteRow(route, row, user);
   const canScore = canUseAction(user, route.actions?.score);
@@ -104,28 +104,28 @@ function RowActions({ route, row }: { route: RouteConfig; row: Record<string, un
   return (
     <div className="inline-flex items-center gap-1">
       {canView ? (
-        <Button asChild aria-label="Xem chi tiết" size="icon" variant="icon">
+        <Button asChild aria-label="Xem chi tiết" className="h-8 min-w-8 rounded-[8px]" size="icon" variant="icon">
           <Link href={`${route.path}?detail=${encodeURIComponent(id)}` as Route}>
             <Eye size={16} />
           </Link>
         </Button>
       ) : null}
       {canEdit && editHref ? (
-        <Button asChild aria-label="Sửa" size="icon" variant="icon">
+        <Button asChild aria-label="Sửa" className="h-8 min-w-8 rounded-[8px]" size="icon" variant="icon">
           <Link href={editHref as Route}>
             <PencilSimple size={16} />
           </Link>
         </Button>
       ) : null}
       {canScore && scoreHref ? (
-        <Button asChild aria-label="Chấm điểm" size="icon" variant="icon">
+        <Button asChild aria-label="Chấm điểm" className="h-8 min-w-8 rounded-[8px]" size="icon" variant="icon">
           <Link href={scoreHref as Route}>
             <PencilSimple size={16} />
           </Link>
         </Button>
       ) : null}
       {canApprove ? (
-        <Button asChild aria-label="Duyệt" size="icon" variant="icon">
+        <Button asChild aria-label="Duyệt" className="h-8 min-w-8 rounded-[8px]" size="icon" variant="icon">
           <Link href={`${route.path}?approve=${encodeURIComponent(id)}` as Route}>
             <CheckCircle size={16} />
           </Link>
@@ -133,7 +133,7 @@ function RowActions({ route, row }: { route: RouteConfig; row: Record<string, un
       ) : null}
       {canToggle ? <StatusSwitch active={row.status === true} href={`${route.path}?toggle=${encodeURIComponent(id)}` as Route} /> : null}
       {canDelete ? (
-        <Button asChild aria-label="Xóa" size="icon" variant="ghost">
+        <Button asChild aria-label="Xóa" className="h-8 min-w-8 rounded-[8px]" size="icon" variant="ghost">
           <Link href={`${route.path}?delete=${encodeURIComponent(id)}` as Route}>
             <Trash size={16} />
           </Link>
@@ -143,21 +143,32 @@ function RowActions({ route, row }: { route: RouteConfig; row: Record<string, un
   );
 }
 
-function canEditRow(route: RouteConfig, user: AuthUser | null) {
+function canEditRow(route: RouteConfig, row: Record<string, unknown>, user: AuthUser | null) {
+  if (route.kind === "accounts") return false;
   if (!isSuperAdmin(user)) return true;
   return route.kind !== "dioceses" && route.kind !== "deaneries" && route.kind !== "parishes";
 }
 
 function canToggleRow(route: RouteConfig, row: Record<string, unknown>, user: AuthUser | null) {
   if (route.kind === "roles" && row.isSystem === true) return false;
+  if (route.kind === "accounts") return !isOwnAccount(row, user) && !rowHasPrimaryRole(row, "SUPER_ADMIN");
   if (!isSuperAdmin(user)) return true;
   return route.kind === "dioceses";
 }
 
 function canDeleteRow(route: RouteConfig, row: Record<string, unknown>, user: AuthUser | null) {
+  if (route.kind === "accounts") return false;
   if (route.kind === "roles" && row.isSystem === true) return false;
   if (!isSuperAdmin(user)) return true;
   return route.kind !== "dioceses" && route.kind !== "deaneries" && route.kind !== "parishes";
+}
+
+function isOwnAccount(row: Record<string, unknown>, user: AuthUser | null) {
+  return typeof row.username === "string" && row.username === user?.username;
+}
+
+function rowHasPrimaryRole(row: Record<string, unknown>, roleCode: string) {
+  return row.primaryRoleCode === roleCode;
 }
 
 function StatusSwitch({ active, href }: { active: boolean; href: Route }) {

@@ -210,3 +210,27 @@
 - `/auth/me` now reloads the effective principal from the backend database, so sidebar/menu visibility follows current RBAC rows instead of stale permission claims embedded in an older token snapshot.
 - Real-world admin-diocese menu gap root cause: a direct account-permission `DENY` on `system.account_role.assign.diocese` overrides the role-level `ALLOW`, so the sidebar hides `Gán vai trò` even when `role_permission` looks correct. The backend now removes stale denies for required admin-unit assignment permissions and rejects recreating them.
 - Re-enabling a role does not recreate its permission matrix. If a custom role like `LD_TRUONG` has zero `role_permission` rows, users assigned to that role still resolve zero effective permissions after login and will not regain screen access until the role is granted permissions again.
+
+### SUPER_ADMIN account filter drawer correction 2026-07-16
+
+- Branch `feature/super-admin-account-filter-drawer` starts from up-to-date `origin/main`.
+- Resource list filters now collapse into a shared `Bộ lọc` drawer across management screens; search remains visible, active filter count is shown on the button, and reset clears status/filter params together.
+- Status selects now rely on the explicit `{ value: "all", label: "Tất cả" }` option and no longer render the duplicate empty-value "Tất cả" row.
+- Account tables no longer show the `leaderFullName` column. SUPER_ADMIN account list now shows username, primary role name, diocese name, and status; the normal account list shows username, primary role name, deanery name, parish name, and status.
+- Account row actions no longer expose delete. Accounts with toggle permission use the status switch action instead, including SUPER_ADMIN account management.
+- Account detail drawer hides leader/deanery/parish implementation ids and role code fields. It shows `Vai trò chính` from `primaryRoleName` and `Vai trò phụ` from `secondaryRoleNames`.
+- Account edit is no longer exposed by the account management UI. Create forms omit hidden role-dependent fields from payloads, so switching to `SUPER_ADMIN` does not keep stale leader/diocese values. SUPER_ADMIN accounts no longer show or submit `dioceseId`.
+- Verification run in this session: `npm.cmd run typecheck`, `npm.cmd run lint`, `npm.cmd run test`, and `npm.cmd run build` passed.
+
+### Account action and filter follow-up 2026-07-16
+
+- Account row actions now hide the toggle switch for the current logged-in username for every role.
+- Account rows with `primaryRoleCode=SUPER_ADMIN` no longer show edit or toggle actions; direct edit URLs render a blocked state instead of the mutation form.
+- SUPER_ADMIN account filters now submit response-safe keys `roleCode` and `dioceseId` inside `filters` JSON to avoid invalid account-list filter requests.
+- SUPER_ADMIN account create form no longer exposes `leaderId` for `ADMIN_DIOCESE`; ADMIN_DIOCESE create now uses only role, diocese, and credential email.
+- Account create forms use a compact account layout. SUPER_ADMIN create keeps the single `roleCode` contract for `SUPER_ADMIN`/`ADMIN_DIOCESE`; normal scoped admin create uses `roleCodes` plus `primaryRoleCode`.
+- Normal scoped admin account create uses `/leaders/account-candidates` so the leader dropdown only shows leaders in scope without an existing account. The leader selector is searchable and displays leader full name plus parish name.
+- Normal scoped admin account create allows multiple roles but requires one primary role. The primary role is selected by a radio inside each checked role item; there is no separate primary-role dropdown.
+- Account list filters are permission/scope-aware: `manage.all` and `manage.diocese` show diocese/deanery/parish filters, `manage.deanery` shows deanery/parish, and `manage.parish` shows parish. The backend accepts `roleCode`, `dioceseId`, `deaneryId`, and `parishId` filter keys.
+- Generic management tables use a compact row density: smaller table text, shorter header/body rows, tighter padding, and smaller row action icon buttons.
+- Verification run in this session: `npm.cmd run typecheck`, `npm.cmd run lint`, `npm.cmd run test`, and `npm.cmd run build` passed.

@@ -11,8 +11,8 @@ export const systemFormSpecs: ResourceFormSpec[] = [
     kind: "accounts",
     actionType: "create",
     superAdminOnly: true,
-    createTitle: "Thêm tài khoản",
-    description: "SUPER_ADMIN tạo SUPER_ADMIN bằng email hoặc tạo ADMIN_DIOCESE theo giáo phận.",
+    createTitle: "Tạo tài khoản",
+    description: "Chọn vai trò, phạm vi quản lý và email nhận thông tin đăng nhập.",
     fields: [
       {
         name: "roleCode",
@@ -20,19 +20,8 @@ export const systemFormSpecs: ResourceFormSpec[] = [
         type: "select",
         required: true,
         options: superAdminAccountRoleOptions,
-        readOnlyOnEdit: true,
-        section: "Vai trò và phạm vi",
-      },
-      {
-        name: "leaderId",
-        label: "Huynh trưởng liên kết",
-        type: "select",
-        optionsEndpoint: "/leaders",
-        optionValue: "id",
-        optionLabel: "fullName",
-        clearable: true,
-        visibleWhen: (values) => values.roleCode === "ADMIN_DIOCESE",
-        section: "Vai trò và phạm vi",
+        createOnly: true,
+        section: "Thông tin tài khoản",
       },
       {
         name: "dioceseId",
@@ -44,15 +33,15 @@ export const systemFormSpecs: ResourceFormSpec[] = [
         clearable: true,
         visibleWhen: (values) => values.roleCode === "ADMIN_DIOCESE",
         requiredWhen: (values) => values.roleCode === "ADMIN_DIOCESE",
-        section: "Vai trò và phạm vi",
+        section: "Thông tin tài khoản",
       },
       {
         name: "credentialEmail",
         label: "Email nhận thông tin đăng nhập",
         type: "email",
         createOnly: true,
-        requiredWhen: (values) => values.roleCode === "SUPER_ADMIN" || (values.roleCode === "ADMIN_DIOCESE" && !values.leaderId),
-        section: "Thông tin gửi thông báo",
+        requiredWhen: (values) => values.roleCode === "SUPER_ADMIN" || values.roleCode === "ADMIN_DIOCESE",
+        section: "Thông tin tài khoản",
       },
     ],
     mapSubmit: (values) => {
@@ -66,49 +55,47 @@ export const systemFormSpecs: ResourceFormSpec[] = [
   },
   {
     kind: "accounts",
-    createTitle: "Thêm tài khoản",
-    editTitle: "Chỉnh sửa tài khoản",
-    description: "Tài khoản hệ thống với scope theo vai trò và hồ sơ liên kết.",
+    createTitle: "Tạo tài khoản",
+    description: "Chọn huynh trưởng liên kết, các vai trò được gán và một vai trò chính.",
     fields: [
-      {
-        name: "roleCode",
-        label: "Vai trò",
-        type: "select",
-        required: true,
-        optionsEndpoint: "/system/roles",
-        optionValue: "roleCode",
-        optionLabel: "roleName",
-        readOnlyOnEdit: true,
-        section: "Vai trò và phạm vi",
-      },
       {
         name: "leaderId",
         label: "Huynh trưởng liên kết",
         type: "select",
-        optionsEndpoint: "/leaders",
+        optionsEndpoint: "/leaders/account-candidates",
         optionValue: "id",
         optionLabel: "fullName",
-        clearable: true,
-        section: "Vai trò và phạm vi",
+        optionLabelFields: ["fullName", "parishName"],
+        searchable: true,
+        required: true,
+        section: "Thông tin tài khoản",
       },
       {
-        name: "dioceseId",
-        label: "Giáo phận trực thuộc",
-        type: "select",
-        optionsEndpoint: "/dioceses",
-        optionValue: "id",
-        optionLabel: "name",
-        clearable: true,
-        section: "Vai trò và phạm vi",
+        name: "roleCodes",
+        label: "Vai trò",
+        type: "checkbox-list",
+        required: true,
+        optionsEndpoint: "/system/roles",
+        optionValue: "roleCode",
+        optionLabel: "roleName",
+        excludeOptionValues: ["SUPER_ADMIN", "ADMIN_DIOCESE"],
+        primaryFieldName: "primaryRoleCode",
+        primaryLabel: "Chính",
+        createOnly: true,
+        helper: "Tick vai trò cần gán rồi chọn radio Chính trên một vai trò đã tick.",
+        section: "Thông tin tài khoản",
       },
-      { name: "credentialEmail", label: "Email nhận thông tin đăng nhập", type: "email", createOnly: true, section: "Thông tin gửi thông báo" },
     ],
-    mapSubmit: (values, mode) => {
+    mapSubmit: (values) => {
       const payload = compactPayload(values);
-      if (mode === "edit") {
-        delete payload.roleCode;
-        delete payload.credentialEmail;
+      const roleCodes = Array.isArray(values.roleCodes) ? values.roleCodes.map(String).filter(Boolean) : [];
+      if (roleCodes.length) {
+        payload.roleCodes = roleCodes;
+        payload.primaryRoleCode = roleCodes.includes(String(values.primaryRoleCode ?? "")) ? values.primaryRoleCode : roleCodes[0];
       }
+      delete payload.roleCode;
+      delete payload.dioceseId;
+      delete payload.credentialEmail;
       return payload;
     },
   },

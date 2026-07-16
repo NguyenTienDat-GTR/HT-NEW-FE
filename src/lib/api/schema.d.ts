@@ -124,7 +124,7 @@ export interface paths {
             cookie?: never;
         };
         get: operations["findById_7"];
-        put: operations["update_7"];
+        put?: never;
         post?: never;
         delete: operations["delete_7"];
         options?: never;
@@ -542,6 +542,22 @@ export interface paths {
         get: operations["findAll_12"];
         put?: never;
         post: operations["create_11"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/leaders/account-candidates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["accountCandidates"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1462,24 +1478,25 @@ export interface components {
             /** Format: date-time */
             timestamp?: string;
         };
-        AccountUpdateRequest: {
-            /** Format: uuid */
-            leaderId?: string;
-            /** Format: uuid */
-            dioceseId?: string;
-        };
         AccountResponse: {
             username?: string;
             /** Format: uuid */
             leaderId?: string;
             leaderFullName?: string;
             primaryRoleCode?: string;
+            primaryRoleName?: string;
+            roleCodes?: string[];
+            roleNames?: string[];
+            secondaryRoleNames?: string[];
             /** Format: uuid */
             dioceseId?: string;
+            dioceseName?: string;
             /** Format: uuid */
             deaneryId?: string;
+            deaneryName?: string;
             /** Format: uuid */
             parishId?: string;
+            parishName?: string;
             authProvider?: string;
             providerId?: string;
             status?: boolean;
@@ -1651,6 +1668,7 @@ export interface components {
             leaderLevel?: "NONE" | "HT_XU" | "DU_TRUONG" | "HT_I" | "HT_II" | "HT_III" | "HLV_I" | "HLV_II" | "HLV_III";
             /** Format: uuid */
             parishId?: string;
+            parishName?: string;
         };
         apiResponseLeaderResponse: {
             success?: boolean;
@@ -2021,7 +2039,9 @@ export interface components {
             displayOrder?: number;
         };
         AccountCreateRequest: {
-            roleCode: string;
+            roleCode?: string;
+            roleCodes?: string[];
+            primaryRoleCode?: string;
             /** Format: uuid */
             leaderId?: string;
             /** Format: uuid */
@@ -2664,6 +2684,14 @@ export interface components {
             message?: string;
             errorCode?: string;
             data?: components["schemas"]["PageLeaderResponse"];
+            /** Format: date-time */
+            timestamp?: string;
+        };
+        apiResponseListLeaderResponse: {
+            success?: boolean;
+            message?: string;
+            errorCode?: string;
+            data?: components["schemas"]["LeaderResponse"][];
             /** Format: date-time */
             timestamp?: string;
         };
@@ -3341,32 +3369,6 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["apiResponseAccountResponse"];
-                };
-            };
-        };
-    };
-    update_7: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                username: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AccountUpdateRequest"];
-            };
-        };
         responses: {
             /** @description OK */
             200: {
@@ -4681,6 +4683,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["apiResponsePageLeaderResponse"];
+                };
+            };
+        };
+    };
+    accountCandidates: {
+        parameters: {
+            query: {
+                request: components["schemas"]["BaseSearchRequest"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["apiResponseListLeaderResponse"];
                 };
             };
         };

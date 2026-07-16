@@ -62,7 +62,8 @@ export function useResourceQueryState(route: RouteConfig) {
 
   function updateParam(key: string, value: string) {
     const next = new URLSearchParams(searchParams);
-    next.set(key, value);
+    if (value && value !== "all") next.set(key, value);
+    else next.delete(key);
     next.set("page", "1");
     router.replace(`${pathname}?${next.toString()}` as Route);
   }
@@ -84,6 +85,16 @@ export function useResourceQueryState(route: RouteConfig) {
     const next = new URLSearchParams(searchParams);
     if (value) next.set(key, value);
     else next.delete(key);
+    next.set("page", "1");
+    router.replace(`${pathname}?${next.toString()}` as Route);
+  }
+
+  function resetFilters() {
+    const next = new URLSearchParams(searchParams);
+    next.delete("status");
+    (route.filters ?? []).forEach((filter) => {
+      if (filter.key !== "status") next.delete(filter.key);
+    });
     next.set("page", "1");
     router.replace(`${pathname}?${next.toString()}` as Route);
   }
@@ -110,6 +121,7 @@ export function useResourceQueryState(route: RouteConfig) {
     updatePageSize,
     updateFilter,
     updateParam,
+    resetFilters,
   };
 }
 

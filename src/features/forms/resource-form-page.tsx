@@ -40,7 +40,7 @@ export function ResourceFormPage({
 
   const detailQuery = useQuery({
     queryKey: ["resource-detail", effectiveRoute.endpoint, id],
-    enabled: mode === "edit" && Boolean(effectiveRoute.endpoint && id),
+    enabled: mode === "edit" && effectiveRoute.kind !== "accounts" && Boolean(effectiveRoute.endpoint && id),
     queryFn: () => apiFetch<Record<string, unknown>>(`${effectiveRoute.endpoint}/${encodeURIComponent(String(id))}`),
   });
 
@@ -56,6 +56,7 @@ export function ResourceFormPage({
       ...field,
       optionsEndpoint: field.buildOptionsEndpoint?.(mergedValues) ?? field.optionsEndpoint,
       required: field.requiredWhen?.(mergedValues, mode) ?? field.required,
+      readOnlyOnEdit: field.readOnlyOnEdit || (field.readOnlyWhen?.(mergedValues, mode) ?? false),
     }));
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -66,9 +67,10 @@ export function ResourceFormPage({
       setErrors(nextErrors);
       if (Object.keys(nextErrors).length) throw new Error("Vui lòng kiểm tra các trường bắt buộc");
 
-      const payload = spec.mapSubmit ? spec.mapSubmit(mergedValues, mode) : mergedValues;
+      const submitValues = pickVisibleValues(visibleFields, mergedValues);
+      const payload = spec.mapSubmit ? spec.mapSubmit(submitValues, mode) : submitValues;
       const path = spec.buildEndpoint
-        ? spec.buildEndpoint({ ...mergedValues, ...payload }, id)
+        ? spec.buildEndpoint({ ...submitValues, ...payload }, id)
         : mode === "create"
           ? effectiveRoute.endpoint
           : `${effectiveRoute.endpoint}/${encodeURIComponent(String(id))}`;
@@ -89,12 +91,16 @@ export function ResourceFormPage({
   if (!spec) return <FormState title="Chưa hỗ trợ form" message="Màn hình này hiện không có mutation form trong contract backend." backHref={effectiveRoute.path} />;
   if (!canOpen) return <FormState title="403" message="Bạn không có quyền mở form này." backHref={effectiveRoute.path} />;
   if (detailQuery.isError) return <FormState title="Không thể tải dữ liệu" message={getApiErrorMessage(detailQuery.error)} backHref={effectiveRoute.path} />;
+  if (mode === "edit" && effectiveRoute.kind === "accounts") {
+    return <FormState title="Không thể chỉnh sửa" message="Màn hình quản trị tài khoản không hỗ trợ chỉnh sửa account." backHref={effectiveRoute.path} />;
+  }
 
   const title = mode === "create" ? (spec.createTitle ?? effectiveRoute.primaryActionLabel ?? effectiveRoute.title) : (spec.editTitle ?? `Chỉnh sửa ${effectiveRoute.title.toLowerCase()}`);
   const sections = groupFields(visibleFields);
+  const compactAccountForm = effectiveRoute.kind === "accounts";
 
   return (
-    <div className="space-y-4 pb-20">
+    <div className={"mx-auto max-w-[860px]space-y-4 pb-20"}>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <Link className="mb-2 inline-flex items-center gap-2 text-xs font-semibold text-primary" href={effectiveRoute.path as Route}>
@@ -111,17 +117,19 @@ export function ResourceFormPage({
           <Panel className="h-72 animate-pulse" />
         ) : (
           sections.map(([section, fields]) => (
-            <Panel className="p-4" key={section}>
+            <Panel className={compactAccountForm ? "p-4 md:p-5" : "p-4"} key={section}>
               <h2 className="mb-3 text-sm font-semibold uppercase tracking-[0.04em] text-muted">{section}</h2>
-              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              <div className={compactAccountForm ? "grid gap-3 md:grid-cols-2" : "grid gap-3 md:grid-cols-2 xl:grid-cols-3"}>
                 {fields.map((field) => (
                   <div className={fieldLayoutClass(field)} key={field.name}>
                     <FormField
                       error={errors[field.name]}
                       field={field}
                       mode={mode}
-                      onChange={(value) => setValues((current) => ({ ...current, [field.name]: value }))}
+                      onChange={(value) => setValues((current) => nextValuesForField(current, field.name, value, mergedValues))}
+                      onFieldChange={(fieldName, value) => setValues((current) => ({ ...current, [fieldName]: value }))}
                       value={mergedValues[field.name] as string | string[] | number | boolean | null | undefined}
+                      values={mergedValues}
                     />
                   </div>
                 ))}
@@ -149,6 +157,16 @@ export function ResourceFormPage({
   );
 }
 
+function nextValuesForField(current: Record<string, unknown>, fieldName: string, value: unknown, mergedValues: Record<string, unknown>) {
+  if (fieldName !== "roleCodes") {
+    return { ...current, [fieldName]: value };
+  }
+  const roleCodes = Array.isArray(value) ? value.map(String).filter(Boolean) : [];
+  const currentPrimary = String(current.primaryRoleCode ?? mergedValues.primaryRoleCode ?? "");
+  const nextPrimary = currentPrimary && roleCodes.includes(currentPrimary) ? currentPrimary : roleCodes[0] ?? "";
+  return { ...current, roleCodes, primaryRoleCode: nextPrimary };
+}
+
 function groupFields(fields: FormFieldSpec[]) {
   const groups = new Map<string, FormFieldSpec[]>();
   fields.forEach((field) => {
@@ -174,6 +192,14 @@ function validateFields(fields: FormFieldSpec[], values: Record<string, unknown>
     }
   });
   return errors;
+}
+
+function pickVisibleValues(fields: FormFieldSpec[], values: Record<string, unknown>) {
+  const visibleNames = new Set(fields.map((field) => field.name));
+  fields.forEach((field) => {
+    if (field.primaryFieldName) visibleNames.add(field.primaryFieldName);
+  });
+  return Object.fromEntries(Object.entries(values).filter(([key]) => visibleNames.has(key)));
 }
 
 function FormState({ title, message, backHref }: { title: string; message: string; backHref: string }) {

@@ -23,10 +23,16 @@ export type FormFieldSpec = {
   buildOptionsEndpoint?: (values: Record<string, unknown>) => string | undefined;
   optionValue?: string;
   optionLabel?: string;
+  optionLabelFields?: string[];
+  excludeOptionValues?: string[];
+  searchable?: boolean;
+  primaryFieldName?: string;
+  primaryLabel?: string;
   createOnly?: boolean;
   editOnly?: boolean;
   visibleWhen?: (values: Record<string, unknown>, mode: ResourceFormMode) => boolean;
   requiredWhen?: (values: Record<string, unknown>, mode: ResourceFormMode) => boolean;
+  readOnlyWhen?: (values: Record<string, unknown>, mode: ResourceFormMode) => boolean;
   readOnlyOnCreate?: boolean;
   readOnlyOnEdit?: boolean;
   clearable?: boolean;
