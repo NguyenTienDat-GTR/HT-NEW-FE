@@ -240,4 +240,14 @@
 - Normal scoped admin account create allows multiple roles but requires one primary role. The primary role is selected by a radio inside each checked role item; there is no separate primary-role dropdown.
 - Account list filters are permission/scope-aware: `manage.all` and `manage.diocese` show diocese/deanery/parish filters, `manage.deanery` shows deanery/parish, and `manage.parish` shows parish. The backend accepts `roleCode`, `dioceseId`, `deaneryId`, and `parishId` filter keys.
 - Generic management tables use a compact row density: smaller table text, shorter header/body rows, tighter padding, and smaller row action icon buttons.
-- Verification run in this session: `npm.cmd run typecheck`, `npm.cmd run lint`, `npm.cmd run test`, and `npm.cmd run build` passed.
+### Role management drawer and form cleanup 2026-07-17
+
+- Branch `feature/role-management-contract-cleanup` starts from `origin/main`.
+- `/system/roles` filter drawer now filters by `isSystem` with "Vai trò hệ thống" / "Vai trò tự tạo" options instead of a free-text role-code filter.
+- `/system/roles` list columns no longer include `description`; full descriptions remain available in the detail drawer.
+- Role toggle actions now use `system.role.toggle.*` in addition to create/update action prefixes so scoped admin role permissions can drive the UI correctly.
+- Role create/edit UI no longer renders the `roleCode` field; backend generates the role code from `roleName` and appends a numeric suffix on collision.
+- Role row actions no longer expose delete, and the generic delete dialog only opens when the current route has a delete action.
+- Detail drawers are wider, render content in two columns, always include "Người tạo" and "Người cập nhật", and show long text fields such as "Mô tả" at full width without line clamp.
+- Shared resource labels and badges in `resource-format.tsx` were normalized to Vietnamese UTF-8 labels for the detail/table surfaces touched by this rollout.
+- Verification run in this session: `npm.cmd run typecheck`, `npm.cmd run lint`, and `git diff --check` passed after removing the role description column and switching role toggle action visibility to `system.role.toggle.*`; the earlier full slice for this rollout also passed `npm.cmd run test` and `npm.cmd run build`.
