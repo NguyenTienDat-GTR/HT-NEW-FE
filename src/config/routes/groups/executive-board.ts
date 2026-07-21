@@ -17,7 +17,7 @@ export const executiveBoardRouteGroup: RouteGroup = {
         icon: Crown,
         columns: ["positionCode", "positionName", "positionType", "status"],
         permissionPrefixes: ["organization.position.read."],
-        actionPermissionPrefixes: ["organization.position.create.", "organization.position.update.", "organization.position.delete.", "organization.position.toggle."],
+        actionPermissionPrefixes: ["organization.position.create.", "organization.position.update.", "organization.position.toggle."],
         primaryActionLabel: "Thêm chức vụ",
         filterLabels: ["Cấp áp dụng", "Trạng thái"],
       }),

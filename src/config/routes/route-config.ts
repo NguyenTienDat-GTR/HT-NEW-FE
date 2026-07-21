@@ -24,7 +24,7 @@ export type ResourceKind =
   | "account-permissions"
   | "audit-logs";
 
-export type ResourceAction = "view" | "create" | "edit" | "toggle" | "delete" | "submit" | "approve" | "score" | "matrix" | "read";
+export type ResourceAction = "view" | "create" | "edit" | "toggle" | "submit" | "approve" | "score" | "matrix" | "read";
 
 export type ResourceActionConfig = {
   label: string;
@@ -90,9 +90,14 @@ export function route(config: RouteConfig): RouteConfig {
     );
   const updatePermissionPrefixes =
     config.actionPermissionPrefixes?.filter((prefix) => prefix.includes(".update.") || prefix.includes(".manage.") || prefix.includes(".assign."));
-  const togglePermissionPrefixes = config.actionPermissionPrefixes?.filter((prefix) => prefix.includes(".toggle.") || prefix.includes(".update.") || prefix.includes(".manage."));
-  const deletePermissionPrefixes =
-    config.actionPermissionPrefixes?.filter((prefix) => prefix.includes(".delete.") || prefix.includes(".manage.") || prefix.includes(".revoke."));
+  const togglePermissionPrefixes = config.actionPermissionPrefixes?.filter(
+    (prefix) =>
+      prefix.includes(".toggle.") ||
+      prefix.includes(".update.") ||
+      prefix.includes(".manage.") ||
+      prefix.includes(".assign.") ||
+      prefix.includes(".revoke."),
+  );
   const approvePermissionPrefixes = config.actionPermissionPrefixes?.filter((prefix) => prefix.includes(".approve."));
   const submitPermissionPrefixes = config.actionPermissionPrefixes?.filter((prefix) => prefix.includes(".submit."));
   const scorePermissionPrefixes = config.actionPermissionPrefixes?.filter((prefix) => prefix.includes(".score."));
@@ -109,7 +114,6 @@ export function route(config: RouteConfig): RouteConfig {
         : {}),
       ...(updatePermissionPrefixes?.length ? { edit: { label: "Sửa", permissionPrefixes: updatePermissionPrefixes } } : {}),
       ...(togglePermissionPrefixes?.length ? { toggle: { label: "Đổi trạng thái", permissionPrefixes: togglePermissionPrefixes } } : {}),
-      ...(deletePermissionPrefixes?.length ? { delete: { label: "Xóa", permissionPrefixes: deletePermissionPrefixes } } : {}),
       ...(approvePermissionPrefixes?.length ? { approve: { label: "Duyệt", permissionPrefixes: approvePermissionPrefixes } } : {}),
       ...(submitPermissionPrefixes?.length ? { submit: { label: "Gửi", permissionPrefixes: submitPermissionPrefixes } } : {}),
       ...(scorePermissionPrefixes?.length ? { score: { label: "Chấm điểm", permissionPrefixes: scorePermissionPrefixes } } : {}),

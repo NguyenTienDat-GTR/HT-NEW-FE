@@ -17,7 +17,7 @@ export const leaderRouteGroup: RouteGroup = {
         icon: UsersThree,
         columns: ["imageUrl", "fullName", "holyName", "parishId", "leaderLevel", "email", "status"],
         permissionPrefixes: ["organization.leader.read."],
-        actionPermissionPrefixes: ["organization.leader.create.", "organization.leader.update.", "organization.leader.delete.", "organization.leader.toggle."],
+        actionPermissionPrefixes: ["organization.leader.create.", "organization.leader.update.", "organization.leader.toggle."],
         primaryActionLabel: "Thêm huynh trưởng",
         filterLabels: ["Giáo xứ", "Cấp HT", "Trạng thái"],
         workflowHint: "Leader update không gửi fullName, birthDate hoặc leaderLevel.",

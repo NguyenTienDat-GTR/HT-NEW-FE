@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { apiFetch } from "@/lib/api/client";
@@ -9,6 +9,7 @@ import { useAuthStore, type AuthUser } from "@/lib/auth/auth-store";
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+  const queryClient = useQueryClient();
   const user = useAuthStore((state) => state.user);
   const setUser = useAuthStore((state) => state.setUser);
 
@@ -19,8 +20,10 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   });
 
   useEffect(() => {
-    if (query.data) setUser(query.data);
-  }, [query.data, setUser]);
+    if (!query.data) return;
+    setUser(query.data);
+    void queryClient.resetQueries({ queryKey: ["resource"] });
+  }, [query.data, queryClient, setUser]);
 
   useEffect(() => {
     if (query.isError) router.replace(`/login?next=${encodeURIComponent(pathname)}`);
