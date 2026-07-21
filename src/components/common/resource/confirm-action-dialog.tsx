@@ -7,14 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 export function ConfirmActionDialog({
-  action,
   loading,
   onClose,
   onConfirm,
   open,
   title,
 }: {
-  action: "toggle" | "delete";
+  action: "toggle";
   loading?: boolean;
   onClose: () => void;
   onConfirm: () => void;
@@ -22,8 +21,7 @@ export function ConfirmActionDialog({
   title: string;
 }) {
   const [text, setText] = useState("");
-  const requiresText = action === "toggle";
-  const canConfirm = !requiresText || text === "Xác nhận";
+  const canConfirm = text === "Xác nhận";
 
   return (
     <Dialog.Root open={open} onOpenChange={(nextOpen) => (!nextOpen ? onClose() : undefined)}>
@@ -38,7 +36,7 @@ export function ConfirmActionDialog({
               <div>
                 <Dialog.Title className="text-lg font-semibold text-foreground">{title}</Dialog.Title>
                 <Dialog.Description className="mt-1 text-sm leading-6 text-muted">
-                  {action === "toggle" ? "Nhập chính xác “Xác nhận” để đổi trạng thái bản ghi." : "Thao tác xóa có thể không hoàn tác được nếu backend cho phép."}
+                  Nhập chính xác <span className="font-medium text-foreground">Xác nhận</span> để đổi trạng thái bản ghi.
                 </Dialog.Description>
               </div>
             </div>
@@ -48,17 +46,15 @@ export function ConfirmActionDialog({
               </Button>
             </Dialog.Close>
           </div>
-          {requiresText ? (
-            <div className="mt-4">
-              <Input autoFocus onChange={(event) => setText(event.target.value)} placeholder="Xác nhận" value={text} />
-            </div>
-          ) : null}
+          <div className="mt-4">
+            <Input autoFocus onChange={(event) => setText(event.target.value)} placeholder="Xác nhận" value={text} />
+          </div>
           <div className="mt-5 flex justify-end gap-3">
             <Button onClick={onClose} type="button" variant="outline">
               Hủy
             </Button>
-            <Button disabled={!canConfirm} loading={loading} onClick={onConfirm} type="button" variant={action === "delete" ? "destructive" : "primary"}>
-              {action === "delete" ? "Xóa" : "Xác nhận"}
+            <Button disabled={!canConfirm} loading={loading} onClick={onConfirm} type="button" variant="primary">
+              Xác nhận
             </Button>
           </div>
         </Dialog.Content>

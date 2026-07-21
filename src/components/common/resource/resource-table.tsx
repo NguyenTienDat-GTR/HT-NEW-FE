@@ -1,6 +1,6 @@
 "use client";
 
-import { CaretDown, CheckCircle, Eye, PencilSimple, Trash } from "@phosphor-icons/react";
+import { CaretDown, CheckCircle, Eye, PencilSimple } from "@phosphor-icons/react";
 import type { Route } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -97,7 +97,6 @@ function RowActions({ route, row }: { route: RouteConfig; row: Record<string, un
   const canView = canUseAction(user, route.actions?.view);
   const canEdit = canUseAction(user, route.actions?.edit) && canEditRow(route, row, user);
   const canToggle = canUseAction(user, route.actions?.toggle) && canToggleRow(route, row, user);
-  const canDelete = canUseAction(user, route.actions?.delete) && canDeleteRow(route, row, user);
   const canScore = canUseAction(user, route.actions?.score);
   const canApprove = canUseAction(user, route.actions?.approve);
 
@@ -131,14 +130,7 @@ function RowActions({ route, row }: { route: RouteConfig; row: Record<string, un
           </Link>
         </Button>
       ) : null}
-      {canToggle ? <StatusSwitch active={row.status === true} href={`${route.path}?toggle=${encodeURIComponent(id)}` as Route} /> : null}
-      {canDelete ? (
-        <Button asChild aria-label="Xóa" className="h-8 min-w-8 rounded-[8px]" size="icon" variant="ghost">
-          <Link href={`${route.path}?delete=${encodeURIComponent(id)}` as Route}>
-            <Trash size={16} />
-          </Link>
-        </Button>
-      ) : null}
+      {canToggle ? <StatusSwitch active={isToggleActive(route, row)} href={`${route.path}?toggle=${encodeURIComponent(id)}` as Route} /> : null}
     </div>
   );
 }
@@ -156,19 +148,19 @@ function canToggleRow(route: RouteConfig, row: Record<string, unknown>, user: Au
   return route.kind === "dioceses";
 }
 
-function canDeleteRow(route: RouteConfig, row: Record<string, unknown>, user: AuthUser | null) {
-  if (route.kind === "accounts") return false;
-  if (route.kind === "roles" && row.isSystem === true) return false;
-  if (!isSuperAdmin(user)) return true;
-  return route.kind !== "dioceses" && route.kind !== "deaneries" && route.kind !== "parishes";
-}
-
 function isOwnAccount(row: Record<string, unknown>, user: AuthUser | null) {
   return typeof row.username === "string" && row.username === user?.username;
 }
 
 function rowHasPrimaryRole(row: Record<string, unknown>, roleCode: string) {
   return row.primaryRoleCode === roleCode;
+}
+
+function isToggleActive(route: RouteConfig, row: Record<string, unknown>) {
+  if (route.kind === "role-permissions" || route.kind === "account-permissions") {
+    return row.effect !== "DENY";
+  }
+  return row.status === true;
 }
 
 function StatusSwitch({ active, href }: { active: boolean; href: Route }) {

@@ -14,7 +14,7 @@ export interface paths {
         get: operations["findById"];
         put: operations["update"];
         post?: never;
-        delete: operations["delete"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -30,7 +30,7 @@ export interface paths {
         get: operations["findById_1"];
         put: operations["update_1"];
         post?: never;
-        delete: operations["delete_1"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -46,7 +46,7 @@ export interface paths {
         get: operations["findById_2"];
         put: operations["update_2"];
         post?: never;
-        delete: operations["delete_2"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -62,7 +62,7 @@ export interface paths {
         get: operations["findById_3"];
         put: operations["update_3"];
         post?: never;
-        delete: operations["delete_3"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -78,7 +78,7 @@ export interface paths {
         get: operations["findById_4"];
         put: operations["update_4"];
         post?: never;
-        delete: operations["delete_4"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -94,7 +94,7 @@ export interface paths {
         get: operations["findById_5"];
         put: operations["update_5"];
         post?: never;
-        delete: operations["delete_5"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -110,23 +110,7 @@ export interface paths {
         get: operations["findById_6"];
         put: operations["update_6"];
         post?: never;
-        delete: operations["delete_6"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/system/accounts/{username}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["findById_7"];
-        put?: never;
-        post?: never;
-        delete: operations["delete_7"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -139,10 +123,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["findById_8"];
-        put: operations["update_8"];
+        get: operations["findById_7"];
+        put: operations["update_7"];
         post?: never;
-        delete: operations["delete_8"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -155,10 +139,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["findById_9"];
-        put: operations["update_9"];
+        get: operations["findById_8"];
+        put: operations["update_8"];
         post?: never;
-        delete: operations["delete_9"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -171,10 +155,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["findById_10"];
-        put: operations["update_10"];
+        get: operations["findById_9"];
+        put: operations["update_9"];
         post?: never;
-        delete: operations["delete_10"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -187,10 +171,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["findById_11"];
-        put: operations["update_11"];
+        get: operations["findById_10"];
+        put: operations["update_10"];
         post?: never;
-        delete: operations["delete_11"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -203,16 +187,32 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["findById_12"];
-        put: operations["update_12"];
+        get: operations["findById_11"];
+        put: operations["update_11"];
         post?: never;
-        delete: operations["delete_12"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
     "/api/executive-board/assignments/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["findById_12"];
+        put: operations["update_12"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/dioceses/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -228,7 +228,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/dioceses/{id}": {
+    "/api/deaneries/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -238,23 +238,7 @@ export interface paths {
         get: operations["findById_14"];
         put: operations["update_14"];
         post?: never;
-        delete: operations["delete_13"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/deaneries/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["findById_15"];
-        put: operations["update_15"];
-        post?: never;
-        delete: operations["delete_14"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -267,10 +251,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["findById_16"];
-        put: operations["update_16"];
+        get: operations["findById_15"];
+        put: operations["update_15"];
         post?: never;
-        delete: operations["delete_15"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -436,6 +420,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/system/role-permissions/bulk": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["bulkAssign"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/system/permissions": {
         parameters: {
             query?: never;
@@ -484,6 +484,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/system/account-roles/bulk": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["bulkAssign_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/system/account-permissions": {
         parameters: {
             query?: never;
@@ -494,6 +510,22 @@ export interface paths {
         get: operations["findAll_9"];
         put?: never;
         post: operations["create_8"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/system/account-permissions/bulk": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["bulkAssign_2"];
         delete?: never;
         options?: never;
         head?: never;
@@ -542,22 +574,6 @@ export interface paths {
         get: operations["findAll_12"];
         put?: never;
         post: operations["create_11"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/leaders/account-candidates": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["accountCandidates"];
-        put?: never;
-        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1035,7 +1051,39 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["findById_17"];
+        get: operations["findById_16"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/system/role-permissions/assignable-permissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["findAssignablePermissions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/system/permissions/taxonomy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["taxonomy"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1083,7 +1131,103 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        get: operations["findById_17"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/system/accounts/{username}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
         get: operations["findById_18"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/system/accounts/permission-targets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["permissionTargets"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/system/account-roles/assignable-roles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["findAssignableRoles"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/system/account-permissions/assignable-permissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["findAssignablePermissions_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/leaders/{id}/rank-history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["rankHistory"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/leaders/account-candidates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["accountCandidates"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1116,6 +1260,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["adminSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/analytics/work-queue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["workQueue"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1402,8 +1562,10 @@ export interface components {
             status?: boolean;
             /** Format: date-time */
             createdAt?: string;
+            createdBy?: string;
             /** Format: date-time */
             updatedAt?: string;
+            updatedBy?: string;
         };
         apiResponseRoleResponse: {
             success?: boolean;
@@ -1475,37 +1637,6 @@ export interface components {
             message?: string;
             errorCode?: string;
             data?: components["schemas"]["PermissionResponse"];
-            /** Format: date-time */
-            timestamp?: string;
-        };
-        AccountResponse: {
-            username?: string;
-            /** Format: uuid */
-            leaderId?: string;
-            leaderFullName?: string;
-            primaryRoleCode?: string;
-            primaryRoleName?: string;
-            roleCodes?: string[];
-            roleNames?: string[];
-            secondaryRoleNames?: string[];
-            /** Format: uuid */
-            dioceseId?: string;
-            dioceseName?: string;
-            /** Format: uuid */
-            deaneryId?: string;
-            deaneryName?: string;
-            /** Format: uuid */
-            parishId?: string;
-            parishName?: string;
-            authProvider?: string;
-            providerId?: string;
-            status?: boolean;
-        };
-        apiResponseAccountResponse: {
-            success?: boolean;
-            message?: string;
-            errorCode?: string;
-            data?: components["schemas"]["AccountResponse"];
             /** Format: date-time */
             timestamp?: string;
         };
@@ -1623,6 +1754,10 @@ export interface components {
             email?: string;
             /** Format: uuid */
             deaneryId?: string;
+            deaneryName?: string;
+            /** Format: uuid */
+            dioceseId?: string;
+            dioceseName?: string;
             chapterName?: string;
         };
         apiResponseParishResponse: {
@@ -1802,6 +1937,7 @@ export interface components {
             associationName?: string;
             /** Format: uuid */
             dioceseId?: string;
+            dioceseName?: string;
         };
         apiResponseDeaneryResponse: {
             success?: boolean;
@@ -2010,7 +2146,7 @@ export interface components {
             recipientUsernames?: string[];
         };
         RoleCreateRequest: {
-            roleCode: string;
+            roleCode?: string;
             roleName: string;
             description?: string;
             /** Format: int32 */
@@ -2027,6 +2163,25 @@ export interface components {
             assignedAt?: string;
             /** Format: date-time */
             expiresAt?: string;
+        };
+        RolePermissionBulkRequest: {
+            roleCode: string;
+            permissionCodes: string[];
+            /** @enum {string} */
+            effect: "ALLOW" | "DENY";
+            conditions?: string;
+            /** Format: date-time */
+            assignedAt?: string;
+            /** Format: date-time */
+            expiresAt?: string;
+        };
+        apiResponseListRolePermissionResponse: {
+            success?: boolean;
+            message?: string;
+            errorCode?: string;
+            data?: components["schemas"]["RolePermissionResponse"][];
+            /** Format: date-time */
+            timestamp?: string;
         };
         PermissionCreateRequest: {
             permissionName: string;
@@ -2048,6 +2203,37 @@ export interface components {
             dioceseId?: string;
             credentialEmail?: string;
         };
+        AccountResponse: {
+            username?: string;
+            /** Format: uuid */
+            leaderId?: string;
+            leaderFullName?: string;
+            primaryRoleCode?: string;
+            primaryRoleName?: string;
+            roleCodes?: string[];
+            roleNames?: string[];
+            secondaryRoleNames?: string[];
+            /** Format: uuid */
+            dioceseId?: string;
+            dioceseName?: string;
+            /** Format: uuid */
+            deaneryId?: string;
+            deaneryName?: string;
+            /** Format: uuid */
+            parishId?: string;
+            parishName?: string;
+            authProvider?: string;
+            providerId?: string;
+            status?: boolean;
+        };
+        apiResponseAccountResponse: {
+            success?: boolean;
+            message?: string;
+            errorCode?: string;
+            data?: components["schemas"]["AccountResponse"];
+            /** Format: date-time */
+            timestamp?: string;
+        };
         AccountRoleCreateRequest: {
             username: string;
             roleCode: string;
@@ -2057,6 +2243,23 @@ export interface components {
             /** Format: date-time */
             expiresAt?: string;
         };
+        AccountRoleBulkRequest: {
+            username: string;
+            roleCodes: string[];
+            primaryRoleCode?: string;
+            /** Format: date-time */
+            assignedAt?: string;
+            /** Format: date-time */
+            expiresAt?: string;
+        };
+        apiResponseListAccountRoleResponse: {
+            success?: boolean;
+            message?: string;
+            errorCode?: string;
+            data?: components["schemas"]["AccountRoleResponse"][];
+            /** Format: date-time */
+            timestamp?: string;
+        };
         AccountPermissionOverrideCreateRequest: {
             username: string;
             permissionCode: string;
@@ -2065,6 +2268,23 @@ export interface components {
             reason?: string;
             /** Format: date-time */
             expiresAt?: string;
+        };
+        AccountPermissionOverrideBulkRequest: {
+            username: string;
+            permissionCodes: string[];
+            /** @enum {string} */
+            effect: "ALLOW" | "DENY";
+            reason: string;
+            /** Format: date-time */
+            expiresAt?: string;
+        };
+        apiResponseListAccountPermissionOverrideResponse: {
+            success?: boolean;
+            message?: string;
+            errorCode?: string;
+            data?: components["schemas"]["AccountPermissionOverrideResponse"][];
+            /** Format: date-time */
+            timestamp?: string;
         };
         PositionCreateRequest: {
             positionName: string;
@@ -2164,6 +2384,12 @@ export interface components {
         AuthenticatedUserResponse: {
             username?: string;
             leaderId?: string;
+            /** Format: uuid */
+            dioceseId?: string;
+            /** Format: uuid */
+            deaneryId?: string;
+            /** Format: uuid */
+            parishId?: string;
             roles?: string[];
             permissions?: string[];
             mustChangePassword?: boolean;
@@ -2249,38 +2475,38 @@ export interface components {
             sortDirection?: string;
         };
         PageScoreFormulaTemplateResponse: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
+            /** Format: int32 */
+            numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["ScoreFormulaTemplateResponse"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"];
-            first?: boolean;
-            last?: boolean;
-            /** Format: int32 */
-            numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         PageableObject: {
-            /** Format: int64 */
-            offset?: number;
-            sort?: components["schemas"]["SortObject"];
-            paged?: boolean;
             /** Format: int32 */
             pageNumber?: number;
+            paged?: boolean;
             /** Format: int32 */
             pageSize?: number;
             unpaged?: boolean;
+            /** Format: int64 */
+            offset?: number;
+            sort?: components["schemas"]["SortObject"];
         };
         SortObject: {
-            empty?: boolean;
-            sorted?: boolean;
             unsorted?: boolean;
+            sorted?: boolean;
+            empty?: boolean;
         };
         apiResponsePageScoreFormulaTemplateResponse: {
             success?: boolean;
@@ -2291,21 +2517,21 @@ export interface components {
             timestamp?: string;
         };
         PageScoreComponentTemplateResponse: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
+            /** Format: int32 */
+            numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["ScoreComponentTemplateResponse"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"];
-            first?: boolean;
-            last?: boolean;
-            /** Format: int32 */
-            numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         apiResponsePageScoreComponentTemplateResponse: {
@@ -2317,21 +2543,21 @@ export interface components {
             timestamp?: string;
         };
         PageCourseRequirementResponse: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
+            /** Format: int32 */
+            numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["CourseRequirementResponse"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"];
-            first?: boolean;
-            last?: boolean;
-            /** Format: int32 */
-            numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         apiResponsePageCourseRequirementResponse: {
@@ -2343,21 +2569,21 @@ export interface components {
             timestamp?: string;
         };
         PageCourseParticipationResponse: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
+            /** Format: int32 */
+            numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["CourseParticipationResponse"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"];
-            first?: boolean;
-            last?: boolean;
-            /** Format: int32 */
-            numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         apiResponsePageCourseParticipationResponse: {
@@ -2369,21 +2595,21 @@ export interface components {
             timestamp?: string;
         };
         PageTrainingCourseResponse: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
+            /** Format: int32 */
+            numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["TrainingCourseResponse"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"];
-            first?: boolean;
-            last?: boolean;
-            /** Format: int32 */
-            numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         apiResponsePageTrainingCourseResponse: {
@@ -2395,21 +2621,21 @@ export interface components {
             timestamp?: string;
         };
         PageRoleResponse: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
+            /** Format: int32 */
+            numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["RoleResponse"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"];
-            first?: boolean;
-            last?: boolean;
-            /** Format: int32 */
-            numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         apiResponsePageRoleResponse: {
@@ -2421,21 +2647,21 @@ export interface components {
             timestamp?: string;
         };
         PageRolePermissionResponse: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
+            /** Format: int32 */
+            numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["RolePermissionResponse"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"];
-            first?: boolean;
-            last?: boolean;
-            /** Format: int32 */
-            numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         apiResponsePageRolePermissionResponse: {
@@ -2446,22 +2672,30 @@ export interface components {
             /** Format: date-time */
             timestamp?: string;
         };
+        apiResponseListPermissionResponse: {
+            success?: boolean;
+            message?: string;
+            errorCode?: string;
+            data?: components["schemas"]["PermissionResponse"][];
+            /** Format: date-time */
+            timestamp?: string;
+        };
         PagePermissionResponse: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
+            /** Format: int32 */
+            numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["PermissionResponse"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"];
-            first?: boolean;
-            last?: boolean;
-            /** Format: int32 */
-            numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         apiResponsePagePermissionResponse: {
@@ -2469,6 +2703,26 @@ export interface components {
             message?: string;
             errorCode?: string;
             data?: components["schemas"]["PagePermissionResponse"];
+            /** Format: date-time */
+            timestamp?: string;
+        };
+        PermissionTaxonomyResponse: {
+            modules?: components["schemas"]["TaxonomyOption"][];
+            resources?: components["schemas"]["TaxonomyOption"][];
+            actions?: components["schemas"]["TaxonomyOption"][];
+            scopes?: components["schemas"]["TaxonomyOption"][];
+        };
+        TaxonomyOption: {
+            code?: string;
+            name?: string;
+            parentCode?: string;
+            description?: string;
+        };
+        apiResponsePermissionTaxonomyResponse: {
+            success?: boolean;
+            message?: string;
+            errorCode?: string;
+            data?: components["schemas"]["PermissionTaxonomyResponse"];
             /** Format: date-time */
             timestamp?: string;
         };
@@ -2481,21 +2735,21 @@ export interface components {
             timestamp?: string;
         };
         PageSystemLogResponse: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
+            /** Format: int32 */
+            numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["SystemLogResponse"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"];
-            first?: boolean;
-            last?: boolean;
-            /** Format: int32 */
-            numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         SystemLogResponse: {
@@ -2542,29 +2796,22 @@ export interface components {
             /** Format: date-time */
             timestamp?: string;
         };
-        Pageable: {
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            sort?: string[];
-        };
         PageAccountResponse: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
+            /** Format: int32 */
+            numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["AccountResponse"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"];
-            first?: boolean;
-            last?: boolean;
-            /** Format: int32 */
-            numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         apiResponsePageAccountResponse: {
@@ -2575,30 +2822,64 @@ export interface components {
             /** Format: date-time */
             timestamp?: string;
         };
-        apiResponseListAccountRoleResponse: {
+        apiResponseListAccountResponse: {
             success?: boolean;
             message?: string;
             errorCode?: string;
-            data?: components["schemas"]["AccountRoleResponse"][];
+            data?: components["schemas"]["AccountResponse"][];
+            /** Format: date-time */
+            timestamp?: string;
+        };
+        PageAccountRoleResponse: {
+            /** Format: int32 */
+            totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
+            /** Format: int32 */
+            numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
+            /** Format: int32 */
+            size?: number;
+            content?: components["schemas"]["AccountRoleResponse"][];
+            /** Format: int32 */
+            number?: number;
+            sort?: components["schemas"]["SortObject"];
+            empty?: boolean;
+        };
+        apiResponsePageAccountRoleResponse: {
+            success?: boolean;
+            message?: string;
+            errorCode?: string;
+            data?: components["schemas"]["PageAccountRoleResponse"];
+            /** Format: date-time */
+            timestamp?: string;
+        };
+        apiResponseListRoleResponse: {
+            success?: boolean;
+            message?: string;
+            errorCode?: string;
+            data?: components["schemas"]["RoleResponse"][];
             /** Format: date-time */
             timestamp?: string;
         };
         PageAccountPermissionOverrideResponse: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
+            /** Format: int32 */
+            numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["AccountPermissionOverrideResponse"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"];
-            first?: boolean;
-            last?: boolean;
-            /** Format: int32 */
-            numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         apiResponsePageAccountPermissionOverrideResponse: {
@@ -2610,21 +2891,21 @@ export interface components {
             timestamp?: string;
         };
         PagePositionResponse: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
+            /** Format: int32 */
+            numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["PositionResponse"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"];
-            first?: boolean;
-            last?: boolean;
-            /** Format: int32 */
-            numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         apiResponsePagePositionResponse: {
@@ -2636,21 +2917,21 @@ export interface components {
             timestamp?: string;
         };
         PageParishResponse: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
+            /** Format: int32 */
+            numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["ParishResponse"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"];
-            first?: boolean;
-            last?: boolean;
-            /** Format: int32 */
-            numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         apiResponsePageParishResponse: {
@@ -2662,21 +2943,21 @@ export interface components {
             timestamp?: string;
         };
         PageLeaderResponse: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
+            /** Format: int32 */
+            numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["LeaderResponse"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"];
-            first?: boolean;
-            last?: boolean;
-            /** Format: int32 */
-            numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         apiResponsePageLeaderResponse: {
@@ -2684,6 +2965,25 @@ export interface components {
             message?: string;
             errorCode?: string;
             data?: components["schemas"]["PageLeaderResponse"];
+            /** Format: date-time */
+            timestamp?: string;
+        };
+        RankHistoryResponse: {
+            /** Format: int64 */
+            id?: number;
+            /** @enum {string} */
+            oldLevel?: "NONE" | "HT_XU" | "DU_TRUONG" | "HT_I" | "HT_II" | "HT_III" | "HLV_I" | "HLV_II" | "HLV_III";
+            /** @enum {string} */
+            newLevel?: "NONE" | "HT_XU" | "DU_TRUONG" | "HT_I" | "HT_II" | "HT_III" | "HLV_I" | "HLV_II" | "HLV_III";
+            /** Format: date */
+            promotionDate?: string;
+            note?: string;
+        };
+        apiResponseListRankHistoryResponse: {
+            success?: boolean;
+            message?: string;
+            errorCode?: string;
+            data?: components["schemas"]["RankHistoryResponse"][];
             /** Format: date-time */
             timestamp?: string;
         };
@@ -2696,21 +2996,21 @@ export interface components {
             timestamp?: string;
         };
         PageExecutiveBoardAssignmentResponse: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
+            /** Format: int32 */
+            numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["ExecutiveBoardAssignmentResponse"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"];
-            first?: boolean;
-            last?: boolean;
-            /** Format: int32 */
-            numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         apiResponsePageExecutiveBoardAssignmentResponse: {
@@ -2722,21 +3022,21 @@ export interface components {
             timestamp?: string;
         };
         PageDiocese: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
+            /** Format: int32 */
+            numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["Diocese"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"];
-            first?: boolean;
-            last?: boolean;
-            /** Format: int32 */
-            numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         apiResponsePageDiocese: {
@@ -2748,21 +3048,21 @@ export interface components {
             timestamp?: string;
         };
         PageDeaneryResponse: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
+            /** Format: int32 */
+            numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["DeaneryResponse"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"];
-            first?: boolean;
-            last?: boolean;
-            /** Format: int32 */
-            numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         apiResponsePageDeaneryResponse: {
@@ -2774,21 +3074,21 @@ export interface components {
             timestamp?: string;
         };
         PageCertificateResponse: {
-            /** Format: int64 */
-            totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
+            /** Format: int32 */
+            numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["CertificateResponse"][];
             /** Format: int32 */
             number?: number;
             sort?: components["schemas"]["SortObject"];
-            first?: boolean;
-            last?: boolean;
-            /** Format: int32 */
-            numberOfElements?: number;
-            pageable?: components["schemas"]["PageableObject"];
             empty?: boolean;
         };
         apiResponsePageCertificateResponse: {
@@ -2804,6 +3104,24 @@ export interface components {
             message?: string;
             errorCode?: string;
             data?: components["schemas"]["AuthenticatedUserResponse"];
+            /** Format: date-time */
+            timestamp?: string;
+        };
+        WorkQueueItemResponse: {
+            key?: string;
+            title?: string;
+            description?: string;
+            href?: string;
+            /** Format: int64 */
+            count?: number;
+            icon?: string;
+            tone?: string;
+        };
+        apiResponseListWorkQueueItemResponse: {
+            success?: boolean;
+            message?: string;
+            errorCode?: string;
+            data?: components["schemas"]["WorkQueueItemResponse"][];
             /** Format: date-time */
             timestamp?: string;
         };
@@ -2917,28 +3235,6 @@ export interface operations {
             };
         };
     };
-    delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["apiResponseVoid"];
-                };
-            };
-        };
-    };
     findById_1: {
         parameters: {
             query?: never;
@@ -2983,28 +3279,6 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["apiResponseScoreComponentTemplateResponse"];
-                };
-            };
-        };
-    };
-    delete_1: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["apiResponseVoid"];
                 };
             };
         };
@@ -3057,28 +3331,6 @@ export interface operations {
             };
         };
     };
-    delete_2: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                requirementCode: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["apiResponseVoid"];
-                };
-            };
-        };
-    };
     findById_3: {
         parameters: {
             query?: never;
@@ -3123,28 +3375,6 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["apiResponseTrainingCourseResponse"];
-                };
-            };
-        };
-    };
-    delete_3: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                courseCode: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["apiResponseVoid"];
                 };
             };
         };
@@ -3197,28 +3427,6 @@ export interface operations {
             };
         };
     };
-    delete_4: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                roleCode: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["apiResponseVoid"];
-                };
-            };
-        };
-    };
     findById_5: {
         parameters: {
             query?: never;
@@ -3263,28 +3471,6 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["apiResponseRolePermissionResponse"];
-                };
-            };
-        };
-    };
-    delete_5: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["apiResponseVoid"];
                 };
             };
         };
@@ -3337,73 +3523,7 @@ export interface operations {
             };
         };
     };
-    delete_6: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                permissionCode: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["apiResponseVoid"];
-                };
-            };
-        };
-    };
     findById_7: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                username: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["apiResponseAccountResponse"];
-                };
-            };
-        };
-    };
-    delete_7: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                username: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["apiResponseVoid"];
-                };
-            };
-        };
-    };
-    findById_8: {
         parameters: {
             query?: never;
             header?: never;
@@ -3425,7 +3545,7 @@ export interface operations {
             };
         };
     };
-    update_8: {
+    update_7: {
         parameters: {
             query?: never;
             header?: never;
@@ -3451,29 +3571,7 @@ export interface operations {
             };
         };
     };
-    delete_8: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["apiResponseVoid"];
-                };
-            };
-        };
-    };
-    findById_9: {
+    findById_8: {
         parameters: {
             query?: never;
             header?: never;
@@ -3495,7 +3593,7 @@ export interface operations {
             };
         };
     };
-    update_9: {
+    update_8: {
         parameters: {
             query?: never;
             header?: never;
@@ -3521,29 +3619,7 @@ export interface operations {
             };
         };
     };
-    delete_9: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["apiResponseVoid"];
-                };
-            };
-        };
-    };
-    findById_10: {
+    findById_9: {
         parameters: {
             query?: never;
             header?: never;
@@ -3565,7 +3641,7 @@ export interface operations {
             };
         };
     };
-    update_10: {
+    update_9: {
         parameters: {
             query?: never;
             header?: never;
@@ -3591,29 +3667,7 @@ export interface operations {
             };
         };
     };
-    delete_10: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                positionCode: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["apiResponseVoid"];
-                };
-            };
-        };
-    };
-    findById_11: {
+    findById_10: {
         parameters: {
             query?: never;
             header?: never;
@@ -3635,7 +3689,7 @@ export interface operations {
             };
         };
     };
-    update_11: {
+    update_10: {
         parameters: {
             query?: never;
             header?: never;
@@ -3661,29 +3715,7 @@ export interface operations {
             };
         };
     };
-    delete_11: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["apiResponseVoid"];
-                };
-            };
-        };
-    };
-    findById_12: {
+    findById_11: {
         parameters: {
             query?: never;
             header?: never;
@@ -3705,7 +3737,7 @@ export interface operations {
             };
         };
     };
-    update_12: {
+    update_11: {
         parameters: {
             query?: never;
             header?: never;
@@ -3731,29 +3763,7 @@ export interface operations {
             };
         };
     };
-    delete_12: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["apiResponseVoid"];
-                };
-            };
-        };
-    };
-    findById_13: {
+    findById_12: {
         parameters: {
             query?: never;
             header?: never;
@@ -3775,7 +3785,7 @@ export interface operations {
             };
         };
     };
-    update_13: {
+    update_12: {
         parameters: {
             query?: never;
             header?: never;
@@ -3801,7 +3811,7 @@ export interface operations {
             };
         };
     };
-    findById_14: {
+    findById_13: {
         parameters: {
             query?: never;
             header?: never;
@@ -3823,7 +3833,7 @@ export interface operations {
             };
         };
     };
-    update_14: {
+    update_13: {
         parameters: {
             query?: never;
             header?: never;
@@ -3849,29 +3859,7 @@ export interface operations {
             };
         };
     };
-    delete_13: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["apiResponseVoid"];
-                };
-            };
-        };
-    };
-    findById_15: {
+    findById_14: {
         parameters: {
             query?: never;
             header?: never;
@@ -3893,7 +3881,7 @@ export interface operations {
             };
         };
     };
-    update_15: {
+    update_14: {
         parameters: {
             query?: never;
             header?: never;
@@ -3919,29 +3907,7 @@ export interface operations {
             };
         };
     };
-    delete_14: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["apiResponseVoid"];
-                };
-            };
-        };
-    };
-    findById_16: {
+    findById_15: {
         parameters: {
             query?: never;
             header?: never;
@@ -3963,7 +3929,7 @@ export interface operations {
             };
         };
     };
-    update_16: {
+    update_15: {
         parameters: {
             query?: never;
             header?: never;
@@ -3985,28 +3951,6 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["apiResponseCertificateResponse"];
-                };
-            };
-        };
-    };
-    delete_15: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                certificateCode: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["apiResponseVoid"];
                 };
             };
         };
@@ -4391,6 +4335,30 @@ export interface operations {
             };
         };
     };
+    bulkAssign: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RolePermissionBulkRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["apiResponseListRolePermissionResponse"];
+                };
+            };
+        };
+    };
     findAll_6: {
         parameters: {
             query: {
@@ -4440,7 +4408,7 @@ export interface operations {
     findAll_7: {
         parameters: {
             query: {
-                pageable: components["schemas"]["Pageable"];
+                request: components["schemas"]["BaseSearchRequest"];
             };
             header?: never;
             path?: never;
@@ -4485,7 +4453,9 @@ export interface operations {
     };
     findAll_8: {
         parameters: {
-            query?: never;
+            query: {
+                request: components["schemas"]["BaseSearchRequest"];
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -4498,7 +4468,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["apiResponseListAccountRoleResponse"];
+                    "*/*": components["schemas"]["apiResponsePageAccountRoleResponse"];
                 };
             };
         };
@@ -4523,6 +4493,30 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["apiResponseAccountRoleResponse"];
+                };
+            };
+        };
+    };
+    bulkAssign_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccountRoleBulkRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["apiResponseListAccountRoleResponse"];
                 };
             };
         };
@@ -4569,6 +4563,30 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["apiResponseAccountPermissionOverrideResponse"];
+                };
+            };
+        };
+    };
+    bulkAssign_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccountPermissionOverrideBulkRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["apiResponseListAccountPermissionOverrideResponse"];
                 };
             };
         };
@@ -4683,28 +4701,6 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["apiResponsePageLeaderResponse"];
-                };
-            };
-        };
-    };
-    accountCandidates: {
-        parameters: {
-            query: {
-                request: components["schemas"]["BaseSearchRequest"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["apiResponseListLeaderResponse"];
                 };
             };
         };
@@ -5543,7 +5539,7 @@ export interface operations {
             };
         };
     };
-    findById_17: {
+    findById_16: {
         parameters: {
             query?: never;
             header?: never;
@@ -5561,6 +5557,48 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["apiResponseCourseParticipationResponse"];
+                };
+            };
+        };
+    };
+    findAssignablePermissions: {
+        parameters: {
+            query: {
+                roleCode: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["apiResponseListPermissionResponse"];
+                };
+            };
+        };
+    };
+    taxonomy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["apiResponsePermissionTaxonomyResponse"];
                 };
             };
         };
@@ -5607,7 +5645,7 @@ export interface operations {
             };
         };
     };
-    findById_18: {
+    findById_17: {
         parameters: {
             query?: never;
             header?: never;
@@ -5625,6 +5663,136 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["apiResponseSystemLogResponse"];
+                };
+            };
+        };
+    };
+    findById_18: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                username: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["apiResponseAccountResponse"];
+                };
+            };
+        };
+    };
+    permissionTargets: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["apiResponseListAccountResponse"];
+                };
+            };
+        };
+    };
+    findAssignableRoles: {
+        parameters: {
+            query?: {
+                username?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["apiResponseListRoleResponse"];
+                };
+            };
+        };
+    };
+    findAssignablePermissions_1: {
+        parameters: {
+            query: {
+                username: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["apiResponseListPermissionResponse"];
+                };
+            };
+        };
+    };
+    rankHistory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["apiResponseListRankHistoryResponse"];
+                };
+            };
+        };
+    };
+    accountCandidates: {
+        parameters: {
+            query: {
+                request: components["schemas"]["BaseSearchRequest"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["apiResponseListLeaderResponse"];
                 };
             };
         };
@@ -5665,6 +5833,26 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["apiResponseAuthenticatedUserResponse"];
+                };
+            };
+        };
+    };
+    workQueue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["apiResponseListWorkQueueItemResponse"];
                 };
             };
         };

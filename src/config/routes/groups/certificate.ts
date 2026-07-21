@@ -17,7 +17,7 @@ export const certificateRouteGroup: RouteGroup = {
         icon: Certificate,
         columns: ["certificateCode", "leaderFullName", "courseName", "totalScore", "passingScore", "approvalStatus", "status"],
         permissionPrefixes: ["training.certificate.read."],
-        actionPermissionPrefixes: ["training.certificate.create.", "training.certificate.approve.", "training.certificate.update.", "training.certificate.delete.", "training.certificate.toggle."],
+        actionPermissionPrefixes: ["training.certificate.create.", "training.certificate.approve.", "training.certificate.update.", "training.certificate.toggle."],
         primaryActionLabel: "Tạo chứng nhận",
         filterLabels: ["Khóa", "Kết quả", "Trạng thái duyệt"],
         workflowHint: "Nếu chưa đạt passingScore, approve bắt buộc nhập approvalReason.",

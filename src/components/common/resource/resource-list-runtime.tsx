@@ -31,8 +31,11 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
   const queryState = useResourceQueryState(effectiveRoute);
   const query = useQuery({
     queryKey: ["resource", effectiveRoute.endpoint, queryState.queryString],
-    enabled: Boolean(effectiveRoute.endpoint),
+    enabled: Boolean(effectiveRoute.endpoint && user),
     queryFn: () => apiFetch<PageResponse<Record<string, unknown>> | Record<string, unknown>[]>(`${effectiveRoute.endpoint}?${queryState.queryString}`),
+    refetchOnMount: "always",
+    retryOnMount: true,
+    staleTime: 0,
   });
 
   const canCreate = canUseAction(user, effectiveRoute.actions?.create) && (config.canCreate?.(effectiveRoute, user) ?? true);
@@ -40,23 +43,21 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
   const rows = rowsFromResponse(query.data);
   const detailId = searchParams.get("detail");
   const toggleId = searchParams.get("toggle");
-  const deleteId = searchParams.get("delete");
   const approveId = searchParams.get("approve");
-  const deleteDialogOpen = Boolean(deleteId && effectiveRoute.actions?.delete);
 
   const closeQueryDialog = () => router.push(effectiveRoute.path as Route);
   const actionMutation = useMutation({
-    mutationFn: ({ action, id, note }: { action: "toggle" | "delete" | "approve"; id: string; note?: string }) => {
+    mutationFn: ({ action, id, note }: { action: "toggle" | "approve"; id: string; note?: string }) => {
       if (action === "toggle") return apiMutation(`${effectiveRoute.endpoint}/${encodeURIComponent(id)}/toggle-status`, "PATCH", { confirmationText: "Xác nhận" });
       if (action === "approve") {
         const approvePath = config.buildApprovePath?.(effectiveRoute, rows, id) ?? `${effectiveRoute.endpoint}/${encodeURIComponent(id)}/approve`;
         const approveBody = config.buildApproveBody?.(effectiveRoute, note) ?? { approved: true, review: note || undefined };
         return apiMutation(approvePath, "POST", approveBody);
       }
-      return apiMutation(`${effectiveRoute.endpoint}/${encodeURIComponent(id)}`, "DELETE");
+      throw new Error("Unsupported resource action");
     },
     onSuccess: async (_data, variables) => {
-      toast.success(variables.action === "toggle" ? "Đổi trạng thái thành công" : variables.action === "approve" ? "Duyệt thành công" : "Xóa thành công");
+      toast.success(variables.action === "toggle" ? "Đổi trạng thái thành công" : "Duyệt thành công");
       closeQueryDialog();
       await queryClient.invalidateQueries({ queryKey: ["resource", effectiveRoute.endpoint] });
     },
@@ -95,7 +96,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
 
         {!query.isLoading && rows.length === 0 ? <ResourceListEmptyState route={effectiveRoute} /> : null}
 
-        {query.isError ? (
+        {query.isError && !query.isFetching ? (
           <div className="mx-4 mb-4 rounded-[10px] border border-danger/30 bg-danger/5 p-3 text-sm font-medium text-danger">
             {getApiErrorMessage(query.error)}
           </div>
@@ -118,14 +119,6 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
         onConfirm={() => toggleId && actionMutation.mutate({ action: "toggle", id: toggleId })}
         open={Boolean(toggleId)}
         title="Đổi trạng thái bản ghi"
-      />
-      <ConfirmActionDialog
-        action="delete"
-        loading={actionMutation.isPending}
-        onClose={closeQueryDialog}
-        onConfirm={() => deleteId && actionMutation.mutate({ action: "delete", id: deleteId })}
-        open={deleteDialogOpen}
-        title="Xóa bản ghi"
       />
       <ApprovalDialog
         loading={actionMutation.isPending}

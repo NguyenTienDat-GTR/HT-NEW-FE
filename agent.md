@@ -265,3 +265,12 @@
 - Detail drawers are wider, render content in two columns, always include "Người tạo" and "Người cập nhật", and show long text fields such as "Mô tả" at full width without line clamp.
 - Shared resource labels and badges in `resource-format.tsx` were normalized to Vietnamese UTF-8 labels for the detail/table surfaces touched by this rollout.
 - Verification run in this session: `npm.cmd run typecheck`, `npm.cmd run lint`, and `git diff --check` passed after removing the role description column and switching role toggle action visibility to `system.role.toggle.*`; the earlier full slice for this rollout also passed `npm.cmd run test` and `npm.cmd run build`.
+
+### Delete-to-toggle RBAC cleanup 2026-07-21
+
+- Branch `feature/toggle-delete-rbac-permissions` removes generic delete actions from resource routing and tables; row actions now expose view/edit/approve/score/toggle only.
+- The shared resource runtime no longer opens `?delete=` dialogs or sends DELETE requests. Toggle confirmation is the only destructive-style lifecycle dialog.
+- Role-permission and account-permission tables use `effect !== DENY` as the active switch state instead of `status`, matching the backend effect-based contract.
+- Route action inference no longer builds delete actions from `.delete.` prefixes. Toggle visibility accepts `.toggle.`, existing management/update permissions, and role-permission assign/revoke permissions where appropriate.
+- Captured OpenAPI snapshot and generated `src/lib/api/schema.d.ts` were cleaned of DELETE operations after live capture from `localhost:1007` was unavailable.
+- Verification run in this session: `npm.cmd run typecheck`, `npm.cmd run lint`, and `npm.cmd test` passed.
