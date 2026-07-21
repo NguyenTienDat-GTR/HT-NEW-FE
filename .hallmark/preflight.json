@@ -1,0 +1,29 @@
+{
+  "date": "2026-07-21",
+  "skill": "hallmark",
+  "project": "HT Management FE",
+  "branch": "feature/fe-module-refactor-ui",
+  "sourceOfTruth": "FE/DESIGN.md",
+  "designDirection": {
+    "genre": "modern-minimal",
+    "macrostructure": "Workbench/Data-Dense dashboard",
+    "font": "Be Vietnam Pro",
+    "anchorColor": "oklch(0.38 0.085 250)",
+    "accentColor": "oklch(0.72 0.12 185)",
+    "surface": "oklch(0.985 0.005 250)"
+  },
+  "constraints": [
+    "Preserve API endpoints, payloads, route URLs, permission prefixes, query state, pagination, and mutations.",
+    "Preserve Phosphor Icons.",
+    "Keep src/app thin and move business UI into modules/shared components.",
+    "Use semantic CSS tokens from the HR navy/teal OKLCH palette rather than scattered raw colors."
+  ],
+  "targetScores": {
+    "palette": 5,
+    "hierarchy": 4,
+    "execution": 4,
+    "spacing": 4,
+    "responsiveness": 5,
+    "voice": 4
+  }
+}

@@ -1,39 +1,37 @@
 @import "tailwindcss";
-
-:root {
-  --background: #ffffff;
-  --foreground: #131316;
-  --muted: #70727f;
-  --app-canvas: #f6f7fb;
-  --surface-1: #f7f7f8;
-  --surface-2: #efeff1;
-  --surface-hover: #f1efff;
-  --border: #e0e0e5;
-  --primary: #6c47ff;
-  --primary-hover: #5a35ee;
-  --primary-soft: #f1edff;
-  --primary-ring: rgb(108 71 255 / 0.22);
-  --success: #1db97b;
-  --danger: #ef4444;
-  --shadow-card: 0 1px 3px rgb(0 0 0 / 0.08), 0 0 0 1px rgb(0 0 0 / 0.04);
-  --shadow-elevated: 0 18px 44px rgb(31 35 48 / 0.12);
-}
+@import "../styles/tokens.css";
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
+  --color-muted-surface: var(--muted-surface);
+  --color-muted-foreground: var(--muted-foreground);
   --color-app-canvas: var(--app-canvas);
   --color-surface-1: var(--surface-1);
   --color-surface-2: var(--surface-2);
   --color-surface-hover: var(--surface-hover);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
   --color-border: var(--border);
+  --color-input: var(--input);
   --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
   --color-primary-hover: var(--primary-hover);
   --color-primary-soft: var(--primary-soft);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
   --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
   --color-danger: var(--danger);
-  --font-sans: var(--font-inter);
+  --color-danger-foreground: var(--danger-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --font-sans: var(--font-body);
 }
 
 * {
@@ -43,6 +41,7 @@
 html {
   background: var(--background);
   color: var(--foreground);
+  overflow-x: clip;
 }
 
 body {
@@ -50,8 +49,9 @@ body {
   margin: 0;
   background: var(--app-canvas);
   color: var(--foreground);
-  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
   text-rendering: optimizeLegibility;
 }
 
@@ -72,7 +72,7 @@ textarea:focus-visible {
 }
 
 ::selection {
-  background: rgb(108 71 255 / 0.16);
+  background: oklch(0.72 0.12 185 / 0.24);
 }
 
 ::-webkit-scrollbar {
@@ -81,14 +81,14 @@ textarea:focus-visible {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #d7d7df;
+  background: var(--surface-2);
   border: 3px solid transparent;
   border-radius: 999px;
   background-clip: content-box;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #c7c5d3;
+  background: var(--border);
   border: 3px solid transparent;
   background-clip: content-box;
 }

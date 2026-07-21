@@ -1,0 +1,20 @@
+{
+  "date": "2026-07-21",
+  "skill": "hallmark",
+  "completed": [
+    "Created semantic token file at src/styles/tokens.css and imported it from src/app/globals.css.",
+    "Stamped token CSS with Hallmark metadata and FE/DESIGN.md design ownership.",
+    "Refined app shell, navigation active states, shared buttons, charts, resource tables, form bottom bar, auth surfaces, and drawer states with tokenized colors and stable dimensions.",
+    "Kept Phosphor Icons and existing operational dashboard density.",
+    "Captured 63 visual screenshots across login, dashboard, analytics, resource list, create form, detail drawer, and filter drawer states at 1440, 1024, 768, 414, 390, 375, and 320 widths.",
+    "Updated design tokens to the HR navy/teal OKLCH palette and switched the app font to Be Vietnam Pro."
+  ],
+  "validation": {
+    "typecheck": "passed",
+    "lint": "passed",
+    "unit": "8 files passed, 10 tests passed",
+    "build": "passed",
+    "e2e": "3 tests passed",
+    "visual": "63 screenshots captured with no horizontal scroll detected"
+  }
+}
