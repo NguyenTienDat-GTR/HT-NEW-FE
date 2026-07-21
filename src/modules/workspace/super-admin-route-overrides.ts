@@ -5,6 +5,12 @@ import type { RouteFilterConfig } from "@/config/routes/route-config";
 
 export function resolveRouteForUser(route: RouteConfig, user: AuthUser | null): RouteConfig {
   if (!isSuperAdmin(user)) {
+    if (route.kind === "role-permissions") {
+      return {
+        ...route,
+        filters: rolePermissionFiltersForUser(user),
+      };
+    }
     if (route.kind !== "accounts") return route;
     return {
       ...route,
@@ -98,6 +104,38 @@ function accountFiltersForUser(user: AuthUser | null): RouteFilterConfig[] {
   }
   filters.push(statusFilter());
   return filters;
+}
+
+function rolePermissionFiltersForUser(user: AuthUser | null): RouteFilterConfig[] {
+  const canReadRoleOptions =
+    hasPermissionPrefix(user, "system.role.read.") ||
+    hasPermissionPrefix(user, "system.role.create.") ||
+    hasPermissionPrefix(user, "system.role.update.") ||
+    hasPermissionPrefix(user, "system.role.toggle.");
+
+  return [
+    canReadRoleOptions
+      ? {
+          key: "role.roleCode",
+          label: "Vai trò",
+          type: "select",
+          optionsEndpoint: "/system/roles",
+          optionValue: "roleCode",
+          optionLabel: "roleName",
+        }
+      : {
+          key: "role.roleCode",
+          label: "Vai trò",
+          type: "text",
+          placeholder: "Lọc theo mã vai trò",
+        },
+    {
+      key: "effect",
+      label: "Hiệu lực",
+      type: "select",
+      options: ["ALLOW", "DENY"].map((value) => ({ value, label: value })),
+    },
+  ];
 }
 
 function roleFilter(): RouteFilterConfig {
