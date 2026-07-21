@@ -12,11 +12,11 @@ const buttonVariants = cva(
     variants: {
       variant: {
         primary:
-          "border border-primary bg-primary text-white shadow-[inset_0_1px_0_rgb(255_255_255_/_0.22),0_10px_22px_rgb(108_71_255_/_0.20)] hover:border-primary-hover hover:bg-primary-hover hover:shadow-[inset_0_1px_0_rgb(255_255_255_/_0.18),0_12px_26px_rgb(108_71_255_/_0.24)]",
+          "border border-primary bg-primary text-white shadow-[var(--shadow-accent)] hover:border-primary-hover hover:bg-primary-hover hover:shadow-[var(--shadow-accent)]",
         secondary: "border border-surface-2 bg-surface-2 text-foreground hover:border-border hover:bg-border",
         outline: "border border-border bg-white text-foreground shadow-sm hover:border-primary hover:bg-primary-soft hover:text-primary",
         ghost: "border border-transparent bg-transparent text-foreground hover:bg-primary-soft hover:text-primary",
-        destructive: "border border-danger bg-danger text-white shadow-[0_10px_22px_rgb(239_68_68_/_0.18)] hover:bg-[#dc2626]",
+        destructive: "border border-danger bg-danger text-white shadow-[var(--shadow-accent)] hover:bg-danger/90",
         icon: "border border-border bg-white p-0 text-foreground shadow-sm hover:border-primary hover:bg-primary-soft hover:text-primary",
       },
       size: {

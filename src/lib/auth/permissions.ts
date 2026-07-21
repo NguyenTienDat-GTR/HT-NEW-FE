@@ -1,5 +1,5 @@
 import type { AuthUser } from "./auth-store";
-import type { ResourceActionConfig } from "@/features/workspace/route-config";
+import type { ResourceActionConfig } from "@/config/routes/route-config";
 
 export function hasPermission(user: AuthUser | null | undefined, permission: string) {
   if (!user) return false;

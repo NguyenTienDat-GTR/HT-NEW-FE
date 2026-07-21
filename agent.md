@@ -21,7 +21,7 @@
 
 - `/login` and `/change-password` render dedicated auth forms with React Hook Form and Zod.
 - `/dashboard`, `/analytics`, `/notifications`, organization, training, certificate, and system routes render through the App Router workspace catch-all and route registry.
-- Current UI design branch is `feature/management-ui-design`, created from up-to-date `main` on 2026-07-14.
+- Current module refactor/UI branch is `feature/fe-module-refactor-ui`, created from up-to-date `main` on 2026-07-21.
 - Sidebar menu is grouped by module name: dashboard, organization, leader, executive-board, training, training-workflow, certificate, and system.
 - Ban điều hành routes now use `/executive-board/positions` and `/executive-board/assignments`; workflow aliases exist for `/training/registrations`, `/training/approvals`, `/training/scores`, `/certificates/approvals`, and `/leaders/profiles`.
 - Auth state uses Zustand memory only. Refresh and protected calls use `credentials: "include"`, Bearer access token, single-flight refresh, and retry once.
@@ -30,12 +30,12 @@
 
 ## Design system and animation
 
-- Light-only design uses Inter via `next/font`, violet `#6C47FF`, 44px targets, 240px/72px sidebar, 1100px content max, 48px data rows, 10px buttons, 8px inputs, and 12px panels/charts.
+- Light-only design uses Be Vietnam Pro via `next/font`, HR navy/teal OKLCH palette in `src/styles/tokens.css` (`primary: oklch(0.38 0.085 250)`, `accent: oklch(0.72 0.12 185)`, `success: oklch(0.68 0.14 150)`, `warning: oklch(0.78 0.16 75)`, `danger: oklch(0.62 0.2 25)`, `background: oklch(0.985 0.005 250)`), 44px targets, 264px/76px sidebar states, 1480px content max, compact data rows, 10px buttons, 8px inputs, and 12px panels/charts.
 - 2026-07-14 management UI refresh keeps the Clerk-style light surface but widens the workspace to 1400px, uses grouped navigation, module chips, richer table badges, workflow hints, empty/error/loading states, and dashboard work-queue shortcuts.
 - Button variants implemented: `primary`, `secondary`, `outline`, `ghost`, `destructive`, and `icon`; loading keeps width stable and disables double submit.
 - KPI `AnimatedMetric` uses Motion `useMotionValue`, `useSpring`, and `useReducedMotion`; visual number is `aria-hidden` while final value is exposed by accessible label.
 - Chart primitives include `ChartFrame`, `ChartHeader`, `ChartLegend`, `ChartTooltip`, `ChartSkeleton`, `ChartEmpty`, `ChartError`, and `ChartDataTable`.
-- Recharts animations are viewport-gated, reduced-motion aware, and use violet/indigo/lavender palette.
+- Recharts animations are viewport-gated, reduced-motion aware, and use the shared brand/success/warning OKLCH chart palette.
 - Muted implementation token is `#70727f` to pass axe/WCAG AA at 14px on white.
 
 ## Completed FE files
@@ -84,7 +84,7 @@
 - `FE/src/features/resources/resource-list-page.tsx`: replaced the old one-file generic resource screen with a reusable data/list primitive that module screens compose.
 - `FE/src/features/leader/leader-resource-view.tsx`, `FE/src/features/organization/organization-resource-view.tsx`, `FE/src/features/executive-board/executive-board-resource-view.tsx`, `FE/src/features/training/training-resource-view.tsx`, `FE/src/features/training-workflow/training-workflow-resource-view.tsx`, `FE/src/features/certificate/certificate-resource-view.tsx`, and `FE/src/features/system/system-resource-view.tsx`: added module-owned resource screens with their own summary cards, workflow hints, side panels, and tone.
 - `FE/src/features/workspace/module-resource-renderer.tsx` and `FE/src/features/workspace/workspace-page.tsx`: route resource pages through module-owned views instead of `ResourceView`; `FE/src/features/resources/resource-view.tsx` was removed.
-- `FE/src/features/workspace/app-shell.tsx`, `FE/src/features/auth/login-view.tsx`, `FE/src/features/auth/change-password-view.tsx`, `FE/src/features/resources/resource-toolbar.tsx`, `FE/src/features/resources/resource-table.tsx`, `FE/src/features/resources/resource-format.tsx`, `FE/src/features/analytics/dashboard-view.tsx`, and `FE/src/features/analytics/animated-metric.tsx`: refreshed UI from the provided visual references with a light violet system, white panels, lavender active navigation, centered auth card, module summary cards, icon row actions, and stable table controls.
+- `FE/src/features/workspace/app-shell.tsx`, `FE/src/features/auth/login-view.tsx`, `FE/src/features/auth/change-password-view.tsx`, `FE/src/features/resources/resource-toolbar.tsx`, `FE/src/features/resources/resource-table.tsx`, `FE/src/features/resources/resource-format.tsx`, `FE/src/features/analytics/dashboard-view.tsx`, and `FE/src/features/analytics/animated-metric.tsx`: refreshed UI from the provided visual references with a light branded admin system, white panels, active navigation, centered auth card, module summary cards, icon row actions, and stable table controls.
 - `FE/src/features/workspace/app-shell.tsx`: revised the sidebar to match the reference layout more closely with per-module accordion collapse, default-open Organization and Leader groups, icon-only full-sidebar collapse, and visible Organization children for Diocese/Deanery/Parish.
 - `FE/src/features/resources/resource-list-page.tsx`: simplified module list pages to a table-first layout with compact breadcrumb/title/action, one full-width filter panel, and full-width table/pagination; summary cards and side panels no longer shrink the list.
 - `FE/src/features/resources/resource-toolbar.tsx`: removed duplicate status filter chips and kept a single status select plus filter button to match the reference list screens.
@@ -184,11 +184,25 @@
 - SaaS/admin UI pass refreshed global tokens, app shell, buttons, inputs, resource tables, filters, pagination, detail drawers, forms, dashboard cards, and analytics charts without changing API endpoints, permissions, route flow, query state, or mutation behavior.
 - Verification run in this session: `npm.cmd run typecheck`, `npm.cmd run lint`, `npm.cmd run test`, `npm.cmd run build`, `npm.cmd run test:e2e`, and `git diff --check` passed.
 
+### FE module refactor + Hallmark UI pass 2026-07-21
+
+- Branch `feature/fe-module-refactor-ui` starts from up-to-date `main` and remains local; no commit or push was performed.
+- `src/app` is route-only: dashboard routes now live under `src/app/(dashboard)`, the dashboard layout owns `AuthGate` + `AppShell`, and `[...segments]/page.tsx` remains a thin catch-all adapter to the route registry.
+- `src/features` was removed after import migration. Module-owned screens now live under `src/modules/auth`, `dashboard`, `analytics`, `organizations`, `leaders`, `executive-board`, `training-courses`, `training-workflow`, `certificates`, `accounts`, and `workspace`.
+- Shared resource primitives moved to `src/components/common/resource`; shared resource form primitives moved to `src/components/form/resource-form`; route/menu config moved to `src/config/routes`.
+- Shared resource list composition was split after the initial migration: common now exposes `resource-list-runtime`, `resource-list-header`, `resource-list-empty-state`, `resource-list-types`, and `resource-list-utils`; module wrappers own their labels and domain rules such as SUPER_ADMIN organization create visibility and certificate/training approval endpoints.
+- Form specs moved beside their owning domains: organizations, leaders/personnel, training-courses, training-workflow, and accounts/system. Existing payload mapping, option endpoints, query params, page semantics, action dialogs, and RBAC checks were preserved.
+- Hallmark pass used Be Vietnam Pro, light SaaS/admin surfaces, the HR navy/teal OKLCH palette, neutral panels/text, Phosphor Icons, and data-dense operational layout.
+- Hallmark metadata was written to `.hallmark/preflight.json` and `.hallmark/log.json`. Central tokens now live in `src/styles/tokens.css` and are imported by `src/app/globals.css` without removing Tailwind v4 `@import "tailwindcss"`.
+- Unit test files moved from `tests/unit/features` to `tests/unit/modules`; tests remain outside `src`.
+- Visual artifacts were captured under `visual-artifacts/fe-module-refactor-ui`: 63 screenshots across `/login`, `/dashboard`, `/analytics`, `/leaders`, `/organization/dioceses`, `/system/accounts`, `/leaders/new`, a `?detail=` drawer, and a filter drawer at 1440, 1024, 768, 414, 390, 375, and 320 widths.
+- Verification run in this session: `rg "@/features" src tests` no results; `rg --files src | rg "(test|spec)\.(ts|tsx)$|^src/test/"` no results; `git diff --check` passed; `npm.cmd run typecheck`, `npm.cmd run lint`, `npm.cmd run test`, `npm.cmd run build`, and `npm.cmd run test:e2e` passed.
+
 ## Remaining FE work
 
 - Expand form specs with richer domain-specific option/context endpoints when backend adds the remaining context APIs.
 - Add live smoke with real E2E credentials from ignored env when available.
-- Expand visual audit beyond login to authenticated dashboard, analytics, table, form, modal, empty/error/loading states once a seeded test account is available.
+- Repeat the authenticated visual audit against a real seeded test account when shared E2E credentials become available; current 2026-07-21 audit used Playwright API mocks for dashboard, analytics, resource lists, create form, detail drawer, and filter drawer.
 - Add richer tests for chart reduced-motion toggling and STOMP reconnect payload behavior with MSW/browser mocks.
 
 ### SUPER_ADMIN RBAC scope rollout 2026-07-15
