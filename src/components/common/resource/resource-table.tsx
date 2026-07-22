@@ -158,7 +158,7 @@ function canToggleRow(route: RouteConfig, row: Record<string, unknown>, user: Au
   if (!isSuperAdmin(user) && isSystemRoleRow(route, row)) return false;
   if (route.kind === "accounts") return !isOwnAccount(row, user) && !rowHasPrimaryRole(row, "SUPER_ADMIN");
   if (!isSuperAdmin(user)) return true;
-  return route.kind === "dioceses";
+  return route.kind === "dioceses" || route.kind === "permissions";
 }
 
 function isSystemRoleRow(route: RouteConfig, row: Record<string, unknown>) {

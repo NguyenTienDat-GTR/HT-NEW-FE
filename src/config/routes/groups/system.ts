@@ -92,6 +92,7 @@ export const systemRouteGroup: RouteGroup = {
       actionPermissionPrefixes: ["system.permission.update.", "system.permission.toggle."],
       actions: {
         edit: { label: "Sửa", permissionPrefixes: ["system.permission.update."], requiredRoles: ["SUPER_ADMIN", "ROLE_SUPER_ADMIN"] },
+        toggle: { label: "Đổi trạng thái", permissionPrefixes: ["system.permission.toggle."], requiredRoles: ["SUPER_ADMIN", "ROLE_SUPER_ADMIN"] },
       },
       filterLabels: ["Phân hệ", "Đối tượng", "Thao tác", "Phạm vi", "Hiệu lực"],
       filters: [

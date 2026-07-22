@@ -12,6 +12,14 @@ function user(permissions: string[]): AuthUser {
   };
 }
 
+function superAdmin(permissions: string[] = []): AuthUser {
+  return {
+    username: "super-admin",
+    roles: ["SUPER_ADMIN"],
+    permissions,
+  };
+}
+
 const toggleRoute: RouteConfig = {
   path: "/organization/parishes",
   moduleName: "organization.parish",
@@ -25,6 +33,23 @@ const toggleRoute: RouteConfig = {
   permissionPrefixes: ["organization.parish.read."],
   actions: {
     toggle: { label: "Toggle", permissionPrefixes: ["organization.parish.toggle."] },
+  },
+};
+
+const permissionRoute: RouteConfig = {
+  ...toggleRoute,
+  path: "/system/permissions",
+  moduleName: "system.permission",
+  endpoint: "/system/permissions",
+  idField: "permissionCode",
+  kind: "permissions",
+  columns: ["permissionCode", "status"],
+  actions: {
+    toggle: {
+      label: "Toggle",
+      permissionPrefixes: ["system.permission.toggle."],
+      requiredRoles: ["SUPER_ADMIN", "ROLE_SUPER_ADMIN"],
+    },
   },
 };
 
@@ -61,5 +86,35 @@ describe("shouldHideStatusColumn", () => {
     );
 
     expect(columns).toEqual(["name", "effect", "approvalStatus", "participationStatus"]);
+  });
+
+  it("keeps permission status visible for non-super-admin even when permission toggle prefix exists", () => {
+    const columns = visibleResourceColumns(
+      permissionRoute,
+      [{ permissionCode: "system.permission.read.all", status: true }],
+      user(["system.permission.toggle.all"]),
+    );
+
+    expect(columns).toEqual(["permissionCode", "status"]);
+  });
+
+  it("keeps permission status visible for super-admin without permission catalog toggle permission", () => {
+    const columns = visibleResourceColumns(
+      permissionRoute,
+      [{ permissionCode: "system.permission.read.all", status: true }],
+      superAdmin(),
+    );
+
+    expect(columns).toEqual(["permissionCode", "status"]);
+  });
+
+  it("hides permission status for super-admin with permission catalog toggle permission", () => {
+    const columns = visibleResourceColumns(
+      permissionRoute,
+      [{ permissionCode: "system.permission.read.all", status: true }],
+      superAdmin(["system.permission.toggle.all"]),
+    );
+
+    expect(columns).toEqual(["permissionCode"]);
   });
 });

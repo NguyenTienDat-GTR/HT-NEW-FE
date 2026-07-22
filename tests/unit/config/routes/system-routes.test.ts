@@ -19,4 +19,13 @@ describe("system route filters", () => {
       ]),
     );
   });
+
+  it("requires super-admin role and toggle permission for permission catalog toggle action", () => {
+    const permissionRoute = systemRouteGroup.children.find((route) => route.path === "/system/permissions");
+
+    expect(permissionRoute?.actions?.toggle).toMatchObject({
+      requiredRoles: ["SUPER_ADMIN", "ROLE_SUPER_ADMIN"],
+      permissionPrefixes: ["system.permission.toggle."],
+    });
+  });
 });
