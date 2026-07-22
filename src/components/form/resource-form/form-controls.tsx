@@ -5,6 +5,7 @@ import type React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { apiFetch, type PageResponse } from "@/lib/api/client";
+import type { AuthUser } from "@/lib/auth/auth-store";
 import { cn } from "@/lib/utils";
 import { optionFromRow, rowsFromResponse } from "./api-utils";
 import type { FormFieldSpec } from "./types";
@@ -15,13 +16,14 @@ type FieldProps = {
   field: FormFieldSpec;
   value: FormValue;
   values?: Record<string, unknown>;
+  user?: AuthUser | null;
   mode: "create" | "edit";
   onChange: (value: FormValue) => void;
   onFieldChange?: (fieldName: string, value: FormValue) => void;
   error?: string;
 };
 
-export function FormField({ field, value, values, mode, onChange, onFieldChange, error }: FieldProps) {
+export function FormField({ field, value, values, user, mode, onChange, onFieldChange, error }: FieldProps) {
   const readonly = (mode === "create" && field.readOnlyOnCreate && value !== undefined && value !== null && value !== "") || (mode === "edit" && field.readOnlyOnEdit);
   const type = field.type ?? "text";
   const id = `field-${field.name}`;
@@ -32,7 +34,7 @@ export function FormField({ field, value, values, mode, onChange, onFieldChange,
       <label className="text-xs font-semibold uppercase tracking-[0.02em] text-muted" htmlFor={id}>
         {field.label} {field.required ? <span className="text-danger">*</span> : null}
       </label>
-      {renderControl({ field, id, type, value: clearing ? "" : value, values, readonly: readonly || clearing, onChange, onFieldChange })}
+      {renderControl({ field, id, type, value: clearing ? "" : value, values, user, readonly: readonly || clearing, onChange, onFieldChange })}
       {mode === "edit" && field.clearable ? (
         <label className="inline-flex items-center gap-2 text-xs font-semibold text-muted">
           <input
@@ -57,6 +59,7 @@ function renderControl({
   type,
   value,
   values,
+  user,
   readonly,
   onChange,
   onFieldChange,
@@ -66,6 +69,7 @@ function renderControl({
   type: string;
   value: FormValue;
   values?: Record<string, unknown>;
+  user?: AuthUser | null;
   readonly: boolean | undefined;
   onChange: (value: FormValue) => void;
   onFieldChange?: (fieldName: string, value: FormValue) => void;
@@ -94,9 +98,33 @@ function renderControl({
         onFieldChange={onFieldChange}
         readonly={readonly}
         radio={type === "radio"}
+        user={user}
         values={values}
         value={value}
       />
+    );
+  }
+
+  if (type === "switch") {
+    const checked = value === true || value === "true";
+    return (
+      <button
+        aria-checked={checked}
+        className={cn(
+          "flex h-10 w-full max-w-full cursor-pointer items-center justify-between gap-3 overflow-hidden rounded-[8px] border px-3 text-sm font-semibold transition-colors focus:outline-none focus:ring-4 focus:ring-[var(--primary-ring)] disabled:cursor-not-allowed disabled:opacity-60",
+          checked ? "border-primary bg-primary/8 text-primary" : "border-border bg-white text-foreground",
+        )}
+        disabled={readonly}
+        id={id}
+        onClick={() => onChange(!checked)}
+        role="switch"
+        type="button"
+      >
+        <span className="min-w-0 truncate text-left">{checked ? "Vai trò chính" : "Vai trò phụ"}</span>
+        <span className={cn("relative h-6 w-11 shrink-0 rounded-full transition-colors", checked ? "bg-primary" : "bg-border")}>
+          <span className={cn("absolute left-1 top-1 h-4 w-4 rounded-full bg-white shadow-sm transition-transform", checked ? "translate-x-5" : "translate-x-0")} />
+        </span>
+      </button>
     );
   }
 
@@ -121,6 +149,7 @@ function OptionControl({
   radio,
   readonly,
   values,
+  user,
   value,
   onChange,
   onFieldChange,
@@ -132,6 +161,7 @@ function OptionControl({
   radio?: boolean;
   readonly?: boolean;
   values?: Record<string, unknown>;
+  user?: AuthUser | null;
   value: FormValue;
   onChange: (value: FormValue) => void;
   onFieldChange?: (fieldName: string, value: FormValue) => void;
@@ -142,7 +172,7 @@ function OptionControl({
     queryFn: () => apiFetch<PageResponse<Record<string, unknown>> | Record<string, unknown>[]>(optionEndpointWithPaging(field.optionsEndpoint)),
   });
   const apiOptions = rowsFromResponse(query.data).map((row) => optionFromRow(row, field.optionValue, field.optionLabel, field.optionLabelFields));
-  const excludedValues = new Set(field.excludeOptionValues ?? []);
+  const excludedValues = new Set([...(field.excludeOptionValues ?? []), ...(field.excludeOptionValuesWhen?.(user ?? null) ?? [])]);
   const options = (field.options ?? apiOptions).filter((option) => !excludedValues.has(option.value));
 
   useEffect(() => {

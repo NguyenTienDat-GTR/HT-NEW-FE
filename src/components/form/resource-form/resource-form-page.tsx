@@ -130,6 +130,7 @@ export function ResourceFormPage({
                       onChange={(value) => setValues((current) => nextValuesForField(current, field.name, value, mergedValues))}
                       onFieldChange={(fieldName, value) => setValues((current) => ({ ...current, [fieldName]: value }))}
                       value={mergedValues[field.name] as string | string[] | number | boolean | null | undefined}
+                      user={user}
                       values={mergedValues}
                     />
                   </div>

@@ -112,10 +112,10 @@ function FilterControl({
   const query = useQuery({
     queryKey: ["toolbar-filter-options", filter.key, filter.optionsEndpoint],
     enabled: Boolean(filter.optionsEndpoint),
-    queryFn: () => apiFetch<PageResponse<Record<string, unknown>> | Record<string, unknown>[]>(`${filter.optionsEndpoint}?page=0&size=100`),
+    queryFn: () => apiFetch<PageResponse<Record<string, unknown>> | Record<string, unknown>[] | Record<string, unknown>>(optionEndpointWithPaging(filter.optionsEndpoint)),
   });
 
-  const apiOptions = rowsFromResponse(query.data).map((row) => optionFromRow(row, filter.optionValue, filter.optionLabel));
+  const apiOptions = filterRowsFromResponse(query.data, filter.optionCollection).map((row) => optionFromRow(row, filter.optionValue, filter.optionLabel));
   const options = filter.options ?? apiOptions;
   const hasExplicitAllOption = options.some((option) => option.value === "all");
 
@@ -146,4 +146,20 @@ function FilterControl({
       </select>
     </label>
   );
+}
+
+function filterRowsFromResponse(data: PageResponse<Record<string, unknown>> | Record<string, unknown>[] | Record<string, unknown> | undefined, collection?: string) {
+  if (!data) return [];
+  if (collection && !Array.isArray(data) && !(data as PageResponse<Record<string, unknown>>).content) {
+    const value = (data as Record<string, unknown>)[collection];
+    return Array.isArray(value) ? value.filter((item): item is Record<string, unknown> => typeof item === "object" && item !== null) : [];
+  }
+  return rowsFromResponse(data as PageResponse<Record<string, unknown>> | Record<string, unknown>[] | undefined);
+}
+
+function optionEndpointWithPaging(endpoint: string | undefined) {
+  if (!endpoint) return "";
+  if (endpoint.includes("/taxonomy")) return endpoint;
+  const separator = endpoint.includes("?") ? "&" : "?";
+  return `${endpoint}${separator}page=0&size=100`;
 }

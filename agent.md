@@ -274,3 +274,17 @@
 - Route action inference no longer builds delete actions from `.delete.` prefixes. Toggle visibility accepts `.toggle.`, existing management/update permissions, and role-permission assign/revoke permissions where appropriate.
 - Captured OpenAPI snapshot and generated `src/lib/api/schema.d.ts` were cleaned of DELETE operations after live capture from `localhost:1007` was unavailable.
 - Verification run in this session: `npm.cmd run typecheck`, `npm.cmd run lint`, and `npm.cmd test` passed.
+
+### RBAC assignment rules cleanup 2026-07-22
+
+- Branch `feature/rbac-assignment-rules` starts from up-to-date `main` in both BE and FE.
+- `/system/permissions` no longer exposes a `Thêm quyền` action. The captured OpenAPI snapshot and generated `src/lib/api/schema.d.ts` were regenerated after removing `POST /api/system/permissions` and `PermissionCreateRequest`.
+- `/system/permissions` filter drawer now uses dropdowns for module/resource/action/scope from `/system/permissions/taxonomy` instead of free-text filter inputs.
+- Account create for scoped admins excludes all system/admin role options (`SUPER_ADMIN`, `ADMIN_DIOCESE`, `ADMIN_DEANERY`, `ADMIN_PARISH`) from the multi-role selector.
+- Account-role bulk assignment must use `/system/account-roles/assignable-roles`; `ADMIN_DIOCESE` can see and assign `ADMIN_DEANERY` and `ADMIN_PARISH` for accounts in its managed diocese, while role-permission assignment still hides system/admin roles from non-SUPER_ADMIN users.
+- `/system/account-permissions/new` now uses the bulk checkbox form for every actor with `system.account_permission.manage.*`, matching `/system/account-roles/new` and submitting multiple `permissionCodes` to `/system/account-permissions/bulk`.
+- Bulk assignment forms default assignment dates to the current local datetime. The role-permission bulk form splits setup, conditions, and validity dates into compact sections.
+- `/system/account-roles/:id/edit` renders `isPrimary` as a switch instead of a dropdown. Enabling the switch submits `isPrimary=true`; backend clears the other primary roles for the same account.
+- Non-SUPER_ADMIN row actions hide edit and status switch controls for system/admin role rows in both `/system/roles` and `/system/role-permissions`; SUPER_ADMIN keeps the system-role management controls allowed by backend authorization.
+- The account-role edit primary-role switch uses compact, non-wrapping labels and a fixed track/knob layout so enabling it does not overflow inside the form grid.
+- Verification run in this session: `npm.cmd run api:generate`, `npm.cmd run typecheck`, `npm.cmd run lint`, `npm.cmd run test`, and `npm.cmd run build` passed.
