@@ -166,10 +166,11 @@ function OptionControl({
   onChange: (value: FormValue) => void;
   onFieldChange?: (fieldName: string, value: FormValue) => void;
 }) {
+  const [remoteSearch, setRemoteSearch] = useState("");
   const query = useQuery({
-    queryKey: ["field-options", field.name, field.optionsEndpoint],
+    queryKey: ["field-options", field.name, field.optionsEndpoint, field.optionSearchParam ? remoteSearch : ""],
     enabled: Boolean(field.optionsEndpoint),
-    queryFn: () => apiFetch<PageResponse<Record<string, unknown>> | Record<string, unknown>[]>(optionEndpointWithPaging(field.optionsEndpoint)),
+    queryFn: () => apiFetch<PageResponse<Record<string, unknown>> | Record<string, unknown>[]>(optionEndpointWithPaging(field.optionsEndpoint, field.optionSearchParam, remoteSearch)),
   });
   const apiOptions = rowsFromResponse(query.data).map((row) => optionFromRow(row, field.optionValue, field.optionLabel, field.optionLabelFields));
   const excludedValues = new Set([...(field.excludeOptionValues ?? []), ...(field.excludeOptionValuesWhen?.(user ?? null) ?? [])]);
@@ -184,9 +185,10 @@ function OptionControl({
       if (next.length !== value.length) onChange(next);
       return;
     }
+    if (field.searchable) return;
     const currentValue = String(value ?? "");
     if (currentValue && !allowed.has(currentValue)) onChange("");
-  }, [checkboxList, field.options, multiple, onChange, options, query.isLoading, value]);
+  }, [checkboxList, field.options, field.searchable, multiple, onChange, options, query.isLoading, value]);
 
   if (checkboxList) {
     const primaryValue = field.primaryFieldName ? String(values?.[field.primaryFieldName] ?? "") : undefined;
@@ -235,7 +237,17 @@ function OptionControl({
   }
 
   if (field.searchable && !multiple) {
-    return <SearchableSelect id={id} onChange={onChange} options={options} readonly={readonly || query.isLoading} value={String(value ?? "")} />;
+    return (
+      <SearchableSelect
+        id={id}
+        onChange={onChange}
+        onSearchChange={field.optionSearchParam ? setRemoteSearch : undefined}
+        options={options}
+        placeholder={field.placeholder}
+        readonly={readonly}
+        value={String(value ?? "")}
+      />
+    );
   }
 
   return (
@@ -263,13 +275,17 @@ function OptionControl({
 function SearchableSelect({
   id,
   onChange,
+  onSearchChange,
   options,
+  placeholder,
   readonly,
   value,
 }: {
   id: string;
   onChange: (value: FormValue) => void;
+  onSearchChange?: (value: string) => void;
   options: Array<{ value: string; label: string; group?: string; disabled?: boolean; disabledReason?: string }>;
+  placeholder?: string;
   readonly?: boolean;
   value: string;
 }) {
@@ -290,14 +306,17 @@ function SearchableSelect({
         id={id}
         onBlur={() => window.setTimeout(() => setOpen(false), 120)}
         onChange={(event) => {
-          setSearch(event.target.value);
+          const nextSearch = event.target.value;
+          setSearch(nextSearch);
+          onSearchChange?.(nextSearch);
           setOpen(true);
         }}
         onFocus={() => {
           setSearch("");
+          onSearchChange?.("");
           setOpen(true);
         }}
-        placeholder="Gõ tên để tìm nhanh"
+        placeholder={placeholder ?? "Gõ tên để tìm nhanh"}
         value={open ? search : selected?.label ?? ""}
       />
       {open && !readonly ? (
@@ -465,8 +484,9 @@ function numericValue(value: string) {
   return Number.isFinite(parsed) ? parsed : value;
 }
 
-function optionEndpointWithPaging(endpoint: string | undefined) {
+function optionEndpointWithPaging(endpoint: string | undefined, searchParam?: string, searchValue?: string) {
   if (!endpoint) return "";
   const separator = endpoint.includes("?") ? "&" : "?";
-  return `${endpoint}${separator}page=0&size=100`;
+  const search = searchParam && searchValue?.trim() ? `&${encodeURIComponent(searchParam)}=${encodeURIComponent(searchValue.trim())}` : "";
+  return `${endpoint}${separator}page=0&size=100${search}`;
 }
