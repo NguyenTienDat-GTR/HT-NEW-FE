@@ -11,6 +11,7 @@ export type AuthUser = {
   roles: string[];
   permissions: string[];
   mustChangePassword?: boolean;
+  unitLocked?: boolean;
 };
 
 type AuthState = {

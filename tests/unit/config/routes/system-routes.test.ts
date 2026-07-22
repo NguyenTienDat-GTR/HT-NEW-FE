@@ -28,4 +28,20 @@ describe("system route filters", () => {
       permissionPrefixes: ["system.permission.toggle."],
     });
   });
+
+  it("uses entity search fields for permission catalog search", () => {
+    const permissionRoute = systemRouteGroup.children.find((route) => route.path === "/system/permissions");
+
+    expect(permissionRoute?.searchFields).toEqual(
+      expect.arrayContaining(["permissionCode", "permissionName", "module.moduleCode", "resource.resourceCode", "action.actionCode", "scope.scopeCode"]),
+    );
+  });
+
+  it("shows account-role toggle switch for assign permission holders", () => {
+    const accountRoleRoute = systemRouteGroup.children.find((route) => route.path === "/system/account-roles");
+
+    expect(accountRoleRoute?.actions?.toggle?.permissionPrefixes).toEqual(
+      expect.arrayContaining(["system.account_role.assign.", "system.account_role.toggle."]),
+    );
+  });
 });

@@ -30,8 +30,12 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   }, [pathname, query.isError, router]);
 
   useEffect(() => {
-    if (query.data?.mustChangePassword && pathname !== "/change-password") router.replace("/change-password");
-  }, [pathname, query.data?.mustChangePassword, router]);
+    if (query.data?.unitLocked && pathname !== "/notifications") router.replace("/notifications");
+  }, [pathname, query.data?.unitLocked, router]);
+
+  useEffect(() => {
+    if (!query.data?.unitLocked && query.data?.mustChangePassword && pathname !== "/change-password") router.replace("/change-password");
+  }, [pathname, query.data?.mustChangePassword, query.data?.unitLocked, router]);
 
   if (query.isLoading && !user) {
     return (

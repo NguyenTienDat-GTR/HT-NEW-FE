@@ -868,6 +868,22 @@ export interface paths {
         patch: operations["markRead"];
         trace?: never;
     };
+    "/api/system/notifications/unread-count": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["unreadCount"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/system/accounts/{username}/toggle-status": {
         parameters: {
             query?: never;
@@ -2383,6 +2399,7 @@ export interface components {
             roles?: string[];
             permissions?: string[];
             mustChangePassword?: boolean;
+            unitLocked?: boolean;
         };
         apiResponseAuthTokenResponse: {
             success?: boolean;
@@ -2441,6 +2458,10 @@ export interface components {
             /** Format: date-time */
             createdAt?: string;
             status?: boolean;
+        };
+        UnreadNotificationCountResponse: {
+            /** Format: int64 */
+            unreadCount?: number;
         };
         apiResponseTrainingNotificationResponse: {
             success?: boolean;
@@ -2716,11 +2737,37 @@ export interface components {
             /** Format: date-time */
             timestamp?: string;
         };
-        apiResponseListTrainingNotificationResponse: {
+        PageTrainingNotificationResponse: {
+            /** Format: int32 */
+            totalPages?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
+            /** Format: int32 */
+            numberOfElements?: number;
+            first?: boolean;
+            last?: boolean;
+            /** Format: int32 */
+            size?: number;
+            content?: components["schemas"]["TrainingNotificationResponse"][];
+            /** Format: int32 */
+            number?: number;
+            sort?: components["schemas"]["SortObject"];
+            empty?: boolean;
+        };
+        apiResponsePageTrainingNotificationResponse: {
             success?: boolean;
             message?: string;
             errorCode?: string;
-            data?: components["schemas"]["TrainingNotificationResponse"][];
+            data?: components["schemas"]["PageTrainingNotificationResponse"];
+            /** Format: date-time */
+            timestamp?: string;
+        };
+        apiResponseUnreadNotificationCountResponse: {
+            success?: boolean;
+            message?: string;
+            errorCode?: string;
+            data?: components["schemas"]["UnreadNotificationCountResponse"];
             /** Format: date-time */
             timestamp?: string;
         };
@@ -5571,6 +5618,28 @@ export interface operations {
     };
     findMyNotifications: {
         parameters: {
+            query: {
+                request: components["schemas"]["BaseSearchRequest"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["apiResponsePageTrainingNotificationResponse"];
+                };
+            };
+        };
+    };
+    unreadCount: {
+        parameters: {
             query?: never;
             header?: never;
             path?: never;
@@ -5584,7 +5653,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["apiResponseListTrainingNotificationResponse"];
+                    "*/*": components["schemas"]["apiResponseUnreadNotificationCountResponse"];
                 };
             };
         };

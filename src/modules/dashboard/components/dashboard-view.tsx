@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import type { Route } from "next";
 import Link from "next/link";
 import { Panel } from "@/components/ui/panel";
-import { apiFetch } from "@/lib/api/client";
+import { apiFetch, type PageResponse } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
 import { ChartFrame, ChartSkeleton } from "@/modules/analytics/components/chart-frame";
 import { AnimatedMetric } from "@/modules/analytics/components/animated-metric";
@@ -36,7 +36,7 @@ export function DashboardView() {
   });
   const notificationsQuery = useQuery({
     queryKey: ["system", "notifications", "dashboard"],
-    queryFn: () => apiFetch<NotificationItem[]>("/system/notifications"),
+    queryFn: () => apiFetch<PageResponse<NotificationItem>>("/system/notifications?page=0&size=4"),
   });
   const workQueueQuery = useQuery({
     queryKey: ["analytics", "work-queue"],
@@ -78,7 +78,7 @@ export function DashboardView() {
             </Link>
           </div>
           <div className="space-y-2">
-            {(notificationsQuery.data ?? []).slice(0, 4).map((item, index) => (
+            {(notificationsQuery.data?.content ?? []).map((item, index) => (
               <div className="flex items-center gap-3 rounded-[10px] px-2 py-3 transition-colors hover:bg-primary-soft" key={item.id}>
                 <span className={cn("grid h-9 w-9 place-items-center rounded-full", index % 2 === 0 ? "bg-danger/10 text-danger" : "bg-blue-50 text-blue-600")}>
                   <Bell className="h-4 w-4" weight="bold" />
@@ -87,7 +87,7 @@ export function DashboardView() {
                 <span className="text-xs text-muted">{item.readAt ? "Đã đọc" : "Mới"}</span>
               </div>
             ))}
-            {!notificationsQuery.isLoading && !notificationsQuery.data?.length ? <p className="rounded-[10px] bg-surface-1 p-3 text-sm text-muted">Chưa có thông báo mới.</p> : null}
+            {!notificationsQuery.isLoading && !notificationsQuery.data?.content.length ? <p className="rounded-[10px] bg-surface-1 p-3 text-sm text-muted">Chưa có thông báo mới.</p> : null}
           </div>
         </Panel>
       </section>

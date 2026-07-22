@@ -38,7 +38,8 @@ describe("resolveRouteForUser", () => {
       type: "select",
       optionsEndpoint: "/system/roles",
     });
-    expect(route.filters?.[1]).toMatchObject({ key: "effect", type: "select" });
+    expect(route.filters).toEqual(expect.arrayContaining([expect.objectContaining({ key: "effect", type: "select" })]));
+    expect(route.filters).toEqual(expect.arrayContaining([expect.objectContaining({ key: "permission.module.moduleCode", type: "select" })]));
   });
 
   it("falls back to text role filter when scoped admin cannot call role options endpoint", () => {
@@ -49,6 +50,7 @@ describe("resolveRouteForUser", () => {
       type: "text",
     });
     expect(route.filters?.[0]).not.toHaveProperty("optionsEndpoint");
-    expect(route.filters?.[1]).toMatchObject({ key: "effect", type: "select" });
+    expect(route.filters).toEqual(expect.arrayContaining([expect.objectContaining({ key: "effect", type: "select" })]));
+    expect(route.filters).toEqual(expect.arrayContaining([expect.objectContaining({ key: "permission.scope.scopeCode", type: "select" })]));
   });
 });
