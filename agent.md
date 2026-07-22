@@ -288,3 +288,13 @@
 - Non-SUPER_ADMIN row actions hide edit and status switch controls for system/admin role rows in both `/system/roles` and `/system/role-permissions`; SUPER_ADMIN keeps the system-role management controls allowed by backend authorization.
 - The account-role edit primary-role switch uses compact, non-wrapping labels and a fixed track/knob layout so enabling it does not overflow inside the form grid.
 - Verification run in this session: `npm.cmd run api:generate`, `npm.cmd run typecheck`, `npm.cmd run lint`, `npm.cmd run test`, and `npm.cmd run build` passed.
+
+### Vietnamese permission taxonomy labels 2026-07-22
+
+- Branch `feature/vietnamese-permission-labels` starts from up-to-date `main` in both BE and FE.
+- `/system/permissions` keeps `permissionCode` as the raw backend code, but maps `moduleCode`, `resourceCode`, `actionCode`, and `scopeCode` to Vietnamese labels in the table and detail drawer.
+- The permission filter drawer labels module/resource/action/scope as `Phân hệ`, `Đối tượng`, `Thao tác`, and `Phạm vi`; taxonomy options from `/system/permissions/taxonomy` are localized client-side while preserving the code values sent inside `filters` JSON. If the taxonomy endpoint is unavailable for the current actor, FE falls back to `/system/permissions?page=0&size=100` and builds dropdown values from readable permission rows.
+- The same `/system/permissions` filter drawer includes `Hiệu lực` with `ALLOW` and `DENY`, sending `effect` inside the JSON `filters` payload for backend assignment-effect filtering.
+- `/system/permissions` status toggle action requires both `SUPER_ADMIN` / `ROLE_SUPER_ADMIN` and `system.permission.toggle.*`; backend migration `V051__seed_permission_toggle_for_super_admin.sql` seeds `system.permission.toggle.all` for `SUPER_ADMIN`. Non-super-admin roles keep the status column visible and do not see a permission catalog toggle switch even if a stale permission prefix exists.
+- Shared resource tables now hide only the exact `status` column when the current page has at least one row showing the toggle switch; business-state columns such as `effect`, `approvalStatus`, and `participationStatus` stay visible.
+- Verification run in this session: `npm.cmd run typecheck`, targeted `npm.cmd run test -- tests/unit/components/common/resource/permission-taxonomy-labels.test.ts`, targeted `resource-table`, `resource-toolbar`, route-config, and search tests, `npm.cmd run lint`, full `npm.cmd run test`, and `git diff --check` passed.

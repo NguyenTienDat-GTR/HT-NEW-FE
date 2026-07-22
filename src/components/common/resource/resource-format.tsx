@@ -1,5 +1,6 @@
 import type React from "react";
 import { cn, viNumber } from "@/lib/utils";
+import { formatPermissionTaxonomyValue, permissionTaxonomyKindFromColumn } from "./permission-taxonomy-labels";
 
 export const columnLabels: Record<string, string> = {
   action: "Hành động",
@@ -119,6 +120,9 @@ export function ResourceCell({ column, row, value, displayMode = "table" }: Reso
   if (column === "imageUrl") return <Avatar name={String(row.fullName ?? row.leaderFullName ?? row.username ?? "")} src={value} />;
   if (column === "status" && typeof value === "boolean") return <StatusBadge active={value} />;
   if (column === "effect" && typeof value === "string") return <EffectBadge effect={value} />;
+  if (["moduleCode", "resourceCode", "actionCode", "scopeCode"].includes(column) && typeof value === "string") {
+    return <TextValue full={full}>{formatPermissionTaxonomyValue(permissionTaxonomyKindFromColumn(column), value) ?? value}</TextValue>;
+  }
   if (column === "leaderLevel" && typeof value === "string") return <Badge>{levelLabels[value] ?? value}</Badge>;
   if (column === "passed" && typeof value === "boolean") return <Badge tone={value ? "success" : "danger"}>{value ? "Đạt" : "Chưa đạt"}</Badge>;
   if (column === "locked" && typeof value === "boolean") return <Badge tone={value ? "warning" : "neutral"}>{value ? "Đã khóa" : "Có thể sửa"}</Badge>;

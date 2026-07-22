@@ -14,7 +14,6 @@ import type { ResourcePageSize } from "./use-resource-query-state";
 const systemRoleCodes = new Set(["SUPER_ADMIN", "ADMIN_DIOCESE", "ADMIN_DEANERY", "ADMIN_PARISH"]);
 
 export function ResourceTable({
-  columns,
   isLoading,
   rows,
   route,
@@ -23,7 +22,6 @@ export function ResourceTable({
   sortBy,
   sortDirection,
 }: {
-  columns: RouteConfig["columns"];
   isLoading: boolean;
   rows: Record<string, unknown>[];
   route: RouteConfig;
@@ -32,12 +30,15 @@ export function ResourceTable({
   sortBy?: string;
   sortDirection: "ASC" | "DESC";
 }) {
+  const user = useAuthStore((state) => state.user);
+  const visibleColumns = visibleResourceColumns(route, rows, user);
+
   return (
     <div className="max-w-full overflow-x-auto">
       <table className="w-full min-w-[1080px] border-separate border-spacing-0 text-left text-xs">
         <thead>
           <tr className="bg-surface-1/90">
-            {columns.map((column) => (
+            {visibleColumns.map((column) => (
               <th className="sticky top-0 z-10 h-10 border-b border-border bg-surface-1/95 px-3 font-semibold text-foreground" key={column}>
                 <button className="inline-flex h-8 cursor-pointer items-center gap-1 rounded-[8px] px-1 transition-colors hover:text-primary" onClick={() => sort(column)} type="button">
                   {columnLabels[column] ?? column}
@@ -53,10 +54,19 @@ export function ResourceTable({
             <th className="h-10 border-b border-border px-3 text-right font-semibold text-foreground">Thao tác</th>
           </tr>
         </thead>
-        <tbody>{isLoading ? <ResourceTableSkeleton columns={columns} size={size} /> : <ResourceRows columns={columns} route={route} rows={rows} />}</tbody>
+        <tbody>{isLoading ? <ResourceTableSkeleton columns={visibleColumns} size={size} /> : <ResourceRows columns={visibleColumns} route={route} rows={rows} />}</tbody>
       </table>
     </div>
   );
+}
+
+export function shouldHideStatusColumn(route: RouteConfig, rows: Record<string, unknown>[], user: AuthUser | null) {
+  if (!route.columns.includes("status")) return false;
+  return rows.some((row) => canShowToggleSwitch(route, row, user));
+}
+
+export function visibleResourceColumns(route: RouteConfig, rows: Record<string, unknown>[], user: AuthUser | null) {
+  return shouldHideStatusColumn(route, rows, user) ? route.columns.filter((column) => column !== "status") : route.columns;
 }
 
 function ResourceTableSkeleton({ columns, size }: { columns: string[]; size: ResourcePageSize }) {
@@ -148,7 +158,7 @@ function canToggleRow(route: RouteConfig, row: Record<string, unknown>, user: Au
   if (!isSuperAdmin(user) && isSystemRoleRow(route, row)) return false;
   if (route.kind === "accounts") return !isOwnAccount(row, user) && !rowHasPrimaryRole(row, "SUPER_ADMIN");
   if (!isSuperAdmin(user)) return true;
-  return route.kind === "dioceses";
+  return route.kind === "dioceses" || route.kind === "permissions";
 }
 
 function isSystemRoleRow(route: RouteConfig, row: Record<string, unknown>) {
@@ -163,6 +173,10 @@ function isOwnAccount(row: Record<string, unknown>, user: AuthUser | null) {
 
 function rowHasPrimaryRole(row: Record<string, unknown>, roleCode: string) {
   return row.primaryRoleCode === roleCode;
+}
+
+function canShowToggleSwitch(route: RouteConfig, row: Record<string, unknown>, user: AuthUser | null) {
+  return Boolean(getResourceId(route, row)) && canUseAction(user, route.actions?.toggle) && canToggleRow(route, row, user);
 }
 
 function isToggleActive(route: RouteConfig, row: Record<string, unknown>) {

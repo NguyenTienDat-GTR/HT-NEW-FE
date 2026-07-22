@@ -10,6 +10,7 @@ import { apiFetch, type PageResponse } from "@/lib/api/client";
 import type { RouteConfig } from "@/config/routes/routes";
 import type { RouteFilterConfig } from "@/config/routes/route-config";
 import { optionFromRow, rowsFromResponse } from "@/components/form/resource-form/api-utils";
+import { formatPermissionTaxonomyValue, permissionTaxonomyKindFromFilter } from "./permission-taxonomy-labels";
 
 export function ResourceFilters({
   route,
@@ -110,13 +111,13 @@ function FilterControl({
   onChange: (value: string) => void;
 }) {
   const query = useQuery({
-    queryKey: ["toolbar-filter-options", filter.key, filter.optionsEndpoint],
+    queryKey: ["toolbar-filter-options", filter.key, filter.optionsEndpoint, filter.optionCollection],
     enabled: Boolean(filter.optionsEndpoint),
-    queryFn: () => apiFetch<PageResponse<Record<string, unknown>> | Record<string, unknown>[] | Record<string, unknown>>(optionEndpointWithPaging(filter.optionsEndpoint)),
+    queryFn: () => fetchFilterOptions(filter),
   });
 
   const apiOptions = filterRowsFromResponse(query.data, filter.optionCollection).map((row) => optionFromRow(row, filter.optionValue, filter.optionLabel));
-  const options = filter.options ?? apiOptions;
+  const options = localizeFilterOptions(filter, filter.options ?? apiOptions);
   const hasExplicitAllOption = options.some((option) => option.value === "all");
 
   if (filter.type === "text") {
@@ -148,7 +149,57 @@ function FilterControl({
   );
 }
 
-function filterRowsFromResponse(data: PageResponse<Record<string, unknown>> | Record<string, unknown>[] | Record<string, unknown> | undefined, collection?: string) {
+function localizeFilterOptions(filter: RouteFilterConfig, options: { value: string; label: string }[]) {
+  const taxonomyKind = permissionTaxonomyKindFromFilter(filter.key, filter.optionCollection);
+  if (!taxonomyKind) return options;
+  return options.map((option) => ({
+    ...option,
+    label: formatPermissionTaxonomyValue(taxonomyKind, option.value) ?? option.label,
+  }));
+}
+
+async function fetchFilterOptions(filter: RouteFilterConfig) {
+  try {
+    return await apiFetch<PageResponse<Record<string, unknown>> | Record<string, unknown>[] | Record<string, unknown>>(optionEndpointWithPaging(filter.optionsEndpoint));
+  } catch (error) {
+    if (!filter.optionsEndpoint?.includes("/system/permissions/taxonomy") || !filter.optionCollection) throw error;
+    const permissions = await apiFetch<PageResponse<Record<string, unknown>>>("/system/permissions?page=0&size=100");
+    return buildPermissionTaxonomyFallback(permissions, filter.optionCollection);
+  }
+}
+
+export function buildPermissionTaxonomyFallback(permissions: PageResponse<Record<string, unknown>>, collection: string) {
+  const codeField = permissionCodeFieldForCollection(collection);
+  if (!codeField) return [];
+  const seen = new Set<string>();
+  return permissions.content
+    .map((permission) => permission[codeField])
+    .filter((value): value is string => typeof value === "string" && value.trim() !== "")
+    .filter((value) => {
+      if (seen.has(value)) return false;
+      seen.add(value);
+      return true;
+    })
+    .sort((left, right) => left.localeCompare(right))
+    .map((code) => ({ code, name: code }));
+}
+
+function permissionCodeFieldForCollection(collection: string) {
+  switch (collection) {
+    case "modules":
+      return "moduleCode";
+    case "resources":
+      return "resourceCode";
+    case "actions":
+      return "actionCode";
+    case "scopes":
+      return "scopeCode";
+    default:
+      return undefined;
+  }
+}
+
+export function filterRowsFromResponse(data: PageResponse<Record<string, unknown>> | Record<string, unknown>[] | Record<string, unknown> | undefined, collection?: string) {
   if (!data) return [];
   if (collection && !Array.isArray(data) && !(data as PageResponse<Record<string, unknown>>).content) {
     const value = (data as Record<string, unknown>)[collection];
