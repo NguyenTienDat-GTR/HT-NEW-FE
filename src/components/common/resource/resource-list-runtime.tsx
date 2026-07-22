@@ -84,7 +84,6 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
           resetFilters={queryState.resetFilters}
         />
         <ResourceTable
-          columns={effectiveRoute.columns}
           isLoading={query.isLoading}
           route={effectiveRoute}
           rows={rows}

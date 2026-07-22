@@ -93,11 +93,11 @@ export const systemRouteGroup: RouteGroup = {
       actions: {
         edit: { label: "Sửa", permissionPrefixes: ["system.permission.update."], requiredRoles: ["SUPER_ADMIN", "ROLE_SUPER_ADMIN"] },
       },
-      filterLabels: ["Module", "Resource", "Action", "Scope"],
+      filterLabels: ["Phân hệ", "Đối tượng", "Thao tác", "Phạm vi", "Hiệu lực"],
       filters: [
         {
           key: "module.moduleCode",
-          label: "Module",
+          label: "Phân hệ",
           type: "select",
           optionsEndpoint: "/system/permissions/taxonomy",
           optionCollection: "modules",
@@ -106,7 +106,7 @@ export const systemRouteGroup: RouteGroup = {
         },
         {
           key: "resource.resourceCode",
-          label: "Resource",
+          label: "Đối tượng",
           type: "select",
           optionsEndpoint: "/system/permissions/taxonomy",
           optionCollection: "resources",
@@ -115,7 +115,7 @@ export const systemRouteGroup: RouteGroup = {
         },
         {
           key: "action.actionCode",
-          label: "Action",
+          label: "Thao tác",
           type: "select",
           optionsEndpoint: "/system/permissions/taxonomy",
           optionCollection: "actions",
@@ -124,12 +124,21 @@ export const systemRouteGroup: RouteGroup = {
         },
         {
           key: "scope.scopeCode",
-          label: "Scope",
+          label: "Phạm vi",
           type: "select",
           optionsEndpoint: "/system/permissions/taxonomy",
           optionCollection: "scopes",
           optionValue: "code",
           optionLabel: "name",
+        },
+        {
+          key: "effect",
+          label: "Hiệu lực",
+          type: "select",
+          options: [
+            { value: "ALLOW", label: "Cho phép" },
+            { value: "DENY", label: "Từ chối" },
+          ],
         },
       ],
     }),
