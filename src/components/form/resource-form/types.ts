@@ -24,6 +24,7 @@ export type FormFieldSpec = {
   optionValue?: string;
   optionLabel?: string;
   optionLabelFields?: string[];
+  optionSearchParam?: string;
   excludeOptionValues?: string[];
   excludeOptionValuesWhen?: (user: AuthUser | null) => string[];
   searchable?: boolean;

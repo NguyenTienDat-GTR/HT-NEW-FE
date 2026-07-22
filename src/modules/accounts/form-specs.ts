@@ -272,7 +272,20 @@ export const systemFormSpecs: ResourceFormSpec[] = [
     buildEndpoint: () => "/system/account-permissions/bulk",
     getInitialValues: () => ({ effect: "ALLOW" }),
     fields: [
-      { name: "username", label: "Tài khoản", type: "select", required: true, optionsEndpoint: "/system/accounts/permission-targets", optionValue: "username", optionLabel: "username", readOnlyOnEdit: true, section: "Thiết lập" },
+      {
+        name: "username",
+        label: "Tài khoản",
+        type: "select",
+        required: true,
+        optionsEndpoint: "/system/accounts/permission-targets",
+        optionValue: "username",
+        optionLabel: "username",
+        optionSearchParam: "search",
+        searchable: true,
+        placeholder: "Nhập username để tìm nhanh",
+        readOnlyOnEdit: true,
+        section: "Thiết lập",
+      },
       { name: "effect", label: "Effect", type: "radio", required: true, options: effectOptions, section: "Thiết lập" },
       {
         name: "permissionCodes",
