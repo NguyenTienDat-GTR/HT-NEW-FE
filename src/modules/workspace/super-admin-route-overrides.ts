@@ -62,15 +62,7 @@ export function resolveRouteForUser(route: RouteConfig, user: AuthUser | null): 
         subtitle: "Gán ALLOW/DENY cho một vai trò bằng danh sách checkbox.",
         columns: ["roleCode", "permissionCode", "effect", "assignedAt", "expiresAt"],
         primaryActionLabel: "Gán nhiều quyền",
-        filters: [
-          { key: "role.roleCode", label: "Vai trò", type: "select", optionsEndpoint: "/system/roles", optionValue: "roleCode", optionLabel: "roleName" },
-          {
-            key: "effect",
-            label: "Hiệu lực",
-            type: "select",
-            options: ["ALLOW", "DENY"].map((value) => ({ value, label: value })),
-          },
-        ],
+        filters: rolePermissionFiltersForUser(user),
       };
     case "account-permissions":
       return {
@@ -78,15 +70,7 @@ export function resolveRouteForUser(route: RouteConfig, user: AuthUser | null): 
         subtitle: "Gán ALLOW/DENY trực tiếp cho tài khoản hợp lệ bằng checkbox.",
         columns: ["username", "permissionCode", "effect", "reason", "expiresAt"],
         primaryActionLabel: "Thêm nhiều quyền riêng",
-        filters: [
-          { key: "account.username", label: "Tài khoản", type: "select", optionsEndpoint: "/system/accounts/permission-targets", optionValue: "username", optionLabel: "username" },
-          {
-            key: "effect",
-            label: "Hiệu lực",
-            type: "select",
-            options: ["ALLOW", "DENY"].map((value) => ({ value, label: value })),
-          },
-        ],
+        filters: accountPermissionFilters(),
       };
     default:
       return route;
@@ -129,13 +113,77 @@ function rolePermissionFiltersForUser(user: AuthUser | null): RouteFilterConfig[
           type: "text",
           placeholder: "Lọc theo mã vai trò",
         },
+    ...permissionTaxonomyFilters(),
+    effectFilter(),
+  ];
+}
+
+function accountPermissionFilters(): RouteFilterConfig[] {
+  return [
     {
-      key: "effect",
-      label: "Hiệu lực",
+      key: "account.username",
+      label: "Tài khoản",
       type: "select",
-      options: ["ALLOW", "DENY"].map((value) => ({ value, label: value })),
+      optionsEndpoint: "/system/accounts/permission-targets",
+      optionValue: "username",
+      optionLabel: "username",
+    },
+    ...permissionTaxonomyFilters(),
+    effectFilter(),
+  ];
+}
+
+function permissionTaxonomyFilters(): RouteFilterConfig[] {
+  return [
+    {
+      key: "permission.module.moduleCode",
+      label: "Phân hệ",
+      type: "select",
+      optionsEndpoint: "/system/permissions/taxonomy",
+      optionCollection: "modules",
+      optionValue: "code",
+      optionLabel: "name",
+    },
+    {
+      key: "permission.resource.resourceCode",
+      label: "Đối tượng",
+      type: "select",
+      optionsEndpoint: "/system/permissions/taxonomy",
+      optionCollection: "resources",
+      optionValue: "code",
+      optionLabel: "name",
+    },
+    {
+      key: "permission.action.actionCode",
+      label: "Thao tác",
+      type: "select",
+      optionsEndpoint: "/system/permissions/taxonomy",
+      optionCollection: "actions",
+      optionValue: "code",
+      optionLabel: "name",
+    },
+    {
+      key: "permission.scope.scopeCode",
+      label: "Phạm vi",
+      type: "select",
+      optionsEndpoint: "/system/permissions/taxonomy",
+      optionCollection: "scopes",
+      optionValue: "code",
+      optionLabel: "name",
     },
   ];
+}
+
+function effectFilter(): RouteFilterConfig {
+  return {
+    key: "effect",
+    label: "Hiệu lực",
+    type: "select",
+    options: [
+      { value: "ALLOW", label: "Cho phép" },
+      { value: "DENY", label: "Từ chối" },
+    ],
+  };
 }
 
 function roleFilter(): RouteFilterConfig {

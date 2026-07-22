@@ -298,3 +298,20 @@
 - `/system/permissions` status toggle action requires both `SUPER_ADMIN` / `ROLE_SUPER_ADMIN` and `system.permission.toggle.*`; backend migration `V051__seed_permission_toggle_for_super_admin.sql` seeds `system.permission.toggle.all` for `SUPER_ADMIN`. Non-super-admin roles keep the status column visible and do not see a permission catalog toggle switch even if a stale permission prefix exists.
 - Shared resource tables now hide only the exact `status` column when the current page has at least one row showing the toggle switch; business-state columns such as `effect`, `approvalStatus`, and `participationStatus` stay visible.
 - Verification run in this session: `npm.cmd run typecheck`, targeted `npm.cmd run test -- tests/unit/components/common/resource/permission-taxonomy-labels.test.ts`, targeted `resource-table`, `resource-toolbar`, route-config, and search tests, `npm.cmd run lint`, full `npm.cmd run test`, and `git diff --check` passed.
+
+### Unit status lock and toggle notifications 2026-07-22
+
+- Branch `feature/unit-status-lock-notifications` starts from `origin/main` in both BE and FE.
+- `AuthUser` includes `unitLocked`. When it is true, workspace routing exposes only `/notifications`; direct navigation to business URLs redirects back to the notification inbox.
+- The bell badge now reads `GET /api/system/notifications/unread-count`, hides at zero, and displays `99+` for counts above 99.
+- `/notifications` renders a dedicated inbox with read/unread state, event type, title, message, created time, and click-to-mark-read behavior through `PATCH /api/system/notifications/{id}/read`.
+- STOMP `/user/queue/notifications` invalidates both the inbox and unread-count queries. `/user/queue/auth-events` still refreshes the auth session so `unitLocked`, roles, and permissions stay synchronized after unit/RBAC toggles.
+- `src/lib/api/schema.d.ts` includes `AuthenticatedUserResponse.unitLocked`, `UnreadNotificationCountResponse`, and `/api/system/notifications/unread-count`.
+- `/notifications` now requests `GET /api/system/notifications` as a paged response, uses URL-backed `page`/`size`, and reuses the shared compact pagination footer. Dashboard notifications request the first 4 items from the paged contract.
+- Auth refresh STOMP events now refresh the access token, reload `/auth/me`, update the auth store, invalidate resource/auth queries, and call `router.refresh()` so reopening an enabled unit no longer requires a manual F5.
+- `/system/permissions` uses entity-safe search fields for module/resource/action/scope to avoid the temporary system-error state when typing a search term.
+- `/system/account-roles` shows the status switch for users with either `system.account_role.toggle.*` or the assignment permission accepted by the backend toggle endpoint.
+- `/system/role-permissions` and `/system/account-permissions` now expose the same taxonomy filter drawer style as `/system/permissions`: role/account plus module, resource, action, scope, and effect filters. SUPER_ADMIN overrides use the same filter helpers.
+- `src/lib/api/schema.d.ts` now models `/api/system/notifications` as `apiResponsePageTrainingNotificationResponse`.
+- Verification run in this session: `npm.cmd run typecheck`, `npm.cmd run lint`, targeted `unit-lock-notifications`, full `npm.cmd run test`, and `npm.cmd run build` passed.
+- Follow-up verification: `npm.cmd run typecheck`, `npm.cmd run lint`, and `npm.cmd run test -- tests/unit/config/routes/system-routes.test.ts tests/unit/modules/workspace/super-admin-route-overrides.test.ts tests/unit/modules/workspace/unit-lock-notifications.test.ts` passed after notification pagination, socket refresh, search/filter, and account-role toggle updates.
