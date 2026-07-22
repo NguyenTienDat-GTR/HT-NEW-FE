@@ -21,6 +21,9 @@ export function WorkspacePage({ segments }: { segments: string[] }) {
     );
   }
   const route = match.route;
+  if (user?.unitLocked && route.path !== "/notifications") {
+    return null;
+  }
   const canReadRoute =
     !isHiddenForSuperAdmin(route, user) &&
     (!route.permissionPrefixes.length || route.permissionPrefixes.some((prefix) => hasPermissionPrefix(user, prefix)));

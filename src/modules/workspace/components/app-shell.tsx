@@ -15,6 +15,7 @@ import { useAuthStore, type AuthUser } from "@/lib/auth/auth-store";
 import { hasPermissionPrefix, isSuperAdmin } from "@/lib/auth/permissions";
 import { cn } from "@/lib/utils";
 import { routeGroups, type RouteConfig, type RouteGroup } from "@/config/routes/routes";
+import { useUnreadNotificationCount } from "@/modules/notifications/hooks";
 import { useNotificationsSocket } from "@/modules/workspace/hooks/notifications-socket";
 
 const defaultOpenGroups: Record<string, boolean> = {
@@ -33,6 +34,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(defaultOpenGroups);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const unreadCountQuery = useUnreadNotificationCount();
   useNotificationsSocket();
 
   const visibleGroups = useMemo(
@@ -136,7 +138,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Button asChild className="relative px-3" variant="ghost">
                 <Link href="/notifications" aria-label="Thông báo">
                   <Bell size={20} />
-                  <span className="absolute right-1 top-1 grid h-5 min-w-5 place-items-center rounded-full bg-danger px-1 text-[11px] font-bold text-white">3</span>
+                  {unreadCountQuery.data?.unreadCount ? (
+                    <span className="absolute right-1 top-1 grid h-5 min-w-5 place-items-center rounded-full bg-danger px-1 text-[11px] font-bold text-white">
+                      {notificationBadgeLabel(unreadCountQuery.data.unreadCount)}
+                    </span>
+                  ) : null}
                 </Link>
               </Button>
               <div className="hidden min-w-0 items-center gap-3 rounded-[12px] border border-border bg-white px-3 py-2 shadow-sm sm:flex">
@@ -253,10 +259,16 @@ function SidebarNav({
   );
 }
 
-function canSeeRoute(route: RouteConfig, user: AuthUser | null) {
+export function canSeeRoute(route: RouteConfig, user: AuthUser | null) {
   if (route.path === "/notifications") return true;
+  if (user?.unitLocked) return false;
   if (isSuperAdmin(user) && isHiddenForSuperAdmin(route)) return false;
   return route.permissionPrefixes.length === 0 || route.permissionPrefixes.some((prefix) => hasPermissionPrefix(user, prefix));
+}
+
+export function notificationBadgeLabel(unreadCount?: number | null) {
+  if (!unreadCount || unreadCount <= 0) return null;
+  return unreadCount > 99 ? "99+" : String(unreadCount);
 }
 
 function isHiddenForSuperAdmin(route: RouteConfig) {
