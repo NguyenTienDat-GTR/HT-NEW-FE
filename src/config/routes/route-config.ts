@@ -46,6 +46,7 @@ export type RouteFilterConfig = {
   type?: "text" | "select" | "boolean";
   options?: RouteFilterOption[];
   optionsEndpoint?: string;
+  optionCollection?: string;
   optionValue?: string;
   optionLabel?: string;
   placeholder?: string;

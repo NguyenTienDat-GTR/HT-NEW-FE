@@ -9,7 +9,7 @@ export type Option = {
   disabledReason?: string;
 };
 
-export type FieldType = "text" | "email" | "url" | "number" | "date" | "datetime" | "textarea" | "select" | "multiselect" | "checkbox-list" | "radio";
+export type FieldType = "text" | "email" | "url" | "number" | "date" | "datetime" | "textarea" | "select" | "multiselect" | "checkbox-list" | "radio" | "switch";
 
 export type FormFieldSpec = {
   name: string;
@@ -25,6 +25,7 @@ export type FormFieldSpec = {
   optionLabel?: string;
   optionLabelFields?: string[];
   excludeOptionValues?: string[];
+  excludeOptionValuesWhen?: (user: AuthUser | null) => string[];
   searchable?: boolean;
   primaryFieldName?: string;
   primaryLabel?: string;

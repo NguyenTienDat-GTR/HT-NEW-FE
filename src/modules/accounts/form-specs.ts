@@ -1,6 +1,8 @@
 import { compactPayload, enumOptions, type ResourceFormSpec } from "@/components/form/resource-form/types";
+import { isSuperAdmin } from "@/lib/auth/permissions";
 
 const effectOptions = enumOptions(["ALLOW", "DENY"]);
+const systemAdminRoleCodes = ["SUPER_ADMIN", "ADMIN_DIOCESE", "ADMIN_DEANERY", "ADMIN_PARISH"];
 const superAdminAccountRoleOptions = [
   { value: "SUPER_ADMIN", label: "Super admin" },
   { value: "ADMIN_DIOCESE", label: "Admin giáo phận" },
@@ -78,7 +80,7 @@ export const systemFormSpecs: ResourceFormSpec[] = [
         optionsEndpoint: "/system/roles",
         optionValue: "roleCode",
         optionLabel: "roleName",
-        excludeOptionValues: ["SUPER_ADMIN", "ADMIN_DIOCESE"],
+        excludeOptionValuesWhen: (user) => (isSuperAdmin(user) ? [] : systemAdminRoleCodes),
         primaryFieldName: "primaryRoleCode",
         primaryLabel: "Chính",
         createOnly: true,
@@ -118,7 +120,7 @@ export const systemFormSpecs: ResourceFormSpec[] = [
   },
   {
     kind: "permissions",
-    createTitle: "Thêm quyền",
+    actionType: "edit",
     editTitle: "Chỉnh sửa quyền",
     description: "Permission code sinh từ module/resource/action/scope, chỉ SUPER_ADMIN được ghi.",
     fields: [
@@ -147,6 +149,7 @@ export const systemFormSpecs: ResourceFormSpec[] = [
     createTitle: "Gán nhiều vai trò cho tài khoản",
     description: "Chọn account trong phạm vi quản lý và tick nhiều vai trò trong một lần gửi.",
     buildEndpoint: () => "/system/account-roles/bulk",
+    getInitialValues: () => ({ assignedAt: currentDatetimeLocal() }),
     fields: [
       { name: "username", label: "Tài khoản", type: "select", required: true, optionsEndpoint: "/system/accounts", optionValue: "username", optionLabel: "username", readOnlyOnEdit: true, section: "Thiết lập" },
       {
@@ -171,8 +174,8 @@ export const systemFormSpecs: ResourceFormSpec[] = [
         helper: "Nếu chọn, vai trò này phải nằm trong danh sách vai trò đã tick.",
         section: "Thiết lập",
       },
-      { name: "assignedAt", label: "Ngày gán", type: "datetime", section: "Thiết lập" },
-      { name: "expiresAt", label: "Ngày hết hạn", type: "datetime", clearable: true, section: "Thiết lập" },
+      { name: "assignedAt", label: "Ngày gán", type: "datetime", section: "Thời hạn" },
+      { name: "expiresAt", label: "Ngày hết hạn", type: "datetime", clearable: true, section: "Thời hạn" },
     ],
     mapSubmit: (values) => compactPayload(values),
   },
@@ -184,7 +187,7 @@ export const systemFormSpecs: ResourceFormSpec[] = [
     fields: [
       { name: "username", label: "Tài khoản", type: "select", required: true, optionsEndpoint: "/system/accounts", optionValue: "username", optionLabel: "username", readOnlyOnEdit: true, section: "Liên kết" },
       { name: "roleCode", label: "Vai trò", type: "select", required: true, optionsEndpoint: "/system/roles", optionValue: "roleCode", optionLabel: "roleName", readOnlyOnEdit: true, section: "Liên kết" },
-      { name: "isPrimary", label: "Vai trò chính", type: "select", options: enumOptions(["true", "false"]), section: "Hiệu lực" },
+      { name: "isPrimary", label: "Vai trò chính", type: "switch", section: "Hiệu lực" },
       { name: "assignedAt", label: "Ngày gán", type: "datetime", section: "Hiệu lực" },
       { name: "expiresAt", label: "Ngày hết hạn", type: "datetime", clearable: true, section: "Hiệu lực" },
     ],
@@ -205,8 +208,20 @@ export const systemFormSpecs: ResourceFormSpec[] = [
     createTitle: "Gán nhiều quyền cho vai trò",
     description: "Chọn vai trò, effect và danh sách quyền bằng checkbox để thao tác nhanh.",
     buildEndpoint: () => "/system/role-permissions/bulk",
+    getInitialValues: () => ({ effect: "ALLOW", assignedAt: currentDatetimeLocal() }),
     fields: [
-      { name: "roleCode", label: "Vai trò", type: "select", required: true, optionsEndpoint: "/system/roles", optionValue: "roleCode", optionLabel: "roleName", readOnlyOnEdit: true, section: "Thiết lập" },
+      {
+        name: "roleCode",
+        label: "Vai trò",
+        type: "select",
+        required: true,
+        optionsEndpoint: "/system/roles",
+        optionValue: "roleCode",
+        optionLabel: "roleName",
+        excludeOptionValuesWhen: (user) => (isSuperAdmin(user) ? [] : systemAdminRoleCodes),
+        readOnlyOnEdit: true,
+        section: "Thiết lập",
+      },
       { name: "effect", label: "Effect", type: "radio", required: true, options: effectOptions, section: "Thiết lập" },
       {
         name: "permissionCodes",
@@ -220,14 +235,15 @@ export const systemFormSpecs: ResourceFormSpec[] = [
         helper: "Chọn vai trò trước để chỉ hiển thị các quyền chưa được gán cho vai trò này.",
         section: "Quyền chưa gán",
       },
-      { name: "conditions", label: "Điều kiện metadata", type: "textarea", clearable: true, section: "Thiết lập" },
-      { name: "assignedAt", label: "Ngày gán", type: "datetime", section: "Thiết lập" },
-      { name: "expiresAt", label: "Ngày hết hạn", type: "datetime", clearable: true, section: "Thiết lập" },
+      { name: "conditions", label: "Điều kiện metadata", type: "textarea", clearable: true, section: "Điều kiện" },
+      { name: "assignedAt", label: "Ngày gán", type: "datetime", section: "Thời hạn" },
+      { name: "expiresAt", label: "Ngày hết hạn", type: "datetime", clearable: true, section: "Thời hạn" },
     ],
     mapSubmit: (values) => compactPayload(values),
   },
   {
     kind: "role-permissions",
+    actionType: "edit",
     createTitle: "Gán quyền cho vai trò",
     editTitle: "Chỉnh sửa quyền của vai trò",
     description: "Tách rõ ALLOW/DENY và thời hạn hiệu lực của quyền theo vai trò.",
@@ -251,10 +267,10 @@ export const systemFormSpecs: ResourceFormSpec[] = [
   {
     kind: "account-permissions",
     actionType: "create",
-    superAdminOnly: true,
     createTitle: "Thêm nhiều quyền riêng tài khoản",
     description: "Chọn tài khoản hợp lệ, effect và danh sách quyền bằng checkbox.",
     buildEndpoint: () => "/system/account-permissions/bulk",
+    getInitialValues: () => ({ effect: "ALLOW" }),
     fields: [
       { name: "username", label: "Tài khoản", type: "select", required: true, optionsEndpoint: "/system/accounts/permission-targets", optionValue: "username", optionLabel: "username", readOnlyOnEdit: true, section: "Thiết lập" },
       { name: "effect", label: "Effect", type: "radio", required: true, options: effectOptions, section: "Thiết lập" },
@@ -270,14 +286,14 @@ export const systemFormSpecs: ResourceFormSpec[] = [
         helper: "Chọn tài khoản trước để chỉ hiển thị các quyền riêng chưa được gán cho account này.",
         section: "Quyền chưa gán",
       },
-      { name: "reason", label: "Lý do", required: true, type: "textarea", section: "Thiết lập" },
-      { name: "expiresAt", label: "Ngày hết hạn", type: "datetime", clearable: true, section: "Thiết lập" },
+      { name: "reason", label: "Lý do", required: true, type: "textarea", section: "Lý do" },
+      { name: "expiresAt", label: "Ngày hết hạn", type: "datetime", clearable: true, section: "Thời hạn" },
     ],
     mapSubmit: (values) => compactPayload(values),
   },
   {
     kind: "account-permissions",
-    createTitle: "Thêm quyền riêng tài khoản",
+    actionType: "edit",
     editTitle: "Chỉnh sửa quyền riêng tài khoản",
     description: "Override trực tiếp theo account, DENY ưu tiên ALLOW khi tính hiệu lực.",
     fields: [
@@ -302,4 +318,10 @@ function buildTargetOptionsEndpoint(basePath: string, key: string, value: unknow
   const target = typeof value === "string" ? value.trim() : "";
   if (!target) return undefined;
   return `${basePath}?${key}=${encodeURIComponent(target)}`;
+}
+
+function currentDatetimeLocal() {
+  const now = new Date();
+  const offsetMs = now.getTimezoneOffset() * 60_000;
+  return new Date(now.getTime() - offsetMs).toISOString().slice(0, 16);
 }

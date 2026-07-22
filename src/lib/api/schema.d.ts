@@ -445,7 +445,7 @@ export interface paths {
         };
         get: operations["findAll_6"];
         put?: never;
-        post: operations["create_6"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2182,16 +2182,6 @@ export interface components {
             data?: components["schemas"]["RolePermissionResponse"][];
             /** Format: date-time */
             timestamp?: string;
-        };
-        PermissionCreateRequest: {
-            permissionName: string;
-            moduleCode: string;
-            resourceCode: string;
-            actionCode: string;
-            scopeCode: string;
-            description?: string;
-            /** Format: int32 */
-            displayOrder?: number;
         };
         AccountCreateRequest: {
             roleCode?: string;
@@ -4377,30 +4367,6 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["apiResponsePagePermissionResponse"];
-                };
-            };
-        };
-    };
-    create_6: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PermissionCreateRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["apiResponsePermissionResponse"];
                 };
             };
         };

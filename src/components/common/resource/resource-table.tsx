@@ -11,6 +11,8 @@ import { columnLabels, ResourceCell } from "./resource-format";
 import { fillRoute, getResourceId } from "./resource-actions";
 import type { ResourcePageSize } from "./use-resource-query-state";
 
+const systemRoleCodes = new Set(["SUPER_ADMIN", "ADMIN_DIOCESE", "ADMIN_DEANERY", "ADMIN_PARISH"]);
+
 export function ResourceTable({
   columns,
   isLoading,
@@ -137,15 +139,22 @@ function RowActions({ route, row }: { route: RouteConfig; row: Record<string, un
 
 function canEditRow(route: RouteConfig, row: Record<string, unknown>, user: AuthUser | null) {
   if (route.kind === "accounts") return false;
+  if (!isSuperAdmin(user) && isSystemRoleRow(route, row)) return false;
   if (!isSuperAdmin(user)) return true;
   return route.kind !== "dioceses" && route.kind !== "deaneries" && route.kind !== "parishes";
 }
 
 function canToggleRow(route: RouteConfig, row: Record<string, unknown>, user: AuthUser | null) {
-  if (route.kind === "roles" && row.isSystem === true) return false;
+  if (!isSuperAdmin(user) && isSystemRoleRow(route, row)) return false;
   if (route.kind === "accounts") return !isOwnAccount(row, user) && !rowHasPrimaryRole(row, "SUPER_ADMIN");
   if (!isSuperAdmin(user)) return true;
   return route.kind === "dioceses";
+}
+
+function isSystemRoleRow(route: RouteConfig, row: Record<string, unknown>) {
+  if (route.kind === "roles") return row.isSystem === true;
+  if (route.kind !== "role-permissions") return false;
+  return row.roleIsSystem === true || (typeof row.roleCode === "string" && systemRoleCodes.has(row.roleCode));
 }
 
 function isOwnAccount(row: Record<string, unknown>, user: AuthUser | null) {
