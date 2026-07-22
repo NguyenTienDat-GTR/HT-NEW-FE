@@ -36,7 +36,7 @@ export function getApiErrorMessage(error: unknown) {
   return error instanceof Error && error.message ? error.message : "Không thể hoàn tất yêu cầu";
 }
 
-async function refreshAccessToken() {
+export async function refreshAccessToken() {
   if (!refreshPromise) {
     refreshPromise = fetch("/backend/api/auth/refresh", {
       method: "POST",

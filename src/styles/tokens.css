@@ -35,6 +35,13 @@
   --status-inactive: oklch(0.62 0.025 250);
   --status-leave: oklch(0.78 0.16 75);
   --status-suspended: oklch(0.62 0.2 25);
+  --toggle-active: var(--success);
+  --toggle-active-surface: oklch(0.68 0.14 150 / 0.15);
+  --toggle-active-surface-hover: oklch(0.68 0.14 150 / 0.2);
+  --toggle-inactive: var(--danger);
+  --toggle-inactive-surface: oklch(0.62 0.2 25 / 0.15);
+  --toggle-inactive-surface-hover: oklch(0.62 0.2 25 / 0.22);
+  --toggle-thumb: oklch(1 0 0);
   --level-probationary: oklch(0.7 0.09 250);
   --level-youth-leader: oklch(0.62 0.12 235);
   --level-1: oklch(0.66 0.13 190);
