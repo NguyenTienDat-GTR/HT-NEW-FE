@@ -8,7 +8,7 @@ import { apiFetch, type PageResponse } from "@/lib/api/client";
 import type { AuthUser } from "@/lib/auth/auth-store";
 import { cn } from "@/lib/utils";
 import { optionFromRow, rowsFromResponse } from "./api-utils";
-import type { FormFieldSpec } from "./types";
+import type { FormFieldSpec, Option } from "./types";
 
 type FormValue = string | string[] | number | boolean | null | undefined;
 
@@ -174,7 +174,9 @@ function OptionControl({
   });
   const apiOptions = rowsFromResponse(query.data).map((row) => optionFromRow(row, field.optionValue, field.optionLabel, field.optionLabelFields));
   const excludedValues = new Set([...(field.excludeOptionValues ?? []), ...(field.excludeOptionValuesWhen?.(user ?? null) ?? [])]);
-  const options = (field.options ?? apiOptions).filter((option) => !excludedValues.has(option.value));
+  const filteredOptions = (field.options ?? apiOptions).filter((option) => !excludedValues.has(option.value));
+  const currentValue = !multiple && !checkboxList ? String(value ?? "") : "";
+  const options = preserveCurrentOption(filteredOptions, currentValue, Boolean(field.optionsEndpoint && !field.options));
 
   useEffect(() => {
     if (query.isLoading || field.options) return;
@@ -270,6 +272,13 @@ function OptionControl({
       ))}
     </select>
   );
+}
+
+function preserveCurrentOption(options: Option[], currentValue: string, remoteOptions: boolean) {
+  if (!remoteOptions || !currentValue || options.some((option) => option.value === currentValue)) {
+    return options;
+  }
+  return [{ value: currentValue, label: currentValue }, ...options];
 }
 
 function SearchableSelect({

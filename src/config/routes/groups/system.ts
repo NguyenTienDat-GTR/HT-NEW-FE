@@ -154,7 +154,10 @@ export const systemRouteGroup: RouteGroup = {
       icon: ShieldCheck,
       columns: ["username", "roleCode", "isPrimary", "assignedAt", "expiresAt", "status"],
       permissionPrefixes: ["system.account_role.assign."],
-      actionPermissionPrefixes: ["system.account_role.assign."],
+      actionPermissionPrefixes: ["system.account_role.assign.", "system.account_role.toggle."],
+      actions: {
+        toggle: { label: "Đổi trạng thái", permissionPrefixes: ["system.account_role.toggle."] },
+      },
       primaryActionLabel: "Gán nhiều vai trò",
       filterLabels: ["Vai trò", "Trạng thái", "Hết hạn"],
       filters: [

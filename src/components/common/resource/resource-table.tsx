@@ -158,7 +158,7 @@ function canToggleRow(route: RouteConfig, row: Record<string, unknown>, user: Au
   if (!isSuperAdmin(user) && isSystemRoleRow(route, row)) return false;
   if (route.kind === "accounts") return !isOwnAccount(row, user) && !rowHasPrimaryRole(row, "SUPER_ADMIN");
   if (!isSuperAdmin(user)) return true;
-  return route.kind === "dioceses" || route.kind === "permissions";
+  return route.kind === "dioceses" || route.kind === "permissions" || route.kind === "account-roles";
 }
 
 function isSystemRoleRow(route: RouteConfig, row: Record<string, unknown>) {
@@ -191,11 +191,13 @@ function StatusSwitch({ active, href }: { active: boolean; href: Route }) {
     <Link
       aria-label={active ? "Tắt trạng thái" : "Bật trạng thái"}
       className={`inline-flex h-7 w-12 items-center rounded-full border px-0.5 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
-        active ? "justify-end border-success bg-success/15 hover:bg-success/20" : "justify-start border-slate-300 bg-slate-200/70 hover:bg-slate-200"
+        active
+          ? "justify-end border-[var(--toggle-active)] bg-[var(--toggle-active-surface)] hover:bg-[var(--toggle-active-surface-hover)]"
+          : "justify-start border-[var(--toggle-inactive)] bg-[var(--toggle-inactive-surface)] hover:bg-[var(--toggle-inactive-surface-hover)]"
       }`}
       href={href}
     >
-      <span className={`block h-5 w-5 rounded-full shadow-sm ${active ? "bg-success" : "bg-white"}`} />
+      <span className={`block h-5 w-5 rounded-full shadow-sm ${active ? "bg-[var(--toggle-active)]" : "bg-[var(--toggle-thumb)]"}`} />
     </Link>
   );
 }
