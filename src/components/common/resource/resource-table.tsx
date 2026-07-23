@@ -157,8 +157,11 @@ function canEditRow(route: RouteConfig, row: Record<string, unknown>, user: Auth
 function canToggleRow(route: RouteConfig, row: Record<string, unknown>, user: AuthUser | null) {
   if (!isSuperAdmin(user) && isSystemRoleRow(route, row)) return false;
   if (route.kind === "accounts") return !isOwnAccount(row, user) && !rowHasPrimaryRole(row, "SUPER_ADMIN");
+  if (route.kind === "dioceses") return isSuperAdmin(user);
+  if (route.kind === "deaneries") return hasRole(user, "ADMIN_DIOCESE");
+  if (route.kind === "parishes") return hasRole(user, "ADMIN_DEANERY");
   if (!isSuperAdmin(user)) return true;
-  return route.kind === "dioceses" || route.kind === "permissions" || route.kind === "account-roles";
+  return route.kind === "permissions" || route.kind === "account-roles";
 }
 
 function isSystemRoleRow(route: RouteConfig, row: Record<string, unknown>) {
@@ -173,6 +176,10 @@ function isOwnAccount(row: Record<string, unknown>, user: AuthUser | null) {
 
 function rowHasPrimaryRole(row: Record<string, unknown>, roleCode: string) {
   return row.primaryRoleCode === roleCode;
+}
+
+function hasRole(user: AuthUser | null, roleCode: string) {
+  return Boolean(user?.roles.some((role) => role === roleCode || role === `ROLE_${roleCode}`));
 }
 
 function canShowToggleSwitch(route: RouteConfig, row: Record<string, unknown>, user: AuthUser | null) {
