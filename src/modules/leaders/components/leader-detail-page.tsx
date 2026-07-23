@@ -52,7 +52,7 @@ const tabs: { id: TabId; label: string; icon: typeof User }[] = [
     {id: "courses", label: "Khóa huấn luyện", icon: BookOpen},
     {id: "certificates", label: "Chứng nhận", icon: CertificateIcon},
     {id: "account", label: "Tài khoản", icon: Key},
-    {id: "activity", label: "Lịch sử hoạt động", icon: ClockCounterClockwise},
+    // {id: "activity", label: "Lịch sử hoạt động", icon: ClockCounterClockwise},
 ];
 
 export function LeaderDetailPage({id, route}: LeaderDetailPageProps) {
@@ -152,7 +152,7 @@ export function LeaderDetailPage({id, route}: LeaderDetailPageProps) {
             {activeTab === "courses" ? <CourseTab leaderId={id}/> : null}
             {activeTab === "certificates" ? <CertificateTab leaderId={id}/> : null}
             {activeTab === "account" ? <AccountTab leader={leader} leaderId={id}/> : null}
-            {activeTab === "activity" ? <ActivityTab leaderId={id}/> : null}
+            {/*{activeTab === "activity" ? <ActivityTab leaderId={id}/> : null}*/}
         </div>
     );
 }
