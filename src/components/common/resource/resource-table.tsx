@@ -105,6 +105,7 @@ function RowActions({ route, row }: { route: RouteConfig; row: Record<string, un
   if (!id) return <span className="text-xs text-muted">-</span>;
 
   const editHref = fillRoute(route.editPath, { id });
+  const detailHref = fillRoute(route.detailPath, { id });
   const scoreHref = fillRoute(route.actions?.score?.route, { id });
   const canView = canUseAction(user, route.actions?.view);
   const canEdit = canUseAction(user, route.actions?.edit) && canEditRow(route, row, user);
@@ -116,7 +117,7 @@ function RowActions({ route, row }: { route: RouteConfig; row: Record<string, un
     <div className="inline-flex items-center gap-1">
       {canView ? (
         <Button asChild aria-label="Xem chi tiết" className="h-8 min-w-8 rounded-[8px]" size="icon" variant="icon">
-          <Link href={`${route.path}?detail=${encodeURIComponent(id)}` as Route}>
+          <Link href={(detailHref ?? `${route.path}?detail=${encodeURIComponent(id)}`) as Route}>
             <Eye size={16} />
           </Link>
         </Button>
@@ -157,8 +158,11 @@ function canEditRow(route: RouteConfig, row: Record<string, unknown>, user: Auth
 function canToggleRow(route: RouteConfig, row: Record<string, unknown>, user: AuthUser | null) {
   if (!isSuperAdmin(user) && isSystemRoleRow(route, row)) return false;
   if (route.kind === "accounts") return !isOwnAccount(row, user) && !rowHasPrimaryRole(row, "SUPER_ADMIN");
+  if (route.kind === "dioceses") return isSuperAdmin(user);
+  if (route.kind === "deaneries") return hasRole(user, "ADMIN_DIOCESE");
+  if (route.kind === "parishes") return hasRole(user, "ADMIN_DEANERY");
   if (!isSuperAdmin(user)) return true;
-  return route.kind === "dioceses" || route.kind === "permissions" || route.kind === "account-roles";
+  return route.kind === "permissions" || route.kind === "account-roles";
 }
 
 function isSystemRoleRow(route: RouteConfig, row: Record<string, unknown>) {
@@ -173,6 +177,10 @@ function isOwnAccount(row: Record<string, unknown>, user: AuthUser | null) {
 
 function rowHasPrimaryRole(row: Record<string, unknown>, roleCode: string) {
   return row.primaryRoleCode === roleCode;
+}
+
+function hasRole(user: AuthUser | null, roleCode: string) {
+  return Boolean(user?.roles.some((role) => role === roleCode || role === `ROLE_${roleCode}`));
 }
 
 function canShowToggleSwitch(route: RouteConfig, row: Record<string, unknown>, user: AuthUser | null) {

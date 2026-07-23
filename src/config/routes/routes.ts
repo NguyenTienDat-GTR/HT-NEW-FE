@@ -29,6 +29,7 @@ export function findRoute(path: string) {
 
 export type RouteMatch =
   | { type: "list"; route: RouteConfig; params: Record<string, string> }
+  | { type: "detail"; route: RouteConfig; params: Record<string, string> }
   | { type: "create"; route: RouteConfig; params: Record<string, string> }
   | { type: "edit"; route: RouteConfig; params: Record<string, string> }
   | { type: "score"; route: RouteConfig; params: Record<string, string> }
@@ -40,6 +41,9 @@ export function matchRoute(path: string): RouteMatch | undefined {
 
   for (const routeConfig of routes) {
     if (routeConfig.createPath === path) return { type: "create", route: routeConfig, params: {} };
+    const detailMatch = matchTemplate(routeConfig.detailPath, path);
+    if (detailMatch) return { type: "detail", route: routeConfig, params: detailMatch };
+
     const editMatch = matchTemplate(routeConfig.editPath, path);
     if (editMatch) return { type: "edit", route: routeConfig, params: editMatch };
 

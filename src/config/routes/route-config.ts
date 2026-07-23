@@ -52,9 +52,28 @@ export type RouteFilterConfig = {
   placeholder?: string;
 };
 
+const statusFilterOptions: RouteFilterOption[] = [
+  { value: "all", label: "Tất cả" },
+  { value: "active", label: "Đang hoạt động" },
+  { value: "inactive", label: "Tạm ngưng" },
+];
+
+export const leaderLevelOptions: RouteFilterOption[] = [
+  { value: "NONE", label: "Chưa có cấp" },
+  { value: "HT_XU", label: "Huynh trưởng xứ" },
+  { value: "DU_TRUONG", label: "Dự trưởng" },
+  { value: "HT_I", label: "Huynh trưởng cấp I" },
+  { value: "HT_II", label: "Huynh trưởng cấp II" },
+  { value: "HT_III", label: "Huynh trưởng cấp III" },
+  { value: "HLV_I", label: "Huấn luyện viên cấp I" },
+  { value: "HLV_II", label: "Huấn luyện viên cấp II" },
+  { value: "HLV_III", label: "Huấn luyện viên cấp III" },
+];
+
 export type RouteConfig = {
   path: string;
   createPath?: string;
+  detailPath?: string;
   editPath?: string;
   idField?: string;
   moduleName: string;
@@ -134,11 +153,7 @@ function inferRouteFilters(config: RouteConfig): RouteFilterConfig[] {
       key: "status",
       label: "Trạng thái",
       type: "select",
-      options: [
-        { value: "all", label: "Tất cả" },
-        { value: "active", label: "Đang hoạt động" },
-        { value: "inactive", label: "Tạm ngưng" },
-      ],
+      options: statusFilterOptions,
     });
   }
 
@@ -153,12 +168,13 @@ function inferRouteFilters(config: RouteConfig): RouteFilterConfig[] {
       filters.push({ key: "deanery.id", label: "Giáo hạt", type: "select", optionsEndpoint: "/deaneries", optionValue: "id", optionLabel: "name" });
       break;
     case "leaders":
+      filters.push({ key: "parish.deanery.id", label: "Giáo hạt", type: "select", optionsEndpoint: "/deaneries", optionValue: "id", optionLabel: "name" });
       filters.push({ key: "parish.id", label: "Giáo xứ", type: "select", optionsEndpoint: "/parishes", optionValue: "id", optionLabel: "name" });
       filters.push({
         key: "leaderLevel",
         label: "Cấp HT",
         type: "select",
-        options: ["NONE", "HT_XU", "DU_TRUONG", "HT_I", "HT_II", "HT_III", "HLV_I", "HLV_II", "HLV_III"].map((value) => ({ value, label: value })),
+        options: leaderLevelOptions,
       });
       break;
     case "positions":

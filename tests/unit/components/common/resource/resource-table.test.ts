@@ -4,10 +4,10 @@ import type { RouteConfig } from "@/config/routes/routes";
 import type { AuthUser } from "@/lib/auth/auth-store";
 import { shouldHideStatusColumn, visibleResourceColumns } from "@/components/common/resource/resource-table";
 
-function user(permissions: string[]): AuthUser {
+function user(permissions: string[], roles: string[] = ["ADMIN_DIOCESE"]): AuthUser {
   return {
     username: "admin",
-    roles: ["ADMIN_DIOCESE"],
+    roles,
     permissions,
   };
 }
@@ -55,7 +55,13 @@ const permissionRoute: RouteConfig = {
 
 describe("shouldHideStatusColumn", () => {
   it("hides status when at least one row can render a toggle switch", () => {
-    expect(shouldHideStatusColumn(toggleRoute, [{ id: "p1", name: "Parish", status: true }], user(["organization.parish.toggle.deanery"]))).toBe(true);
+    expect(
+      shouldHideStatusColumn(
+        toggleRoute,
+        [{ id: "p1", name: "Parish", status: true }],
+        user(["organization.parish.toggle.deanery"], ["ADMIN_DEANERY"]),
+      ),
+    ).toBe(true);
   });
 
   it("keeps status when the current user cannot render a toggle switch", () => {
@@ -70,7 +76,7 @@ describe("shouldHideStatusColumn", () => {
           columns: ["name"],
         },
         [{ id: "p1", name: "Parish", status: true }],
-        user(["organization.parish.toggle.deanery"]),
+        user(["organization.parish.toggle.deanery"], ["ADMIN_DEANERY"]),
       ),
     ).toBe(false);
   });
@@ -82,7 +88,7 @@ describe("shouldHideStatusColumn", () => {
         columns: ["name", "effect", "approvalStatus", "participationStatus", "status"],
       },
       [{ id: "p1", name: "Parish", effect: "ALLOW", approvalStatus: "PENDING", participationStatus: "REGISTERED", status: true }],
-      user(["organization.parish.toggle.deanery"]),
+      user(["organization.parish.toggle.deanery"], ["ADMIN_DEANERY"]),
     );
 
     expect(columns).toEqual(["name", "effect", "approvalStatus", "participationStatus"]);

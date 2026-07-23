@@ -2,6 +2,10 @@ import { compactPayload, enumOptions, type ResourceFormSpec } from "@/components
 import { leaderLevels } from "@/modules/organizations/form-specs";
 
 const unitTypeOptions = enumOptions(["DIOCESE", "DEANERY", "PARISH"]);
+const genderOptions = [
+  { value: "NAM", label: "Nam" },
+  { value: "NU", label: "Nữ" },
+];
 
 export const personnelFormSpecs: ResourceFormSpec[] = [
   {
@@ -13,7 +17,7 @@ export const personnelFormSpecs: ResourceFormSpec[] = [
       { name: "holyName", label: "Tên thánh", required: true, section: "Thông tin cá nhân" },
       { name: "fullName", label: "Họ và tên", required: true, readOnlyOnEdit: true, section: "Thông tin cá nhân" },
       { name: "birthDate", label: "Ngày sinh", type: "date", required: true, readOnlyOnEdit: true, section: "Thông tin cá nhân" },
-      { name: "gender", label: "Giới tính", type: "select", required: true, options: enumOptions(["NAM", "NU"]), section: "Thông tin cá nhân" },
+      { name: "gender", label: "Giới tính", type: "select", required: true, options: genderOptions, section: "Thông tin cá nhân" },
       { name: "email", label: "Email", type: "email", required: true, clearable: true, section: "Thông tin liên hệ" },
       { name: "phoneNumber", label: "Số điện thoại", clearable: true, section: "Thông tin liên hệ" },
       { name: "imageUrl", label: "Ảnh đại diện URL", type: "url", clearable: true, section: "Thông tin liên hệ" },

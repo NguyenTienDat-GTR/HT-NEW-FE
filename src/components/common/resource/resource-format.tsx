@@ -1,18 +1,23 @@
 import type React from "react";
+import { formatVietnamDateValue } from "@/lib/date-format";
 import { cn, viNumber } from "@/lib/utils";
 import { formatPermissionTaxonomyValue, permissionTaxonomyKindFromColumn } from "./permission-taxonomy-labels";
 
 export const columnLabels: Record<string, string> = {
   action: "Hành động",
   actionCode: "Thao tác",
+  approvedAt: "Ngày duyệt",
+  approvedBy: "Người duyệt",
   approvalReason: "Lý do duyệt",
   approvalReasonRequired: "Cần lý do duyệt",
   approvalStatus: "Trạng thái duyệt",
   assignedAt: "Ngày gán",
   assignedBy: "Người gán",
   authProvider: "Nguồn đăng nhập",
+  birthDate: "Ngày sinh",
   certificateApprovalStatus: "Duyệt chứng nhận",
   certificateCode: "Mã chứng nhận",
+  certificateName: "Tên chứng nhận",
   chaplain: "Tuyên úy",
   chapterName: "Xứ đoàn",
   code: "Mã",
@@ -33,9 +38,11 @@ export const columnLabels: Record<string, string> = {
   effect: "Hiệu lực",
   email: "Email",
   endDate: "Ngày kết thúc",
+  establishmentDate: "Ngày thành lập",
   eventType: "Sự kiện",
   expiresAt: "Hết hạn",
   expression: "Biểu thức",
+  firstName: "Tên",
   fullName: "Họ tên",
   gender: "Giới tính",
   holyName: "Tên thánh",
@@ -44,6 +51,7 @@ export const columnLabels: Record<string, string> = {
   ipAddress: "IP",
   isPrimary: "Vai trò chính",
   isSystem: "Vai trò hệ thống",
+  lastName: "Họ",
   leaderFullName: "Huynh trưởng",
   leaderId: "Huynh trưởng",
   leaderLevel: "Cấp HT",
@@ -58,6 +66,7 @@ export const columnLabels: Record<string, string> = {
   participationStatus: "Trạng thái tham dự",
   passed: "Kết quả",
   passingScore: "Điểm đạt",
+  patronSaintDay: "Ngày bổn mạng",
   permissionCode: "Mã quyền",
   permissionName: "Tên quyền",
   phoneNumber: "SĐT",
@@ -70,6 +79,8 @@ export const columnLabels: Record<string, string> = {
   readAt: "Đã đọc",
   reason: "Lý do",
   registrationEndAt: "Hết đăng ký",
+  registrationDate: "Ngày đăng ký",
+  registrationStartAt: "Mở đăng ký",
   requiredCurrentLevel: "Cấp yêu cầu",
   requiredMinAge: "Tuổi tối thiểu",
   requirementCode: "Mã điều kiện",
@@ -98,15 +109,24 @@ export const columnLabels: Record<string, string> = {
 
 const levelLabels: Record<string, string> = {
   NONE: "Chưa có cấp",
-  HT_XU: "HT xứ",
+  HT_XU: "Huynh trưởng xứ",
   DU_TRUONG: "Dự trưởng",
-  HT_I: "HT cấp I",
-  HT_II: "HT cấp II",
-  HT_III: "HT cấp III",
-  HLV_I: "HLV cấp I",
-  HLV_II: "HLV cấp II",
-  HLV_III: "HLV cấp III",
+  HT_I: "Huynh trưởng cấp I",
+  HT_II: "Huynh trưởng cấp II",
+  HT_III: "Huynh trưởng cấp III",
+  HLV_I: "Huấn luyện viên cấp I",
+  HLV_II: "Huấn luyện viên cấp II",
+  HLV_III: "Huấn luyện viên cấp III",
 };
+
+const genderLabels: Record<string, string> = {
+  NAM: "Nam",
+  NU: "Nữ",
+};
+
+export function formatLeaderLevel(value: string) {
+  return levelLabels[value] ?? value;
+}
 
 type ResourceCellProps = {
   column: string;
@@ -120,12 +140,17 @@ export function ResourceCell({ column, row, value, displayMode = "table" }: Reso
   if (column === "imageUrl") return <Avatar name={String(row.fullName ?? row.leaderFullName ?? row.username ?? "")} src={value} />;
   if (column === "status" && typeof value === "boolean") return <StatusBadge active={value} />;
   if (column === "effect" && typeof value === "string") return <EffectBadge effect={value} />;
+  if (column === "gender" && typeof value === "string") return <TextValue full={full}>{genderLabels[value] ?? value}</TextValue>;
   if (["moduleCode", "resourceCode", "actionCode", "scopeCode"].includes(column) && typeof value === "string") {
     return <TextValue full={full}>{formatPermissionTaxonomyValue(permissionTaxonomyKindFromColumn(column), value) ?? value}</TextValue>;
   }
-  if (column === "leaderLevel" && typeof value === "string") return <Badge>{levelLabels[value] ?? value}</Badge>;
+  if (column === "leaderLevel" && typeof value === "string") return <LeaderLevelBadge value={value} />;
   if (column === "passed" && typeof value === "boolean") return <Badge tone={value ? "success" : "danger"}>{value ? "Đạt" : "Chưa đạt"}</Badge>;
   if (column === "locked" && typeof value === "boolean") return <Badge tone={value ? "warning" : "neutral"}>{value ? "Đã khóa" : "Có thể sửa"}</Badge>;
+  if (typeof value === "string") {
+    const formattedDate = formatVietnamDateValue(value);
+    if (formattedDate) return <TextValue full={full}>{formattedDate}</TextValue>;
+  }
   if (column.toLowerCase().includes("status") && typeof value === "string") return <WorkflowBadge value={value} />;
   if (Array.isArray(value)) return <ArrayValue values={value} />;
   if (typeof value === "string" || typeof value === "number") {
@@ -209,7 +234,31 @@ function WorkflowBadge({ value }: { value: string }) {
   return <Badge tone={tone}>{label}</Badge>;
 }
 
-function Badge({ children, tone = "neutral" }: { children: React.ReactNode; tone?: "neutral" | "success" | "danger" | "warning" }) {
+function LeaderLevelBadge({ value }: { value: string }) {
+  const label = formatLeaderLevel(value);
+  const className =
+    value === "HT_XU"
+      ? "border-amber-400 bg-white text-danger"
+      : value === "DU_TRUONG"
+        ? "border-danger bg-danger text-white"
+        : value.startsWith("HT_")
+          ? "border-amber-400 bg-danger text-white"
+          : value.startsWith("HLV_")
+            ? "border-purple-600 bg-purple-600 text-white"
+            : undefined;
+
+  return className ? <Badge className={className}>{label}</Badge> : <Badge>{label}</Badge>;
+}
+
+function Badge({
+  children,
+  tone = "neutral",
+  className,
+}: {
+  children: React.ReactNode;
+  tone?: "neutral" | "success" | "danger" | "warning";
+  className?: string;
+}) {
   return (
     <span
       className={cn(
@@ -218,6 +267,7 @@ function Badge({ children, tone = "neutral" }: { children: React.ReactNode; tone
         tone === "success" && "border-success/25 bg-success/10 text-success",
         tone === "danger" && "border-danger/25 bg-danger/10 text-danger",
         tone === "warning" && "border-amber-300 bg-amber-50 text-amber-700",
+        className,
       )}
     >
       {children}

@@ -1,4 +1,5 @@
-import { compactPayload, enumOptions, type ResourceFormSpec } from "@/components/form/resource-form/types";
+import { compactPayload, type ResourceFormSpec } from "@/components/form/resource-form/types";
+import { leaderLevelOptions } from "@/config/routes/route-config";
 
 export const organizationFormSpecs: ResourceFormSpec[] = [
   {
@@ -9,7 +10,7 @@ export const organizationFormSpecs: ResourceFormSpec[] = [
     fields: [
       { name: "name", label: "Tên giáo phận", required: true, section: "Thông tin cơ bản" },
       { name: "unionName", label: "Tên liên đoàn", required: true, section: "Thông tin cơ bản" },
-      { name: "chaplain", label: "Tuyên úy", section: "Thông tin cơ bản" },
+      { name: "chaplain", label: "Cha tuyên úy", section: "Thông tin cơ bản" },
       { name: "phoneNumber", label: "Số điện thoại", section: "Thông tin liên hệ" },
       { name: "email", label: "Email", type: "email", section: "Thông tin liên hệ" },
       { name: "patronSaintDay", label: "Ngày bổn mạng", type: "date", section: "Mốc thời gian" },
@@ -37,7 +38,7 @@ export const organizationFormSpecs: ResourceFormSpec[] = [
         readOnlyOnEdit: true,
         section: "Phạm vi",
       },
-      { name: "chaplain", label: "Tuyên úy", section: "Thông tin cơ bản" },
+      { name: "chaplain", label: "Cha tuyên úy", section: "Thông tin cơ bản" },
       { name: "phoneNumber", label: "Số điện thoại", section: "Thông tin liên hệ" },
       { name: "email", label: "Email", type: "email", section: "Thông tin liên hệ" },
       { name: "patronSaintDay", label: "Ngày bổn mạng", type: "date", section: "Mốc thời gian" },
@@ -78,4 +79,4 @@ export const organizationFormSpecs: ResourceFormSpec[] = [
   },
 ];
 
-export const leaderLevels = enumOptions(["NONE", "HT_XU", "DU_TRUONG", "HT_I", "HT_II", "HT_III", "HLV_I", "HLV_II", "HLV_III"]);
+export const leaderLevels = leaderLevelOptions;
