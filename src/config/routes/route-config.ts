@@ -73,6 +73,7 @@ export const leaderLevelOptions: RouteFilterOption[] = [
 export type RouteConfig = {
   path: string;
   createPath?: string;
+  detailPath?: string;
   editPath?: string;
   idField?: string;
   moduleName: string;

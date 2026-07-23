@@ -20,6 +20,7 @@ export const leaderRouteGroup: RouteGroup = {
         actionPermissionPrefixes: ["organization.leader.create.", "organization.leader.update.", "organization.leader.toggle."],
         primaryActionLabel: "Thêm huynh trưởng",
         createPath: "/leaders/new",
+        detailPath: "/leaders/profiles/:id",
         filterLabels: ["Giáo hạt", "Giáo xứ", "Cấp HT", "Trạng thái"],
         workflowHint: "Khi chỉnh sửa, hệ thống không gửi lại họ tên, ngày sinh hoặc cấp huynh trưởng.",
       }),

@@ -105,6 +105,7 @@ function RowActions({ route, row }: { route: RouteConfig; row: Record<string, un
   if (!id) return <span className="text-xs text-muted">-</span>;
 
   const editHref = fillRoute(route.editPath, { id });
+  const detailHref = fillRoute(route.detailPath, { id });
   const scoreHref = fillRoute(route.actions?.score?.route, { id });
   const canView = canUseAction(user, route.actions?.view);
   const canEdit = canUseAction(user, route.actions?.edit) && canEditRow(route, row, user);
@@ -116,7 +117,7 @@ function RowActions({ route, row }: { route: RouteConfig; row: Record<string, un
     <div className="inline-flex items-center gap-1">
       {canView ? (
         <Button asChild aria-label="Xem chi tiết" className="h-8 min-w-8 rounded-[8px]" size="icon" variant="icon">
-          <Link href={`${route.path}?detail=${encodeURIComponent(id)}` as Route}>
+          <Link href={(detailHref ?? `${route.path}?detail=${encodeURIComponent(id)}`) as Route}>
             <Eye size={16} />
           </Link>
         </Button>

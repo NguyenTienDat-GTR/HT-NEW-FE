@@ -1,18 +1,23 @@
 import type React from "react";
+import { formatVietnamDateValue } from "@/lib/date-format";
 import { cn, viNumber } from "@/lib/utils";
 import { formatPermissionTaxonomyValue, permissionTaxonomyKindFromColumn } from "./permission-taxonomy-labels";
 
 export const columnLabels: Record<string, string> = {
   action: "Hành động",
   actionCode: "Thao tác",
+  approvedAt: "Ngày duyệt",
+  approvedBy: "Người duyệt",
   approvalReason: "Lý do duyệt",
   approvalReasonRequired: "Cần lý do duyệt",
   approvalStatus: "Trạng thái duyệt",
   assignedAt: "Ngày gán",
   assignedBy: "Người gán",
   authProvider: "Nguồn đăng nhập",
+  birthDate: "Ngày sinh",
   certificateApprovalStatus: "Duyệt chứng nhận",
   certificateCode: "Mã chứng nhận",
+  certificateName: "Tên chứng nhận",
   chaplain: "Tuyên úy",
   chapterName: "Xứ đoàn",
   code: "Mã",
@@ -74,6 +79,8 @@ export const columnLabels: Record<string, string> = {
   readAt: "Đã đọc",
   reason: "Lý do",
   registrationEndAt: "Hết đăng ký",
+  registrationDate: "Ngày đăng ký",
+  registrationStartAt: "Mở đăng ký",
   requiredCurrentLevel: "Cấp yêu cầu",
   requiredMinAge: "Tuổi tối thiểu",
   requirementCode: "Mã điều kiện",
@@ -140,6 +147,10 @@ export function ResourceCell({ column, row, value, displayMode = "table" }: Reso
   if (column === "leaderLevel" && typeof value === "string") return <LeaderLevelBadge value={value} />;
   if (column === "passed" && typeof value === "boolean") return <Badge tone={value ? "success" : "danger"}>{value ? "Đạt" : "Chưa đạt"}</Badge>;
   if (column === "locked" && typeof value === "boolean") return <Badge tone={value ? "warning" : "neutral"}>{value ? "Đã khóa" : "Có thể sửa"}</Badge>;
+  if (typeof value === "string") {
+    const formattedDate = formatVietnamDateValue(value);
+    if (formattedDate) return <TextValue full={full}>{formattedDate}</TextValue>;
+  }
   if (column.toLowerCase().includes("status") && typeof value === "string") return <WorkflowBadge value={value} />;
   if (Array.isArray(value)) return <ArrayValue values={value} />;
   if (typeof value === "string" || typeof value === "number") {

@@ -5,6 +5,7 @@ import type { Route } from "next";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Panel } from "@/components/ui/panel";
 import { cn } from "@/lib/utils";
+import { formatVietnamDateTime } from "@/lib/date-format";
 import { ResourcePagination } from "@/components/common/resource/resource-pagination";
 import type { ResourcePageSize } from "@/components/common/resource/use-resource-query-state";
 import { useMarkNotificationRead, useNotifications, type NotificationItem } from "@/modules/notifications/hooks";
@@ -123,11 +124,5 @@ function parsePageSize(value: string | null): ResourcePageSize {
 }
 
 function formatDateTime(value?: string | null) {
-  if (!value) return "Không rõ thời gian";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat("vi-VN", {
-    dateStyle: "short",
-    timeStyle: "short",
-  }).format(date);
+  return formatVietnamDateTime(value) ?? value ?? "Không rõ thời gian";
 }
