@@ -2,7 +2,9 @@
 
 import * as Dialog from "@radix-ui/react-dialog";
 import { useQuery } from "@tanstack/react-query";
-import { MagnifyingGlass, SlidersHorizontal, X } from "@phosphor-icons/react";
+import { MagnifyingGlass, Plus, SlidersHorizontal, X } from "@phosphor-icons/react";
+import type { Route } from "next";
+import Link from "next/link";
 import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +23,7 @@ export function ResourceFilters({
   updateFilter,
   updateParam,
   resetFilters,
+  canCreate,
 }: {
   route: RouteConfig;
   search: string;
@@ -30,6 +33,7 @@ export function ResourceFilters({
   updateFilter: (key: string, value: string) => void;
   updateParam: (key: string, value: string) => void;
   resetFilters: () => void;
+  canCreate: boolean;
 }) {
   const filters = route.filters ?? [];
   const activeFilterCount = useMemo(() => {
@@ -47,55 +51,65 @@ export function ResourceFilters({
           <Input className="pl-9" onChange={(event) => setSearch(event.target.value)} placeholder={`Tìm kiếm ${route.title.toLowerCase()}`} value={search} />
         </label>
 
-        {filters.length ? (
-          <Dialog.Root>
-            <Dialog.Trigger asChild>
-              <Button className="shrink-0 justify-center" type="button" variant="outline">
-                <SlidersHorizontal size={18} />
-                Bộ lọc
-                {activeFilterCount ? (
-                  <span className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-xs font-semibold text-white">
-                    {activeFilterCount}
-                  </span>
-                ) : null}
-              </Button>
-            </Dialog.Trigger>
-            <Dialog.Portal>
-              <Dialog.Overlay className="fixed inset-0 z-40 bg-slate-950/30 backdrop-blur-sm" />
-              <Dialog.Content className="fixed bottom-0 right-0 top-0 z-50 flex w-full max-w-[440px] flex-col border-l border-border bg-white shadow-[var(--shadow-elevated)] focus:outline-none">
-                <div className="flex items-start justify-between gap-4 border-b border-border p-5">
-                  <div>
-                    <Dialog.Title className="text-xl font-semibold text-foreground">Bộ lọc</Dialog.Title>
-                    <Dialog.Description className="mt-1 text-sm text-muted">Chọn điều kiện để thu hẹp danh sách {route.title.toLowerCase()}.</Dialog.Description>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+          {filters.length ? (
+            <Dialog.Root>
+              <Dialog.Trigger asChild>
+                <Button className="shrink-0 justify-center" type="button" variant="outline">
+                  <SlidersHorizontal size={18} />
+                  Bộ lọc
+                  {activeFilterCount ? (
+                    <span className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-xs font-semibold text-white">
+                      {activeFilterCount}
+                    </span>
+                  ) : null}
+                </Button>
+              </Dialog.Trigger>
+              <Dialog.Portal>
+                <Dialog.Overlay className="fixed inset-0 z-40 bg-slate-950/30 backdrop-blur-sm" />
+                <Dialog.Content className="fixed bottom-0 right-0 top-0 z-50 flex w-full max-w-[440px] flex-col border-l border-border bg-white shadow-[var(--shadow-elevated)] focus:outline-none">
+                  <div className="flex items-start justify-between gap-4 border-b border-border p-5">
+                    <div>
+                      <Dialog.Title className="text-xl font-semibold text-foreground">Bộ lọc</Dialog.Title>
+                      <Dialog.Description className="mt-1 text-sm text-muted">Chọn điều kiện để thu hẹp danh sách {route.title.toLowerCase()}.</Dialog.Description>
+                    </div>
+                    <Dialog.Close asChild>
+                      <Button aria-label="Đóng" size="icon" type="button" variant="ghost">
+                        <X size={20} />
+                      </Button>
+                    </Dialog.Close>
                   </div>
-                  <Dialog.Close asChild>
-                    <Button aria-label="Đóng" size="icon" type="button" variant="ghost">
-                      <X size={20} />
+                  <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-5">
+                    {filters.map((filter) => (
+                      <FilterControl
+                        filter={filter}
+                        key={filter.key}
+                        onChange={(value) => (filter.key === "status" ? updateParam("status", value) : updateFilter(filter.key, value))}
+                        value={filter.key === "status" ? status : (filterValues[filter.key] ?? "")}
+                      />
+                    ))}
+                  </div>
+                  <div className="flex justify-end gap-3 border-t border-border bg-surface-1/60 p-4">
+                    <Button onClick={resetFilters} type="button" variant="outline">
+                      Xóa lọc
                     </Button>
-                  </Dialog.Close>
-                </div>
-                <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-5">
-                  {filters.map((filter) => (
-                    <FilterControl
-                      filter={filter}
-                      key={filter.key}
-                      onChange={(value) => (filter.key === "status" ? updateParam("status", value) : updateFilter(filter.key, value))}
-                      value={filter.key === "status" ? status : (filterValues[filter.key] ?? "")}
-                    />
-                  ))}
-                </div>
-                <div className="flex justify-end gap-3 border-t border-border bg-surface-1/60 p-4">
-                  <Button onClick={resetFilters} type="button" variant="outline">
-                    Xóa lọc
-                  </Button>
-                  <Dialog.Close asChild>
-                    <Button type="button">Áp dụng</Button>
-                  </Dialog.Close>
-                </div>
-              </Dialog.Content>
-            </Dialog.Portal>
-          </Dialog.Root>
-        ) : null}
+                    <Dialog.Close asChild>
+                      <Button type="button">Áp dụng</Button>
+                    </Dialog.Close>
+                  </div>
+                </Dialog.Content>
+              </Dialog.Portal>
+            </Dialog.Root>
+          ) : null}
+          {route.primaryActionLabel && route.createPath && canCreate ? (
+            <Button asChild className="shrink-0 justify-center">
+              <Link href={route.createPath as Route}>
+                <Plus size={18} />
+                {route.primaryActionLabel}
+              </Link>
+            </Button>
+          ) : null}
+        </div>
       </div>
     </div>
   );

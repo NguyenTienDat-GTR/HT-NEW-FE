@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Route } from "next";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
@@ -15,6 +15,7 @@ import { ConfirmActionDialog } from "./confirm-action-dialog";
 import { DetailDrawer } from "./detail-drawer";
 import { ResourceListEmptyState } from "./resource-list-empty-state";
 import { ResourceListHeader } from "./resource-list-header";
+import { buildResourceKpiQuerySpecs, buildResourceKpis, shouldShowResourceKpis } from "./resource-kpis";
 import type { ResourceListRuntimeProps } from "./resource-list-types";
 import { asPageResponse } from "./resource-list-utils";
 import { ResourcePagination } from "./resource-pagination";
@@ -40,6 +41,22 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
 
   const canCreate = canUseAction(user, effectiveRoute.actions?.create) && (config.canCreate?.(effectiveRoute, user) ?? true);
   const pageData = asPageResponse(query.data, queryState.size);
+  const showKpis = shouldShowResourceKpis(effectiveRoute);
+  const kpiQuerySpecs = buildResourceKpiQuerySpecs(effectiveRoute, queryState.queryString);
+  const kpiQueries = useQueries({
+    queries: kpiQuerySpecs.map((spec) => ({
+      queryKey: ["resource-kpi", effectiveRoute.endpoint, spec.id, spec.queryString],
+      enabled: Boolean(showKpis && effectiveRoute.endpoint && user),
+      queryFn: () => apiFetch<PageResponse<Record<string, unknown>>>(`${effectiveRoute.endpoint}?${spec.queryString}`),
+      staleTime: 0,
+    })),
+  });
+  const kpiQueryTotals = Object.fromEntries(kpiQuerySpecs.map((spec, index) => [spec.id, kpiQueries[index]?.data?.totalElements ?? 0]));
+  const kpis = buildResourceKpis({
+    route: effectiveRoute,
+    pageData,
+    queryTotals: kpiQueryTotals,
+  });
   const rows = rowsFromResponse(query.data);
   const detailId = searchParams.get("detail");
   const toggleId = searchParams.get("toggle");
@@ -66,8 +83,8 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
   return (
     <div className="space-y-5">
       <ResourceListHeader
-        canCreate={canCreate}
-        moduleDescription={config.moduleDescription}
+        kpis={kpis}
+        kpisLoading={query.isLoading || kpiQueries.some((kpiQuery) => kpiQuery.isLoading)}
         moduleLabel={config.moduleLabel}
         route={effectiveRoute}
       />
@@ -82,6 +99,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
           updateFilter={queryState.updateFilter}
           updateParam={queryState.updateParam}
           resetFilters={queryState.resetFilters}
+          canCreate={canCreate}
         />
         <ResourceTable
           isLoading={query.isLoading}
