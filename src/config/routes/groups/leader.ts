@@ -21,6 +21,9 @@ export const leaderRouteGroup: RouteGroup = {
         primaryActionLabel: "Thêm huynh trưởng",
         createPath: "/leaders/new",
         detailPath: "/leaders/profiles/:id",
+        actions: {
+          edit: { label: "Sửa", permissionPrefixes: ["organization.leader.update."], requiredRoles: ["ADMIN_PARISH", "ROLE_ADMIN_PARISH"] },
+        },
         filterLabels: ["Giáo hạt", "Giáo xứ", "Cấp HT", "Trạng thái"],
         workflowHint: "Khi chỉnh sửa, hệ thống không gửi lại họ tên, ngày sinh hoặc cấp huynh trưởng.",
       }),

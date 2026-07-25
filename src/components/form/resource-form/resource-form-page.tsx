@@ -9,14 +9,18 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Panel } from "@/components/ui/panel";
+import type { RouteConfig } from "@/config/routes/routes";
 import { apiFetch, apiMutation, getApiErrorMessage } from "@/lib/api/client";
 import { useAuthStore } from "@/lib/auth/auth-store";
 import { canUseAction } from "@/lib/auth/permissions";
-import type { RouteConfig } from "@/config/routes/routes";
+import { cn } from "@/lib/utils";
 import { resolveRouteForUser } from "@/modules/workspace/super-admin-route-overrides";
-import { getFormSpec } from "./registry";
 import { FormField } from "./form-controls";
+import { getLeaderCreateStepFields, LeaderCreateFormLayout, leaderCreateStepCount } from "./leader-create-form-layout";
+import { getFormSpec } from "./registry";
 import type { FormFieldSpec, ResourceFormMode } from "./types";
+
+type FormValue = string | string[] | number | boolean | null | undefined;
 
 export function ResourceFormPage({
   route,
@@ -37,6 +41,9 @@ export function ResourceFormPage({
   const spec = getFormSpec(effectiveRoute, effectiveAction, user);
   const action = effectiveAction === "score" ? effectiveRoute.actions?.score : effectiveRoute.actions?.[mode];
   const canOpen = canUseAction(user, action);
+  const [values, setValues] = useState<Record<string, unknown>>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [leaderCreateStep, setLeaderCreateStep] = useState(0);
 
   const detailQuery = useQuery({
     queryKey: ["resource-detail", effectiveRoute.endpoint, id],
@@ -44,7 +51,6 @@ export function ResourceFormPage({
     queryFn: () => apiFetch<Record<string, unknown>>(`${effectiveRoute.endpoint}/${encodeURIComponent(String(id))}`),
   });
 
-  const [values, setValues] = useState<Record<string, unknown>>({});
   const initialValues = detailQuery.data ?? {};
   const createDefaults = mode === "create" ? spec?.getInitialValues?.(user) ?? {} : {};
   const mergedValues = mode === "edit" ? { ...initialValues, ...values } : { ...createDefaults, ...values };
@@ -59,7 +65,6 @@ export function ResourceFormPage({
       required: field.requiredWhen?.(mergedValues, mode) ?? field.required,
       readOnlyOnEdit: field.readOnlyOnEdit || (field.readOnlyWhen?.(mergedValues, mode) ?? false),
     }));
-  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const mutation = useMutation({
     mutationFn: async () => {
@@ -99,9 +104,33 @@ export function ResourceFormPage({
   const title = mode === "create" ? (spec.createTitle ?? effectiveRoute.primaryActionLabel ?? effectiveRoute.title) : (spec.editTitle ?? `Chỉnh sửa ${effectiveRoute.title.toLowerCase()}`);
   const sections = groupFields(visibleFields);
   const compactAccountForm = effectiveRoute.kind === "accounts";
+  const horizontalSections = shouldUseHorizontalSections(effectiveRoute.kind, mode);
+  const leaderCreateLayout = shouldUseLeaderCreateLayout(effectiveRoute.kind, mode);
+  const leaderImageField = leaderCreateLayout ? visibleFields.find((field) => field.name === "imageUrl") : undefined;
+  const leaderFormFields = leaderCreateLayout ? visibleFields.filter((field) => field.name !== "imageUrl") : visibleFields;
+  const currentLeaderCreateFields = leaderCreateLayout ? getLeaderCreateStepFields(leaderFormFields, leaderCreateStep) : [];
+  const leaderCreateCanContinue = leaderCreateLayout && leaderCreateStep < leaderCreateStepCount - 1;
+
+  function handlePrimaryAction() {
+    if (leaderCreateCanContinue) {
+      const nextErrors = validateFields(currentLeaderCreateFields, mergedValues);
+      setErrors(nextErrors);
+      if (Object.keys(nextErrors).length) {
+        toast.error("Vui lòng kiểm tra các trường bắt buộc");
+        return;
+      }
+      setLeaderCreateStep((step) => Math.min(step + 1, leaderCreateStepCount - 1));
+      return;
+    }
+    mutation.mutate();
+  }
+
+  function handleFieldChange(field: FormFieldSpec, value: FormValue) {
+    setValues((current) => nextValuesForField(current, field.name, value, mergedValues));
+  }
 
   return (
-    <div className="mx-auto max-w-[860px] space-y-4 pb-20">
+    <div className={cn("mx-auto space-y-4 pb-20", leaderCreateLayout ? "max-w-[960px]" : horizontalSections ? "max-w-[1180px]" : "max-w-[860px]")}>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <Link className="mb-2 inline-flex items-center gap-2 text-xs font-semibold text-primary" href={effectiveRoute.path as Route}>
@@ -109,49 +138,61 @@ export function ResourceFormPage({
             Quay lại danh sách
           </Link>
           <h1 className="text-2xl font-semibold tracking-[0] text-foreground">{title}</h1>
-          <p className="mt-1 max-w-[72ch] text-sm leading-5 text-muted">{spec.description ?? effectiveRoute.subtitle}</p>
+          {leaderCreateLayout ? null : <p className="mt-1 max-w-[72ch] text-sm leading-5 text-muted">{spec.description ?? effectiveRoute.subtitle}</p>}
         </div>
       </div>
 
-      <div className="space-y-3">
-        {detailQuery.isLoading ? (
-          <Panel className="h-72 animate-pulse" />
-        ) : (
-          sections.map(([section, fields]) => (
-            <Panel className={compactAccountForm ? "p-4 md:p-5" : "p-4"} key={section}>
-              <h2 className="mb-3 text-sm font-semibold uppercase tracking-[0.04em] text-muted">{section}</h2>
-              <div className={compactAccountForm ? "grid gap-3 md:grid-cols-2" : "grid gap-3 md:grid-cols-2 xl:grid-cols-3"}>
-                {fields.map((field) => (
-                  <div className={fieldLayoutClass(field)} key={field.name}>
-                    <FormField
-                      error={errors[field.name]}
-                      field={field}
-                      mode={mode}
-                      onChange={(value) => setValues((current) => nextValuesForField(current, field.name, value, mergedValues))}
-                      onFieldChange={(fieldName, value) => setValues((current) => ({ ...current, [fieldName]: value }))}
-                      value={mergedValues[field.name] as string | string[] | number | boolean | null | undefined}
-                      user={user}
-                      values={mergedValues}
-                    />
-                  </div>
-                ))}
-              </div>
-            </Panel>
-          ))
-        )}
-      </div>
+      {leaderCreateLayout ? (
+        <LeaderCreateFormLayout
+          currentStep={leaderCreateStep}
+          errors={errors}
+          fields={leaderFormFields}
+          imageField={leaderImageField}
+          mode={mode}
+          onChange={handleFieldChange}
+          onFieldChange={(fieldName, value) => setValues((current) => ({ ...current, [fieldName]: value }))}
+          onStepSelect={setLeaderCreateStep}
+          user={user}
+          values={mergedValues}
+        />
+      ) : (
+        <div className={horizontalSections ? sectionGridClass(sections.length) : "space-y-3"}>
+          {detailQuery.isLoading ? (
+            <Panel className="h-72 animate-pulse" />
+          ) : (
+            sections.map(([section, fields]) => (
+              <Panel className={cn(compactAccountForm || horizontalSections ? "p-4 md:p-5" : "p-4", horizontalSections && "h-full")} key={section}>
+                <h2 className="mb-3 text-sm font-semibold uppercase tracking-[0.04em] text-muted">{section}</h2>
+                <div className={fieldGridClass(compactAccountForm, horizontalSections)}>
+                  {fields.map((field) => (
+                    <div className={fieldLayoutClass(field, horizontalSections)} key={field.name}>
+                      <FormField
+                        error={errors[field.name]}
+                        field={field}
+                        mode={mode}
+                        onChange={(value) => handleFieldChange(field, value)}
+                        onFieldChange={(fieldName, value) => setValues((current) => ({ ...current, [fieldName]: value }))}
+                        user={user}
+                        value={mergedValues[field.name] as FormValue}
+                        values={mergedValues}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </Panel>
+            ))
+          )}
+        </div>
+      )}
 
       <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-white/95 px-4 py-2.5 shadow-[var(--shadow-bottom-bar)] backdrop-blur">
-        <div className="mx-auto flex max-w-[1180px] justify-end gap-3">
+        <div className={cn("mx-auto flex justify-end gap-3", leaderCreateLayout ? "max-w-[960px]" : "max-w-[1180px]")}>
           <Button asChild variant="outline">
-            <Link href={effectiveRoute.path as Route}>
-              <X size={16} />
-              Hủy
-            </Link>
+            <Link href={effectiveRoute.path as Route}>{leaderCreateLayout ? "Hủy" : <><X size={16} />Hủy</>}</Link>
           </Button>
-          <Button loading={mutation.isPending} onClick={() => mutation.mutate()} type="button">
-            <FloppyDisk size={16} />
-            {spec.submitLabel ?? (mode === "create" ? "Tạo mới" : "Lưu cập nhật")}
+          <Button loading={mutation.isPending} onClick={handlePrimaryAction} type="button">
+            {leaderCreateCanContinue ? null : <FloppyDisk size={16} />}
+            {leaderCreateCanContinue ? "Tiếp tục" : spec.submitLabel ?? (mode === "create" ? "Tạo mới" : "Lưu cập nhật")}
           </Button>
         </div>
       </div>
@@ -178,7 +219,30 @@ function groupFields(fields: FormFieldSpec[]) {
   return Array.from(groups.entries());
 }
 
-function fieldLayoutClass(field: FormFieldSpec) {
+function shouldUseLeaderCreateLayout(kind: RouteConfig["kind"], mode: ResourceFormMode) {
+  return mode === "create" && kind === "leaders";
+}
+
+function shouldUseHorizontalSections(kind: RouteConfig["kind"], mode: ResourceFormMode) {
+  return mode === "edit" && ["leaders", "dioceses", "deaneries", "parishes"].includes(kind);
+}
+
+function sectionGridClass(sectionCount: number) {
+  if (sectionCount >= 4) return "grid gap-4 lg:grid-cols-2 xl:grid-cols-4";
+  if (sectionCount === 3) return "grid gap-4 lg:grid-cols-3";
+  if (sectionCount === 2) return "grid gap-4 lg:grid-cols-2";
+  return "space-y-3";
+}
+
+function fieldGridClass(compactAccountForm: boolean, horizontalSections: boolean) {
+  if (horizontalSections) return "grid gap-3";
+  if (compactAccountForm) return "grid gap-3 md:grid-cols-2";
+  return "grid gap-3 md:grid-cols-2 xl:grid-cols-3";
+}
+
+function fieldLayoutClass(field: FormFieldSpec, horizontalSections = false) {
+  if (horizontalSections) return undefined;
+  if (field.type === "image") return "md:col-span-2 xl:col-span-3";
   if (field.type === "checkbox-list") return "md:col-span-2 xl:col-span-3";
   if (field.type === "textarea" || field.type === "multiselect") return "md:col-span-2";
   return undefined;

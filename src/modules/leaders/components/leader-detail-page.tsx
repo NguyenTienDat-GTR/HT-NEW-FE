@@ -5,16 +5,24 @@ import {
     Certificate as CertificateIcon,
     ClockCounterClockwise,
     EnvelopeSimple,
+    FloppyDisk,
     HouseLine,
+    IdentificationCard,
+    ImageSquare,
     Key,
     PencilSimple,
     Phone,
     User,
+    X,
 } from "@phosphor-icons/react";
-import {useQuery} from "@tanstack/react-query";
+import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 import type {Route} from "next";
 import Link from "next/link";
+import type {ReactNode} from "react";
 import {useMemo, useState} from "react";
+import {toast} from "sonner";
+import {FormField} from "@/components/form/resource-form/form-controls";
+import type {FormFieldSpec} from "@/components/form/resource-form/types";
 import {Button} from "@/components/ui/button";
 import {Panel} from "@/components/ui/panel";
 import type {RouteConfig} from "@/config/routes/routes";
@@ -23,7 +31,6 @@ import {serializeBaseSearch} from "@/lib/api/search";
 import {useAuthStore} from "@/lib/auth/auth-store";
 import {canUseAction} from "@/lib/auth/permissions";
 import {cn} from "@/lib/utils";
-import {fillRoute} from "@/components/common/resource/resource-actions";
 import {formatLeaderLevel} from "@/components/common/resource/resource-format";
 import {
     displayValue,
@@ -33,7 +40,6 @@ import {
     workflowLabel,
     yearFromDate,
     type AccountRow,
-    type ActivityLogRow,
     type CertificateRow,
     type CourseParticipationRow,
     type LeaderDetail,
@@ -46,6 +52,14 @@ type LeaderDetailPageProps = {
 };
 
 type TabId = "profile" | "courses" | "certificates" | "account" | "activity";
+type LeaderEditValues = {
+    holyName: string;
+    email: string;
+    phoneNumber: string;
+    imageUrl: string;
+    gender: string;
+    parishId: string;
+};
 
 const tabs: { id: TabId; label: string; icon: typeof User }[] = [
     {id: "profile", label: "Thông tin cá nhân", icon: User},
@@ -57,7 +71,11 @@ const tabs: { id: TabId; label: string; icon: typeof User }[] = [
 
 export function LeaderDetailPage({id, route}: LeaderDetailPageProps) {
     const [activeTab, setActiveTab] = useState<TabId>("profile");
+    const [editingProfile, setEditingProfile] = useState(false);
+    const [editValues, setEditValues] = useState<LeaderEditValues>(emptyLeaderEditValues);
+    const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
     const user = useAuthStore((state) => state.user);
+    const queryClient = useQueryClient();
     const leaderQuery = useQuery({
         queryKey: ["leader-detail-page", id],
         queryFn: () => apiFetch<LeaderDetail>(`/leaders/${encodeURIComponent(id)}`),
@@ -65,7 +83,28 @@ export function LeaderDetailPage({id, route}: LeaderDetailPageProps) {
 
     const leader = leaderQuery.data;
     const canEdit = canUseAction(user, route.actions?.edit);
-    const editHref = fillRoute(route.editPath, {id});
+    const mutation = useMutation({
+        mutationFn: async () => {
+            const nextErrors = validateLeaderEdit(editValues);
+            setFieldErrors(nextErrors);
+            if (Object.keys(nextErrors).length) throw new Error("Vui lòng kiểm tra các trường bắt buộc");
+            return apiFetch<LeaderDetail>(`/leaders/${encodeURIComponent(id)}`, {
+                method: "PUT",
+                body: JSON.stringify(toLeaderUpdatePayload(editValues)),
+            });
+        },
+        onSuccess: async (updatedLeader) => {
+            toast.success("Lưu cập nhật thành công");
+            setEditingProfile(false);
+            setFieldErrors({});
+            queryClient.setQueryData(["leader-detail-page", id], updatedLeader);
+            await queryClient.invalidateQueries({queryKey: ["resource", route.endpoint]});
+            await queryClient.invalidateQueries({queryKey: ["leader-detail-page", id]});
+        },
+        onError: (error) => {
+            toast.error(getApiErrorMessage(error));
+        },
+    });
 
     if (leaderQuery.isLoading) return <LeaderDetailSkeleton/>;
     if (leaderQuery.isError) {
@@ -77,6 +116,10 @@ export function LeaderDetailPage({id, route}: LeaderDetailPageProps) {
         );
     }
     if (!leader) return null;
+    const headerLeader = editingProfile ? {
+        ...leader,
+        imageUrl: editValues.imageUrl === "__CLEAR__" ? null : editValues.imageUrl
+    } : leader;
 
     return (
         <div className="space-y-5">
@@ -99,7 +142,11 @@ export function LeaderDetailPage({id, route}: LeaderDetailPageProps) {
             <Panel className="overflow-hidden">
                 <div className="flex flex-col gap-5 p-5 lg:flex-row lg:items-center lg:justify-between">
                     <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center">
-                        <LeaderAvatar leader={leader}/>
+                        <EditableLeaderAvatar
+                            editing={editingProfile && activeTab === "profile"}
+                            leader={headerLeader}
+                            onChange={(value) => setEditValues((current) => ({...current, imageUrl: value}))}
+                        />
                         <div className="min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
                                 <h2 className="break-words text-2xl font-semibold tracking-[0] text-foreground">
@@ -116,12 +163,19 @@ export function LeaderDetailPage({id, route}: LeaderDetailPageProps) {
                         </div>
                     </div>
 
-                    {canEdit && editHref ? (
-                        <Button asChild className="self-start lg:self-center">
-                            <Link href={editHref as Route}>
-                                <PencilSimple size={18}/>
-                                Sửa thông tin
-                            </Link>
+                    {canEdit && activeTab === "profile" && !editingProfile ? (
+                        <Button
+                            className="self-start lg:self-center"
+                            onClick={() => {
+                                setActiveTab("profile");
+                                setEditingProfile(true);
+                                setEditValues(valuesFromLeader(leader));
+                                setFieldErrors({});
+                            }}
+                            type="button"
+                        >
+                            <PencilSimple size={18}/>
+                            Sửa thông tin hồ sơ
                         </Button>
                     ) : null}
                 </div>
@@ -137,7 +191,13 @@ export function LeaderDetailPage({id, route}: LeaderDetailPageProps) {
                                     active ? "border-primary text-primary" : "border-transparent text-muted hover:text-foreground",
                                 )}
                                 key={tab.id}
-                                onClick={() => setActiveTab(tab.id)}
+                                onClick={() => {
+                                    setActiveTab(tab.id);
+                                    if (tab.id !== "profile") {
+                                        setEditingProfile(false);
+                                        setFieldErrors({});
+                                    }
+                                }}
                                 type="button"
                             >
                                 <Icon size={17}/>
@@ -148,53 +208,277 @@ export function LeaderDetailPage({id, route}: LeaderDetailPageProps) {
                 </div>
             </Panel>
 
-            {activeTab === "profile" ? <ProfileTab id={id} leader={leader}/> : null}
+            {activeTab === "profile" ? (
+                <ProfileTab
+                    editing={editingProfile}
+                    errors={fieldErrors}
+                    id={id}
+                    leader={leader}
+                    onChange={(fieldName, value) => setEditValues((current) => ({
+                        ...current,
+                        [fieldName]: String(value ?? "")
+                    }))}
+                    values={editValues}
+                />
+            ) : null}
             {activeTab === "courses" ? <CourseTab leaderId={id}/> : null}
             {activeTab === "certificates" ? <CertificateTab leaderId={id}/> : null}
             {activeTab === "account" ? <AccountTab leader={leader} leaderId={id}/> : null}
             {/*{activeTab === "activity" ? <ActivityTab leaderId={id}/> : null}*/}
+
+            {editingProfile && activeTab === "profile" ? (
+                <div
+                    className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-white/95 px-4 py-2.5 shadow-[var(--shadow-bottom-bar)] backdrop-blur">
+                    <div className="mx-auto flex max-w-[1180px] justify-end gap-3">
+                        <Button
+                            onClick={() => {
+                                setEditingProfile(false);
+                                setEditValues(emptyLeaderEditValues);
+                                setFieldErrors({});
+                            }}
+                            type="button"
+                            variant="outline"
+                        >
+                            <X size={16}/>
+                            Hủy
+                        </Button>
+                        <Button loading={mutation.isPending} onClick={() => mutation.mutate()} type="button">
+                            <FloppyDisk size={16}/>
+                            Lưu cập nhật
+                        </Button>
+                    </div>
+                </div>
+            ) : null}
         </div>
     );
 }
 
-function ProfileTab({id, leader}: { id: string; leader: LeaderDetail }) {
+function ProfileTab({
+                        id,
+                        leader,
+                        editing,
+                        values,
+                        errors,
+                        onChange,
+                    }: {
+    id: string;
+    leader: LeaderDetail;
+    editing: boolean;
+    values: LeaderEditValues;
+    errors: Record<string, string>;
+    onChange: (fieldName: keyof LeaderEditValues, value: unknown) => void;
+}) {
     const rankHistoryQuery = useQuery({
         queryKey: ["leader-rank-history-page", id],
         queryFn: () => apiFetch<RankHistoryRow[]>(`/leaders/${encodeURIComponent(id)}/rank-history`),
     });
 
     return (
-        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(360px,0.92fr)]">
-            <div className="space-y-5">
-                <InfoCard
-                    items={[
-                        ["Tên thánh, Họ và tên", `${leader?.holyName ?? ""} ${leader?.fullName ?? ""}`.trim()],
-                        ["Ngày sinh", formatDate(leader.birthDate)],
-                        ["Giới tính", genderLabel(leader.gender)],
-                        ["Điện thoại", leader.phoneNumber],
-                        ["Email", leader.email],
-                        ["Cấp huynh trưởng", leader.leaderLevel ? formatLeaderLevel(leader.leaderLevel) : undefined],
-                    ]}
-                    title="Thông tin cá nhân"
-                />
-                <RankHistoryPanel
-                    error={rankHistoryQuery.isError ? getApiErrorMessage(rankHistoryQuery.error) : undefined}
-                    histories={rankHistoryQuery.data} loading={rankHistoryQuery.isLoading}/>
-            </div>
+        <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.45fr)_minmax(360px,0.72fr)]">
+            <SectionCard icon={IdentificationCard} title="Thông tin cơ bản">
+                <div className="grid gap-x-6 gap-y-5 md:grid-cols-2 xl:grid-cols-3">
+                    <ProfileField
+                        editing={editing}
+                        error={errors.holyName}
+                        editValue={values.holyName}
+                        field={leaderEditableFields.holyName}
+                        label="Tên thánh"
+                        onChange={(value) => onChange("holyName", value)}
+                        value={leader.holyName}
+                    />
+                    <ProfileField label="Họ và tên" value={leader.fullName}/>
+                    <ProfileField
+                        editing={editing}
+                        error={errors.gender}
+                        editValue={values.gender}
+                        field={leaderEditableFields.gender}
+                        label="Giới tính"
+                        onChange={(value) => onChange("gender", value)}
+                        value={genderLabel(leader.gender)}
+                    />
+                    <ProfileField label="Ngày sinh" value={formatDate(leader.birthDate)}/>
+                    <ProfileField
+                        editing={editing}
+                        error={errors.phoneNumber}
+                        editValue={values.phoneNumber}
+                        field={leaderEditableFields.phoneNumber}
+                        label="Số điện thoại"
+                        onChange={(value) => onChange("phoneNumber", value)}
+                        value={leader.phoneNumber}
+                    />
+                    <ProfileField
+                        editing={editing}
+                        error={errors.email}
+                        editValue={values.email}
+                        field={leaderEditableFields.email}
+                        label="Email"
+                        onChange={(value) => onChange("email", value)}
+                        value={leader.email}
+                    />
+                    <ProfileField
+                        editing={editing}
+                        error={errors.parishId}
+                        editValue={values.parishId}
+                        field={leaderEditableFields.parishId}
+                        label="Giáo xứ"
+                        onChange={(value) => onChange("parishId", value)}
+                        value={leader.parishName}
+                    />
+                    <ProfileField label="Giáo hạt" value={leader.deaneryName}/>
+                    <ProfileField label="Cấp huynh trưởng"
+                                  value={leader.leaderLevel ? formatLeaderLevel(leader.leaderLevel) : undefined}/>
+                </div>
+                <div className="mt-6 flex flex-wrap items-center justify-start gap-x-4 gap-y-2 text-xs text-muted">
+                    <StatusBadge active={leader.status === true}/>
+                    <MetaText label="Tạo" value={`${displayValue(leader.createdBy)} · ${formatDate(leader.createdAt)}`}/>
+                    <MetaText label="Cập nhật" value={`${displayValue(leader.updatedBy)} · ${formatDate(leader.updatedAt)}`}/>
+                </div>
+            </SectionCard>
 
-            <InfoCard
-                items={[
-                    ["Giáo hạt", leader.deaneryName],
-                    ["Giáo xứ", leader.parishName],
-                    ["Trạng thái", leader.status === true ? "Đang hoạt động" : "Tạm ngưng"],
-                    ["Ngày tạo hồ sơ", formatDate(leader.createdAt)],
-                    ["Người tạo", leader.createdBy],
-                    ["Ngày cập nhật", formatDate(leader.updatedAt)],
-                    ["Người cập nhật", leader.updatedBy],
-                ]}
-                title="Thông tin tổ chức"
+            <RankHistoryPanel
+                error={rankHistoryQuery.isError ? getApiErrorMessage(rankHistoryQuery.error) : undefined}
+                histories={rankHistoryQuery.data}
+                loading={rankHistoryQuery.isLoading}
             />
         </div>
+    );
+}
+
+const emptyLeaderEditValues: LeaderEditValues = {
+    holyName: "",
+    email: "",
+    phoneNumber: "",
+    imageUrl: "",
+    gender: "",
+    parishId: "",
+};
+
+const leaderEditableFields = {
+    holyName: {name: "holyName", label: "Tên thánh", required: true},
+    phoneNumber: {name: "phoneNumber", label: "Số điện thoại", placeholder: "Nhập số điện thoại"},
+    email: {name: "email", label: "Email", type: "email", required: true, placeholder: "Nhập email chính thức"},
+    gender: {
+        name: "gender",
+        label: "Giới tính",
+        type: "select",
+        required: true,
+        options: [
+            {value: "NAM", label: "Nam"},
+            {value: "NU", label: "Nữ"},
+        ],
+    },
+    parishId: {
+        name: "parishId",
+        label: "Giáo xứ",
+        type: "select",
+        required: true,
+        optionsEndpoint: "/parishes",
+        optionValue: "id",
+        optionLabel: "name",
+    },
+} satisfies Record<string, FormFieldSpec>;
+
+function valuesFromLeader(leader: LeaderDetail): LeaderEditValues {
+    return {
+        holyName: leader.holyName ?? "",
+        email: leader.email ?? "",
+        phoneNumber: leader.phoneNumber ?? "",
+        imageUrl: leader.imageUrl ?? "",
+        gender: leader.gender ?? "",
+        parishId: leader.parishId ?? "",
+    };
+}
+
+function validateLeaderEdit(values: LeaderEditValues) {
+    const errors: Record<string, string> = {};
+    if (!values.holyName.trim()) errors.holyName = "Trường này là bắt buộc";
+    if (!values.email.trim()) errors.email = "Trường này là bắt buộc";
+    if (!values.gender.trim()) errors.gender = "Trường này là bắt buộc";
+    if (!values.parishId.trim()) errors.parishId = "Trường này là bắt buộc";
+    return errors;
+}
+
+function toLeaderUpdatePayload(values: LeaderEditValues) {
+    const payload: Record<string, unknown> = {
+        holyName: values.holyName.trim(),
+        email: values.email.trim(),
+        gender: values.gender,
+        parishId: values.parishId,
+    };
+    const clearFields: string[] = [];
+
+    if (values.phoneNumber.trim()) payload.phoneNumber = values.phoneNumber.trim();
+    else clearFields.push("phoneNumber");
+
+    if (values.imageUrl === "__CLEAR__") clearFields.push("imageUrl");
+    else if (values.imageUrl.trim()) payload.imageUrl = values.imageUrl;
+
+    if (clearFields.length) payload.clearFields = clearFields;
+    return payload;
+}
+
+function SectionCard({title, icon: Icon, children}: { title: string; icon: typeof User; children: ReactNode }) {
+    return (
+        <Panel className="h-full rounded-[12px] p-5 md:p-7">
+            <div className="mb-6 flex items-center gap-3">
+                <span
+                    className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary shadow-[inset_0_0_0_1px_rgba(108,71,255,0.08)]">
+                    <Icon size={21} weight="duotone"/>
+                </span>
+                <h3 className="text-lg font-semibold tracking-[0] text-foreground md:text-xl">{title}</h3>
+            </div>
+            {children}
+        </Panel>
+    );
+}
+
+function ProfileField({
+                          label,
+                          value,
+                          editing,
+                          field,
+                          editValue,
+                          onChange,
+                          error,
+                      }: {
+    label: string;
+    value: unknown;
+    editing?: boolean;
+    field?: FormFieldSpec;
+    editValue?: string;
+    onChange?: (value: unknown) => void;
+    error?: string;
+}) {
+    if (editing && field && onChange) {
+        return (
+            <div className="w-full max-w-64 space-y-1">
+                <FormField
+                    error={error}
+                    field={field}
+                    mode="edit"
+                    onChange={onChange}
+                    value={editValue}
+                />
+            </div>
+        );
+    }
+
+    return (
+        <div className="w-full max-w-64 space-y-1">
+            <p className="text-sm font-semibold tracking-[0] text-muted">{label}</p>
+            <p className="flex min-h-11 items-center rounded-[8px] border border-border bg-white px-4 py-2 text-sm font-medium leading-5 text-foreground shadow-sm">
+                {displayValue(value)}
+            </p>
+        </div>
+    );
+}
+
+function MetaText({label, value}: { label: string; value: string }) {
+    return (
+        <span className="inline-flex min-h-7 items-center gap-1.5">
+            <span className="font-semibold text-foreground">{label}:</span>
+            <span>{value}</span>
+        </span>
     );
 }
 
@@ -279,44 +563,6 @@ function AccountTab({leader, leaderId}: { leader: LeaderDetail; leaderId: string
     );
 }
 
-function ActivityTab({leaderId}: { leaderId: string }) {
-    const query = useQuery({
-        queryKey: ["leader-detail-activity", leaderId],
-        queryFn: () => apiFetch<PageResponse<ActivityLogRow>>(`/system/audit-logs?${leaderRelatedQuery({resourceId: leaderId}, "loggedAt")}`),
-    });
-    return (
-        <RelatedPanel
-            columns={["Thời gian", "Người thực hiện", "Hành động", "Thông điệp", "Kết quả"]}
-            error={query.isError ? getApiErrorMessage(query.error) : undefined}
-            loading={query.isLoading}
-            rows={(query.data?.content ?? []).map((row) => [
-                formatDate(row.loggedAt),
-                row.username,
-                row.action,
-                row.message ?? row.errorMessage ?? row.requestPath,
-                row.statusCode ? String(row.statusCode) : undefined,
-            ])}
-            title="Lịch sử hoạt động"
-        />
-    );
-}
-
-function InfoCard({title, items}: { title: string; items: [string, unknown][] }) {
-    return (
-        <Panel className="p-5">
-            <h3 className="text-base font-semibold text-foreground">{title}</h3>
-            <dl className="mt-5 grid gap-4">
-                {items.map(([label, value]) => (
-                    <div className="grid gap-1 sm:grid-cols-[150px_minmax(0,1fr)] sm:gap-4" key={label}>
-                        <dt className="text-sm font-medium text-muted">{label}:</dt>
-                        <dd className="break-words text-sm font-medium leading-6 text-foreground">{displayValue(value)}</dd>
-                    </div>
-                ))}
-            </dl>
-        </Panel>
-    );
-}
-
 function RankHistoryPanel({
                               histories,
                               loading,
@@ -328,18 +574,17 @@ function RankHistoryPanel({
 }) {
     const items = [...(histories ?? [])].sort((left, right) => yearFromDate(right.promotionDate) - yearFromDate(left.promotionDate));
     return (
-        <Panel className="p-5">
-            <h3 className="text-base font-semibold text-foreground">Lịch sử cấp bậc</h3>
-            {loading ? <div className="mt-4 h-20 rounded-[8px] bg-surface-2 motion-safe:animate-pulse"/> : null}
+        <SectionCard icon={ClockCounterClockwise} title="Lịch sử cấp bậc">
+            {loading ? <div className="h-20 rounded-[8px] bg-surface-2 motion-safe:animate-pulse"/> : null}
             {error ? <p className="mt-3 text-sm text-danger">{error}</p> : null}
             {!loading && !error && items.length === 0 ?
                 <p className="mt-3 text-sm text-muted">Chưa có lịch sử cấp bậc.</p> : null}
             {!loading && !error && items.length ? (
-                <ol className="mt-4 space-y-2">
+                <ol className="space-y-3">
                     {items.map((history, index) => (
-                        <li className="flex items-start gap-3 rounded-[8px] border border-border bg-surface-1 px-3 py-2"
+                        <li className="flex min-h-16 items-start gap-3 rounded-[8px] border border-border bg-white px-4 py-3 shadow-sm"
                             key={history.id ?? `${history.newLevel}-${history.promotionDate}-${index}`}>
-                            <span className="mt-1 h-2 w-2 rounded-full bg-primary"/>
+                            <span className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full bg-primary"/>
                             <div>
                                 <p className="text-sm font-semibold text-foreground">{rankHistorySentence(history)}</p>
                                 {history.note ? <p className="mt-1 text-xs text-muted">{history.note}</p> : null}
@@ -348,7 +593,7 @@ function RankHistoryPanel({
                     ))}
                 </ol>
             ) : null}
-        </Panel>
+        </SectionCard>
     );
 }
 
@@ -412,24 +657,70 @@ function RelatedPanel({
     );
 }
 
-function LeaderAvatar({leader}: { leader: LeaderDetail }) {
+function EditableLeaderAvatar({
+                                  leader,
+                                  editing,
+                                  onChange,
+                              }: {
+    leader: LeaderDetail;
+    editing: boolean;
+    onChange: (value: string) => void;
+}) {
     const name = leader.fullName ?? leader.holyName ?? "HT";
     const initial = name.trim().charAt(0).toUpperCase() || "H";
-    if (leader.imageUrl) {
-        return (
-            <span
-                aria-label={name}
-                className="block h-24 w-24 shrink-0 rounded-full border border-border bg-cover bg-center shadow-sm"
-                role="img"
-                style={{backgroundImage: `url(${leader.imageUrl})`}}
-            />
-        );
-    }
+    const inputId = `leader-avatar-${leader.id ?? "current"}`;
     return (
-        <span
-            className="flex h-24 w-24 shrink-0 items-center justify-center rounded-full bg-primary text-2xl font-semibold text-white shadow-[var(--shadow-accent)]">
-      {initial}
-    </span>
+        <div className="flex shrink-0 flex-col items-start gap-2">
+            {leader.imageUrl ? (
+                <span
+                    aria-label={name}
+                    className="block h-24 w-24 rounded-full border border-border bg-cover bg-center shadow-sm"
+                    role="img"
+                    style={{backgroundImage: `url(${leader.imageUrl})`}}
+                />
+            ) : (
+                <span
+                    className="flex h-24 w-24 items-center justify-center rounded-full bg-primary text-2xl font-semibold text-white shadow-[var(--shadow-accent)]">
+                    {editing ? <ImageSquare size={28} weight="duotone"/> : initial}
+                </span>
+            )}
+            {editing ? (
+                <div className="flex flex-wrap items-center gap-2">
+                    <input
+                        accept="image/*"
+                        className="sr-only"
+                        id={inputId}
+                        onChange={(event) => {
+                            const file = event.target.files?.[0];
+                            if (!file) return;
+                            const reader = new FileReader();
+                            reader.onload = () => {
+                                if (typeof reader.result === "string") onChange(reader.result);
+                            };
+                            reader.readAsDataURL(file);
+                            event.target.value = "";
+                        }}
+                        type="file"
+                    />
+                    <label
+                        className="inline-flex min-h-9 cursor-pointer items-center gap-2 rounded-[8px] border border-border bg-white px-3 text-xs font-semibold text-foreground shadow-sm transition-colors hover:border-primary hover:text-primary"
+                        htmlFor={inputId}
+                    >
+                        <ImageSquare size={15}/>
+                        Thay đổi ảnh
+                    </label>
+                    {leader.imageUrl ? (
+                        <button
+                            className="inline-flex min-h-9 cursor-pointer items-center rounded-[8px] px-2 text-xs font-semibold text-muted transition-colors hover:bg-surface-1 hover:text-danger"
+                            onClick={() => onChange("__CLEAR__")}
+                            type="button"
+                        >
+                            Xóa ảnh
+                        </button>
+                    ) : null}
+                </div>
+            ) : null}
+        </div>
     );
 }
 

@@ -2,7 +2,7 @@ import { ShieldCheck } from "@phosphor-icons/react";
 import { describe, expect, it } from "vitest";
 import type { RouteConfig } from "@/config/routes/routes";
 import type { AuthUser } from "@/lib/auth/auth-store";
-import { shouldHideStatusColumn, visibleResourceColumns } from "@/components/common/resource/resource-table";
+import { canShowEditAction, shouldHideStatusColumn, visibleResourceColumns } from "@/components/common/resource/resource-table";
 
 function user(permissions: string[], roles: string[] = ["ADMIN_DIOCESE"]): AuthUser {
   return {
@@ -50,6 +50,20 @@ const permissionRoute: RouteConfig = {
       permissionPrefixes: ["system.permission.toggle."],
       requiredRoles: ["SUPER_ADMIN", "ROLE_SUPER_ADMIN"],
     },
+  },
+};
+
+const leaderRoute: RouteConfig = {
+  ...toggleRoute,
+  path: "/leaders/profiles",
+  moduleName: "leader.profile",
+  endpoint: "/leaders",
+  idField: "id",
+  kind: "leaders",
+  columns: ["fullName", "status"],
+  permissionPrefixes: ["organization.leader.read."],
+  actions: {
+    edit: { label: "Sửa", permissionPrefixes: ["organization.leader.update."] },
   },
 };
 
@@ -122,5 +136,15 @@ describe("shouldHideStatusColumn", () => {
     );
 
     expect(columns).toEqual(["permissionCode"]);
+  });
+
+  it("does not show leader edit actions in the list table", () => {
+    expect(
+      canShowEditAction(
+        leaderRoute,
+        { id: "leader-1", fullName: "Nguyễn Văn A", status: true },
+        user(["organization.leader.update.parish"], ["ADMIN_PARISH"]),
+      ),
+    ).toBe(false);
   });
 });

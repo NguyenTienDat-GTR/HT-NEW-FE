@@ -20,7 +20,7 @@ export const personnelFormSpecs: ResourceFormSpec[] = [
       { name: "gender", label: "Giới tính", type: "select", required: true, options: genderOptions, section: "Thông tin cá nhân" },
       { name: "email", label: "Email", type: "email", required: true, clearable: true, section: "Thông tin liên hệ" },
       { name: "phoneNumber", label: "Số điện thoại", clearable: true, section: "Thông tin liên hệ" },
-      { name: "imageUrl", label: "Ảnh đại diện URL", type: "url", clearable: true, section: "Thông tin liên hệ" },
+      { name: "imageUrl", label: "Ảnh đại diện", type: "image", clearable: true, section: "Thông tin liên hệ" },
       {
         name: "parishId",
         label: "Giáo xứ",

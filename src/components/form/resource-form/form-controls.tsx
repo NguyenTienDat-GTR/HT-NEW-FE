@@ -1,5 +1,6 @@
 "use client";
 
+import { ImageSquare, UploadSimple } from "@phosphor-icons/react";
 import { useQuery } from "@tanstack/react-query";
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";
@@ -128,6 +129,10 @@ function renderControl({
     );
   }
 
+  if (type === "image") {
+    return <ImagePickerControl id={id} onChange={onChange} readonly={readonly} value={value} />;
+  }
+
   return (
     <Input
       className="h-10"
@@ -138,6 +143,66 @@ function renderControl({
       type={type === "datetime" ? "datetime-local" : type}
       value={String(value ?? "")}
     />
+  );
+}
+
+export function ImagePickerControl({
+  id,
+  value,
+  readonly,
+  onChange,
+}: {
+  id: string;
+  value: FormValue;
+  readonly?: boolean;
+  onChange: (value: FormValue) => void;
+}) {
+  const imageSource = typeof value === "string" && value ? value : "";
+
+  return (
+    <div className="rounded-[8px] border border-border bg-white p-3 shadow-sm">
+      <div
+        aria-hidden={!imageSource}
+        aria-label={imageSource ? "Ảnh đã chọn" : undefined}
+        className={cn(
+          "flex aspect-[4/3] w-full items-center justify-center overflow-hidden rounded-[8px] border border-border bg-surface-1 bg-cover bg-center text-muted",
+          imageSource && "shadow-inner",
+        )}
+        role={imageSource ? "img" : undefined}
+        style={imageSource ? { backgroundImage: `url(${imageSource})` } : undefined}
+      >
+        {!imageSource ? <ImageSquare size={34} weight="duotone" /> : null}
+      </div>
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <input
+          accept="image/*"
+          className="sr-only"
+          disabled={readonly}
+          id={id}
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = () => {
+              if (typeof reader.result === "string") onChange(reader.result);
+            };
+            reader.readAsDataURL(file);
+            event.target.value = "";
+          }}
+          type="file"
+        />
+        <label
+          className={cn(
+            "inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-[8px] border border-border bg-white px-3 text-sm font-semibold text-foreground shadow-sm transition-colors hover:border-primary hover:text-primary",
+            readonly && "cursor-not-allowed opacity-60 hover:border-border hover:text-foreground",
+          )}
+          htmlFor={id}
+        >
+          <UploadSimple size={16} />
+          {imageSource ? "Đổi ảnh" : "Chọn ảnh"}
+        </label>
+      </div>
+    </div>
   );
 }
 

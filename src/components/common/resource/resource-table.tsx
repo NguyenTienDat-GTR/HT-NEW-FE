@@ -108,7 +108,7 @@ function RowActions({ route, row }: { route: RouteConfig; row: Record<string, un
   const detailHref = fillRoute(route.detailPath, { id });
   const scoreHref = fillRoute(route.actions?.score?.route, { id });
   const canView = canUseAction(user, route.actions?.view);
-  const canEdit = canUseAction(user, route.actions?.edit) && canEditRow(route, row, user);
+  const canEdit = canShowEditAction(route, row, user);
   const canToggle = canUseAction(user, route.actions?.toggle) && canToggleRow(route, row, user);
   const canScore = canUseAction(user, route.actions?.score);
   const canApprove = canUseAction(user, route.actions?.approve);
@@ -150,9 +150,14 @@ function RowActions({ route, row }: { route: RouteConfig; row: Record<string, un
 
 function canEditRow(route: RouteConfig, row: Record<string, unknown>, user: AuthUser | null) {
   if (route.kind === "accounts") return false;
+  if (route.kind === "leaders") return false;
   if (!isSuperAdmin(user) && isSystemRoleRow(route, row)) return false;
   if (!isSuperAdmin(user)) return true;
   return route.kind !== "dioceses" && route.kind !== "deaneries" && route.kind !== "parishes";
+}
+
+export function canShowEditAction(route: RouteConfig, row: Record<string, unknown>, user: AuthUser | null) {
+  return canUseAction(user, route.actions?.edit) && canEditRow(route, row, user);
 }
 
 function canToggleRow(route: RouteConfig, row: Record<string, unknown>, user: AuthUser | null) {
