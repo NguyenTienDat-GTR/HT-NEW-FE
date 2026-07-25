@@ -9,7 +9,7 @@ export type Option = {
   disabledReason?: string;
 };
 
-export type FieldType = "text" | "email" | "url" | "number" | "date" | "datetime" | "textarea" | "select" | "multiselect" | "checkbox-list" | "radio" | "switch";
+export type FieldType = "text" | "email" | "url" | "image" | "number" | "date" | "datetime" | "textarea" | "select" | "multiselect" | "checkbox-list" | "radio" | "switch";
 
 export type FormFieldSpec = {
   name: string;

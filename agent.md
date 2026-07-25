@@ -316,3 +316,14 @@
 - Backend RBAC writes now compare hierarchy against the actor's active role from the database, so FE must not infer that a broad permission token can affect higher-role accounts or roles. After account-role toggles, refresh account-role/account queries because disabling a primary role can make the backend promote the highest remaining active role as the new primary role.
 - Verification run in this session: `npm.cmd run typecheck`, `npm.cmd run lint`, targeted `unit-lock-notifications`, full `npm.cmd run test`, and `npm.cmd run build` passed.
 - Follow-up verification: `npm.cmd run typecheck`, `npm.cmd run lint`, and `npm.cmd run test -- tests/unit/config/routes/system-routes.test.ts tests/unit/modules/workspace/super-admin-route-overrides.test.ts tests/unit/modules/workspace/unit-lock-notifications.test.ts` passed after notification pagination, socket refresh, search/filter, and account-role toggle updates.
+
+### Leader and organization edit layout 2026-07-25
+
+- Branch `feature/leader-org-edit-layout` starts from up-to-date `origin/main` in FE.
+- Leader detail profile tab now uses exactly two horizontal sections on desktop styled after the provided reference image: `Thông tin cơ bản` as the wider form grid on the left and `Lịch sử cấp bậc` as the right-side section; mobile/tablet stacks them responsively.
+- Leader profile editing now happens inline from the detail page; the list table hides the leader edit action, and the detail header shows `Sửa thông tin hồ sơ` only while the profile tab is active and the user has update permission.
+- Leader profile edit action is additionally role-guarded to `ADMIN_PARISH` / `ROLE_ADMIN_PARISH` so `ADMIN_DIOCESE` and `ADMIN_DEANERY` read/create scopes do not expose an update button the backend would reject.
+- Leader avatar editing is exposed from the detail header with a `Thay đổi ảnh` picker and preview; the profile sections no longer render a raw image URL field.
+- Leader create now uses a dedicated full-page three-step wizard for personal, contact, and organization information; the first step includes a compact avatar picker and fields are capped in a three-column grid on desktop.
+- Diocese, deanery, and parish edit forms use the same horizontal section layout so compact fields no longer stack into long vertical forms.
+- Verification run in this session: direct `tsc --noEmit`, direct `eslint`, direct `vitest run`, `git diff --check`, and `next build` passed. The first build attempts failed only because sandboxed network could not fetch Google Fonts; rerunning build with network access passed.
