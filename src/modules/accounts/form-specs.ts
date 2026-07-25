@@ -1,5 +1,6 @@
 import { compactPayload, enumOptions, type ResourceFormSpec } from "@/components/form/resource-form/types";
 import { isSuperAdmin } from "@/lib/auth/permissions";
+import type { AuthUser } from "@/lib/auth/auth-store";
 
 const effectOptions = enumOptions(["ALLOW", "DENY"]);
 const systemAdminRoleCodes = ["SUPER_ADMIN", "ADMIN_DIOCESE", "ADMIN_DEANERY", "ADMIN_PARISH"];
@@ -7,6 +8,17 @@ const superAdminAccountRoleOptions = [
   { value: "SUPER_ADMIN", label: "Super admin" },
   { value: "ADMIN_DIOCESE", label: "Admin giáo phận" },
 ];
+
+function hasRole(user: AuthUser | null | undefined, roleCode: string) {
+  return Boolean(user?.roles.some((role) => role === roleCode || role === `ROLE_${roleCode}`));
+}
+
+export function getAccountCreateExcludedRoleCodes(user: AuthUser | null) {
+  if (isSuperAdmin(user)) return [];
+  if (hasRole(user, "ADMIN_DIOCESE")) return ["SUPER_ADMIN", "ADMIN_DIOCESE"];
+  if (hasRole(user, "ADMIN_DEANERY")) return ["SUPER_ADMIN", "ADMIN_DIOCESE", "ADMIN_DEANERY"];
+  return systemAdminRoleCodes;
+}
 
 export const systemFormSpecs: ResourceFormSpec[] = [
   {
@@ -80,7 +92,7 @@ export const systemFormSpecs: ResourceFormSpec[] = [
         optionsEndpoint: "/system/roles",
         optionValue: "roleCode",
         optionLabel: "roleName",
-        excludeOptionValuesWhen: (user) => (isSuperAdmin(user) ? [] : systemAdminRoleCodes),
+        excludeOptionValuesWhen: getAccountCreateExcludedRoleCodes,
         primaryFieldName: "primaryRoleCode",
         primaryLabel: "Chính",
         createOnly: true,
