@@ -168,7 +168,7 @@ export function ResourceCell({ column, row, value, displayMode = "table" }: Reso
 }
 
 function TextValue({ children, full }: { children: React.ReactNode; full: boolean }) {
-  return <span className={full ? "whitespace-pre-wrap break-words" : "line-clamp-1 max-w-[260px]"}>{children}</span>;
+  return <span className={full ? "whitespace-pre-wrap wrap-break-word" : "line-clamp-1 max-w-65"}>{children}</span>;
 }
 
 function ArrayValue({ values }: { values: unknown[] }) {

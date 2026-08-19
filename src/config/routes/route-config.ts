@@ -65,9 +65,9 @@ export const leaderLevelOptions: RouteFilterOption[] = [
   { value: "HT_I", label: "Huynh trưởng cấp I" },
   { value: "HT_II", label: "Huynh trưởng cấp II" },
   { value: "HT_III", label: "Huynh trưởng cấp III" },
-  { value: "HLV_I", label: "Huấn luyện viên cấp I" },
-  { value: "HLV_II", label: "Huấn luyện viên cấp II" },
-  { value: "HLV_III", label: "Huấn luyện viên cấp III" },
+  { value: "HLV_I", label: "Huấn luyện viên sơ cấp" },
+  { value: "HLV_II", label: "Huấn luyện viên trung cấp" },
+  { value: "HLV_III", label: "Huấn luyện viên cao cấp" },
 ];
 
 export type RouteConfig = {
