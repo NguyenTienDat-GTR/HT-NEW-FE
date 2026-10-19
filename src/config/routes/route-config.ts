@@ -23,7 +23,7 @@ export type ResourceKind =
   | "account-permissions"
   | "audit-logs";
 
-export type ResourceAction = "view" | "create" | "edit" | "toggle" | "submit" | "approve" | "score" | "matrix" | "read";
+export type ResourceAction = "view" | "create" | "edit" | "toggle" | "submit" | "approve" | "reject" | "withdraw" | "remove" | "score" | "matrix" | "read";
 
 export type ResourceActionConfig = {
   label: string;
@@ -65,6 +65,26 @@ const unitTypeFilterLabels: Record<string, string> = {
 
 function unitTypeFilterOptions(values: string[]): RouteFilterOption[] {
   return values.map((value) => ({ value, label: unitTypeFilterLabels[value] ?? value }));
+}
+
+const participationStatusLabels: Record<string, string> = {
+  REGISTERED: "Đã đăng ký",
+  ATTENDED: "Đã tham dự",
+  COMPLETED: "Hoàn thành",
+  CANCELLED: "Đã hủy",
+  REJECTED: "Từ chối",
+};
+
+const approvalStatusLabels: Record<string, string> = {
+  PENDING: "Chờ xử lý",
+  SUBMITTED: "Đã gửi",
+  APPROVED: "Đã duyệt",
+  REJECTED: "Từ chối",
+  NOT_REQUIRED: "Không yêu cầu",
+};
+
+function labeledOptions(values: string[], labels: Record<string, string>): RouteFilterOption[] {
+  return values.map((value) => ({ value, label: labels[value] ?? value }));
 }
 
 export const leaderLevelOptions: RouteFilterOption[] = [
@@ -144,6 +164,10 @@ export function route(config: RouteConfig): RouteConfig {
       ...(updatePermissionPrefixes?.length ? { edit: { label: "Sửa", permissionPrefixes: updatePermissionPrefixes } } : {}),
       ...(togglePermissionPrefixes?.length ? { toggle: { label: "Đổi trạng thái", permissionPrefixes: togglePermissionPrefixes } } : {}),
       ...(approvePermissionPrefixes?.length ? { approve: { label: "Duyệt", permissionPrefixes: approvePermissionPrefixes } } : {}),
+      // Tài khoản có quyền duyệt hồ sơ tham dự cũng có quyền từ chối duyệt.
+      ...(approvePermissionPrefixes?.length && config.kind === "participations"
+        ? { reject: { label: "Từ chối", permissionPrefixes: approvePermissionPrefixes } }
+        : {}),
       ...(submitPermissionPrefixes?.length ? { submit: { label: "Gửi", permissionPrefixes: submitPermissionPrefixes } } : {}),
       ...(scorePermissionPrefixes?.length ? { score: { label: "Chấm điểm", permissionPrefixes: scorePermissionPrefixes } } : {}),
       ...config.actions,
@@ -266,7 +290,7 @@ function inferRouteFilters(config: RouteConfig): RouteFilterConfig[] {
           key: "participationStatus",
           label: "Trạng thái tham dự",
           type: "select",
-          options: ["REGISTERED", "ATTENDED", "COMPLETED", "CANCELLED"].map((value) => ({ value, label: value })),
+          options: labeledOptions(["REGISTERED", "ATTENDED", "COMPLETED", "CANCELLED", "REJECTED"], participationStatusLabels),
         });
       }
       if (columns.has("approvalStatus")) {
@@ -274,7 +298,7 @@ function inferRouteFilters(config: RouteConfig): RouteFilterConfig[] {
           key: "approvalStatus",
           label: "Trạng thái duyệt",
           type: "select",
-          options: ["PENDING", "SUBMITTED", "APPROVED", "REJECTED"].map((value) => ({ value, label: value })),
+          options: labeledOptions(["PENDING", "SUBMITTED", "APPROVED", "REJECTED"], approvalStatusLabels),
         });
       }
       if (columns.has("certificateApprovalStatus")) {
@@ -282,7 +306,7 @@ function inferRouteFilters(config: RouteConfig): RouteFilterConfig[] {
           key: "certificateApprovalStatus",
           label: "Chứng nhận",
           type: "select",
-          options: ["PENDING", "SUBMITTED", "APPROVED", "REJECTED", "NOT_REQUIRED"].map((value) => ({ value, label: value })),
+          options: labeledOptions(["PENDING", "SUBMITTED", "APPROVED", "REJECTED", "NOT_REQUIRED"], approvalStatusLabels),
         });
       }
       break;
@@ -293,7 +317,7 @@ function inferRouteFilters(config: RouteConfig): RouteFilterConfig[] {
           key: "approvalStatus",
           label: "Trạng thái duyệt",
           type: "select",
-          options: ["PENDING", "SUBMITTED", "APPROVED", "REJECTED"].map((value) => ({ value, label: value })),
+          options: labeledOptions(["PENDING", "SUBMITTED", "APPROVED", "REJECTED"], approvalStatusLabels),
         });
       }
       break;

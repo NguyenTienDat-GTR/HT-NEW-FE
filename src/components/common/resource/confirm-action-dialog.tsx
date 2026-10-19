@@ -12,8 +12,14 @@ export function ConfirmActionDialog({
   onConfirm,
   open,
   title,
+  description,
+  confirmLabel = "Xác nhận",
+  requireConfirmText = true,
 }: {
-  action: "toggle";
+  action: "toggle" | "withdraw";
+  description?: string;
+  confirmLabel?: string;
+  requireConfirmText?: boolean;
   loading?: boolean;
   onClose: () => void;
   onConfirm: () => void;
@@ -21,7 +27,7 @@ export function ConfirmActionDialog({
   title: string;
 }) {
   const [text, setText] = useState("");
-  const canConfirm = text === "Xác nhận";
+  const canConfirm = !requireConfirmText || text === "Xác nhận";
 
   return (
     <Dialog.Root open={open} onOpenChange={(nextOpen) => (!nextOpen ? onClose() : undefined)}>
@@ -36,7 +42,11 @@ export function ConfirmActionDialog({
               <div>
                 <Dialog.Title className="text-lg font-semibold text-foreground">{title}</Dialog.Title>
                 <Dialog.Description className="mt-1 text-sm leading-6 text-muted">
-                  Nhập chính xác <span className="font-medium text-foreground">Xác nhận</span> để đổi trạng thái bản ghi.
+                  {description ?? (
+                    <>
+                      Nhập chính xác <span className="font-medium text-foreground">Xác nhận</span> để đổi trạng thái bản ghi.
+                    </>
+                  )}
                 </Dialog.Description>
               </div>
             </div>
@@ -46,15 +56,17 @@ export function ConfirmActionDialog({
               </Button>
             </Dialog.Close>
           </div>
-          <div className="mt-4">
-            <Input autoFocus onChange={(event) => setText(event.target.value)} placeholder="Xác nhận" value={text} />
-          </div>
+          {requireConfirmText ? (
+            <div className="mt-4">
+              <Input autoFocus onChange={(event) => setText(event.target.value)} placeholder="Xác nhận" value={text} />
+            </div>
+          ) : null}
           <div className="mt-5 flex justify-end gap-3">
             <Button onClick={onClose} type="button" variant="outline">
               Hủy
             </Button>
             <Button disabled={!canConfirm} loading={loading} onClick={onConfirm} type="button" variant="primary">
-              Xác nhận
+              {confirmLabel}
             </Button>
           </div>
         </Dialog.Content>

@@ -3,7 +3,9 @@
 import { keepPreviousData, useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Route } from "next";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useState } from "react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import { Panel } from "@/components/ui/panel";
 import { rowsFromResponse } from "@/components/form/resource-form/api-utils";
 import { apiFetch, apiMutation, getApiErrorMessage, type PageResponse } from "@/lib/api/client";
@@ -14,6 +16,7 @@ import { ApprovalDialog } from "./approval-dialog";
 import { embeddedTabHref, useEmbeddedResource, withReturnTo } from "./embedded-resource-context";
 import { ConfirmActionDialog } from "./confirm-action-dialog";
 import { DetailDrawer } from "./detail-drawer";
+import { getResourceId, isAwaitingApproval } from "./resource-actions";
 import { ResourceListEmptyState } from "./resource-list-empty-state";
 import { ResourceListHeader } from "./resource-list-header";
 import { buildResourceKpiQuerySpecs, buildResourceKpis, shouldShowResourceKpis } from "./resource-kpis";
@@ -75,24 +78,66 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
   const detailId = searchParams.get("detail");
   const toggleId = searchParams.get("toggle");
   const approveId = searchParams.get("approve");
+  const rejectId = searchParams.get("reject");
+  const withdrawId = searchParams.get("withdraw");
+  const removeId = searchParams.get("remove");
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [bulkMode, setBulkMode] = useState<"approve" | "reject" | null>(null);
+  const canBulkApprove = Boolean(config.bulkApprovePath) && canUseAction(user, effectiveRoute.actions?.approve);
+  const selectableIds = canBulkApprove
+    ? rows.filter((row) => isAwaitingApproval(row)).flatMap((row) => {
+        const id = getResourceId(effectiveRoute, row);
+        return id ? [id] : [];
+      })
+    : [];
 
   const closeQueryDialog = () => router.push((embedded ? embeddedTabHref(embedded) : effectiveRoute.path) as Route);
   const actionMutation = useMutation({
-    mutationFn: ({ action, id, note }: { action: "toggle" | "approve"; id: string; note?: string }) => {
+    mutationFn: ({ action, id, note }: { action: "toggle" | "approve" | "reject" | "withdraw" | "remove"; id: string; note?: string }) => {
+      if (action === "remove") return apiMutation(config.buildRemovePath?.(id) ?? `${effectiveRoute.endpoint}/${encodeURIComponent(id)}`, "DELETE");
+      if (action === "withdraw") return apiMutation(config.buildWithdrawPath?.(id) ?? `${effectiveRoute.endpoint}/${encodeURIComponent(id)}`, "DELETE");
       if (action === "toggle") return apiMutation(`${effectiveRoute.endpoint}/${encodeURIComponent(id)}/toggle-status`, "PATCH", { confirmationText: "Xác nhận" });
-      if (action === "approve") {
+      if (action === "approve" || action === "reject") {
+        const approved = action === "approve";
         const approvePath = config.buildApprovePath?.(effectiveRoute, rows, id) ?? `${effectiveRoute.endpoint}/${encodeURIComponent(id)}/approve`;
-        const approveBody = config.buildApproveBody?.(effectiveRoute, note) ?? { approved: true, review: note || undefined };
+        const approveBody = config.buildApproveBody?.(effectiveRoute, note, approved) ?? { approved, review: note || undefined };
         return apiMutation(approvePath, "POST", approveBody);
       }
       throw new Error("Unsupported resource action");
     },
     onSuccess: async (_data, variables) => {
-      toast.success(variables.action === "toggle" ? "Đổi trạng thái thành công" : "Duyệt thành công");
+      toast.success(variables.action === "toggle" ? "Đổi trạng thái thành công" : variables.action === "reject" ? "Đã từ chối duyệt" : variables.action === "withdraw" ? "Đã thu hồi đăng ký" : variables.action === "remove" ? "Đã xóa hồ sơ khỏi danh sách tham dự" : "Duyệt thành công");
       closeQueryDialog();
       await queryClient.invalidateQueries({ queryKey: ["resource", effectiveRoute.endpoint] });
     },
   });
+
+  const bulkMutation = useMutation({
+    mutationFn: ({ approved, note }: { approved: boolean; note: string }) =>
+      apiMutation<{ successCount: number; failedCount: number; failures: { leaderFullName?: string; reason: string }[] }>(
+        config.bulkApprovePath ?? "",
+        "POST",
+        { ids: selectedIds, approved, review: note || undefined },
+      ),
+    onSuccess: async (result, variables) => {
+      const action = variables.approved ? "Duyệt" : "Từ chối";
+      toast.success(`${action} ${result.successCount} hồ sơ thành công`);
+      if (result.failedCount > 0) {
+        toast.error(`${result.failedCount} hồ sơ không xử lý được: ${result.failures.map((failure) => `${failure.leaderFullName ?? "Hồ sơ"} (${failure.reason})`).join("; ")}`);
+      }
+      setSelectedIds([]);
+      setBulkMode(null);
+      await queryClient.invalidateQueries({ queryKey: ["resource", effectiveRoute.endpoint] });
+    },
+  });
+  const selection = canBulkApprove
+    ? {
+        selectedIds,
+        selectableIds,
+        onToggle: (id: string) => setSelectedIds((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id])),
+        onToggleAll: (on: boolean) => setSelectedIds(on ? selectableIds : []),
+      }
+    : undefined;
 
   return (
     <div className="space-y-5">
@@ -116,7 +161,19 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
           resetFilters={queryState.resetFilters}
           canCreate={canCreate}
         />
+        {canBulkApprove ? (
+          <div className="flex flex-wrap items-center gap-3 border-b border-border bg-surface-1/60 px-4 py-2.5">
+            <span className="text-sm text-muted">Đã chọn {selectedIds.filter((id) => selectableIds.includes(id)).length} hồ sơ</span>
+            <Button disabled={selectedIds.length === 0} onClick={() => setBulkMode("approve")} size="sm" type="button">
+              Duyệt đã chọn
+            </Button>
+            <Button disabled={selectedIds.length === 0} onClick={() => setBulkMode("reject")} size="sm" type="button" variant="outline">
+              Từ chối đã chọn
+            </Button>
+          </div>
+        ) : null}
         <ResourceTable
+          selection={selection}
           isLoading={query.isLoading}
           route={effectiveRoute}
           rows={rows}
@@ -157,6 +214,43 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
         onClose={closeQueryDialog}
         onConfirm={(note) => approveId && actionMutation.mutate({ action: "approve", id: approveId, note })}
         open={Boolean(approveId)}
+      />
+      <ApprovalDialog
+        key={bulkMode ?? "bulk-closed"}
+        loading={bulkMutation.isPending}
+        mode={bulkMode === "reject" ? "reject" : "approve"}
+        onClose={() => setBulkMode(null)}
+        onConfirm={(note) => bulkMode && bulkMutation.mutate({ approved: bulkMode === "approve", note })}
+        open={bulkMode !== null}
+      />
+      <ConfirmActionDialog
+        action="withdraw"
+        confirmLabel="Xóa"
+        description="Hồ sơ sẽ bị xóa khỏi danh sách tham dự kể cả điểm đã nhập (nếu có). Không xóa được hồ sơ đã có chứng nhận."
+        loading={actionMutation.isPending}
+        onClose={closeQueryDialog}
+        onConfirm={() => removeId && actionMutation.mutate({ action: "remove", id: removeId })}
+        open={Boolean(removeId)}
+        requireConfirmText={false}
+        title="Xóa khỏi danh sách tham dự"
+      />
+      <ConfirmActionDialog
+        action="withdraw"
+        confirmLabel="Thu hồi"
+        description="Đăng ký sẽ bị xóa khỏi khóa huấn luyện và huynh trưởng có thể được đăng ký lại. Chỉ người gửi mới được thu hồi, và chỉ khi hồ sơ chưa được duyệt hoặc từ chối."
+        loading={actionMutation.isPending}
+        onClose={closeQueryDialog}
+        onConfirm={() => withdrawId && actionMutation.mutate({ action: "withdraw", id: withdrawId })}
+        open={Boolean(withdrawId)}
+        requireConfirmText={false}
+        title="Thu hồi đăng ký"
+      />
+      <ApprovalDialog
+        loading={actionMutation.isPending}
+        mode="reject"
+        onClose={closeQueryDialog}
+        onConfirm={(note) => rejectId && actionMutation.mutate({ action: "reject", id: rejectId, note })}
+        open={Boolean(rejectId)}
       />
     </div>
   );
