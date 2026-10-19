@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { apiFetch, getApiErrorMessage } from "@/lib/api/client";
 import type { RouteConfig } from "@/config/routes/routes";
+import { useEmbeddedResource } from "./embedded-resource-context";
 import { ResourceCell, columnLabels, formatLeaderLevel } from "./resource-format";
 
 const AUDIT_KEYS = ["createdAt", "createdBy", "updatedAt", "updatedBy"] as const;
@@ -26,6 +27,36 @@ const LEADER_PRIMARY_KEYS = [
   "phoneNumber",
 ];
 
+// Hồ sơ tham dự: ẩn mã định danh (UUID), các trường trùng nghĩa và thông tin đã có ở phần thông tin khóa.
+const PARTICIPATION_HIDDEN_KEYS = new Set([
+  "id",
+  "leaderId",
+  "courseCode",
+  "courseTypeCode",
+  "parishId",
+  "deaneryId",
+  "managementUnitType",
+  // result trùng "Kết quả" (passed); status là cờ hoạt động của bản ghi, trùng ý nghĩa với trạng thái tham dự/duyệt.
+  "result",
+  "status",
+]);
+const PARTICIPATION_EMBEDDED_HIDDEN_KEYS = new Set(["courseName", "passingScore"]);
+const PARTICIPATION_PRIMARY_KEYS = [
+  "leaderFullName",
+  "parishName",
+  "deaneryName",
+  "registrationDate",
+  "participationStatus",
+  "approvalStatus",
+  "eligible",
+  "exceptionReason",
+  "review",
+  "componentScores",
+  "totalScore",
+  "passed",
+];
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 type RankHistoryRow = {
   id?: number;
   oldLevel?: string | null;
@@ -40,8 +71,9 @@ export function DetailDrawer({ id, onClose, route }: { id?: string | null; onClo
     enabled: Boolean(id && route.endpoint),
     queryFn: () => apiFetch<Record<string, unknown>>(`${route.endpoint}/${encodeURIComponent(String(id))}`),
   });
+  const embedded = useEmbeddedResource();
   const row = query.data;
-  const keys = row ? detailKeys(route, row) : route.columns;
+  const keys = row ? detailKeys(route, row, Boolean(embedded)) : route.columns;
   const rankHistoryQuery = useQuery({
     queryKey: ["leader-rank-history", id],
     enabled: Boolean(id && route.kind === "leaders"),
@@ -56,7 +88,7 @@ export function DetailDrawer({ id, onClose, route }: { id?: string | null; onClo
           <div className="flex items-start justify-between gap-4 border-b border-border p-5">
             <div>
               <Dialog.Title className="text-xl font-semibold text-foreground">{route.title}</Dialog.Title>
-              <Dialog.Description className="mt-1 text-sm text-muted">Chi tiết bản ghi {id}</Dialog.Description>
+              <Dialog.Description className="mt-1 text-sm text-muted">{route.kind === "participations" ? "Chi tiết hồ sơ tham dự" : `Chi tiết bản ghi ${id}`}</Dialog.Description>
             </div>
             <Dialog.Close asChild>
               <Button aria-label="Đóng" size="icon" variant="ghost">
@@ -74,7 +106,13 @@ export function DetailDrawer({ id, onClose, route }: { id?: string | null; onClo
                     <div className={detailItemClass(key)} key={key}>
                       <dt className="text-xs font-semibold uppercase text-muted">{detailLabel(route, key)}</dt>
                       <dd className="mt-1 break-words text-sm leading-6 text-foreground">
-                        <ResourceCell column={key} displayMode="detail" row={row} value={row[key]} />
+                        {route.kind === "participations" && key === "componentScores" ? (
+                          <ComponentScoreList scores={row[key]} />
+                        ) : route.kind === "participations" && typeof row[key] === "string" && row[key] === "SYSTEM_AUTO_APPROVAL" ? (
+                          "Hệ thống tự duyệt"
+                        ) : (
+                          <ResourceCell column={key} displayMode="detail" row={row} value={row[key]} />
+                        )}
                       </dd>
                     </div>
                   ))}
@@ -95,12 +133,36 @@ export function DetailDrawer({ id, onClose, route }: { id?: string | null; onClo
   );
 }
 
-function detailKeys(route: RouteConfig, row: Record<string, unknown>) {
+function detailKeys(route: RouteConfig, row: Record<string, unknown>, embedded: boolean) {
+  if (route.kind === "participations") {
+    const hidden = (key: string) =>
+      PARTICIPATION_HIDDEN_KEYS.has(key) ||
+      (embedded && PARTICIPATION_EMBEDDED_HIDDEN_KEYS.has(key)) ||
+      (typeof row[key] === "string" && UUID_PATTERN.test(row[key] as string)) ||
+      row[key] === undefined;
+    const ordered = prioritizeAndSendTail(Object.keys(row), PARTICIPATION_PRIMARY_KEYS, ["createdAt", "createdBy", "updatedAt", "updatedBy"]);
+    return ordered.filter((key) => !hidden(key));
+  }
   const baseKeys =
     route.kind === "accounts"
       ? ["username", "primaryRoleName", "secondaryRoleNames", "dioceseName", "authProvider", "providerId", "status"]
       : Object.keys(row);
   return orderDetailKeys(route, withAuditKeys(baseKeys)).filter((key) => shouldRenderKey(route, row, key));
+}
+
+function ComponentScoreList({ scores }: { scores: unknown }) {
+  const items = Array.isArray(scores) ? (scores as { componentName?: string; score?: number | string | null; maxScore?: number | string | null }[]) : [];
+  if (items.length === 0) return <span className="text-muted">Chưa chấm điểm</span>;
+  return (
+    <ul className="space-y-0.5">
+      {items.map((item, index) => (
+        <li key={`${item.componentName}-${index}`}>
+          {item.componentName ?? "Thành phần"}: <span className="font-semibold">{item.score ?? "—"}</span>
+          {item.maxScore !== null && item.maxScore !== undefined ? ` / ${item.maxScore}` : ""}
+        </li>
+      ))}
+    </ul>
+  );
 }
 
 function LeaderRankHistory({

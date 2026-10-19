@@ -16,7 +16,7 @@ import { apiFetch, getApiErrorMessage } from "@/lib/api/client";
 import { useAuthStore } from "@/lib/auth/auth-store";
 import { canUseAction, hasPermissionPrefix } from "@/lib/auth/permissions";
 import { cn } from "@/lib/utils";
-import { resolveOrganizingState } from "@/modules/training-courses/registration-state";
+import { isCourseWithinDates } from "@/modules/training-courses/registration-state";
 import { TrainingWorkflowResourceView } from "@/modules/training-workflow/components/training-workflow-resource-view";
 
 // Quy trình huấn luyện của một khóa: mỗi tab dùng lại đúng màn hình/logic của menu cũ, lọc theo khóa đang chọn.
@@ -37,6 +37,9 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
     queryKey: ["resource-detail", route.endpoint, id],
     enabled: Boolean(route.endpoint && id),
     queryFn: () => apiFetch<Record<string, unknown>>(`${route.endpoint}/${encodeURIComponent(id)}`),
+    // Luôn tải lại khi vào trang để thấy ngay thay đổi vừa lưu ở form sửa khóa (ngày, trạng thái...).
+    refetchOnMount: "always",
+    staleTime: 0,
   });
 
   const tabs = useMemo(
@@ -128,7 +131,7 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
                 basePath,
                 tab: activeTab.key,
                 fixedFilters: { "course.courseCode": id },
-                scoringOpen: course ? resolveOrganizingState(course) === "ONGOING" : undefined,
+                scoringOpen: course ? isCourseWithinDates(course) : undefined,
                 scoringHint: course ? scoringWindowHint(course) : undefined,
               }}
             >

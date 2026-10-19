@@ -3,6 +3,9 @@ import { leaderLevels } from "@/modules/organizations/form-specs";
 
 const unitTypes = unitTypeSelectOptions(["DIOCESE", "DEANERY"]);
 
+// Khóa đã có hồ sơ tham gia (BE trả hasParticipations ở chi tiết khóa) thì khóa các trường này khi sửa.
+const lockedByParticipations = (values: Record<string, unknown>, mode: string) => mode === "edit" && values.hasParticipations === true;
+
 export const trainingFormSpecs: ResourceFormSpec[] = [
   {
     kind: "course-types",
@@ -37,7 +40,7 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
     kind: "courses",
     createTitle: "Tạo khóa huấn luyện",
     editTitle: "Chỉnh sửa khóa huấn luyện",
-    description: "Khóa học, thời gian, cửa sổ đăng ký và điểm đạt.",
+    description: "Khóa học, thời gian, cửa sổ đăng ký và điểm đạt. Sau khi khóa có hồ sơ tham gia, không đổi được loại khóa, năm tổ chức, số năm hoạt động và điểm đạt.",
     getInitialValues: () => ({ yearsActive: 0 }),
     fields: [
       { name: "courseName", label: "Tên khóa", required: true, section: "Thông tin khóa" },
@@ -49,14 +52,16 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
         optionsEndpoint: "/training/course-types",
         optionValue: "typeCode",
         optionLabel: "typeName",
+        readOnlyWhen: lockedByParticipations,
         section: "Thông tin khóa",
       },
-      { name: "hostYear", label: "Năm tổ chức", type: "number", section: "Thông tin khóa" },
+      { name: "hostYear", label: "Năm tổ chức", type: "number", readOnlyWhen: lockedByParticipations, section: "Thông tin khóa" },
       {
         name: "yearsActive",
         label: "Số năm hoạt động",
         type: "number",
         min: 0,
+        readOnlyWhen: lockedByParticipations,
         helper: "Số năm tối thiểu giữa năm đạt khóa tiên quyết và năm tổ chức khóa này. Mặc định 0, không được âm.",
         section: "Thông tin khóa",
       },
@@ -70,6 +75,7 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
         label: "Điểm đạt",
         type: "number",
         required: true,
+        readOnlyWhen: lockedByParticipations,
         helper: "Điểm tổng kết (trung bình có hệ số) tối thiểu để đạt khóa.",
         dynamicHelper: {
           buildEndpoint: (values) => {
