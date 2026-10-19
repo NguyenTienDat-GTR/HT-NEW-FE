@@ -8,6 +8,7 @@ import type { RouteConfig } from "@/config/routes/routes";
 import { useAuthStore, type AuthUser } from "@/lib/auth/auth-store";
 import { canUseAction, isSuperAdmin } from "@/lib/auth/permissions";
 import { columnLabels, ResourceCell } from "./resource-format";
+import { useEmbeddedResource, resourceActionHref, withReturnTo } from "./embedded-resource-context";
 import { fillRoute, getResourceId } from "./resource-actions";
 import { RegistrationToggleButton } from "@/modules/training-courses/components/registration-toggle-button";
 import type { ResourcePageSize } from "./use-resource-query-state";
@@ -102,6 +103,7 @@ function ResourceRows({ columns, route, rows }: { columns: string[]; route: Rout
 
 function RowActions({ route, row }: { route: RouteConfig; row: Record<string, unknown> }) {
   const user = useAuthStore((state) => state.user);
+  const embedded = useEmbeddedResource();
   const id = getResourceId(route, row);
   if (!id) return <span className="text-xs text-muted">-</span>;
 
@@ -118,7 +120,7 @@ function RowActions({ route, row }: { route: RouteConfig; row: Record<string, un
     <div className="inline-flex items-center gap-1">
       {canView ? (
         <Button asChild aria-label="Xem chi tiết" className="h-8 min-w-8 rounded-lg" size="icon" variant="icon">
-          <Link href={(detailHref ?? `${route.path}?detail=${encodeURIComponent(id)}`) as Route}>
+          <Link href={(detailHref ?? resourceActionHref(route.path, embedded, { detail: id })) as Route}>
             <EyeIcon size={16} />
           </Link>
         </Button>
@@ -133,19 +135,19 @@ function RowActions({ route, row }: { route: RouteConfig; row: Record<string, un
       {route.kind === "courses" && canEdit ? <RegistrationToggleButton endpoint={route.endpoint ?? ""} id={id} row={row} /> : null}
       {canScore && scoreHref ? (
         <Button asChild aria-label="Chấm điểm" className="h-8 min-w-8 rounded-lg" size="icon" variant="icon">
-          <Link href={scoreHref as Route}>
+          <Link href={withReturnTo(scoreHref, embedded) as Route}>
             <PencilSimpleIcon size={16} />
           </Link>
         </Button>
       ) : null}
       {canApprove ? (
         <Button asChild aria-label="Duyệt" className="h-8 min-w-8 rounded-lg" size="icon" variant="icon">
-          <Link href={`${route.path}?approve=${encodeURIComponent(id)}` as Route}>
+          <Link href={resourceActionHref(route.path, embedded, { approve: id }) as Route}>
             <CheckCircleIcon size={16} />
           </Link>
         </Button>
       ) : null}
-      {canToggle ? <StatusSwitch active={isToggleActive(route, row)} href={`${route.path}?toggle=${encodeURIComponent(id)}` as Route} /> : null}
+      {canToggle ? <StatusSwitch active={isToggleActive(route, row)} href={resourceActionHref(route.path, embedded, { toggle: id }) as Route} /> : null}
     </div>
   );
 }

@@ -4,7 +4,7 @@ import { ArrowLeft, FloppyDisk, X } from "@phosphor-icons/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Route } from "next";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -34,6 +34,7 @@ export function ResourceFormPage({
   actionType?: "create" | "edit" | "score" | "matrix";
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const user = useAuthStore((state) => state.user);
   const effectiveRoute = resolveRouteForUser(route, user);
@@ -52,7 +53,13 @@ export function ResourceFormPage({
   });
 
   const initialValues = detailQuery.data ?? {};
-  const createDefaults = mode === "create" ? spec?.getInitialValues?.(user) ?? {} : {};
+  // Mở từ tab khóa huấn luyện: quay về đúng tab sau khi lưu và chọn sẵn khóa.
+  const returnTo = safeReturnTo(searchParams.get("returnTo"));
+  const prefillCourseCode = searchParams.get("courseCode");
+  const createDefaults: Record<string, unknown> =
+    mode === "create"
+      ? { ...(spec?.getInitialValues?.(user) ?? {}), ...(prefillCourseCode && spec?.fields.some((field) => field.name === "courseCode") ? { courseCode: prefillCourseCode } : {}) }
+      : {};
   const mergedValues = mode === "edit" ? { ...initialValues, ...values } : { ...createDefaults, ...values };
 
   const visibleFields = (spec?.fields ?? [])
@@ -87,7 +94,7 @@ export function ResourceFormPage({
     onSuccess: async () => {
       toast.success(mode === "create" ? "Tạo mới thành công" : "Lưu cập nhật thành công");
       await queryClient.invalidateQueries({ queryKey: ["resource", effectiveRoute.endpoint] });
-      router.push(effectiveRoute.path as Route);
+      router.push((returnTo ?? effectiveRoute.path) as Route);
     },
     onError: (error) => {
       toast.error(getApiErrorMessage(error));
@@ -133,7 +140,7 @@ export function ResourceFormPage({
     <div className={cn("mx-auto space-y-4 pb-20", leaderCreateLayout ? "max-w-[960px]" : horizontalSections ? "max-w-[1180px]" : "max-w-[860px]")}>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <Link className="mb-2 inline-flex items-center gap-2 text-xs font-semibold text-primary" href={effectiveRoute.path as Route}>
+          <Link className="mb-2 inline-flex items-center gap-2 text-xs font-semibold text-primary" href={(returnTo ?? effectiveRoute.path) as Route}>
             <ArrowLeft size={16} />
             Quay lại danh sách
           </Link>
@@ -188,7 +195,7 @@ export function ResourceFormPage({
       <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-white/95 px-4 py-2.5 shadow-[var(--shadow-bottom-bar)] backdrop-blur">
         <div className={cn("mx-auto flex justify-end gap-3", leaderCreateLayout ? "max-w-[960px]" : "max-w-[1180px]")}>
           <Button asChild variant="outline">
-            <Link href={effectiveRoute.path as Route}>{leaderCreateLayout ? "Hủy" : <><X size={16} />Hủy</>}</Link>
+            <Link href={(returnTo ?? effectiveRoute.path) as Route}>{leaderCreateLayout ? "Hủy" : <><X size={16} />Hủy</>}</Link>
           </Button>
           <Button loading={mutation.isPending} onClick={handlePrimaryAction} type="button">
             {leaderCreateCanContinue ? null : <FloppyDisk size={16} />}
@@ -198,6 +205,12 @@ export function ResourceFormPage({
       </div>
     </div>
   );
+}
+
+// Chỉ chấp nhận đường dẫn nội bộ làm điểm quay về.
+function safeReturnTo(value: string | null) {
+  if (!value || !value.startsWith("/") || value.startsWith("//")) return undefined;
+  return value;
 }
 
 function nextValuesForField(current: Record<string, unknown>, fieldName: string, value: unknown, mergedValues: Record<string, unknown>) {

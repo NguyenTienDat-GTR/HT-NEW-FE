@@ -7,15 +7,17 @@ export function ResourceListHeader({
   kpis,
   kpisLoading,
   route,
+  embedded = false,
 }: {
   moduleLabel: string;
   kpis: ResourceKpi[];
   kpisLoading: boolean;
   route: RouteConfig;
+  embedded?: boolean;
 }) {
   return (
     <section className="space-y-3">
-      <div className="min-w-0">
+      <div className={cn("min-w-0", embedded && "hidden")}>
         <div className="flex flex-wrap items-center gap-2 text-sm text-muted">
           <span>Trang chủ</span>
           <span aria-hidden>›</span>

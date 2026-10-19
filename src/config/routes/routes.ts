@@ -16,12 +16,15 @@ export const routeGroups: RouteGroup[] = [
   leaderRouteGroup,
   executiveBoardRouteGroup,
   trainingRouteGroup,
-  trainingWorkflowRouteGroup,
   certificateRouteGroup,
   systemRouteGroup,
 ];
 
-export const routes: RouteConfig[] = routeGroups.flatMap((group) => group.children);
+// Quy trình huấn luyện (đăng ký, duyệt, tham dự, chấm điểm) hiển thị thành tab trong chi tiết khóa huấn luyện,
+// không còn menu trên sidebar nhưng route vẫn được khai báo cho form, liên kết và phân quyền.
+const embeddedRouteGroups: RouteGroup[] = [trainingWorkflowRouteGroup];
+
+export const routes: RouteConfig[] = [...routeGroups, ...embeddedRouteGroups].flatMap((group) => group.children);
 
 export function findRoute(path: string) {
   return routes.find((routeConfig) => routeConfig.path === path);

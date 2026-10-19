@@ -28,3 +28,22 @@ describe("training workflow routes", () => {
     expect(canSee("/training/participations", ["training.participation.read.diocese"])).toBe(true);
   });
 });
+
+describe("training workflow menu placement", () => {
+  it("removes the workflow group from the sidebar but keeps its routes resolvable", async () => {
+    const { routeGroups, matchRoute } = await import("@/config/routes/routes");
+
+    expect(routeGroups.some((group) => group.moduleName === "training-workflow")).toBe(false);
+    expect(matchRoute("/training/registrations/new")?.type).toBe("create");
+    expect(matchRoute("/training/participations/abc/score")?.type).toBe("score");
+  });
+
+  it("resolves a course path as a course detail page", async () => {
+    const { matchRoute } = await import("@/config/routes/routes");
+    const match = matchRoute("/training/courses/ABC-1");
+
+    expect(match?.type).toBe("detail");
+    expect(match?.params.id).toBe("ABC-1");
+    expect(matchRoute("/training/courses/new")?.type).toBe("create");
+  });
+});

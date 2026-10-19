@@ -11,6 +11,7 @@ import { useAuthStore } from "@/lib/auth/auth-store";
 import { canUseAction } from "@/lib/auth/permissions";
 import { resolveRouteForUser } from "@/modules/workspace/super-admin-route-overrides";
 import { ApprovalDialog } from "./approval-dialog";
+import { embeddedTabHref, useEmbeddedResource, withReturnTo } from "./embedded-resource-context";
 import { ConfirmActionDialog } from "./confirm-action-dialog";
 import { DetailDrawer } from "./detail-drawer";
 import { ResourceListEmptyState } from "./resource-list-empty-state";
@@ -28,8 +29,19 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const user = useAuthStore((state) => state.user);
-  const effectiveRoute = resolveRouteForUser(route, user);
-  const queryState = useResourceQueryState(effectiveRoute);
+  const embedded = useEmbeddedResource();
+  const resolvedRoute = resolveRouteForUser(route, user);
+  // Nhúng trong trang khác: bỏ bộ lọc cố định khỏi thanh lọc, form tạo mới quay về đúng tab và biết khóa đang chọn.
+  const effectiveRoute = embedded
+    ? {
+        ...resolvedRoute,
+        filters: (resolvedRoute.filters ?? []).filter((filter) => !(filter.key in embedded.fixedFilters)),
+        createPath: resolvedRoute.createPath
+          ? withReturnTo(resolvedRoute.createPath, embedded, embedded.fixedFilters["course.courseCode"] ? { courseCode: embedded.fixedFilters["course.courseCode"] } : {})
+          : undefined,
+      }
+    : resolvedRoute;
+  const queryState = useResourceQueryState(effectiveRoute, embedded?.fixedFilters);
   const query = useQuery({
     queryKey: ["resource", effectiveRoute.endpoint, queryState.queryString],
     enabled: Boolean(effectiveRoute.endpoint && user),
@@ -64,7 +76,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
   const toggleId = searchParams.get("toggle");
   const approveId = searchParams.get("approve");
 
-  const closeQueryDialog = () => router.push(effectiveRoute.path as Route);
+  const closeQueryDialog = () => router.push((embedded ? embeddedTabHref(embedded) : effectiveRoute.path) as Route);
   const actionMutation = useMutation({
     mutationFn: ({ action, id, note }: { action: "toggle" | "approve"; id: string; note?: string }) => {
       if (action === "toggle") return apiMutation(`${effectiveRoute.endpoint}/${encodeURIComponent(id)}/toggle-status`, "PATCH", { confirmationText: "Xác nhận" });
@@ -89,6 +101,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
         kpisLoading={query.isLoading || kpiQueries.some((kpiQuery) => kpiQuery.isLoading)}
         moduleLabel={config.moduleLabel}
         route={effectiveRoute}
+        embedded={Boolean(embedded)}
       />
 
       <Panel className="overflow-hidden">

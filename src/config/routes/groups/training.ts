@@ -25,6 +25,7 @@ export const trainingRouteGroup: RouteGroup = {
       }),
       route({
         path: "/training/courses",
+        detailPath: "/training/courses/:id",
         moduleName: "training.course",
         title: "Khóa huấn luyện",
         subtitle: "Thiết lập khóa, owner scope, thời gian và điểm đạt.",
@@ -34,7 +35,8 @@ export const trainingRouteGroup: RouteGroup = {
         icon: GraduationCap,
         columns: ["courseName", "courseTypeName", "hostYear", "yearsActive", "location", "registrationStatus", "organizingStatus", "status"],
         searchFields: ["courseName", "location"],
-        permissionPrefixes: ["training.course.read."],
+        // Phạm vi giáo xứ chỉ xem các khóa đang mở đăng ký và đăng ký tham dự trong tab của khóa.
+        permissionPrefixes: ["training.course.read.", "training.participation.submit.parish"],
         actionPermissionPrefixes: ["training.course.create.", "training.course.update.", "training.course.toggle."],
         primaryActionLabel: "Tạo khóa",
         filterLabels: ["Năm", "Loại khóa", "Trạng thái đăng ký", "Trạng thái tổ chức", "Trạng thái"],

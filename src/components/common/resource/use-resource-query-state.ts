@@ -8,7 +8,7 @@ import type { RouteConfig } from "@/config/routes/routes";
 
 export type ResourcePageSize = 10 | 20 | 50 | 100;
 
-export function useResourceQueryState(route: RouteConfig) {
+export function useResourceQueryState(route: RouteConfig, fixedFilters: Record<string, string> = {}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -49,16 +49,19 @@ export function useResourceQueryState(route: RouteConfig) {
       size,
       search,
       status: status === "all" ? undefined : status === "active",
-      filters: Object.fromEntries(
-        (route.filters ?? [])
-          .filter((filter) => filter.key !== "status")
-          .map((filter) => [filter.key, normalizeFilterValue(filterValues[filter.key], filter.type)]),
-      ),
+      filters: {
+        ...Object.fromEntries(
+          (route.filters ?? [])
+            .filter((filter) => filter.key !== "status")
+            .map((filter) => [filter.key, normalizeFilterValue(filterValues[filter.key], filter.type)]),
+        ),
+        ...fixedFilters,
+      },
       searchFields: route.searchFields,
       sortBy,
       sortDirection,
     }).toString();
-  }, [filterValues, page, route.filters, route.searchFields, search, size, sortBy, sortDirection, status]);
+  }, [filterValues, fixedFilters, page, route.filters, route.searchFields, search, size, sortBy, sortDirection, status]);
 
   function updateParam(key: string, value: string) {
     const next = new URLSearchParams(searchParams);
