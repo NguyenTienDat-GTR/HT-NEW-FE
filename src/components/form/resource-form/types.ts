@@ -9,7 +9,7 @@ export type Option = {
   disabledReason?: string;
 };
 
-export type FieldType = "text" | "email" | "url" | "image" | "number" | "date" | "datetime" | "textarea" | "select" | "multiselect" | "checkbox-list" | "radio" | "switch";
+export type FieldType = "text" | "email" | "url" | "image" | "number" | "date" | "datetime" | "textarea" | "select" | "multiselect" | "checkbox-list" | "radio" | "switch" | "registration-list";
 
 export type FormFieldSpec = {
   name: string;
@@ -18,6 +18,9 @@ export type FormFieldSpec = {
   required?: boolean;
   helper?: string;
   placeholder?: string;
+  min?: number;
+  // Trường lập danh sách huynh trưởng bằng modal: courseField = trường chứa mã khóa, otherField = danh sách còn lại (không được trùng người).
+  registrationList?: { mode: "standard" | "exception"; courseField: string; otherField: string };
   options?: Option[];
   optionsEndpoint?: string;
   buildOptionsEndpoint?: (values: Record<string, unknown>) => string | undefined;

@@ -38,6 +38,7 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
     createTitle: "Tạo khóa huấn luyện",
     editTitle: "Chỉnh sửa khóa huấn luyện",
     description: "Khóa học, thời gian, cửa sổ đăng ký và điểm đạt.",
+    getInitialValues: () => ({ yearsActive: 0 }),
     fields: [
       { name: "courseName", label: "Tên khóa", required: true, section: "Thông tin khóa" },
       {
@@ -51,6 +52,14 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
         section: "Thông tin khóa",
       },
       { name: "hostYear", label: "Năm tổ chức", type: "number", section: "Thông tin khóa" },
+      {
+        name: "yearsActive",
+        label: "Số năm hoạt động",
+        type: "number",
+        min: 0,
+        helper: "Số năm tối thiểu giữa năm đạt khóa tiên quyết và năm tổ chức khóa này. Mặc định 0, không được âm.",
+        section: "Thông tin khóa",
+      },
       { name: "location", label: "Địa điểm", section: "Thông tin khóa" },
       { name: "startDate", label: "Ngày bắt đầu", type: "date", required: true, section: "Thời gian" },
       { name: "endDate", label: "Ngày kết thúc", type: "date", required: true, section: "Thời gian" },

@@ -269,18 +269,10 @@ function inferRouteFilters(config: RouteConfig): RouteFilterConfig[] {
           options: ["REGISTERED", "ATTENDED", "COMPLETED", "CANCELLED"].map((value) => ({ value, label: value })),
         });
       }
-      if (columns.has("deaneryApprovalStatus")) {
+      if (columns.has("approvalStatus")) {
         filters.push({
-          key: "deaneryApprovalStatus",
-          label: "Duyệt giáo hạt",
-          type: "select",
-          options: ["PENDING", "SUBMITTED", "APPROVED", "REJECTED"].map((value) => ({ value, label: value })),
-        });
-      }
-      if (columns.has("dioceseApprovalStatus")) {
-        filters.push({
-          key: "dioceseApprovalStatus",
-          label: "Duyệt giáo phận",
+          key: "approvalStatus",
+          label: "Trạng thái duyệt",
           type: "select",
           options: ["PENDING", "SUBMITTED", "APPROVED", "REJECTED"].map((value) => ({ value, label: value })),
         });

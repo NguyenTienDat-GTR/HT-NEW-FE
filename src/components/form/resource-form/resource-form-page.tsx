@@ -201,6 +201,10 @@ export function ResourceFormPage({
 }
 
 function nextValuesForField(current: Record<string, unknown>, fieldName: string, value: unknown, mergedValues: Record<string, unknown>) {
+  if (fieldName === "courseCode") {
+    // Đổi khóa thì điều kiện tham dự đổi theo, phải lập lại cả hai danh sách.
+    return { ...current, courseCode: value, leaderIds: [], exceptionLeaders: [] };
+  }
   if (fieldName !== "roleCodes") {
     return { ...current, [fieldName]: value };
   }
@@ -245,12 +249,18 @@ function fieldLayoutClass(field: FormFieldSpec, horizontalSections = false) {
   if (field.type === "image") return "md:col-span-2 xl:col-span-3";
   if (field.type === "checkbox-list") return "md:col-span-2 xl:col-span-3";
   if (field.type === "textarea" || field.type === "multiselect") return "md:col-span-2";
+  if (field.type === "registration-list") return "md:col-span-2 xl:col-span-3";
   return undefined;
 }
 
 function validateFields(fields: FormFieldSpec[], values: Record<string, unknown>) {
   const errors: Record<string, string> = {};
   fields.forEach((field) => {
+    const raw = values[field.name];
+    if (field.min !== undefined && raw !== undefined && raw !== null && raw !== "" && Number(raw) < field.min) {
+      errors[field.name] = `Giá trị không được nhỏ hơn ${field.min}`;
+      return;
+    }
     if (!field.required) return;
     const value = values[field.name];
     if (value === undefined || value === null || value === "" || (Array.isArray(value) && value.length === 0)) {

@@ -20,8 +20,7 @@ export function TrainingWorkflowResourceView({ route }: { route: RouteConfig }) 
 
 function buildApprovePath(route: RouteConfig, rows: Record<string, unknown>[], id: string) {
   const row = rows.find((candidate) => getResourceId(route, candidate) === id);
-  const deaneryStatus = String(row?.deaneryApprovalStatus ?? "");
-  if (deaneryStatus === "PENDING" || deaneryStatus === "SUBMITTED") return `/training/registrations/${encodeURIComponent(id)}/deanery-approval`;
+  if (row?.managementUnitType === "DEANERY") return `/training/registrations/${encodeURIComponent(id)}/deanery-approval`;
   return `/training/registrations/${encodeURIComponent(id)}/diocese-approval`;
 }
 
