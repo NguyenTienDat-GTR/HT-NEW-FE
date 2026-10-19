@@ -340,3 +340,22 @@
 - `src/modules/leaders/components/leader-detail-utils.ts`: `CourseParticipationRow.courseType` -> `courseTypeCode` (BE participation response đổi tên field).
 - Kiểm thử trong session này: `npm run typecheck` PASS; `npm run lint` PASS (0 error, 3 warning có sẵn, không liên quan). `npm run test` KHÔNG chạy được trong môi trường agent (VM Linux thiếu native binding `@rolldown/binding-linux-x64-gnu` do node_modules là bản Windows); cần chạy `npm run test`, `npm run build`, `npm run test:e2e` trên môi trường Windows.
 - `src/lib/api/schema.d.ts` là file sinh tự động, hiện vẫn là bản cũ (không file nguồn nào import type training cũ nên typecheck vẫn pass). Cần chạy `npm run api:generate` sau khi BE mới chạy để cập nhật `/api/training/course-types`, `TrainingCourseTypeResponse`, `courseTypeCode`.
+
+## 2026-10-19 - Thành phần điểm có hệ số, bỏ công thức điểm (branch `feature/score-component-weights`, từ `main`)
+
+BE tương ứng: branch `feature/score-component-weights`, migration `V057`, xem `BE/project.md` mục "Training Score Component Workflow".
+
+Logic mới:
+- Module "Công thức điểm" (`/training/score-formulas`) đã bị XÓA khỏi FE (route, form spec, filter, label quyền `score_formula`).
+- Thành phần điểm (`/training/score-components`) giờ gắn một loại khóa (`courseTypeCode`, chọn từ `/training/course-types`, chỉ chọn lúc tạo), có `coefficient` (hệ số, > 0) và cờ `includeInFinal` (switch "Tính vào điểm tổng kết", mặc định bật). Tắt cờ thì thành phần vẫn nhập điểm nhưng KHÔNG tính vào điểm tổng kết.
+- Điểm tổng kết (BE tính) = trung bình có hệ số: Σ(điểm × hệ số) / Σ hệ số của các thành phần `includeInFinal = true`.
+- Form khóa huấn luyện: bỏ `scoreFormulaId`, thêm `passingScore` (điểm đạt, bắt buộc). Cột bảng chấm điểm dùng `passingScore` thay `scoreFormulaId`.
+
+File đã đổi: `src/modules/training-courses/form-specs.ts`, `src/config/routes/groups/training.ts`, `src/config/routes/groups/training-workflow.ts`, `src/config/routes/route-config.ts` (bỏ kind `score-formulas`, thêm filter loại khóa cho `score-components`), `src/components/form/resource-form/types.ts` + `form-controls.tsx` (field `switchLabels` để switch không bị cứng nhãn "Vai trò chính/phụ"), `src/components/common/resource/resource-format.tsx` (nhãn `coefficient`, `includeInFinal`), `src/components/common/resource/permission-taxonomy-labels.ts`, `src/modules/training-workflow/form-specs.ts`.
+
+Kiểm thử: `npm run typecheck` PASS; `npx vitest run` 43/44 PASS - 1 fail có sẵn ở test sidebar (`toHaveClass("rounded-[10px]")`), không liên quan; eslint các thư mục đã sửa không lỗi.
+
+Còn lại / lưu ý cho phiên sau:
+- `src/lib/api/schema.d.ts` và `openapi/ht-management.json` CHƯA cập nhật (cần chạy BE rồi `npm run api:capture && npm run api:generate`); vẫn chứa schema `ScoreFormula*`.
+- Form chấm điểm (`participations` action `score` trong `modules/training-workflow/form-specs.ts`) vẫn nhập text `componentCode | score` và gửi `componentCode`, trong khi BE yêu cầu `componentId` - lỗi có từ trước; nên làm form lấy danh sách thành phần của khóa (id, tên, hệ số, cờ tính tổng kết) rồi gửi `componentId`. Response participation trả `componentScores[].coefficient/includeInFinal`.
+- Chưa test thủ công trên UI (BE/DB cần chạy); migration V057 chưa được chạy thử trên Postgres thật.

@@ -63,7 +63,7 @@ export const workflowFormSpecs: ResourceFormSpec[] = [
     kind: "participations",
     actionType: "score",
     editTitle: "Chấm điểm tham dự",
-    description: "Nhập điểm theo component của công thức khóa. Khi backend có score-context, form sẽ dùng dữ liệu thật trong detail panel.",
+    description: "Nhập điểm theo thành phần điểm của loại khóa (điểm tổng kết là trung bình có hệ số). Khi backend có score-context, form sẽ dùng dữ liệu thật trong detail panel.",
     buildEndpoint: (_values, id) => `/training/participations/${encodeURIComponent(String(id ?? ""))}/score`,
     method: "PATCH",
     fields: [

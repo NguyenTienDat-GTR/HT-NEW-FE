@@ -121,7 +121,7 @@ function renderControl({
         role="switch"
         type="button"
       >
-        <span className="min-w-0 truncate text-left">{checked ? "Vai trò chính" : "Vai trò phụ"}</span>
+        <span className="min-w-0 truncate text-left">{checked ? (field.switchLabels?.[0] ?? "Vai trò chính") : (field.switchLabels?.[1] ?? "Vai trò phụ")}</span>
         <span className={cn("relative h-6 w-11 shrink-0 rounded-full transition-colors", checked ? "bg-primary" : "bg-border")}>
           <span className={cn("absolute left-1 top-1 h-4 w-4 rounded-full bg-white shadow-sm transition-transform", checked ? "translate-x-5" : "translate-x-0")} />
         </span>

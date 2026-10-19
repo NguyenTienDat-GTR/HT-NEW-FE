@@ -38,6 +38,7 @@ export type FormFieldSpec = {
   readOnlyOnCreate?: boolean;
   readOnlyOnEdit?: boolean;
   clearable?: boolean;
+  switchLabels?: [string, string];
   section?: string;
 };
 

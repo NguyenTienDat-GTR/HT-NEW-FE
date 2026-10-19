@@ -37,7 +37,7 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
     kind: "courses",
     createTitle: "Tạo khóa huấn luyện",
     editTitle: "Chỉnh sửa khóa huấn luyện",
-    description: "Khóa học, thời gian, cửa sổ đăng ký và công thức điểm.",
+    description: "Khóa học, thời gian, cửa sổ đăng ký và điểm đạt.",
     fields: [
       { name: "courseName", label: "Tên khóa", required: true, section: "Thông tin khóa" },
       {
@@ -56,16 +56,7 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
       { name: "endDate", label: "Ngày kết thúc", type: "date", required: true, section: "Thời gian" },
       { name: "registrationStartAt", label: "Mở đăng ký", type: "datetime", required: true, section: "Thời gian đăng ký" },
       { name: "registrationEndAt", label: "Đóng đăng ký", type: "datetime", required: true, section: "Thời gian đăng ký" },
-      {
-        name: "scoreFormulaId",
-        label: "Công thức điểm",
-        type: "select",
-        required: true,
-        optionsEndpoint: "/training/score-formulas",
-        optionValue: "id",
-        optionLabel: "name",
-        section: "Cấu hình chấm điểm",
-      },
+      { name: "passingScore", label: "Điểm đạt", type: "number", required: true, helper: "Điểm tổng kết (trung bình có hệ số) tối thiểu để đạt khóa.", section: "Cấu hình chấm điểm" },
       { name: "additionalNotes", label: "Ghi chú", type: "textarea", clearable: true, section: "Ghi chú" },
     ],
     mapSubmit: (values, mode) => {
@@ -78,11 +69,31 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
     kind: "score-components",
     createTitle: "Thêm thành phần điểm",
     editTitle: "Chỉnh sửa thành phần điểm",
-    description: "Thành phần điểm dùng trong công thức chấm.",
+    description: "Thành phần điểm thuộc một loại khóa, có hệ số để tính điểm tổng kết (trung bình có hệ số).",
+    getInitialValues: () => ({ includeInFinal: true, coefficient: 1 }),
     fields: [
       { name: "name", label: "Tên thành phần", required: true, section: "Thông tin thành phần" },
-      { name: "maxScore", label: "Điểm tối đa", type: "number", required: true, section: "Thông tin thành phần" },
-      { name: "unitType", label: "Cấp quản lý", type: "select", required: true, options: unitTypes, readOnlyOnEdit: true, section: "Phạm vi" },
+      {
+        name: "courseTypeCode",
+        label: "Loại khóa",
+        type: "select",
+        required: true,
+        optionsEndpoint: "/training/course-types",
+        optionValue: "typeCode",
+        optionLabel: "typeName",
+        readOnlyOnEdit: true,
+        section: "Thông tin thành phần",
+      },
+      { name: "maxScore", label: "Điểm tối đa", type: "number", required: true, section: "Chấm điểm" },
+      { name: "coefficient", label: "Hệ số", type: "number", required: true, helper: "Điểm tổng kết = Σ(điểm × hệ số) / Σ hệ số của các thành phần được tính.", section: "Chấm điểm" },
+      {
+        name: "includeInFinal",
+        label: "Tính vào điểm tổng kết",
+        type: "switch",
+        switchLabels: ["Có tính vào điểm tổng kết", "Không tính vào điểm tổng kết"],
+        section: "Chấm điểm",
+      },
+      { name: "unitType", label: "Cấp quản lý", type: "select", required: true, options: unitTypes, readOnlyOnEdit: true, helper: "Phải trùng cấp quản lý của loại khóa.", section: "Phạm vi" },
       { name: "displayOrder", label: "Thứ tự", type: "number", section: "Hiển thị" },
       { name: "description", label: "Mô tả", type: "textarea", clearable: true, section: "Hiển thị" },
     ],
@@ -91,35 +102,8 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
       if (mode === "edit") {
         delete payload.code;
         delete payload.unitType;
+        delete payload.courseTypeCode;
       }
-      return payload;
-    },
-  },
-  {
-    kind: "score-formulas",
-    createTitle: "Tạo công thức điểm",
-    editTitle: "Chỉnh sửa công thức điểm",
-    description: "Công thức tính điểm dựa trên các thành phần đã chọn.",
-    fields: [
-      { name: "name", label: "Tên công thức", required: true, section: "Thông tin công thức" },
-      { name: "expression", label: "Biểu thức", required: true, section: "Thông tin công thức" },
-      { name: "passingScore", label: "Điểm đạt", type: "number", required: true, section: "Thông tin công thức" },
-      { name: "unitType", label: "Cấp quản lý", type: "select", required: true, options: unitTypes, section: "Phạm vi" },
-      {
-        name: "componentIds",
-        label: "Thành phần điểm",
-        type: "multiselect",
-        required: true,
-        optionsEndpoint: "/training/score-components",
-        optionValue: "id",
-        optionLabel: "name",
-        section: "Thành phần",
-      },
-      { name: "description", label: "Mô tả", type: "textarea", clearable: true, section: "Ghi chú" },
-    ],
-    mapSubmit: (values, mode) => {
-      const payload = compactPayload(values);
-      if (mode === "edit") delete payload.code;
       return payload;
     },
   },

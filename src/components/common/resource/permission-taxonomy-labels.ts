@@ -29,8 +29,7 @@ const taxonomyLabels: Record<PermissionTaxonomyKind, Record<string, string>> = {
     course_type: "Loại khóa huấn luyện",
     role: "Vai trò",
     role_permission: "Phân quyền vai trò",
-    score_component: "Thành phần điểm",
-    score_formula: "Công thức điểm",
+    score_component: "Thành phần điểm",
     session: "Phiên đăng nhập",
   },
   action: {

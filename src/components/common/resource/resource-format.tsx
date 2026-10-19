@@ -71,6 +71,8 @@ export const columnLabels: Record<string, string> = {
   locked: "Khóa",
   loggedAt: "Thời gian",
   maxScore: "Điểm tối đa",
+  coefficient: "Hệ số",
+  includeInFinal: "Tính điểm tổng kết",
   moduleCode: "Module",
   name: "Tên",
   parishId: "Giáo xứ",
