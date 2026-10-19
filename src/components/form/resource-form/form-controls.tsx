@@ -3,7 +3,7 @@
 import { ImageSquare, UploadSimple } from "@phosphor-icons/react";
 import { useQuery } from "@tanstack/react-query";
 import type React from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { apiFetch, type PageResponse } from "@/lib/api/client";
 import type { AuthUser } from "@/lib/auth/auth-store";
@@ -49,6 +49,7 @@ export function FormField({ field, value, values, user, mode, onChange, onFieldC
         </label>
       ) : null}
       {field.helper ? <p className="text-xs leading-5 text-muted">{field.helper}</p> : null}
+      <DynamicHelper field={field} values={values} />
       {error ? <p className="text-xs font-semibold text-danger">{error}</p> : null}
     </div>
   );
@@ -121,7 +122,7 @@ function renderControl({
         role="switch"
         type="button"
       >
-        <span className="min-w-0 truncate text-left">{checked ? "Vai trò chính" : "Vai trò phụ"}</span>
+        <span className="min-w-0 truncate text-left">{checked ? (field.switchLabels?.[0] ?? "Vai trò chính") : (field.switchLabels?.[1] ?? "Vai trò phụ")}</span>
         <span className={cn("relative h-6 w-11 shrink-0 rounded-full transition-colors", checked ? "bg-primary" : "bg-border")}>
           <span className={cn("absolute left-1 top-1 h-4 w-4 rounded-full bg-white shadow-sm transition-transform", checked ? "translate-x-5" : "translate-x-0")} />
         </span>
@@ -141,7 +142,7 @@ function renderControl({
       onChange={(event) => onChange(type === "number" ? numericValue(event.target.value) : event.target.value)}
       placeholder={field.placeholder}
       type={type === "datetime" ? "datetime-local" : type}
-      value={String(value ?? "")}
+      value={type === "datetime" ? toDatetimeLocalValue(value) : String(value ?? "")}
     />
   );
 }
@@ -300,6 +301,19 @@ function OptionControl({
           </label>
         ))}
       </div>
+    );
+  }
+
+  if (field.searchable && multiple) {
+    return (
+      <SearchableMultiSelect
+        id={id}
+        onChange={onChange}
+        options={options}
+        placeholder={field.placeholder}
+        readonly={readonly || query.isLoading}
+        value={Array.isArray(value) ? value : []}
+      />
     );
   }
 
@@ -563,4 +577,146 @@ function optionEndpointWithPaging(endpoint: string | undefined, searchParam?: st
   const separator = endpoint.includes("?") ? "&" : "?";
   const search = searchParam && searchValue?.trim() ? `&${encodeURIComponent(searchParam)}=${encodeURIComponent(searchValue.trim())}` : "";
   return `${endpoint}${separator}page=0&size=100${search}`;
+}
+
+// Chuyển ISO-8601 có múi giờ từ BE sang giá trị của input datetime-local (giờ Việt Nam, UTC+7).
+function toDatetimeLocalValue(value: unknown) {
+  if (typeof value !== "string" || !value) return "";
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value)) return value;
+  const time = new Date(value).getTime();
+  if (Number.isNaN(time)) return value.slice(0, 16);
+  return new Date(time + 7 * 60 * 60 * 1000).toISOString().slice(0, 16);
+}
+
+function DynamicHelper({ field, values }: { field: FormFieldSpec; values?: Record<string, unknown> }) {
+  const endpoint = field.dynamicHelper?.buildEndpoint(values ?? {});
+  const query = useQuery({
+    queryKey: ["field-helper", field.name, endpoint],
+    enabled: Boolean(endpoint),
+    queryFn: () => apiFetch<unknown>(String(endpoint)),
+  });
+  if (!field.dynamicHelper || !endpoint || query.data === undefined) return null;
+  const helper = field.dynamicHelper.format(query.data, values ?? {});
+  if (!helper) return null;
+  return <p className={cn("text-xs leading-5", helper.invalid ? "font-semibold text-danger" : "text-muted")}>{helper.text}</p>;
+}
+
+// Bỏ dấu + hạ chữ thường để tìm kiếm tiếng Việt không phân biệt dấu.
+function normalizeSearchText(value: string) {
+  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D").toLowerCase();
+}
+
+function SearchableMultiSelect({
+  id,
+  onChange,
+  options,
+  placeholder,
+  readonly,
+  value,
+}: {
+  id: string;
+  onChange: (value: FormValue) => void;
+  options: Option[];
+  placeholder?: string;
+  readonly?: boolean;
+  value: string[];
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const containerRef = useRef<HTMLDivElement>(null);
+  const selected = useMemo(() => new Set(value), [value]);
+
+  // Chỉ đóng dropdown khi bấm ra ngoài; bấm vào checkbox/nhãn bên trong không được làm mất focus và đóng danh sách.
+  useEffect(() => {
+    if (!open) return;
+    function handlePointerDown(event: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) setOpen(false);
+    }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open]);
+
+  const filteredOptions = useMemo(() => {
+    const keyword = normalizeSearchText(search.trim());
+    if (!keyword) return options;
+    return options.filter((option) => normalizeSearchText(`${option.label} ${option.value} ${option.group ?? ""}`).includes(keyword));
+  }, [options, search]);
+  const selectedOptions = options.filter((option) => selected.has(option.value));
+  const allFilteredSelected = filteredOptions.length > 0 && filteredOptions.every((option) => selected.has(option.value) || option.disabled);
+
+  function toggle(optionValue: string) {
+    onChange(selected.has(optionValue) ? value.filter((item) => item !== optionValue) : [...value, optionValue]);
+  }
+
+  function toggleAllFiltered() {
+    const filteredValues = filteredOptions.filter((option) => !option.disabled).map((option) => option.value);
+    if (allFilteredSelected) onChange(value.filter((item) => !filteredValues.includes(item)));
+    else onChange(Array.from(new Set([...value, ...filteredValues])));
+  }
+
+  return (
+    <div className="relative" ref={containerRef}>
+      <button
+        aria-expanded={open}
+        className="flex min-h-10 w-full flex-wrap items-center gap-1.5 rounded-[8px] border border-border bg-white px-2.5 py-1.5 text-left text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-4 focus:ring-[var(--primary-ring)] disabled:cursor-not-allowed disabled:bg-surface-1 disabled:opacity-70"
+        disabled={readonly}
+        id={id}
+        onClick={() => setOpen((current) => !current)}
+        type="button"
+      >
+        {selectedOptions.length === 0 ? <span className="text-muted">{placeholder ?? "Chọn người nhận"}</span> : null}
+        {selectedOptions.map((option) => (
+          <span className="inline-flex items-center gap-1 rounded-[6px] border border-primary/25 bg-primary/8 px-2 py-0.5 text-xs font-semibold text-primary" key={option.value}>
+            {option.label}
+            <span
+              aria-label={`Bỏ chọn ${option.label}`}
+              className="cursor-pointer px-0.5 hover:text-danger"
+              onClick={(event) => {
+                event.stopPropagation();
+                if (!readonly) toggle(option.value);
+              }}
+              role="button"
+            >
+              ×
+            </span>
+          </span>
+        ))}
+      </button>
+      {open && !readonly ? (
+        <div className="absolute z-30 mt-1 w-full rounded-[8px] border border-border bg-white p-2 shadow-lg">
+          <Input autoFocus className="h-9" onChange={(event) => setSearch(event.target.value)} placeholder="Tìm theo tên hoặc tài khoản" value={search} />
+          <div className="mt-2 flex items-center justify-between text-xs text-muted">
+            <span>Đã chọn {selectedOptions.length}/{options.length}</span>
+            {filteredOptions.length > 0 ? (
+              <button className="font-semibold text-primary hover:underline" onClick={toggleAllFiltered} type="button">
+                {allFilteredSelected ? "Bỏ chọn kết quả" : "Chọn tất cả kết quả"}
+              </button>
+            ) : null}
+          </div>
+          <div className="mt-1 max-h-64 overflow-y-auto">
+            {filteredOptions.length === 0 ? <p className="px-3 py-2 text-sm text-muted">Không có dữ liệu phù hợp</p> : null}
+            {filteredOptions.map((option) => (
+              <label
+                className={cn("flex cursor-pointer items-start gap-2 rounded-[6px] px-2 py-1.5 text-sm hover:bg-primary/8", option.disabled && "cursor-not-allowed opacity-60 hover:bg-transparent")}
+                key={option.value}
+              >
+                <input checked={selected.has(option.value)} className="mt-0.5 h-4 w-4 accent-primary" disabled={option.disabled} onChange={() => toggle(option.value)} type="checkbox" />
+                <span>
+                  <span className="block font-semibold">{option.label}</span>
+                  {/*{option.label !== option.value ? <span className="block text-xs text-muted">{option.value}</span> : null}*/}
+                </span>
+              </label>
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
 }

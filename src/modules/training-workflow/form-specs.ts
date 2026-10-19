@@ -30,15 +30,6 @@ export const workflowFormSpecs: ResourceFormSpec[] = [
         optionLabel: "fullName",
         section: "Danh sách đăng ký",
       },
-      {
-        name: "recipientUsernames",
-        label: "Tài khoản nhận thông báo",
-        type: "multiselect",
-        optionsEndpoint: "/system/accounts",
-        optionValue: "username",
-        optionLabel: "username",
-        section: "Thông báo",
-      },
       { name: "exceptionReasonsText", label: "Lý do ngoại lệ", type: "textarea", helper: "Mỗi dòng: leaderId | lý do", section: "Ngoại lệ" },
     ],
     mapSubmit: (values) => {
@@ -63,7 +54,7 @@ export const workflowFormSpecs: ResourceFormSpec[] = [
     kind: "participations",
     actionType: "score",
     editTitle: "Chấm điểm tham dự",
-    description: "Nhập điểm theo component của công thức khóa. Khi backend có score-context, form sẽ dùng dữ liệu thật trong detail panel.",
+    description: "Nhập điểm theo thành phần điểm của loại khóa (điểm tổng kết là trung bình có hệ số). Khi backend có score-context, form sẽ dùng dữ liệu thật trong detail panel.",
     buildEndpoint: (_values, id) => `/training/participations/${encodeURIComponent(String(id ?? ""))}/score`,
     method: "PATCH",
     fields: [

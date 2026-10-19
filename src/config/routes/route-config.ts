@@ -13,7 +13,6 @@ export type ResourceKind =
   | "courses"
   | "course-types"
   | "score-components"
-  | "score-formulas"
   | "participations"
   | "certificates"
   | "accounts"
@@ -221,18 +220,44 @@ function inferRouteFilters(config: RouteConfig): RouteFilterConfig[] {
         optionValue: "typeCode",
         optionLabel: "typeName",
       });
+      filters.push({
+        key: "registrationStatus",
+        label: "Thời gian đăng ký",
+        type: "select",
+        options: [
+          { value: "OPEN", label: "Đang mở đăng ký" },
+          { value: "NOT_STARTED", label: "Chưa đến giờ đăng ký" },
+          { value: "CLOSED", label: "Đã đóng thủ công" },
+          { value: "ENDED", label: "Đã hết hạn đăng ký" },
+        ],
+      });
+      filters.push({
+        key: "organizingStatus",
+        label: "Thời gian tổ chức",
+        type: "select",
+        options: [
+          { value: "UPCOMING", label: "Sắp diễn ra" },
+          { value: "ONGOING", label: "Đang diễn ra" },
+          { value: "ENDED", label: "Đã kết thúc" },
+        ],
+      });
       filters.push({ key: "hostYear", label: "Năm", type: "text", placeholder: "Ví dụ 2026" });
       break;
     case "score-components":
+      filters.push({
+        key: "courseType.typeCode",
+        label: "Loại khóa",
+        type: "select",
+        optionsEndpoint: "/training/course-types",
+        optionValue: "typeCode",
+        optionLabel: "typeName",
+      });
       filters.push({
         key: "unitType",
         label: "Cấp quản lý",
         type: "select",
         options: unitTypeFilterOptions(["DIOCESE", "DEANERY"]),
       });
-      break;
-    case "score-formulas":
-      filters.push({ key: "name", label: "Tên công thức", type: "text", placeholder: "Lọc theo tên" });
       break;
     case "participations":
       filters.push({ key: "course.courseCode", label: "Khóa", type: "text", placeholder: "Lọc theo mã khóa" });

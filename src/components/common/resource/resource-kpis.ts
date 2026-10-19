@@ -35,16 +35,6 @@ const unitTypeKpis = [
   { value: "PARISH", label: "Cấp giáo xứ", tone: "success" },
 ] satisfies Array<{ value: string; label: string; tone: ResourceKpiTone }>;
 
-const courseLevelKpis = [
-  { label: "Dự trưởng", values: ["SMTL_DT", "SMKN_DT"], tone: "warning" },
-  { label: "Cấp I", values: ["SMTL_I", "SMKN_I"], tone: "success" },
-  { label: "Cấp II", values: ["TSM_II", "SMTL_II", "SMKN_II"], tone: "primary" },
-  { label: "Cấp III", values: ["TSM_III_1", "TSM_III_2", "SMTL_III", "SMKN_III"], tone: "accent" },
-  { label: "HLV I", values: ["HLV_I"], tone: "danger" },
-  { label: "HLV II", values: ["HLV_II"], tone: "danger" },
-  { label: "HLV III", values: ["HLV_III"], tone: "danger" },
-] satisfies Array<{ label: string; values: string[]; tone: ResourceKpiTone }>;
-
 export function shouldShowResourceKpis(route: RouteConfig) {
   if (route.moduleName.startsWith("system.")) return SYSTEM_KPI_KINDS.has(route.kind);
   return !SYSTEM_HIDDEN_KINDS.has(route.kind) && Boolean(route.endpoint);
@@ -63,12 +53,6 @@ export function buildResourceKpiQuerySpecs(route: RouteConfig, queryString: stri
 
   if (route.kind === "positions") {
     unitTypeKpis.forEach((unitType) => addSpec(specs, kpiId("positionType", unitType.value), constrainFilterQueryString(queryString, "positionType", unitType.value)));
-  }
-
-  if (route.kind === "courses") {
-    courseLevelKpis.forEach((level) => {
-      level.values.forEach((courseType) => addSpec(specs, kpiId("courseType", courseType), constrainFilterQueryString(queryString, "courseType", courseType)));
-    });
   }
 
   return specs;
@@ -98,16 +82,6 @@ export function buildResourceKpis({
 
   if (route.kind === "positions") {
     kpis.push(...unitTypeKpis.map((unitType) => ({ label: unitType.label, value: queryTotals[kpiId("positionType", unitType.value)] ?? 0, tone: unitType.tone })));
-  }
-
-  if (route.kind === "courses") {
-    kpis.push(
-      ...courseLevelKpis.map((level) => ({
-        label: level.label,
-        value: level.values.reduce((total, courseType) => total + (queryTotals[kpiId("courseType", courseType)] ?? 0), 0),
-        tone: level.tone,
-      })),
-    );
   }
 
   return kpis;

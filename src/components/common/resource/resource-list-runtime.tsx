@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Route } from "next";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
@@ -48,7 +48,9 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
       queryKey: ["resource-kpi", effectiveRoute.endpoint, spec.id, spec.queryString],
       enabled: Boolean(showKpis && effectiveRoute.endpoint && user),
       queryFn: () => apiFetch<PageResponse<Record<string, unknown>>>(`${effectiveRoute.endpoint}?${spec.queryString}`),
-      staleTime: 0,
+      // Cache KPI để đổi bộ lọc qua lại không bắn lại hàng loạt request (tránh chạm giới hạn 429).
+      staleTime: 60_000,
+      placeholderData: keepPreviousData,
     })),
   });
   const kpiQueryTotals = Object.fromEntries(kpiQuerySpecs.map((spec, index) => [spec.id, kpiQueries[index]?.data?.totalElements ?? 0]));

@@ -340,3 +340,66 @@
 - `src/modules/leaders/components/leader-detail-utils.ts`: `CourseParticipationRow.courseType` -> `courseTypeCode` (BE participation response đổi tên field).
 - Kiểm thử trong session này: `npm run typecheck` PASS; `npm run lint` PASS (0 error, 3 warning có sẵn, không liên quan). `npm run test` KHÔNG chạy được trong môi trường agent (VM Linux thiếu native binding `@rolldown/binding-linux-x64-gnu` do node_modules là bản Windows); cần chạy `npm run test`, `npm run build`, `npm run test:e2e` trên môi trường Windows.
 - `src/lib/api/schema.d.ts` là file sinh tự động, hiện vẫn là bản cũ (không file nguồn nào import type training cũ nên typecheck vẫn pass). Cần chạy `npm run api:generate` sau khi BE mới chạy để cập nhật `/api/training/course-types`, `TrainingCourseTypeResponse`, `courseTypeCode`.
+
+## 2026-10-19 - Thành phần điểm có hệ số, bỏ công thức điểm (branch `feature/score-component-weights`, từ `main`)
+
+BE tương ứng: branch `feature/score-component-weights`, migration `V057`, xem `BE/project.md` mục "Training Score Component Workflow".
+
+Logic mới:
+- Module "Công thức điểm" (`/training/score-formulas`) đã bị XÓA khỏi FE (route, form spec, filter, label quyền `score_formula`).
+- Thành phần điểm (`/training/score-components`) giờ gắn một loại khóa (`courseTypeCode`, chọn từ `/training/course-types`, chỉ chọn lúc tạo), có `coefficient` (hệ số, > 0) và cờ `includeInFinal` (switch "Tính vào điểm tổng kết", mặc định bật). Tắt cờ thì thành phần vẫn nhập điểm nhưng KHÔNG tính vào điểm tổng kết.
+- Điểm tổng kết (BE tính) = trung bình có hệ số: Σ(điểm × hệ số) / Σ hệ số của các thành phần `includeInFinal = true`.
+- Form tạo thành phần điểm KHÔNG còn chọn cấp quản lý (`unitType`): BE suy ra từ loại khóa; dropdown loại khóa do BE lọc theo phạm vi tài khoản (giáo hạt/giáo phận).
+- Form khóa huấn luyện: bỏ `scoreFormulaId`, thêm `passingScore` (điểm đạt, bắt buộc). Cột bảng chấm điểm dùng `passingScore` thay `scoreFormulaId`.
+
+File đã đổi: `src/modules/training-courses/form-specs.ts`, `src/config/routes/groups/training.ts`, `src/config/routes/groups/training-workflow.ts`, `src/config/routes/route-config.ts` (bỏ kind `score-formulas`, thêm filter loại khóa cho `score-components`), `src/components/form/resource-form/types.ts` + `form-controls.tsx` (field `switchLabels` để switch không bị cứng nhãn "Vai trò chính/phụ"), `src/components/common/resource/resource-format.tsx` (nhãn `coefficient`, `includeInFinal`), `src/components/common/resource/permission-taxonomy-labels.ts`, `src/modules/training-workflow/form-specs.ts`.
+
+Kiểm thử: `npm run typecheck` PASS; `npx vitest run` 43/44 PASS - 1 fail có sẵn ở test sidebar (`toHaveClass("rounded-[10px]")`), không liên quan; eslint các thư mục đã sửa không lỗi.
+
+Còn lại / lưu ý cho phiên sau:
+- `src/lib/api/schema.d.ts` và `openapi/ht-management.json` CHƯA cập nhật (cần chạy BE rồi `npm run api:capture && npm run api:generate`); vẫn chứa schema `ScoreFormula*`.
+- Form chấm điểm (`participations` action `score` trong `modules/training-workflow/form-specs.ts`) vẫn nhập text `componentCode | score` và gửi `componentCode`, trong khi BE yêu cầu `componentId` - lỗi có từ trước; nên làm form lấy danh sách thành phần của khóa (id, tên, hệ số, cờ tính tổng kết) rồi gửi `componentId`. Response participation trả `componentScores[].coefficient/includeInFinal`.
+- Chưa test thủ công trên UI (BE/DB cần chạy); migration V057 chưa được chạy thử trên Postgres thật.
+
+## 2026-10-19 - Đóng/mở đăng ký, người nhận danh sách, điểm đạt, hiển thị tên (cùng branch `feature/score-component-weights`)
+
+BE tương ứng: `BE/project.md` mục "Training Course Registration Control and Recipients (V058)".
+
+- Danh sách khóa: cột "Trạng thái đăng ký" (`registrationOpen` + khung thời gian -> Đang mở / Đã đóng / Chưa đến giờ / Hết hạn, logic ở `src/modules/training-courses/registration-state.ts`). Nút khóa/mở khóa ở cột thao tác (`modules/training-courses/components/registration-toggle-button.tsx`, gọi `PATCH /training/courses/{code}/registration`), chỉ hiện với người có quyền sửa khóa; vô hiệu khi đã hết hạn đăng ký (phải gia hạn trước). BE tự đóng khi hết hạn.
+- Form khóa: thêm `recipientUsernames` (checkbox-list) lấy từ `GET /training/courses/recipient-candidates?courseTypeCode=` (lọc quyền duyệt + phạm vi tài khoản đăng nhập, phụ thuộc loại khóa đã chọn); khi sửa luôn gửi mảng (kể cả rỗng) để bỏ chọn được. Form đăng ký tham dự đã bỏ ô "Tài khoản nhận thông báo".
+- `FormFieldSpec.dynamicHelper` (types.ts + `DynamicHelper` trong form-controls.tsx): tip động lấy từ API; dùng cho `passingScore` (gọi `/training/courses/passing-score-limit`, đỏ khi vượt). BE vẫn chặn khi lưu.
+- Input `datetime` (form-controls.tsx `toDatetimeLocalValue`) đã load được giá trị khi sửa (ISO có múi giờ -> giờ VN UTC+7).
+- Chi tiết khóa (`detail-drawer.tsx`): ẩn `courseCode`, `courseTypeCode`, `dioceseId`, `deaneryId`; hiển thị `courseTypeName` (nhãn "Loại khóa"), `dioceseName`/`deaneryName`, người tạo/cập nhật (`createdBy`/`updatedBy`).
+- Kiểm thử: `npm run typecheck` PASS, eslint các thư mục đã sửa sạch, `vitest` 43/44 (1 fail sidebar có sẵn). Chưa test UI thật; `schema.d.ts` vẫn chưa regenerate. Migration V058 chưa chạy thử trên Postgres thật.
+
+## 2026-10-19 - Bộ lọc/cột trạng thái khóa, tự chuyển trạng thái, thông báo RabbitMQ, picker người nhận có tìm kiếm (cùng branch `feature/score-component-weights`)
+
+BE tương ứng: `BE/project.md` mục "Training Course Registration Control and Recipients" (V059: `registrationStatus`, `organizingStatus`).
+
+- Bộ lọc danh sách khóa (`config/routes/route-config.ts` case `courses`): "Thời gian đăng ký" (`registrationStatus`: Đang mở / Chưa đến giờ / Đã đóng thủ công / Đã hết hạn) và "Thời gian tổ chức" (`organizingStatus`: Sắp diễn ra / Đang diễn ra / Đã kết thúc).
+- Cột bảng: `registrationStatus` và `organizingStatus` (thay `registrationOpen`) render Badge theo token màu (`success`, `info`, `warning` suy từ token `--warning`, `muted`); map tone/nhãn ở `modules/training-courses/registration-state.ts`, ưu tiên giá trị BE, fallback tính từ khung thời gian. Badge thêm tone `info`; tone `warning` đổi từ amber cứng sang token.
+- Nút khóa/mở khóa chỉ bật khi trạng thái OPEN/CLOSED; chưa đến giờ/hết hạn thì tự động (BE).
+- Picker người nhận danh sách đăng ký: field `multiselect` + `searchable: true` -> `SearchableMultiSelect` trong `form-controls.tsx` (dropdown, chip đã chọn, ô tìm theo tên/tài khoản không phân biệt dấu, "chọn tất cả kết quả").
+- Thông báo đóng/mở đăng ký đi qua RabbitMQ, chỉ lưu DB (không socket) nên `useUnreadNotificationCount` (`modules/notifications/hooks.ts`) thăm dò mỗi 60s và refetch khi focus lại cửa sổ.
+- Test: `tests/unit/registration-state.test.ts`; `npm run typecheck` PASS, eslint sạch, vitest 45/46 (1 fail sidebar có sẵn). Chưa test UI thật; `schema.d.ts` chưa regenerate; migration V059 chưa chạy thử trên Postgres thật.
+
+## 2026-10-19 - Sửa lỗi 429 khi đổi bộ lọc khóa huấn luyện
+
+- Nguyên nhân: mỗi lần đổi bộ lọc danh sách khóa bắn 1 request danh sách + 2 KPI trạng thái + 14 KPI theo mã loại khóa cũ (`SMTL_DT`...; mã loại khóa nay là UUID nên các KPI này vốn đã sai) -> vượt giới hạn đọc 120 request/phút của BE.
+- Đã bỏ KPI theo loại khóa trong `components/common/resource/resource-kpis.ts` (chỉ còn Tổng / Đang hoạt động / Tạm ngưng cho khóa) và cache KPI 60s + `keepPreviousData` trong `resource-list-runtime.tsx`. Các màn khác (leaders 9 KPI cấp bậc, positions 3) vẫn bắn nhiều request mỗi lần đổi bộ lọc - nếu gặp 429 tiếp thì gộp KPI thành một endpoint thống kê ở BE.
+- Message 429 từng bị mojibake do BE thiếu charset UTF-8 (đã sửa ở BE, xem `BE/project.md`).
+
+## 2026-10-19 - Thông báo đóng/mở đăng ký realtime qua socket + RabbitMQ
+
+- Bỏ polling 60s ở `useUnreadNotificationCount` (đã thêm trước đó). `modules/workspace/hooks/notifications-socket.ts` giữ một kết nối STOMP duy nhất (chỉ heartbeat khi rảnh); khi BE đẩy thông báo thì invalidate danh sách/số chưa đọc, và nếu `eventType` bắt đầu bằng `training.course.registration_` thì invalidate luôn `["resource","/training/courses"]` để trạng thái đăng ký cập nhật ngay.
+- BE: consumer RabbitMQ lưu thông báo rồi đẩy STOMP tới người đang online (xem `BE/project.md`); người offline đọc lại qua REST.
+
+## 2026-10-19 - Vì sao socket không nhận thông báo realtime
+
+- Nguyên nhân gốc nằm ở BE: handshake WebSocket `/ws/notifications` bị Spring Security chặn 401 (trình duyệt không gắn được header Authorization khi nâng cấp WebSocket), nên `useNotificationsSocket` không bao giờ kết nối được dù FE đúng. Đã mở `permitAll` cho handshake; xác thực vẫn do STOMP CONNECT (Bearer) đảm nhiệm. Xem `BE/project.md` mục "WebSocket handshake security".
+- Sau khi BE restart (devtools tự restart khi build), socket FE tự nối lại sau 5s (`reconnectDelay`); nếu vừa sửa mà chưa thấy, tải lại trang một lần.
+
+## 2026-10-19 - Picker người nhận: hiện vai trò, sửa lỗi đóng dropdown khi tick
+
+- Option người nhận hiển thị "Họ tên - tài khoản - Vai trò" (`optionLabelFields` thêm `roleName` từ `recipient-candidates`).
+- `SearchableMultiSelect` (`form-controls.tsx`): bỏ `onBlur` trên container (bấm vào nhãn/checkbox không phải phần tử focus được nên `relatedTarget` null -> đóng dropdown trước khi tick). Nay đóng bằng listener `mousedown` ngoài vùng + phím Escape.

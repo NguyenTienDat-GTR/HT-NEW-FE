@@ -25,7 +25,11 @@ export function useNotificationsSocket() {
         client.connectHeaders = { Authorization: `Bearer ${useAuthStore.getState().accessToken ?? ""}` };
       },
       onConnect: () => {
-        client.subscribe("/user/queue/notifications", () => {
+        client.subscribe("/user/queue/notifications", (message) => {
+          // Sự kiện đóng/mở đăng ký từ RabbitMQ: cập nhật luôn trạng thái trong danh sách khóa.
+          if (isCourseRegistrationEvent(message.body)) {
+            void queryClient.invalidateQueries({ queryKey: ["resource", "/training/courses"] });
+          }
           void queryClient.invalidateQueries({ queryKey: ["resource", "/system/notifications"] });
           void queryClient.invalidateQueries({ queryKey: ["system", "notifications"] });
           void queryClient.invalidateQueries({ queryKey: notificationKeys.unreadCount });
@@ -53,4 +57,13 @@ export function useNotificationsSocket() {
       void client.deactivate();
     };
   }, [queryClient, router, token]);
+}
+
+function isCourseRegistrationEvent(body: string) {
+  try {
+    const eventType = (JSON.parse(body) as { eventType?: unknown }).eventType;
+    return typeof eventType === "string" && eventType.startsWith("training.course.registration_");
+  } catch {
+    return false;
+  }
 }
