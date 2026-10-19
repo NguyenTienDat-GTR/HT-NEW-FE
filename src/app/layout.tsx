@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { Be_Vietnam_Pro } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import { Toaster } from "sonner";
 import { AppProviders } from "@/components/providers/app-providers";
 import "./globals.css";
 
-const beVietnamPro = Be_Vietnam_Pro({
+const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin", "vietnamese"],
   weight: ["400", "500", "600", "700"],
   variable: "--font-sans",
@@ -23,7 +23,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="vi">
-      <body className={beVietnamPro.variable}>
+      <body className={plusJakartaSans.variable}>
         <AppProviders>
           {children}
           <Toaster position="top-right" richColors closeButton />
