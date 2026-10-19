@@ -57,7 +57,8 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
 
   const canCreate = canUseAction(user, effectiveRoute.actions?.create) && (config.canCreate?.(effectiveRoute, user) ?? true);
   const pageData = asPageResponse(query.data, queryState.size);
-  const showKpis = shouldShowResourceKpis(effectiveRoute);
+  // Trong chi tiết khóa không hiển thị KPI (và không gọi các truy vấn KPI).
+  const showKpis = !embedded && shouldShowResourceKpis(effectiveRoute);
   const kpiQuerySpecs = buildResourceKpiQuerySpecs(effectiveRoute, queryState.queryString);
   const kpiQueries = useQueries({
     queries: kpiQuerySpecs.map((spec) => ({
@@ -70,11 +71,14 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
     })),
   });
   const kpiQueryTotals = Object.fromEntries(kpiQuerySpecs.map((spec, index) => [spec.id, kpiQueries[index]?.data?.totalElements ?? 0]));
-  const kpis = buildResourceKpis({
-    route: effectiveRoute,
-    pageData,
-    queryTotals: kpiQueryTotals,
-  });
+  // Trong chi tiết khóa không hiển thị thẻ KPI.
+  const kpis = embedded
+    ? []
+    : buildResourceKpis({
+        route: effectiveRoute,
+        pageData,
+        queryTotals: kpiQueryTotals,
+      });
   const rows = rowsFromResponse(query.data);
   const detailId = searchParams.get("detail");
   const toggleId = searchParams.get("toggle");
@@ -147,7 +151,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
           components: scoreComponents,
           drafts: scoreDrafts,
           // Chứng nhận đã duyệt thì khóa điểm (BE cũng chặn).
-          isEditable: (row) => row.certificateApprovalStatus !== "APPROVED",
+          isEditable: (row) => row.certificateApprovalStatus !== "APPROVED" && embedded?.scoringOpen !== false,
           valueOf: (rowId, row, componentId) => scoreDrafts[rowId]?.values[componentId] ?? originalScore(row, componentId),
           isInvalid: (component, value) => isInvalidScore(component, value),
           onChange: (rowId, row, componentId, value) =>
@@ -235,9 +239,20 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
   }
 
   const saveScoresButton = scoreEntryEnabled ? (
-    <Button disabled={pendingScoreRowIds.length === 0} onClick={saveScoresInBackground} type="button">
+    <Button disabled={pendingScoreRowIds.length === 0 || embedded?.scoringOpen === false} onClick={saveScoresInBackground} type="button">
       {pendingScoreRowIds.length ? `Lưu điểm (${pendingScoreRowIds.length})` : savingScoreIds.length ? `Đang lưu ${savingScoreIds.length}...` : "Lưu điểm"}
     </Button>
+  ) : null;
+  const bulkActions = canBulkApprove ? (
+    <>
+      <span className="whitespace-nowrap text-sm text-muted">Đã chọn {selectedIds.filter((id) => selectableIds.includes(id)).length} hồ sơ</span>
+      <Button disabled={selectedIds.length === 0} onClick={() => setBulkMode("approve")} size="sm" type="button">
+        Duyệt đã chọn
+      </Button>
+      <Button disabled={selectedIds.length === 0} onClick={() => setBulkMode("reject")} size="sm" type="button" variant="outline">
+        Từ chối đã chọn
+      </Button>
+    </>
   ) : null;
   const selection = canBulkApprove
     ? {
@@ -270,21 +285,15 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
           resetFilters={queryState.resetFilters}
           canCreate={canCreate}
           extraActions={saveScoresButton}
+          leadingActions={bulkActions}
         />
-        {canBulkApprove ? (
-          <div className="flex flex-wrap items-center gap-3 border-b border-border bg-surface-1/60 px-4 py-2.5">
-            <span className="text-sm text-muted">Đã chọn {selectedIds.filter((id) => selectableIds.includes(id)).length} hồ sơ</span>
-            <Button disabled={selectedIds.length === 0} onClick={() => setBulkMode("approve")} size="sm" type="button">
-              Duyệt đã chọn
-            </Button>
-            <Button disabled={selectedIds.length === 0} onClick={() => setBulkMode("reject")} size="sm" type="button" variant="outline">
-              Từ chối đã chọn
-            </Button>
-          </div>
+        {scoreEntryEnabled && embedded?.scoringOpen === false ? (
+          <div className="border-b border-warning/30 bg-warning/10 px-4 py-2 text-xs font-medium text-foreground">{embedded.scoringHint ?? "Chỉ chấm điểm được khi khóa đang diễn ra."}</div>
         ) : null}
         <ResourceTable
           selection={selection}
           scoreEntry={scoreEntry}
+          page={queryState.page}
           isLoading={query.isLoading}
           route={effectiveRoute}
           rows={rows}

@@ -38,7 +38,7 @@ const approvalFilters: RouteFilterConfig[] = [
   ...unitFilters,
 ];
 
-// Danh sách tham dự chỉ có hồ sơ đã duyệt: trạng thái tham dự là Đã tham dự/Hoàn thành, chứng nhận không còn trạng thái "Đã gửi".
+// Danh sách tham dự chỉ có hồ sơ đã duyệt: trạng thái tham dự là Đã tham dự/Hoàn thành.
 const participantFilters: RouteFilterConfig[] = [
   { key: "course.courseCode", label: "Khóa", type: "text", placeholder: "Lọc theo mã khóa" },
   {
@@ -50,33 +50,11 @@ const participantFilters: RouteFilterConfig[] = [
       { value: "COMPLETED", label: "Hoàn thành" },
     ],
   },
-  {
-    key: "certificateApprovalStatus",
-    label: "Chứng nhận",
-    type: "select",
-    options: [
-      { value: "NOT_REQUIRED", label: "Không yêu cầu" },
-      { value: "PENDING", label: "Chờ xử lý" },
-      { value: "APPROVED", label: "Đã duyệt" },
-      { value: "REJECTED", label: "Từ chối" },
-    ],
-  },
   ...unitFilters,
 ];
 
 const scoreFilters: RouteFilterConfig[] = [
   { key: "course.courseCode", label: "Khóa", type: "text", placeholder: "Lọc theo mã khóa" },
-  {
-    key: "certificateApprovalStatus",
-    label: "Chứng nhận",
-    type: "select",
-    options: [
-      { value: "NOT_REQUIRED", label: "Không yêu cầu" },
-      { value: "PENDING", label: "Chờ xử lý" },
-      { value: "APPROVED", label: "Đã duyệt" },
-      { value: "REJECTED", label: "Từ chối" },
-    ],
-  },
   ...unitFilters,
 ];
 
@@ -130,7 +108,7 @@ export const trainingWorkflowRouteGroup: RouteGroup = {
         idField: "id",
         kind: "participations",
         icon: ClipboardText,
-        columns: ["leaderFullName", "parishName", "deaneryName", "courseName", "participationStatus", "totalScore", "passed", "certificateApprovalStatus"],
+        columns: ["leaderFullName", "parishName", "deaneryName", "courseName", "participationStatus", "totalScore", "passed"],
         permissionPrefixes: [
           "training.participation.read.deanery",
           "training.participation.read.diocese",
@@ -142,7 +120,7 @@ export const trainingWorkflowRouteGroup: RouteGroup = {
         filters: participantFilters,
         // Người có quyền duyệt được xóa hồ sơ khỏi danh sách tham dự (trừ hồ sơ đã có chứng nhận).
         actions: { remove: { label: "Xóa khỏi danh sách", permissionPrefixes: ["training.participation.approve."] } },
-        filterLabels: ["Khóa", "Trạng thái tham dự", "Chứng nhận"],
+        filterLabels: ["Khóa", "Trạng thái tham dự"],
         workflowHint: "Score form khóa khi certificateApprovalStatus là APPROVED.",
       }),
       route({
@@ -154,7 +132,7 @@ export const trainingWorkflowRouteGroup: RouteGroup = {
         idField: "id",
         kind: "participations",
         icon: ChartBar,
-        columns: ["leaderFullName", "parishName", "deaneryName", "courseName", "totalScore", "passed", "certificateApprovalStatus"],
+        columns: ["leaderFullName", "parishName", "deaneryName", "courseName", "totalScore", "passed"],
         permissionPrefixes: ["training.participation.score.deanery", "training.participation.score.diocese"],
         actionPermissionPrefixes: ["training.participation.score."],
         filters: scoreFilters,

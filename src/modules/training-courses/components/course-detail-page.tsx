@@ -16,6 +16,7 @@ import { apiFetch, getApiErrorMessage } from "@/lib/api/client";
 import { useAuthStore } from "@/lib/auth/auth-store";
 import { canUseAction, hasPermissionPrefix } from "@/lib/auth/permissions";
 import { cn } from "@/lib/utils";
+import { resolveOrganizingState } from "@/modules/training-courses/registration-state";
 import { TrainingWorkflowResourceView } from "@/modules/training-workflow/components/training-workflow-resource-view";
 
 // Quy trình huấn luyện của một khóa: mỗi tab dùng lại đúng màn hình/logic của menu cũ, lọc theo khóa đang chọn.
@@ -67,13 +68,13 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
 
   return (
     <div className="space-y-5">
-      <section className="space-y-3">
+      <section className="space-y-2">
         <Link className="inline-flex items-center gap-2 text-xs font-semibold text-primary" href={route.path as Route}>
           <ArrowLeft size={16} />
           Quay lại danh sách khóa
         </Link>
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <h1 className="text-2xl font-semibold tracking-[0] text-foreground">{courseQuery.isLoading ? "Đang tải..." : String(course?.courseName ?? id)}</h1>
+          <h1 className="text-xl font-semibold tracking-[0] text-foreground">{courseQuery.isLoading ? "Đang tải..." : String(course?.courseName ?? id)}</h1>
           {editHref && canUseAction(user, route.actions?.edit) ? (
             <Button asChild variant="outline">
               <Link href={editHref as Route}>
@@ -84,13 +85,13 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
           ) : null}
         </div>
         {course ? (
-          <Panel className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Panel className="flex flex-wrap gap-x-6 gap-y-1.5 px-4 py-2.5">
             {summaryColumns.map((column) => (
-              <div className="min-w-0" key={column}>
-                <p className="text-xs font-semibold uppercase tracking-[0.02em] text-muted">{summaryLabels[column] ?? column}</p>
-                <div className="mt-1 text-sm text-foreground">
+              <div className="flex min-w-0 items-baseline gap-1.5 text-xs" key={column}>
+                <span className="shrink-0 text-muted">{summaryLabels[column] ?? column}:</span>
+                <span className="min-w-0 font-medium text-foreground">
                   <ResourceCell column={column} row={course} value={course[column]} />
-                </div>
+                </span>
               </div>
             ))}
           </Panel>
@@ -123,7 +124,13 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
           {activeTab ? (
             <EmbeddedResourceProvider
               key={activeTab.key}
-              value={{ basePath, tab: activeTab.key, fixedFilters: { "course.courseCode": id } }}
+              value={{
+                basePath,
+                tab: activeTab.key,
+                fixedFilters: { "course.courseCode": id },
+                scoringOpen: course ? resolveOrganizingState(course) === "ONGOING" : undefined,
+                scoringHint: course ? scoringWindowHint(course) : undefined,
+              }}
             >
               <TrainingWorkflowResourceView route={activeTab.route} />
             </EmbeddedResourceProvider>
@@ -132,6 +139,12 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
       )}
     </div>
   );
+}
+
+function scoringWindowHint(course: Record<string, unknown>) {
+  const start = typeof course.startDate === "string" ? course.startDate : "";
+  const end = typeof course.endDate === "string" ? course.endDate : "";
+  return `Chỉ chấm điểm được khi khóa đang diễn ra${start || end ? ` (${start || "…"} → ${end || "…"})` : ""}.`;
 }
 
 const summaryLabels: Record<string, string> = {

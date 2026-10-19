@@ -9,6 +9,9 @@ export type EmbeddedResource = {
   basePath: string;
   tab: string;
   fixedFilters: Record<string, string>;
+  // Khóa có đang trong thời gian diễn ra không (false thì tab chấm điểm không cho nhập điểm).
+  scoringOpen?: boolean;
+  scoringHint?: string;
 };
 
 const EmbeddedResourceContext = createContext<EmbeddedResource | null>(null);

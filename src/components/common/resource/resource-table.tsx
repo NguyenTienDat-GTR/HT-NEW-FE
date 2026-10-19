@@ -26,7 +26,9 @@ export function ResourceTable({
   sortDirection,
   selection,
   scoreEntry,
+  page = 0,
 }: {
+  page?: number;
   scoreEntry?: ScoreEntry;
   // Chọn nhiều hồ sơ để duyệt/từ chối hàng loạt.
   selection?: { selectedIds: string[]; selectableIds: string[]; onToggle: (id: string) => void; onToggleAll: (on: boolean) => void };
@@ -60,6 +62,7 @@ export function ResourceTable({
                 />
               </th>
             ) : null}
+            {embedded ? <th className="sticky top-0 z-10 h-10 w-12 border-b border-border bg-surface-1/95 px-3 font-semibold text-foreground">STT</th> : null}
             {visibleColumns.map((column) => (
               <th className="sticky top-0 z-10 h-10 border-b border-border bg-surface-1/95 px-3 font-semibold text-foreground" key={column}>
                 <button className="inline-flex h-8 cursor-pointer items-center gap-1 rounded-lg px-1 transition-colors hover:text-primary" onClick={() => sort(column)} type="button">
@@ -85,7 +88,7 @@ export function ResourceTable({
             <th className="h-10 border-b border-border px-3 text-right font-semibold text-foreground">Thao tác</th>
           </tr>
         </thead>
-        <tbody>{isLoading ? <ResourceTableSkeleton columns={visibleColumns} size={size} /> : <ResourceRows columns={visibleColumns} route={route} rows={rows} scoreEntry={scoreEntry} selection={selection} />}</tbody>
+        <tbody>{isLoading ? <ResourceTableSkeleton columns={visibleColumns} size={size} /> : <ResourceRows columns={visibleColumns} indexOffset={embedded ? page * size : undefined} route={route} rows={rows} scoreEntry={scoreEntry} selection={selection} />}</tbody>
       </table>
     </div>
   );
@@ -121,7 +124,10 @@ function ResourceRows({
   rows,
   selection,
   scoreEntry,
+  indexOffset,
 }: {
+  // Có giá trị thì hiển thị cột STT bắt đầu từ offset (số hàng của các trang trước).
+  indexOffset?: number;
   scoreEntry?: ScoreEntry;
   columns: string[];
   route: RouteConfig;
@@ -146,6 +152,7 @@ function ResourceRows({
           ) : null}
         </td>
       ) : null}
+      {indexOffset !== undefined ? <td className="h-12 w-12 border-b border-surface-2 px-3 align-middle text-muted">{indexOffset + rowIndex + 1}</td> : null}
       {columns.map((column) => (
         <td className="h-12 border-b border-surface-2 px-3 align-middle" key={column}>
           <ResourceCell column={column} row={row} value={row[column]} />
@@ -195,7 +202,8 @@ function RowActions({ route, row }: { route: RouteConfig; row: Record<string, un
   const canView = canUseAction(user, route.actions?.view);
   const canEdit = canShowEditAction(route, row, user);
   const canToggle = canUseAction(user, route.actions?.toggle) && canToggleRow(route, row, user);
-  const canScore = canUseAction(user, route.actions?.score);
+  // Tab chấm điểm nhập điểm trực tiếp trên bảng nên không cần nút chấm điểm ở từng hàng.
+  const canScore = canUseAction(user, route.actions?.score) && route.moduleName !== "training.score";
   // Hồ sơ tham dự chỉ duyệt/từ chối khi đang chờ duyệt.
   const awaitingApproval = route.kind !== "participations" || isAwaitingApproval(row);
   // Chỉ người gửi đăng ký mới thu hồi được, và chỉ khi hồ sơ còn chờ duyệt (chưa duyệt hoặc từ chối).
