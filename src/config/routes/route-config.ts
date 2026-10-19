@@ -49,7 +49,35 @@ export type RouteFilterConfig = {
   optionValue?: string;
   optionLabel?: string;
   placeholder?: string;
+  // Bộ lọc phụ thuộc: danh sách lựa chọn chỉ gồm bản ghi thuộc giá trị đang chọn của bộ lọc cha
+  // (ví dụ giáo xứ theo giáo hạt). optionFilterField là trường lọc của API danh sách lựa chọn.
+  dependsOn?: { filterKey: string; optionFilterField: string };
 };
+
+// Bộ lọc đơn vị tổ chức dùng chung: giáo phận -> giáo hạt -> giáo xứ, mỗi cấp chỉ hiện đơn vị thuộc cấp cha đang chọn.
+export function deaneryUnitFilter(key: string, parentFilterKey?: string): RouteFilterConfig {
+  return {
+    key,
+    label: "Giáo hạt",
+    type: "select",
+    optionsEndpoint: "/deaneries",
+    optionValue: "id",
+    optionLabel: "name",
+    ...(parentFilterKey ? { dependsOn: { filterKey: parentFilterKey, optionFilterField: "diocese.id" } } : {}),
+  };
+}
+
+export function parishUnitFilter(key: string, parentFilterKey?: string, parentIsDiocese = false): RouteFilterConfig {
+  return {
+    key,
+    label: "Giáo xứ",
+    type: "select",
+    optionsEndpoint: "/parishes",
+    optionValue: "id",
+    optionLabel: "name",
+    ...(parentFilterKey ? { dependsOn: { filterKey: parentFilterKey, optionFilterField: parentIsDiocese ? "deanery.diocese.id" : "deanery.id" } } : {}),
+  };
+}
 
 const statusFilterOptions: RouteFilterOption[] = [
   { value: "all", label: "Tất cả" },
@@ -201,8 +229,8 @@ function inferRouteFilters(config: RouteConfig): RouteFilterConfig[] {
       filters.push({ key: "deanery.id", label: "Giáo hạt", type: "select", optionsEndpoint: "/deaneries", optionValue: "id", optionLabel: "name" });
       break;
     case "leaders":
-      filters.push({ key: "parish.deanery.id", label: "Giáo hạt", type: "select", optionsEndpoint: "/deaneries", optionValue: "id", optionLabel: "name" });
-      filters.push({ key: "parish.id", label: "Giáo xứ", type: "select", optionsEndpoint: "/parishes", optionValue: "id", optionLabel: "name" });
+      filters.push(deaneryUnitFilter("parish.deanery.id"));
+      filters.push(parishUnitFilter("parish.id", "parish.deanery.id"));
       filters.push({
         key: "leaderLevel",
         label: "Cấp HT",
@@ -323,8 +351,8 @@ function inferRouteFilters(config: RouteConfig): RouteFilterConfig[] {
       break;
     case "accounts":
       filters.push({ key: "diocese.id", label: "Giáo phận", type: "select", optionsEndpoint: "/dioceses", optionValue: "id", optionLabel: "name" });
-      filters.push({ key: "deanery.id", label: "Giáo hạt", type: "select", optionsEndpoint: "/deaneries", optionValue: "id", optionLabel: "name" });
-      filters.push({ key: "parish.id", label: "Giáo xứ", type: "select", optionsEndpoint: "/parishes", optionValue: "id", optionLabel: "name" });
+      filters.push(deaneryUnitFilter("deanery.id", "diocese.id"));
+      filters.push(parishUnitFilter("parish.id", "deanery.id"));
       break;
     case "roles":
       filters.push({ key: "roleCode", label: "Mã vai trò", type: "text", placeholder: "Lọc theo mã vai trò" });

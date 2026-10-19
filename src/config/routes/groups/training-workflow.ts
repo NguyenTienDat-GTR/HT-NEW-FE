@@ -1,11 +1,11 @@
 import { ChartBar, ClipboardText } from "@phosphor-icons/react";
-import { route, type RouteFilterConfig, type RouteGroup } from "../route-config";
+import { deaneryUnitFilter, parishUnitFilter, route, type RouteFilterConfig, type RouteGroup } from "../route-config";
 
 // Chỉ giữ các trạng thái còn phát sinh ở hai màn đăng ký và duyệt đăng ký.
 // Giáo hạt/giáo xứ của huynh trưởng (danh sách tùy chọn đã giới hạn theo phạm vi tài khoản).
 const unitFilters: RouteFilterConfig[] = [
-  { key: "leader.parish.deanery.id", label: "Giáo hạt", type: "select", optionsEndpoint: "/deaneries", optionValue: "id", optionLabel: "name" },
-  { key: "leader.parish.id", label: "Giáo xứ", type: "select", optionsEndpoint: "/parishes", optionValue: "id", optionLabel: "name" },
+  deaneryUnitFilter("leader.parish.deanery.id"),
+  parishUnitFilter("leader.parish.id", "leader.parish.deanery.id"),
 ];
 
 const registrationFilters: RouteFilterConfig[] = [

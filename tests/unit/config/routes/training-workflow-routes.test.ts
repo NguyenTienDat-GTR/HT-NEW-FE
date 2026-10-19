@@ -47,3 +47,19 @@ describe("training workflow menu placement", () => {
     expect(matchRoute("/training/courses/new")?.type).toBe("create");
   });
 });
+
+describe("unit filter cascading", () => {
+  it("makes the parish filter depend on the deanery filter in every module", async () => {
+    const { findRoute } = await import("@/config/routes/routes");
+
+    for (const [path, deaneryKey, parishKey] of [
+      ["/training/registrations", "leader.parish.deanery.id", "leader.parish.id"],
+      ["/training/approvals", "leader.parish.deanery.id", "leader.parish.id"],
+      ["/training/participations", "leader.parish.deanery.id", "leader.parish.id"],
+      ["/training/scores", "leader.parish.deanery.id", "leader.parish.id"],
+    ] as const) {
+      const filters = findRoute(path)?.filters ?? [];
+      expect(filters.find((filter) => filter.key === parishKey)?.dependsOn?.filterKey).toBe(deaneryKey);
+    }
+  });
+});

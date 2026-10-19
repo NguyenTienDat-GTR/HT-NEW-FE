@@ -85,6 +85,7 @@ export function ResourceFilters({
                         filter={filter}
                         key={filter.key}
                         onChange={(value) => (filter.key === "status" ? updateParam("status", value) : updateFilter(filter.key, value))}
+                        parentValue={filter.dependsOn ? (filterValues[filter.dependsOn.filterKey] ?? "") : ""}
                         value={filter.key === "status" ? status : (filterValues[filter.key] ?? "")}
                       />
                     ))}
@@ -119,15 +120,17 @@ function FilterControl({
   filter,
   value,
   onChange,
+  parentValue = "",
 }: {
   filter: RouteFilterConfig;
   value: string;
   onChange: (value: string) => void;
+  parentValue?: string;
 }) {
   const query = useQuery({
-    queryKey: ["toolbar-filter-options", filter.key, filter.optionsEndpoint, filter.optionCollection],
+    queryKey: ["toolbar-filter-options", filter.key, filter.optionsEndpoint, filter.optionCollection, parentValue],
     enabled: Boolean(filter.optionsEndpoint),
-    queryFn: () => fetchFilterOptions(filter),
+    queryFn: () => fetchFilterOptions(filter, parentValue),
   });
 
   const apiOptions = filterRowsFromResponse(query.data, filter.optionCollection).map((row) => optionFromRow(row, filter.optionValue, filter.optionLabel));
@@ -172,9 +175,14 @@ function localizeFilterOptions(filter: RouteFilterConfig, options: { value: stri
   }));
 }
 
-async function fetchFilterOptions(filter: RouteFilterConfig) {
+async function fetchFilterOptions(filter: RouteFilterConfig, parentValue = "") {
   try {
-    return await apiFetch<PageResponse<Record<string, unknown>> | Record<string, unknown>[] | Record<string, unknown>>(optionEndpointWithPaging(filter.optionsEndpoint));
+    // Bộ lọc phụ thuộc chỉ lấy các đơn vị thuộc giá trị đang chọn của bộ lọc cha.
+    const scoped =
+      filter.dependsOn && parentValue
+        ? `${filter.optionsEndpoint}${filter.optionsEndpoint?.includes("?") ? "&" : "?"}filters=${encodeURIComponent(JSON.stringify({ [filter.dependsOn.optionFilterField]: parentValue }))}`
+        : filter.optionsEndpoint;
+    return await apiFetch<PageResponse<Record<string, unknown>> | Record<string, unknown>[] | Record<string, unknown>>(optionEndpointWithPaging(scoped));
   } catch (error) {
     if (!filter.optionsEndpoint?.includes("/system/permissions/taxonomy") || !filter.optionCollection) throw error;
     const permissions = await apiFetch<PageResponse<Record<string, unknown>>>("/system/permissions?page=0&size=100");

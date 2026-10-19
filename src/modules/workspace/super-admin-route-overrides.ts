@@ -1,7 +1,7 @@
 import type { AuthUser } from "@/lib/auth/auth-store";
 import { hasPermissionPrefix, isSuperAdmin } from "@/lib/auth/permissions";
 import type { RouteConfig } from "@/config/routes/routes";
-import type { RouteFilterConfig } from "@/config/routes/route-config";
+import { deaneryUnitFilter, parishUnitFilter, type RouteFilterConfig } from "@/config/routes/route-config";
 
 export function resolveRouteForUser(route: RouteConfig, user: AuthUser | null): RouteConfig {
   if (!isSuperAdmin(user)) {
@@ -80,9 +80,9 @@ export function resolveRouteForUser(route: RouteConfig, user: AuthUser | null): 
 function accountFiltersForUser(user: AuthUser | null): RouteFilterConfig[] {
   const filters: RouteFilterConfig[] = [roleFilter()];
   if (hasPermissionPrefix(user, "system.account.manage.all") || hasPermissionPrefix(user, "system.account.manage.diocese")) {
-    filters.push(dioceseFilter(), deaneryFilter(), parishFilter());
+    filters.push(dioceseFilter(), deaneryFilter("dioceseId"), parishFilter("deaneryId"));
   } else if (hasPermissionPrefix(user, "system.account.manage.deanery")) {
-    filters.push(deaneryFilter(), parishFilter());
+    filters.push(deaneryFilter(), parishFilter("deaneryId"));
   } else if (hasPermissionPrefix(user, "system.account.manage.parish")) {
     filters.push(parishFilter());
   }
@@ -201,12 +201,12 @@ function dioceseFilter(): RouteFilterConfig {
   return { key: "dioceseId", label: "Giáo phận", type: "select", optionsEndpoint: "/dioceses", optionValue: "id", optionLabel: "name" };
 }
 
-function deaneryFilter(): RouteFilterConfig {
-  return { key: "deaneryId", label: "Giáo hạt", type: "select", optionsEndpoint: "/deaneries", optionValue: "id", optionLabel: "name" };
+function deaneryFilter(parentKey?: string): RouteFilterConfig {
+  return deaneryUnitFilter("deaneryId", parentKey);
 }
 
-function parishFilter(): RouteFilterConfig {
-  return { key: "parishId", label: "Giáo xứ", type: "select", optionsEndpoint: "/parishes", optionValue: "id", optionLabel: "name" };
+function parishFilter(parentKey?: string): RouteFilterConfig {
+  return parishUnitFilter("parishId", parentKey);
 }
 
 function statusFilter(): RouteFilterConfig {

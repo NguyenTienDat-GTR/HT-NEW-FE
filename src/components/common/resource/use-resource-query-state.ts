@@ -88,6 +88,8 @@ export function useResourceQueryState(route: RouteConfig, fixedFilters: Record<s
     const next = new URLSearchParams(searchParams);
     if (value) next.set(key, value);
     else next.delete(key);
+    // Đổi bộ lọc cha thì bỏ giá trị các bộ lọc con (giáo hạt -> giáo xứ) vì không còn thuộc lựa chọn mới.
+    dependentFilterKeys(route.filters ?? [], key).forEach((child) => next.delete(child));
     next.set("page", "1");
     router.replace(`${pathname}?${next.toString()}` as Route);
   }
@@ -126,6 +128,11 @@ export function useResourceQueryState(route: RouteConfig, fixedFilters: Record<s
     updateParam,
     resetFilters,
   };
+}
+
+function dependentFilterKeys(filters: NonNullable<RouteConfig["filters"]>, parentKey: string): string[] {
+  const direct = filters.filter((filter) => filter.dependsOn?.filterKey === parentKey).map((filter) => filter.key);
+  return direct.flatMap((key) => [key, ...dependentFilterKeys(filters, key)]);
 }
 
 function parseUrlPage(value: string | null) {
