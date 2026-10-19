@@ -10,7 +10,6 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
     editTitle: "Chỉnh sửa loại khóa",
     description: "Loại khóa huấn luyện: cấp quản lý, điều kiện tham dự, khóa tiên quyết và cấp thăng.",
     fields: [
-      { name: "typeCode", label: "Mã loại khóa", required: true, readOnlyOnEdit: true, section: "Thông tin loại khóa" },
       { name: "typeName", label: "Tên loại khóa", required: true, section: "Thông tin loại khóa" },
       { name: "managementUnitType", label: "Cấp quản lý", type: "select", required: true, options: unitTypes, section: "Thông tin loại khóa" },
       { name: "certificateShortCode", label: "Mã viết tắt chứng chỉ", section: "Thông tin loại khóa" },
@@ -40,7 +39,6 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
     editTitle: "Chỉnh sửa khóa huấn luyện",
     description: "Khóa học, thời gian, cửa sổ đăng ký và công thức điểm.",
     fields: [
-      { name: "courseCode", label: "Mã khóa", required: true, readOnlyOnEdit: true, section: "Thông tin khóa" },
       { name: "courseName", label: "Tên khóa", required: true, section: "Thông tin khóa" },
       {
         name: "courseTypeCode",
@@ -64,7 +62,7 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
         type: "select",
         required: true,
         optionsEndpoint: "/training/score-formulas",
-        optionValue: "code",
+        optionValue: "id",
         optionLabel: "name",
         section: "Cấu hình chấm điểm",
       },
@@ -82,7 +80,6 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
     editTitle: "Chỉnh sửa thành phần điểm",
     description: "Thành phần điểm dùng trong công thức chấm.",
     fields: [
-      { name: "code", label: "Mã thành phần", required: true, readOnlyOnEdit: true, section: "Thông tin thành phần" },
       { name: "name", label: "Tên thành phần", required: true, section: "Thông tin thành phần" },
       { name: "maxScore", label: "Điểm tối đa", type: "number", required: true, section: "Thông tin thành phần" },
       { name: "unitType", label: "Cấp quản lý", type: "select", required: true, options: unitTypes, readOnlyOnEdit: true, section: "Phạm vi" },
@@ -104,7 +101,6 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
     editTitle: "Chỉnh sửa công thức điểm",
     description: "Công thức tính điểm dựa trên các thành phần đã chọn.",
     fields: [
-      { name: "code", label: "Mã công thức", required: true, readOnlyOnEdit: true, section: "Thông tin công thức" },
       { name: "name", label: "Tên công thức", required: true, section: "Thông tin công thức" },
       { name: "expression", label: "Biểu thức", required: true, section: "Thông tin công thức" },
       { name: "passingScore", label: "Điểm đạt", type: "number", required: true, section: "Thông tin công thức" },
@@ -115,7 +111,7 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
         type: "multiselect",
         required: true,
         optionsEndpoint: "/training/score-components",
-        optionValue: "code",
+        optionValue: "id",
         optionLabel: "name",
         section: "Thành phần",
       },
