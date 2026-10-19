@@ -382,3 +382,9 @@ BE tương ứng: `BE/project.md` mục "Training Course Registration Control an
 - Picker người nhận danh sách đăng ký: field `multiselect` + `searchable: true` -> `SearchableMultiSelect` trong `form-controls.tsx` (dropdown, chip đã chọn, ô tìm theo tên/tài khoản không phân biệt dấu, "chọn tất cả kết quả").
 - Thông báo đóng/mở đăng ký đi qua RabbitMQ, chỉ lưu DB (không socket) nên `useUnreadNotificationCount` (`modules/notifications/hooks.ts`) thăm dò mỗi 60s và refetch khi focus lại cửa sổ.
 - Test: `tests/unit/registration-state.test.ts`; `npm run typecheck` PASS, eslint sạch, vitest 45/46 (1 fail sidebar có sẵn). Chưa test UI thật; `schema.d.ts` chưa regenerate; migration V059 chưa chạy thử trên Postgres thật.
+
+## 2026-10-19 - Sửa lỗi 429 khi đổi bộ lọc khóa huấn luyện
+
+- Nguyên nhân: mỗi lần đổi bộ lọc danh sách khóa bắn 1 request danh sách + 2 KPI trạng thái + 14 KPI theo mã loại khóa cũ (`SMTL_DT`...; mã loại khóa nay là UUID nên các KPI này vốn đã sai) -> vượt giới hạn đọc 120 request/phút của BE.
+- Đã bỏ KPI theo loại khóa trong `components/common/resource/resource-kpis.ts` (chỉ còn Tổng / Đang hoạt động / Tạm ngưng cho khóa) và cache KPI 60s + `keepPreviousData` trong `resource-list-runtime.tsx`. Các màn khác (leaders 9 KPI cấp bậc, positions 3) vẫn bắn nhiều request mỗi lần đổi bộ lọc - nếu gặp 429 tiếp thì gộp KPI thành một endpoint thống kê ở BE.
+- Message 429 từng bị mojibake do BE thiếu charset UTF-8 (đã sửa ở BE, xem `BE/project.md`).
