@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { MagnifyingGlass, Plus, SlidersHorizontal, X } from "@phosphor-icons/react";
 import type { Route } from "next";
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { apiFetch, type PageResponse } from "@/lib/api/client";
@@ -24,7 +24,9 @@ export function ResourceFilters({
   updateParam,
   resetFilters,
   canCreate,
+  extraActions,
 }: {
+  extraActions?: ReactNode;
   route: RouteConfig;
   search: string;
   setSearch: (value: string) => void;
@@ -102,6 +104,7 @@ export function ResourceFilters({
               </Dialog.Portal>
             </Dialog.Root>
           ) : null}
+          {extraActions}
           {route.primaryActionLabel && route.createPath && canCreate ? (
             <Button asChild className="shrink-0 justify-center">
               <Link href={route.createPath as Route}>

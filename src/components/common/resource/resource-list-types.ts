@@ -9,6 +9,8 @@ export type ResourceListModuleConfig = {
   // Duyệt/từ chối nhiều hồ sơ một lần.
   bulkApprovePath?: string;
   // Thu hồi một hồ sơ.
+  // Bảng chấm điểm: thêm cột điểm thành phần nhập trực tiếp trên từng hồ sơ (khi nhúng trong chi tiết khóa).
+  scoreEntry?: boolean;
   // Xóa hồ sơ khỏi danh sách tham dự.
   buildRemovePath?: (id: string) => string;
   buildWithdrawPath?: (id: string) => string;

@@ -26,7 +26,7 @@ const workflowTabs = [
   { key: "scores", label: "Chấm điểm", path: "/training/scores" },
 ] as const;
 
-const summaryColumns = ["courseTypeName", "hostYear", "yearsActive", "location", "startDate", "endDate", "registrationStatus", "organizingStatus"];
+const summaryColumns = ["courseTypeName", "hostYear", "yearsActive", "passingScore", "location", "startDate", "endDate", "registrationStatus", "organizingStatus"];
 
 export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig }) {
   const user = useAuthStore((state) => state.user);
@@ -138,6 +138,7 @@ const summaryLabels: Record<string, string> = {
   courseTypeName: "Loại khóa",
   hostYear: "Năm tổ chức",
   yearsActive: "Số năm hoạt động",
+  passingScore: "Điểm đạt",
   location: "Địa điểm",
   startDate: "Ngày bắt đầu",
   endDate: "Ngày kết thúc",

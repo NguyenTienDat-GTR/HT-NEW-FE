@@ -13,6 +13,7 @@ export function TrainingWorkflowResourceView({ route }: { route: RouteConfig }) 
         moduleDescription: "Theo dõi đăng ký, duyệt, tham dự và chấm điểm theo trạng thái workflow.",
         buildApprovePath,
         buildApproveBody,
+        scoreEntry: route.moduleName === "training.score",
         bulkApprovePath: route.moduleName === "training.approval" ? "/training/registrations/bulk-approval" : undefined,
         buildRemovePath: (id) => `/training/participants/${encodeURIComponent(id)}`,
         buildWithdrawPath: (id) => `/training/registrations/${encodeURIComponent(id)}`,

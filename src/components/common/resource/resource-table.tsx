@@ -10,6 +10,7 @@ import { canUseAction, isSuperAdmin } from "@/lib/auth/permissions";
 import { columnLabels, ResourceCell } from "./resource-format";
 import { useEmbeddedResource, resourceActionHref, withReturnTo } from "./embedded-resource-context";
 import { fillRoute, getResourceId, isAwaitingApproval } from "./resource-actions";
+import type { ScoreEntry } from "./score-entry";
 import { RegistrationToggleButton } from "@/modules/training-courses/components/registration-toggle-button";
 import type { ResourcePageSize } from "./use-resource-query-state";
 
@@ -24,7 +25,9 @@ export function ResourceTable({
   sortBy,
   sortDirection,
   selection,
+  scoreEntry,
 }: {
+  scoreEntry?: ScoreEntry;
   // Chọn nhiều hồ sơ để duyệt/từ chối hàng loạt.
   selection?: { selectedIds: string[]; selectableIds: string[]; onToggle: (id: string) => void; onToggleAll: (on: boolean) => void };
   isLoading: boolean;
@@ -36,7 +39,9 @@ export function ResourceTable({
   sortDirection: "ASC" | "DESC";
 }) {
   const user = useAuthStore((state) => state.user);
-  const visibleColumns = visibleResourceColumns(route, rows, user);
+  const embedded = useEmbeddedResource();
+  // Trong chi tiết khóa, bảng đã thuộc về một khóa nên không cần cột khóa.
+  const visibleColumns = visibleResourceColumns(route, rows, user).filter((column) => !(embedded && column === "courseName"));
 
   return (
     <div className="max-w-full overflow-x-auto">
@@ -68,10 +73,19 @@ export function ResourceTable({
                 </button>
               </th>
             ))}
+            {scoreEntry?.components.map((component) => (
+              <th className="sticky top-0 z-10 h-10 border-b border-border bg-surface-1/95 px-3 font-semibold text-foreground" key={component.id}>
+                <span className="block whitespace-nowrap">{component.name}</span>
+                <span className="block text-[10px] font-normal text-muted">
+                  Tối đa {Number(component.maxScore)}
+                  {component.includeInFinal === false ? " · không tính tổng" : ` · hệ số ${Number(component.coefficient ?? 1)}`}
+                </span>
+              </th>
+            ))}
             <th className="h-10 border-b border-border px-3 text-right font-semibold text-foreground">Thao tác</th>
           </tr>
         </thead>
-        <tbody>{isLoading ? <ResourceTableSkeleton columns={visibleColumns} size={size} /> : <ResourceRows columns={visibleColumns} route={route} rows={rows} selection={selection} />}</tbody>
+        <tbody>{isLoading ? <ResourceTableSkeleton columns={visibleColumns} size={size} /> : <ResourceRows columns={visibleColumns} route={route} rows={rows} scoreEntry={scoreEntry} selection={selection} />}</tbody>
       </table>
     </div>
   );
@@ -106,7 +120,9 @@ function ResourceRows({
   route,
   rows,
   selection,
+  scoreEntry,
 }: {
+  scoreEntry?: ScoreEntry;
   columns: string[];
   route: RouteConfig;
   rows: Record<string, unknown>[];
@@ -135,6 +151,30 @@ function ResourceRows({
           <ResourceCell column={column} row={row} value={row[column]} />
         </td>
       ))}
+      {scoreEntry?.components.map((component) => {
+        const value = rowId ? scoreEntry.valueOf(rowId, row, component.id) : "";
+        const editable = Boolean(rowId) && scoreEntry.isEditable(row);
+        const invalid = scoreEntry.isInvalid(component, value);
+        return (
+          <td className="h-12 border-b border-surface-2 px-3 align-middle" key={component.id}>
+            {editable && rowId ? (
+              <input
+                aria-label={`${component.name} của ${String(row.leaderFullName ?? "")}`}
+                className={`h-8 w-20 rounded-md border bg-white px-2 text-right text-xs focus:outline-none focus:ring-2 ${invalid ? "border-danger focus:ring-danger/30" : "border-border focus:border-primary focus:ring-primary/20"} ${scoreEntry.drafts[rowId]?.values[component.id] !== undefined ? "bg-primary/5" : ""}`}
+                inputMode="decimal"
+                max={Number(component.maxScore)}
+                min={0}
+                onChange={(event) => scoreEntry.onChange(rowId, row, component.id, event.target.value)}
+                step="0.01"
+                type="number"
+                value={value}
+              />
+            ) : (
+              <span className="text-xs">{value === "" ? "—" : value}</span>
+            )}
+          </td>
+        );
+      })}
       <td className="sticky right-0 h-12 border-b border-surface-2 bg-white px-3 text-right shadow-(--shadow-table-sticky) transition-colors group-hover:bg-primary-soft">
         <RowActions route={route} row={row} />
       </td>

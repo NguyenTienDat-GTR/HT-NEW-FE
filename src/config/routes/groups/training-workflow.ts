@@ -154,7 +154,7 @@ export const trainingWorkflowRouteGroup: RouteGroup = {
         idField: "id",
         kind: "participations",
         icon: ChartBar,
-        columns: ["leaderFullName", "parishName", "deaneryName", "courseName", "passingScore", "totalScore", "passed", "certificateApprovalStatus"],
+        columns: ["leaderFullName", "parishName", "deaneryName", "courseName", "totalScore", "passed", "certificateApprovalStatus"],
         permissionPrefixes: ["training.participation.score.deanery", "training.participation.score.diocese"],
         actionPermissionPrefixes: ["training.participation.score."],
         filters: scoreFilters,

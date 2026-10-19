@@ -3,7 +3,7 @@
 import { keepPreviousData, useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Route } from "next";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Panel } from "@/components/ui/panel";
@@ -17,6 +17,7 @@ import { embeddedTabHref, useEmbeddedResource, withReturnTo } from "./embedded-r
 import { ConfirmActionDialog } from "./confirm-action-dialog";
 import { DetailDrawer } from "./detail-drawer";
 import { getResourceId, isAwaitingApproval } from "./resource-actions";
+import { isInvalidScore, originalScore, runWithConcurrency, sameScore, type ScoreComponent, type ScoreDrafts, type ScoreEntry } from "./score-entry";
 import { ResourceListEmptyState } from "./resource-list-empty-state";
 import { ResourceListHeader } from "./resource-list-header";
 import { buildResourceKpiQuerySpecs, buildResourceKpis, shouldShowResourceKpis } from "./resource-kpis";
@@ -83,6 +84,14 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
   const removeId = searchParams.get("remove");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkMode, setBulkMode] = useState<"approve" | "reject" | null>(null);
+  const [scoreDrafts, setScoreDrafts] = useState<ScoreDrafts>({});
+  const scoreCourseCode = embedded?.fixedFilters["course.courseCode"];
+  const scoreEntryEnabled = Boolean(config.scoreEntry && scoreCourseCode && canUseAction(user, effectiveRoute.actions?.score));
+  const scoreComponentsQuery = useQuery({
+    queryKey: ["score-components", scoreCourseCode],
+    enabled: scoreEntryEnabled,
+    queryFn: () => apiFetch<ScoreComponent[]>(`/training/courses/${encodeURIComponent(String(scoreCourseCode))}/score-components`),
+  });
   const canBulkApprove = Boolean(config.bulkApprovePath) && canUseAction(user, effectiveRoute.actions?.approve);
   const selectableIds = canBulkApprove
     ? rows.filter((row) => isAwaitingApproval(row)).flatMap((row) => {
@@ -130,6 +139,106 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
       await queryClient.invalidateQueries({ queryKey: ["resource", effectiveRoute.endpoint] });
     },
   });
+  const scoreComponents = scoreComponentsQuery.data ?? [];
+  const dirtyScoreRowIds = Object.keys(scoreDrafts);
+  const scoreEntry: ScoreEntry | undefined =
+    scoreEntryEnabled && scoreComponents.length
+      ? {
+          components: scoreComponents,
+          drafts: scoreDrafts,
+          // Chứng nhận đã duyệt thì khóa điểm (BE cũng chặn).
+          isEditable: (row) => row.certificateApprovalStatus !== "APPROVED",
+          valueOf: (rowId, row, componentId) => scoreDrafts[rowId]?.values[componentId] ?? originalScore(row, componentId),
+          isInvalid: (component, value) => isInvalidScore(component, value),
+          onChange: (rowId, row, componentId, value) =>
+            setScoreDrafts((current) => {
+              const entry = current[rowId] ?? { row, values: {} };
+              const values = { ...entry.values };
+              if (sameScore(value, originalScore(row, componentId))) delete values[componentId];
+              else values[componentId] = value;
+              const next = { ...current };
+              if (Object.keys(values).length === 0) delete next[rowId];
+              else next[rowId] = { row, values };
+              return next;
+            }),
+        }
+      : undefined;
+  // Lưu điểm chạy nền: không khóa giao diện, người dùng vẫn nhập tiếp, lọc, đổi trang trong lúc lưu.
+  const [savingScoreIds, setSavingScoreIds] = useState<string[]>([]);
+  const savingScoreIdsRef = useRef<Set<string>>(new Set());
+  const pendingScoreRowIds = dirtyScoreRowIds.filter((id) => !savingScoreIds.includes(id));
+
+  function saveScoresInBackground() {
+    const snapshot = Object.entries(scoreDrafts).filter(([id]) => !savingScoreIdsRef.current.has(id));
+    if (snapshot.length === 0) return;
+    const jobs: { id: string; label: string; values: Record<string, string>; body: unknown }[] = [];
+    const problems: string[] = [];
+    for (const [id, draft] of snapshot) {
+      const label = String(draft.row.leaderFullName ?? id);
+      const entries = scoreComponents.map((component) => ({ component, text: draft.values[component.id] ?? originalScore(draft.row, component.id) }));
+      const missing = entries.filter((entry) => entry.text.trim() === "");
+      if (missing.length) {
+        problems.push(`${label}: thiếu điểm ${missing.map((entry) => entry.component.name).join(", ")}`);
+        continue;
+      }
+      const invalid = entries.find((entry) => isInvalidScore(entry.component, entry.text));
+      if (invalid) {
+        problems.push(`${label}: điểm ${invalid.component.name} phải từ 0 đến ${Number(invalid.component.maxScore)}`);
+        continue;
+      }
+      jobs.push({
+        id,
+        label,
+        values: { ...draft.values },
+        body: {
+          componentScores: entries.map((entry) => ({ componentId: entry.component.id, score: Number(entry.text) })),
+          review: typeof draft.row.review === "string" ? draft.row.review : undefined,
+        },
+      });
+    }
+    if (problems.length) toast.error(`${problems.length} hồ sơ chưa hợp lệ: ${problems.join("; ")}`);
+    if (jobs.length === 0) return;
+
+    jobs.forEach((job) => savingScoreIdsRef.current.add(job.id));
+    setSavingScoreIds((current) => [...current, ...jobs.map((job) => job.id)]);
+    const toastId = toast.loading(`Đang lưu điểm ${jobs.length} hồ sơ...`);
+
+    // Không await: tác vụ tự chạy nền, kết quả báo qua toast. Tối đa 4 request song song.
+    void (async () => {
+      const results = await runWithConcurrency(jobs, 4, (job) =>
+        apiFetch(`/training/participations/${encodeURIComponent(job.id)}/score`, { method: "PATCH", body: JSON.stringify(job.body) }),
+      );
+      const saved: typeof jobs = [];
+      const failures: string[] = [];
+      results.forEach((result, index) => {
+        const job = jobs[index];
+        if (!job) return;
+        if (result.status === "fulfilled") saved.push(job);
+        else failures.push(`${job.label}: ${getApiErrorMessage(result.reason)}`);
+      });
+      jobs.forEach((job) => savingScoreIdsRef.current.delete(job.id));
+      setSavingScoreIds((current) => current.filter((id) => !jobs.some((job) => job.id === id)));
+      // Chỉ bỏ bản nháp nếu người dùng chưa sửa tiếp trong lúc lưu.
+      setScoreDrafts((current) => {
+        const next = { ...current };
+        saved.forEach((job) => {
+          const draft = next[job.id];
+          if (draft && JSON.stringify(draft.values) === JSON.stringify(job.values)) delete next[job.id];
+        });
+        return next;
+      });
+      if (failures.length) toast.error(`${failures.length} hồ sơ chưa lưu được: ${failures.join("; ")}`, { id: toastId });
+      else toast.success(`Đã lưu điểm ${saved.length} hồ sơ`, { id: toastId });
+      if (saved.length && failures.length) toast.success(`Đã lưu điểm ${saved.length} hồ sơ`);
+      if (saved.length) await queryClient.invalidateQueries({ queryKey: ["resource", effectiveRoute.endpoint] });
+    })();
+  }
+
+  const saveScoresButton = scoreEntryEnabled ? (
+    <Button disabled={pendingScoreRowIds.length === 0} onClick={saveScoresInBackground} type="button">
+      {pendingScoreRowIds.length ? `Lưu điểm (${pendingScoreRowIds.length})` : savingScoreIds.length ? `Đang lưu ${savingScoreIds.length}...` : "Lưu điểm"}
+    </Button>
+  ) : null;
   const selection = canBulkApprove
     ? {
         selectedIds,
@@ -160,6 +269,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
           updateParam={queryState.updateParam}
           resetFilters={queryState.resetFilters}
           canCreate={canCreate}
+          extraActions={saveScoresButton}
         />
         {canBulkApprove ? (
           <div className="flex flex-wrap items-center gap-3 border-b border-border bg-surface-1/60 px-4 py-2.5">
@@ -174,6 +284,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
         ) : null}
         <ResourceTable
           selection={selection}
+          scoreEntry={scoreEntry}
           isLoading={query.isLoading}
           route={effectiveRoute}
           rows={rows}
