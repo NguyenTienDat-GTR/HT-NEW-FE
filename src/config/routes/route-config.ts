@@ -11,7 +11,7 @@ export type ResourceKind =
   | "executive-board"
   | "leaders"
   | "courses"
-  | "requirements"
+  | "course-types"
   | "score-components"
   | "score-formulas"
   | "participations"
@@ -57,6 +57,16 @@ const statusFilterOptions: RouteFilterOption[] = [
   { value: "active", label: "Đang hoạt động" },
   { value: "inactive", label: "Tạm ngưng" },
 ];
+
+const unitTypeFilterLabels: Record<string, string> = {
+  DIOCESE: "Giáo phận",
+  DEANERY: "Giáo hạt",
+  PARISH: "Giáo xứ",
+};
+
+function unitTypeFilterOptions(values: string[]): RouteFilterOption[] {
+  return values.map((value) => ({ value, label: unitTypeFilterLabels[value] ?? value }));
+}
 
 export const leaderLevelOptions: RouteFilterOption[] = [
   { value: "NONE", label: "Chưa có cấp" },
@@ -182,7 +192,7 @@ function inferRouteFilters(config: RouteConfig): RouteFilterConfig[] {
         key: "positionType",
         label: "Cấp áp dụng",
         type: "select",
-        options: ["DIOCESE", "DEANERY", "PARISH"].map((value) => ({ value, label: value })),
+        options: unitTypeFilterOptions(["DIOCESE", "DEANERY", "PARISH"]),
       });
       break;
     case "executive-board":
@@ -190,30 +200,39 @@ function inferRouteFilters(config: RouteConfig): RouteFilterConfig[] {
         key: "unitType",
         label: "Loại đơn vị",
         type: "select",
-        options: ["DIOCESE", "DEANERY", "PARISH"].map((value) => ({ value, label: value })),
+        options: unitTypeFilterOptions(["DIOCESE", "DEANERY", "PARISH"]),
       });
       filters.push({ key: "position.positionCode", label: "Mã chức vụ", type: "text", placeholder: "Lọc theo mã chức vụ" });
       break;
-    case "requirements":
+    case "course-types":
+      filters.push({
+        key: "managementUnitType",
+        label: "Cấp quản lý",
+        type: "select",
+        options: unitTypeFilterOptions(["DIOCESE", "DEANERY"]),
+      });
+      break;
     case "courses":
       filters.push({
-        key: "courseType",
+        key: "courseType.typeCode",
         label: "Loại khóa",
         type: "select",
-        options: ["DIOCESE", "DEANERY"].map((value) => ({ value, label: value })),
+        optionsEndpoint: "/training/course-types",
+        optionValue: "typeCode",
+        optionLabel: "typeName",
       });
-      if (config.kind === "courses") filters.push({ key: "hostYear", label: "Năm", type: "text", placeholder: "Ví dụ 2026" });
+      filters.push({ key: "hostYear", label: "Năm", type: "text", placeholder: "Ví dụ 2026" });
       break;
     case "score-components":
       filters.push({
         key: "unitType",
         label: "Cấp quản lý",
         type: "select",
-        options: ["DIOCESE", "DEANERY"].map((value) => ({ value, label: value })),
+        options: unitTypeFilterOptions(["DIOCESE", "DEANERY"]),
       });
       break;
     case "score-formulas":
-      filters.push({ key: "code", label: "Mã công thức", type: "text", placeholder: "Lọc theo mã" });
+      filters.push({ key: "name", label: "Tên công thức", type: "text", placeholder: "Lọc theo tên" });
       break;
     case "participations":
       filters.push({ key: "course.courseCode", label: "Khóa", type: "text", placeholder: "Lọc theo mã khóa" });
@@ -316,7 +335,7 @@ function inferRouteFilters(config: RouteConfig): RouteFilterConfig[] {
         key: "unitType",
         label: "Cấp đơn vị",
         type: "select",
-        options: ["DIOCESE", "DEANERY", "PARISH"].map((value) => ({ value, label: value })),
+        options: unitTypeFilterOptions(["DIOCESE", "DEANERY", "PARISH"]),
       });
       break;
     default:

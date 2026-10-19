@@ -1,7 +1,7 @@
-import { compactPayload, enumOptions, type ResourceFormSpec } from "@/components/form/resource-form/types";
+import { compactPayload, unitTypeSelectOptions, type ResourceFormSpec } from "@/components/form/resource-form/types";
 import { leaderLevels } from "@/modules/organizations/form-specs";
 
-const unitTypeOptions = enumOptions(["DIOCESE", "DEANERY", "PARISH"]);
+const unitTypeOptions = unitTypeSelectOptions(["DIOCESE", "DEANERY", "PARISH"]);
 const genderOptions = [
   { value: "NAM", label: "Nam" },
   { value: "NU", label: "Nữ" },

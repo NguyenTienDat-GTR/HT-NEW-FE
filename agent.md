@@ -327,3 +327,16 @@
 - Leader create now uses a dedicated full-page three-step wizard for personal, contact, and organization information; the first step includes a compact avatar picker and fields are capped in a three-column grid on desktop.
 - Diocese, deanery, and parish edit forms use the same horizontal section layout so compact fields no longer stack into long vertical forms.
 - Verification run in this session: direct `tsc --noEmit`, direct `eslint`, direct `vitest run`, `git diff --check`, and `next build` passed. The first build attempts failed only because sandboxed network could not fetch Google Fonts; rerunning build with network access passed.
+
+### Training Course Type catalog alignment 2026-10-19
+
+- Branch `feature/training-course-type-refactor` (BE + FE), bắt đầu từ `main`, giữ local tới khi có yêu cầu commit/push.
+- Theo BE mới: bỏ enum CourseType và bảng điều kiện riêng; loại khóa trở thành catalog `/api/training/course-types` đã bao gồm điều kiện tham dự. Mỗi khóa trỏ tới đúng một loại khóa qua `courseTypeCode`.
+- `src/config/routes/route-config.ts`: `ResourceKind` thay `"requirements"` bằng `"course-types"`; `inferRouteFilters` tách case `course-types` (lọc theo `managementUnitType`) và `courses` (lọc loại khóa qua `courseType.typeCode` từ `/training/course-types`, kèm năm).
+- `src/config/routes/groups/training.ts`: thay route `/training/requirements` bằng `/training/course-types` (idField `typeCode`, quyền `training.course_type.*`, cột typeCode/typeName/managementUnitType/requiredCurrentLevel/prerequisiteTypeCode/resultingLevel/status). Cột khóa học đổi `courseType` -> `courseTypeCode`.
+- `src/modules/training-courses/form-specs.ts`: bỏ enum `courseTypes` hardcode. Spec `requirements` thay bằng spec `course-types` (typeCode, typeName, managementUnitType, certificateShortCode, điều kiện, prerequisiteTypeCode chọn từ catalog, resultingLevel). Spec `courses` bỏ field `requirementCode`; `courseType` enum đổi thành `courseTypeCode` chọn từ `/training/course-types`.
+- `src/components/common/resource/resource-format.tsx`: thêm nhãn cho courseTypeCode/courseTypeName/typeCode/typeName/managementUnitType/prerequisiteTypeCode/resultingLevel/certificateShortCode.
+- `src/components/common/resource/permission-taxonomy-labels.ts`: thêm nhãn resource `course_type`.
+- `src/modules/leaders/components/leader-detail-utils.ts`: `CourseParticipationRow.courseType` -> `courseTypeCode` (BE participation response đổi tên field).
+- Kiểm thử trong session này: `npm run typecheck` PASS; `npm run lint` PASS (0 error, 3 warning có sẵn, không liên quan). `npm run test` KHÔNG chạy được trong môi trường agent (VM Linux thiếu native binding `@rolldown/binding-linux-x64-gnu` do node_modules là bản Windows); cần chạy `npm run test`, `npm run build`, `npm run test:e2e` trên môi trường Windows.
+- `src/lib/api/schema.d.ts` là file sinh tự động, hiện vẫn là bản cũ (không file nguồn nào import type training cũ nên typecheck vẫn pass). Cần chạy `npm run api:generate` sau khi BE mới chạy để cập nhật `/api/training/course-types`, `TrainingCourseTypeResponse`, `courseTypeCode`.

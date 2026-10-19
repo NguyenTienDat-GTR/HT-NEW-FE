@@ -26,6 +26,15 @@ export const columnLabels: Record<string, string> = {
   courseCode: "Mã khóa",
   courseName: "Khóa",
   courseType: "Loại khóa",
+  courseTypeCode: "Loại khóa",
+  courseTypeName: "Tên loại khóa",
+  typeCode: "Mã loại khóa",
+  typeName: "Tên loại khóa",
+  managementUnitType: "Cấp quản lý",
+  prerequisiteTypeCode: "Khóa tiên quyết",
+  prerequisiteTypeName: "Khóa tiên quyết",
+  resultingLevel: "Cấp độ khi đạt",
+  certificateShortCode: "Mã viết tắt chứng chỉ",
   createdAt: "Ngày tạo",
   createdBy: "Người tạo",
   deaneryApprovalStatus: "Duyệt giáo hạt",
@@ -87,6 +96,7 @@ export const columnLabels: Record<string, string> = {
   registrationStartAt: "Mở đăng ký",
   requiredCurrentLevel: "Cấp yêu cầu",
   requiredMinAge: "Tuổi tối thiểu",
+  requiredYearsActive: "Số năm sinh hoạt",
   requirementCode: "Mã điều kiện",
   requirementName: "Điều kiện",
   resourceCode: "Đối tượng",
@@ -128,6 +138,15 @@ const genderLabels: Record<string, string> = {
   NU: "Nữ",
 };
 
+const unitTypeLabels: Record<string, string> = {
+  DIOCESE: "Giáo phận",
+  DEANERY: "Giáo hạt",
+  PARISH: "Giáo xứ",
+  // NONE: "Chưa có cấp",
+};
+
+const leaderLevelColumns = new Set(["requiredCurrentLevel", "resultingLevel"]);
+
 export function formatLeaderLevel(value: string) {
   return levelLabels[value] ?? value;
 }
@@ -149,6 +168,8 @@ export function ResourceCell({ column, row, value, displayMode = "table" }: Reso
     return <TextValue full={full}>{formatPermissionTaxonomyValue(permissionTaxonomyKindFromColumn(column), value) ?? value}</TextValue>;
   }
   if (column === "leaderLevel" && typeof value === "string") return <LeaderLevelBadge value={value} />;
+  if (leaderLevelColumns.has(column) && typeof value === "string") return <TextValue full={full}>{formatLeaderLevel(value)}</TextValue>;
+  if (typeof value === "string" && unitTypeLabels[value]) return <TextValue full={full}>{unitTypeLabels[value]}</TextValue>;
   if (column === "passed" && typeof value === "boolean") return <Badge tone={value ? "success" : "danger"}>{value ? "Đạt" : "Chưa đạt"}</Badge>;
   if (column === "locked" && typeof value === "boolean") return <Badge tone={value ? "warning" : "neutral"}>{value ? "Đã khóa" : "Có thể sửa"}</Badge>;
   if (typeof value === "string") {
