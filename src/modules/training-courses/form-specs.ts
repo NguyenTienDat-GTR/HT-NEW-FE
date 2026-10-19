@@ -97,7 +97,7 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
         helper: "Chỉ hiển thị tài khoản có quyền duyệt danh sách đăng ký trong phạm vi của bạn. Bỏ trống để gửi cho tất cả tài khoản đủ quyền.",
         section: "Người nhận danh sách đăng ký",
       },
-      { name: "additionalNotes", label: "Ghi chú", type: "textarea", clearable: true, section: "Ghi chú" },
+      { name: "additionalNotes", label: "Ghi chú", type: "textarea", clearable: true, section: "Thông tin bổ sung" },
     ],
     mapSubmit: (values, mode) => {
       const payload = compactPayload(values);
