@@ -11,7 +11,7 @@ export type ResourceKind =
   | "executive-board"
   | "leaders"
   | "courses"
-  | "requirements"
+  | "course-types"
   | "score-components"
   | "score-formulas"
   | "participations"
@@ -194,15 +194,24 @@ function inferRouteFilters(config: RouteConfig): RouteFilterConfig[] {
       });
       filters.push({ key: "position.positionCode", label: "Mã chức vụ", type: "text", placeholder: "Lọc theo mã chức vụ" });
       break;
-    case "requirements":
-    case "courses":
+    case "course-types":
       filters.push({
-        key: "courseType",
-        label: "Loại khóa",
+        key: "managementUnitType",
+        label: "Cấp quản lý",
         type: "select",
         options: ["DIOCESE", "DEANERY"].map((value) => ({ value, label: value })),
       });
-      if (config.kind === "courses") filters.push({ key: "hostYear", label: "Năm", type: "text", placeholder: "Ví dụ 2026" });
+      break;
+    case "courses":
+      filters.push({
+        key: "courseType.typeCode",
+        label: "Loại khóa",
+        type: "select",
+        optionsEndpoint: "/training/course-types",
+        optionValue: "typeCode",
+        optionLabel: "typeName",
+      });
+      filters.push({ key: "hostYear", label: "Năm", type: "text", placeholder: "Ví dụ 2026" });
       break;
     case "score-components":
       filters.push({

@@ -1,26 +1,36 @@
 import { compactPayload, enumOptions, type ResourceFormSpec } from "@/components/form/resource-form/types";
 import { leaderLevels } from "@/modules/organizations/form-specs";
 
-const courseTypes = enumOptions(["SMTL_DT", "SMKN_DT", "SMTL_I", "SMKN_I", "TSM_II", "SMTL_II", "SMKN_II", "TSM_III_1", "TSM_III_2", "SMTL_III", "SMKN_III", "HLV_I", "HLV_II", "HLV_III"]);
 const unitTypes = enumOptions(["DIOCESE", "DEANERY"]);
 
 export const trainingFormSpecs: ResourceFormSpec[] = [
   {
-    kind: "requirements",
-    createTitle: "Thêm điều kiện khóa",
-    editTitle: "Chỉnh sửa điều kiện khóa",
-    description: "Điều kiện tham dự theo loại khóa, cấp hiện tại, tuổi và thâm niên.",
+    kind: "course-types",
+    createTitle: "Thêm loại khóa",
+    editTitle: "Chỉnh sửa loại khóa",
+    description: "Loại khóa huấn luyện: cấp quản lý, điều kiện tham dự, khóa tiên quyết và cấp thăng.",
     fields: [
-      { name: "requirementCode", label: "Mã điều kiện", required: true, readOnlyOnEdit: true, section: "Thông tin điều kiện" },
-      { name: "requirementName", label: "Tên điều kiện", required: true, section: "Thông tin điều kiện" },
-      { name: "courseType", label: "Loại khóa", type: "select", required: true, options: courseTypes, section: "Thông tin điều kiện" },
-      { name: "requiredCurrentLevel", label: "Cấp hiện tại", type: "select", required: true, options: leaderLevels, section: "Điều kiện" },
-      { name: "requiredMinAge", label: "Tuổi tối thiểu", type: "number", section: "Điều kiện" },
-      { name: "requiredYearsActive", label: "Số năm sinh hoạt", type: "number", section: "Điều kiện" },
+      { name: "typeCode", label: "Mã loại khóa", required: true, readOnlyOnEdit: true, section: "Thông tin loại khóa" },
+      { name: "typeName", label: "Tên loại khóa", required: true, section: "Thông tin loại khóa" },
+      { name: "managementUnitType", label: "Cấp quản lý", type: "select", required: true, options: unitTypes, section: "Thông tin loại khóa" },
+      { name: "certificateShortCode", label: "Mã viết tắt chứng chỉ", section: "Thông tin loại khóa" },
+      { name: "requiredCurrentLevel", label: "Cấp hiện tại yêu cầu", type: "select", options: leaderLevels, section: "Điều kiện tham dự" },
+      { name: "requiredMinAge", label: "Tuổi tối thiểu", type: "number", section: "Điều kiện tham dự" },
+      { name: "requiredYearsActive", label: "Số năm sinh hoạt", type: "number", section: "Điều kiện tham dự" },
+      {
+        name: "prerequisiteTypeCode",
+        label: "Khóa tiên quyết",
+        type: "select",
+        optionsEndpoint: "/training/course-types",
+        optionValue: "typeCode",
+        optionLabel: "typeName",
+        section: "Nâng cấp",
+      },
+      { name: "resultingLevel", label: "Cấp thăng khi duyệt chứng chỉ", type: "select", options: leaderLevels, section: "Nâng cấp" },
     ],
     mapSubmit: (values, mode) => {
       const payload = compactPayload(values);
-      if (mode === "edit") delete payload.requirementCode;
+      if (mode === "edit") delete payload.typeCode;
       return payload;
     },
   },
@@ -32,15 +42,14 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
     fields: [
       { name: "courseCode", label: "Mã khóa", required: true, readOnlyOnEdit: true, section: "Thông tin khóa" },
       { name: "courseName", label: "Tên khóa", required: true, section: "Thông tin khóa" },
-      { name: "courseType", label: "Loại khóa", type: "select", required: true, options: courseTypes, section: "Thông tin khóa" },
       {
-        name: "requirementCode",
-        label: "Điều kiện khóa",
+        name: "courseTypeCode",
+        label: "Loại khóa",
         type: "select",
-        optionsEndpoint: "/training/requirements",
-        optionValue: "requirementCode",
-        optionLabel: "requirementName",
-        clearable: true,
+        required: true,
+        optionsEndpoint: "/training/course-types",
+        optionValue: "typeCode",
+        optionLabel: "typeName",
         section: "Thông tin khóa",
       },
       { name: "hostYear", label: "Năm tổ chức", type: "number", section: "Thông tin khóa" },

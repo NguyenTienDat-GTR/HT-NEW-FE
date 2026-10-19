@@ -36,7 +36,7 @@ export type CourseParticipationRow = {
   id?: string;
   courseCode?: string | null;
   courseName?: string | null;
-  courseType?: string | null;
+  courseTypeCode?: string | null;
   registrationDate?: string | null;
   participationStatus?: string | null;
   totalScore?: number | string | null;
