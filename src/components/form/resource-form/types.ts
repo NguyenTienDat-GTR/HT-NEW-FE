@@ -65,6 +65,16 @@ export function enumOptions(values: string[]): Option[] {
   return values.map((value) => ({ value, label: value }));
 }
 
+const unitTypeLabels: Record<string, string> = {
+  DIOCESE: "Giáo phận",
+  DEANERY: "Giáo hạt",
+  PARISH: "Giáo xứ",
+};
+
+export function unitTypeSelectOptions(values: string[]): Option[] {
+  return values.map((value) => ({ value, label: unitTypeLabels[value] ?? value }));
+}
+
 export function compactPayload(values: Record<string, unknown>) {
   const payload: Record<string, unknown> = {};
   const clearFields: string[] = [];

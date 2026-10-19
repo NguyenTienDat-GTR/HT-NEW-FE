@@ -58,6 +58,16 @@ const statusFilterOptions: RouteFilterOption[] = [
   { value: "inactive", label: "Tạm ngưng" },
 ];
 
+const unitTypeFilterLabels: Record<string, string> = {
+  DIOCESE: "Giáo phận",
+  DEANERY: "Giáo hạt",
+  PARISH: "Giáo xứ",
+};
+
+function unitTypeFilterOptions(values: string[]): RouteFilterOption[] {
+  return values.map((value) => ({ value, label: unitTypeFilterLabels[value] ?? value }));
+}
+
 export const leaderLevelOptions: RouteFilterOption[] = [
   { value: "NONE", label: "Chưa có cấp" },
   { value: "HT_XU", label: "Huynh trưởng xứ" },
@@ -182,7 +192,7 @@ function inferRouteFilters(config: RouteConfig): RouteFilterConfig[] {
         key: "positionType",
         label: "Cấp áp dụng",
         type: "select",
-        options: ["DIOCESE", "DEANERY", "PARISH"].map((value) => ({ value, label: value })),
+        options: unitTypeFilterOptions(["DIOCESE", "DEANERY", "PARISH"]),
       });
       break;
     case "executive-board":
@@ -190,7 +200,7 @@ function inferRouteFilters(config: RouteConfig): RouteFilterConfig[] {
         key: "unitType",
         label: "Loại đơn vị",
         type: "select",
-        options: ["DIOCESE", "DEANERY", "PARISH"].map((value) => ({ value, label: value })),
+        options: unitTypeFilterOptions(["DIOCESE", "DEANERY", "PARISH"]),
       });
       filters.push({ key: "position.positionCode", label: "Mã chức vụ", type: "text", placeholder: "Lọc theo mã chức vụ" });
       break;
@@ -199,7 +209,7 @@ function inferRouteFilters(config: RouteConfig): RouteFilterConfig[] {
         key: "managementUnitType",
         label: "Cấp quản lý",
         type: "select",
-        options: ["DIOCESE", "DEANERY"].map((value) => ({ value, label: value })),
+        options: unitTypeFilterOptions(["DIOCESE", "DEANERY"]),
       });
       break;
     case "courses":
@@ -218,11 +228,11 @@ function inferRouteFilters(config: RouteConfig): RouteFilterConfig[] {
         key: "unitType",
         label: "Cấp quản lý",
         type: "select",
-        options: ["DIOCESE", "DEANERY"].map((value) => ({ value, label: value })),
+        options: unitTypeFilterOptions(["DIOCESE", "DEANERY"]),
       });
       break;
     case "score-formulas":
-      filters.push({ key: "code", label: "Mã công thức", type: "text", placeholder: "Lọc theo mã" });
+      filters.push({ key: "name", label: "Tên công thức", type: "text", placeholder: "Lọc theo tên" });
       break;
     case "participations":
       filters.push({ key: "course.courseCode", label: "Khóa", type: "text", placeholder: "Lọc theo mã khóa" });
@@ -325,7 +335,7 @@ function inferRouteFilters(config: RouteConfig): RouteFilterConfig[] {
         key: "unitType",
         label: "Cấp đơn vị",
         type: "select",
-        options: ["DIOCESE", "DEANERY", "PARISH"].map((value) => ({ value, label: value })),
+        options: unitTypeFilterOptions(["DIOCESE", "DEANERY", "PARISH"]),
       });
       break;
     default:

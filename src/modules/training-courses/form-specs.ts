@@ -1,7 +1,7 @@
-import { compactPayload, enumOptions, type ResourceFormSpec } from "@/components/form/resource-form/types";
+import { compactPayload, enumOptions, unitTypeSelectOptions, type ResourceFormSpec } from "@/components/form/resource-form/types";
 import { leaderLevels } from "@/modules/organizations/form-specs";
 
-const unitTypes = enumOptions(["DIOCESE", "DEANERY"]);
+const unitTypes = unitTypeSelectOptions(["DIOCESE", "DEANERY"]);
 
 export const trainingFormSpecs: ResourceFormSpec[] = [
   {
@@ -25,7 +25,7 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
         optionLabel: "typeName",
         section: "Nâng cấp",
       },
-      { name: "resultingLevel", label: "Cấp thăng khi duyệt chứng chỉ", type: "select", options: leaderLevels, section: "Nâng cấp" },
+      { name: "resultingLevel", label: "Cấp độ khi hoàn thành", type: "select", options: leaderLevels, section: "Nâng cấp" },
     ],
     mapSubmit: (values, mode) => {
       const payload = compactPayload(values);
