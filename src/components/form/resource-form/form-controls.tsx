@@ -538,7 +538,7 @@ function CheckboxList({
                       />
                       <span className="min-w-0">
                       <span className="block break-words font-semibold">{option.label}</span>
-                      <span className="block break-words text-xs text-muted">{option.value}</span>
+                      {/*<span className="block break-words text-xs text-muted">{option.value}</span>*/}
                       {option.disabledReason ? <span className="text-xs text-muted">{option.disabledReason}</span> : null}
                       </span>
                     </label>

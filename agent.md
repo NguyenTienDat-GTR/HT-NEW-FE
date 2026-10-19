@@ -393,3 +393,8 @@ BE tương ứng: `BE/project.md` mục "Training Course Registration Control an
 
 - Bỏ polling 60s ở `useUnreadNotificationCount` (đã thêm trước đó). `modules/workspace/hooks/notifications-socket.ts` giữ một kết nối STOMP duy nhất (chỉ heartbeat khi rảnh); khi BE đẩy thông báo thì invalidate danh sách/số chưa đọc, và nếu `eventType` bắt đầu bằng `training.course.registration_` thì invalidate luôn `["resource","/training/courses"]` để trạng thái đăng ký cập nhật ngay.
 - BE: consumer RabbitMQ lưu thông báo rồi đẩy STOMP tới người đang online (xem `BE/project.md`); người offline đọc lại qua REST.
+
+## 2026-10-19 - Vì sao socket không nhận thông báo realtime
+
+- Nguyên nhân gốc nằm ở BE: handshake WebSocket `/ws/notifications` bị Spring Security chặn 401 (trình duyệt không gắn được header Authorization khi nâng cấp WebSocket), nên `useNotificationsSocket` không bao giờ kết nối được dù FE đúng. Đã mở `permitAll` cho handshake; xác thực vẫn do STOMP CONNECT (Bearer) đảm nhiệm. Xem `BE/project.md` mục "WebSocket handshake security".
+- Sau khi BE restart (devtools tự restart khi build), socket FE tự nối lại sau 5s (`reconnectDelay`); nếu vừa sửa mà chưa thấy, tải lại trang một lần.
