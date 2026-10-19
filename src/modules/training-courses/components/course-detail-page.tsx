@@ -27,7 +27,7 @@ const workflowTabs = [
   { key: "scores", label: "Chấm điểm", path: "/training/scores" },
 ] as const;
 
-const summaryColumns = ["courseTypeName", "hostYear", "yearsActive", "passingScore", "location", "startDate", "endDate", "registrationStatus", "organizingStatus"];
+const summaryColumns = ["courseTypeName", "hostYear", "yearsActive", "passingScore", "scoreLocked", "location", "startDate", "endDate", "registrationStatus", "organizingStatus"];
 
 export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig }) {
   const user = useAuthStore((state) => state.user);
@@ -133,6 +133,7 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
                 fixedFilters: { "course.courseCode": id },
                 scoringOpen: course ? isCourseWithinDates(course) : undefined,
                 scoringHint: course ? scoringWindowHint(course) : undefined,
+                scoreLocked: course ? course.scoreLocked === true : undefined,
               }}
             >
               <TrainingWorkflowResourceView route={activeTab.route} />
@@ -155,6 +156,7 @@ const summaryLabels: Record<string, string> = {
   hostYear: "Năm tổ chức",
   yearsActive: "Số năm hoạt động",
   passingScore: "Điểm đạt",
+  scoreLocked: "Khóa chỉnh sửa điểm",
   location: "Địa điểm",
   startDate: "Ngày bắt đầu",
   endDate: "Ngày kết thúc",

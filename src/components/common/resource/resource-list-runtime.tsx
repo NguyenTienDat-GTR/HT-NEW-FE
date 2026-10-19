@@ -10,7 +10,7 @@ import { Panel } from "@/components/ui/panel";
 import { rowsFromResponse } from "@/components/form/resource-form/api-utils";
 import { apiFetch, apiMutation, getApiErrorMessage, type PageResponse } from "@/lib/api/client";
 import { useAuthStore } from "@/lib/auth/auth-store";
-import { canUseAction } from "@/lib/auth/permissions";
+import { canUseAction, hasPermissionPrefix } from "@/lib/auth/permissions";
 import { resolveRouteForUser } from "@/modules/workspace/super-admin-route-overrides";
 import { ApprovalDialog } from "./approval-dialog";
 import { embeddedTabHref, useEmbeddedResource, withReturnTo } from "./embedded-resource-context";
@@ -151,7 +151,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
           components: scoreComponents,
           drafts: scoreDrafts,
           // Chứng nhận đã duyệt thì khóa điểm (BE cũng chặn).
-          isEditable: (row) => row.certificateApprovalStatus !== "APPROVED" && embedded?.scoringOpen !== false,
+          isEditable: (row) => row.certificateApprovalStatus !== "APPROVED" && embedded?.scoringOpen !== false && embedded?.scoreLocked !== true,
           valueOf: (rowId, row, componentId) => scoreDrafts[rowId]?.values[componentId] ?? originalScore(row, componentId),
           isInvalid: (component, value) => isInvalidScore(component, value),
           onChange: (rowId, row, componentId, value) =>
@@ -238,8 +238,27 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
     })();
   }
 
+  // Admin giáo phận/giáo hạt (quyền lock) khóa hoặc mở chỉnh sửa điểm của khóa; khóa thì không nhập điểm được.
+  const canLockScore = Boolean(config.scoreEntry && scoreCourseCode) && hasPermissionPrefix(user, "training.participation.lock.");
+  const lockScoreMutation = useMutation({
+    mutationFn: (locked: boolean) => apiMutation(`/training/courses/${encodeURIComponent(String(scoreCourseCode))}/score-lock`, "PATCH", { locked }),
+    onSuccess: async (_data, locked) => {
+      toast.success(locked ? "Đã khóa chỉnh sửa điểm" : "Đã mở chỉnh sửa điểm");
+      await queryClient.invalidateQueries({ queryKey: ["resource-detail"] });
+    },
+  });
+  const lockScoreButton = canLockScore ? (
+    <Button
+      loading={lockScoreMutation.isPending}
+      onClick={() => lockScoreMutation.mutate(embedded?.scoreLocked !== true)}
+      type="button"
+      variant="outline"
+    >
+      {embedded?.scoreLocked === true ? "Mở chỉnh sửa điểm" : "Khóa chỉnh sửa điểm"}
+    </Button>
+  ) : null;
   const saveScoresButton = scoreEntryEnabled ? (
-    <Button disabled={pendingScoreRowIds.length === 0 || embedded?.scoringOpen === false} onClick={saveScoresInBackground} type="button">
+    <Button disabled={pendingScoreRowIds.length === 0 || embedded?.scoringOpen === false || embedded?.scoreLocked === true} onClick={saveScoresInBackground} type="button">
       {pendingScoreRowIds.length ? `Lưu điểm (${pendingScoreRowIds.length})` : savingScoreIds.length ? `Đang lưu ${savingScoreIds.length}...` : "Lưu điểm"}
     </Button>
   ) : null;
@@ -284,9 +303,17 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
           updateParam={queryState.updateParam}
           resetFilters={queryState.resetFilters}
           canCreate={canCreate}
-          extraActions={saveScoresButton}
+          extraActions={
+            <>
+              {lockScoreButton}
+              {saveScoresButton}
+            </>
+          }
           leadingActions={bulkActions}
         />
+        {scoreEntryEnabled && embedded?.scoreLocked === true ? (
+          <div className="border-b border-warning/30 bg-warning/10 px-4 py-2 text-xs font-medium text-foreground">Điểm của khóa đang bị khóa chỉnh sửa. Cần mở khóa mới nhập được điểm.</div>
+        ) : null}
         {scoreEntryEnabled && embedded?.scoringOpen === false ? (
           <div className="border-b border-warning/30 bg-warning/10 px-4 py-2 text-xs font-medium text-foreground">{embedded.scoringHint ?? "Chỉ chấm điểm được khi khóa đang diễn ra."}</div>
         ) : null}

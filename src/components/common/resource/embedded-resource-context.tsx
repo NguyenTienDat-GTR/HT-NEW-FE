@@ -12,6 +12,8 @@ export type EmbeddedResource = {
   // Khóa có đang trong thời gian diễn ra không (false thì tab chấm điểm không cho nhập điểm).
   scoringOpen?: boolean;
   scoringHint?: string;
+  // Khóa đang bị khóa chỉnh sửa điểm bởi admin.
+  scoreLocked?: boolean;
 };
 
 const EmbeddedResourceContext = createContext<EmbeddedResource | null>(null);

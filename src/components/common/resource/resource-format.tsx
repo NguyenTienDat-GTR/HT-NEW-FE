@@ -99,6 +99,7 @@ export const columnLabels: Record<string, string> = {
   participationStatus: "Trạng thái tham dự",
   passed: "Kết quả",
   passingScore: "Điểm đạt",
+  scoreLocked: "Khóa chỉnh sửa điểm",
   patronSaintDay: "Ngày bổn mạng",
   permissionCode: "Mã quyền",
   permissionName: "Tên quyền",
