@@ -93,7 +93,6 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
         switchLabels: ["Có tính vào điểm tổng kết", "Không tính vào điểm tổng kết"],
         section: "Chấm điểm",
       },
-      { name: "unitType", label: "Cấp quản lý", type: "select", required: true, options: unitTypes, readOnlyOnEdit: true, helper: "Phải trùng cấp quản lý của loại khóa.", section: "Phạm vi" },
       { name: "displayOrder", label: "Thứ tự", type: "number", section: "Hiển thị" },
       { name: "description", label: "Mô tả", type: "textarea", clearable: true, section: "Hiển thị" },
     ],

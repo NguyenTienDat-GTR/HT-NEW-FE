@@ -349,6 +349,7 @@ Logic mới:
 - Module "Công thức điểm" (`/training/score-formulas`) đã bị XÓA khỏi FE (route, form spec, filter, label quyền `score_formula`).
 - Thành phần điểm (`/training/score-components`) giờ gắn một loại khóa (`courseTypeCode`, chọn từ `/training/course-types`, chỉ chọn lúc tạo), có `coefficient` (hệ số, > 0) và cờ `includeInFinal` (switch "Tính vào điểm tổng kết", mặc định bật). Tắt cờ thì thành phần vẫn nhập điểm nhưng KHÔNG tính vào điểm tổng kết.
 - Điểm tổng kết (BE tính) = trung bình có hệ số: Σ(điểm × hệ số) / Σ hệ số của các thành phần `includeInFinal = true`.
+- Form tạo thành phần điểm KHÔNG còn chọn cấp quản lý (`unitType`): BE suy ra từ loại khóa; dropdown loại khóa do BE lọc theo phạm vi tài khoản (giáo hạt/giáo phận).
 - Form khóa huấn luyện: bỏ `scoreFormulaId`, thêm `passingScore` (điểm đạt, bắt buộc). Cột bảng chấm điểm dùng `passingScore` thay `scoreFormulaId`.
 
 File đã đổi: `src/modules/training-courses/form-specs.ts`, `src/config/routes/groups/training.ts`, `src/config/routes/groups/training-workflow.ts`, `src/config/routes/route-config.ts` (bỏ kind `score-formulas`, thêm filter loại khóa cho `score-components`), `src/components/form/resource-form/types.ts` + `form-controls.tsx` (field `switchLabels` để switch không bị cứng nhãn "Vai trò chính/phụ"), `src/components/common/resource/resource-format.tsx` (nhãn `coefficient`, `includeInFinal`), `src/components/common/resource/permission-taxonomy-labels.ts`, `src/modules/training-workflow/form-specs.ts`.
