@@ -46,7 +46,7 @@ export function ChangePasswordView() {
 
   return (
     <main className="relative grid min-h-dvh overflow-hidden bg-app-canvas px-4 py-10">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,oklch(0.72_0.12_185_/_0.12),transparent_34%),linear-gradient(180deg,var(--background)_0%,var(--primary-soft)_100%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(56,189,248,0.12),transparent_34%),linear-gradient(180deg,var(--background)_0%,var(--primary-soft)_100%)]" />
       <section className="relative m-auto w-full max-w-140 rounded-[18px] border border-white/80 bg-white/90 p-8 shadow-[var(--shadow-elevated)] backdrop-blur-xl sm:p-10">
         <div className="mb-8 flex flex-col items-center text-center">
           <BrandMark className="justify-center" />
