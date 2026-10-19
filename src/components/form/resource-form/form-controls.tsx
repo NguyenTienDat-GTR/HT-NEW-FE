@@ -3,7 +3,7 @@
 import { ImageSquare, UploadSimple } from "@phosphor-icons/react";
 import { useQuery } from "@tanstack/react-query";
 import type React from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { apiFetch, type PageResponse } from "@/lib/api/client";
 import type { AuthUser } from "@/lib/auth/auth-store";
@@ -538,7 +538,7 @@ function CheckboxList({
                       />
                       <span className="min-w-0">
                       <span className="block break-words font-semibold">{option.label}</span>
-                      {/*<span className="block break-words text-xs text-muted">{option.value}</span>*/}
+                      <span className="block break-words text-xs text-muted">{option.value}</span>
                       {option.disabledReason ? <span className="text-xs text-muted">{option.disabledReason}</span> : null}
                       </span>
                     </label>
@@ -623,7 +623,26 @@ function SearchableMultiSelect({
 }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const containerRef = useRef<HTMLDivElement>(null);
   const selected = useMemo(() => new Set(value), [value]);
+
+  // Chỉ đóng dropdown khi bấm ra ngoài; bấm vào checkbox/nhãn bên trong không được làm mất focus và đóng danh sách.
+  useEffect(() => {
+    if (!open) return;
+    function handlePointerDown(event: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) setOpen(false);
+    }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open]);
+
   const filteredOptions = useMemo(() => {
     const keyword = normalizeSearchText(search.trim());
     if (!keyword) return options;
@@ -643,7 +662,7 @@ function SearchableMultiSelect({
   }
 
   return (
-    <div className="relative" onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOpen(false); }}>
+    <div className="relative" ref={containerRef}>
       <button
         aria-expanded={open}
         className="flex min-h-10 w-full flex-wrap items-center gap-1.5 rounded-[8px] border border-border bg-white px-2.5 py-1.5 text-left text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-4 focus:ring-[var(--primary-ring)] disabled:cursor-not-allowed disabled:bg-surface-1 disabled:opacity-70"
@@ -691,7 +710,7 @@ function SearchableMultiSelect({
                 <input checked={selected.has(option.value)} className="mt-0.5 h-4 w-4 accent-primary" disabled={option.disabled} onChange={() => toggle(option.value)} type="checkbox" />
                 <span>
                   <span className="block font-semibold">{option.label}</span>
-                  {option.label !== option.value ? <span className="block text-xs text-muted">{option.value}</span> : null}
+                  {/*{option.label !== option.value ? <span className="block text-xs text-muted">{option.value}</span> : null}*/}
                 </span>
               </label>
             ))}

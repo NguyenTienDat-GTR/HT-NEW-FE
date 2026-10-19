@@ -93,7 +93,7 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
           return typeCode ? `/training/courses/recipient-candidates?courseTypeCode=${encodeURIComponent(typeCode)}` : undefined;
         },
         optionValue: "username",
-        optionLabelFields: ["fullName", "username"],
+        optionLabelFields: ["fullName", "username", "roleName"],
         helper: "Chỉ hiển thị tài khoản có quyền duyệt danh sách đăng ký trong phạm vi của bạn. Bỏ trống để gửi cho tất cả tài khoản đủ quyền.",
         section: "Người nhận danh sách đăng ký",
       },

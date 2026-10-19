@@ -398,3 +398,8 @@ BE tương ứng: `BE/project.md` mục "Training Course Registration Control an
 
 - Nguyên nhân gốc nằm ở BE: handshake WebSocket `/ws/notifications` bị Spring Security chặn 401 (trình duyệt không gắn được header Authorization khi nâng cấp WebSocket), nên `useNotificationsSocket` không bao giờ kết nối được dù FE đúng. Đã mở `permitAll` cho handshake; xác thực vẫn do STOMP CONNECT (Bearer) đảm nhiệm. Xem `BE/project.md` mục "WebSocket handshake security".
 - Sau khi BE restart (devtools tự restart khi build), socket FE tự nối lại sau 5s (`reconnectDelay`); nếu vừa sửa mà chưa thấy, tải lại trang một lần.
+
+## 2026-10-19 - Picker người nhận: hiện vai trò, sửa lỗi đóng dropdown khi tick
+
+- Option người nhận hiển thị "Họ tên - tài khoản - Vai trò" (`optionLabelFields` thêm `roleName` từ `recipient-candidates`).
+- `SearchableMultiSelect` (`form-controls.tsx`): bỏ `onBlur` trên container (bấm vào nhãn/checkbox không phải phần tử focus được nên `relatedTarget` null -> đóng dropdown trước khi tick). Nay đóng bằng listener `mousedown` ngoài vùng + phím Escape.
