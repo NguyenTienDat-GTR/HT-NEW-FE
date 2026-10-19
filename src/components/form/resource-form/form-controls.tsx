@@ -9,6 +9,7 @@ import { apiFetch, type PageResponse } from "@/lib/api/client";
 import type { AuthUser } from "@/lib/auth/auth-store";
 import { cn } from "@/lib/utils";
 import { optionFromRow, rowsFromResponse } from "./api-utils";
+import { RegistrationListField, registrationEntries } from "./registration-list-field";
 import type { FormFieldSpec, Option } from "./types";
 
 type FormValue = string | string[] | number | boolean | null | undefined;
@@ -89,6 +90,20 @@ function renderControl({
     );
   }
 
+  if (type === "registration-list" && field.registrationList) {
+    const config = field.registrationList;
+    return (
+      <RegistrationListField
+        courseCode={String(values?.[config.courseField] ?? "")}
+        mode={config.mode}
+        onChange={(entries) => onChange(entries as unknown as FormValue)}
+        otherEntries={registrationEntries(values?.[config.otherField])}
+        readonly={readonly}
+        value={value}
+      />
+    );
+  }
+
   if (type === "select" || type === "multiselect" || type === "checkbox-list" || type === "radio") {
     return (
       <OptionControl
@@ -141,6 +156,7 @@ function renderControl({
       id={id}
       onChange={(event) => onChange(type === "number" ? numericValue(event.target.value) : event.target.value)}
       placeholder={field.placeholder}
+      min={type === "number" ? field.min : undefined}
       type={type === "datetime" ? "datetime-local" : type}
       value={type === "datetime" ? toDatetimeLocalValue(value) : String(value ?? "")}
     />

@@ -9,3 +9,8 @@ export function fillRoute(template: string | undefined, params: Record<string, s
   if (!template) return undefined;
   return Object.entries(params).reduce((path, [key, value]) => path.replace(`:${key}`, encodeURIComponent(value)), template);
 }
+
+// Hồ sơ tham dự chỉ được duyệt/từ chối khi đang chờ duyệt.
+export function isAwaitingApproval(row: Record<string, unknown>) {
+  return ["PENDING", "SUBMITTED"].includes(String(row.approvalStatus ?? ""));
+}

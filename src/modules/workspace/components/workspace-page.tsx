@@ -3,6 +3,7 @@
 import { DashboardView } from "@/modules/dashboard/components/dashboard-view";
 import { AnalyticsView } from "@/modules/analytics/components/analytics-view";
 import { LeaderDetailPage } from "@/modules/leaders/components/leader-detail-page";
+import { CourseDetailPage } from "@/modules/training-courses/components/course-detail-page";
 import { ResourceFormPage } from "@/components/form/resource-form/resource-form-page";
 import type React from "react";
 import { Panel } from "@/components/ui/panel";
@@ -39,6 +40,8 @@ export function WorkspacePage({ segments }: { segments: string[] }) {
     );
   } else if (match.type === "detail" && route.kind === "leaders") {
     content = <LeaderDetailPage id={match.params.id} route={route} />;
+  } else if (match.type === "detail" && route.kind === "courses") {
+    content = <CourseDetailPage id={match.params.id} route={route} />;
   } else if (match.type === "create") content = <ResourceFormPage mode="create" route={route} />;
   else if (match.type === "edit") content = <ResourceFormPage id={match.params.id} mode="edit" route={route} />;
   else if (match.type === "score") content = <ResourceFormPage actionType="score" id={match.params.id} mode="edit" route={route} />;

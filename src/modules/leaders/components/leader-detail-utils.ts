@@ -44,8 +44,7 @@ export type CourseParticipationRow = {
   passed?: boolean | null;
   result?: string | null;
   review?: string | null;
-  deaneryApprovalStatus?: string | null;
-  dioceseApprovalStatus?: string | null;
+  approvalStatus?: string | null;
   certificateApprovalStatus?: string | null;
   status?: boolean | null;
 };

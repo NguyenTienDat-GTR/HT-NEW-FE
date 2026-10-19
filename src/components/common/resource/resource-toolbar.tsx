@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { MagnifyingGlass, Plus, SlidersHorizontal, X } from "@phosphor-icons/react";
 import type { Route } from "next";
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { apiFetch, type PageResponse } from "@/lib/api/client";
@@ -24,7 +24,12 @@ export function ResourceFilters({
   updateParam,
   resetFilters,
   canCreate,
+  extraActions,
+  leadingActions,
 }: {
+  extraActions?: ReactNode;
+  // Khu vực thao tác đứng trước ô tìm kiếm (ví dụ chọn nhiều hồ sơ); khi có thì ô tìm kiếm được thu gọn.
+  leadingActions?: ReactNode;
   route: RouteConfig;
   search: string;
   setSearch: (value: string) => void;
@@ -45,7 +50,8 @@ export function ResourceFilters({
   return (
     <div className="border-b border-border bg-white p-4">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-        <label className="relative min-w-0 flex-1">
+        {leadingActions ? <div className="flex flex-wrap items-center gap-2 lg:items-end">{leadingActions}</div> : null}
+        <label className={leadingActions ? "relative w-full min-w-0 lg:w-72" : "relative min-w-0 flex-1"}>
           <span className="mb-2 block text-xs font-semibold text-foreground">Tìm kiếm</span>
           <MagnifyingGlass className="pointer-events-none absolute left-3 top-[38px] h-4 w-4 text-muted" />
           <Input className="pl-9" onChange={(event) => setSearch(event.target.value)} placeholder={`Tìm kiếm ${route.title.toLowerCase()}`} value={search} />
@@ -85,6 +91,7 @@ export function ResourceFilters({
                         filter={filter}
                         key={filter.key}
                         onChange={(value) => (filter.key === "status" ? updateParam("status", value) : updateFilter(filter.key, value))}
+                        parentValue={filter.dependsOn ? (filterValues[filter.dependsOn.filterKey] ?? "") : ""}
                         value={filter.key === "status" ? status : (filterValues[filter.key] ?? "")}
                       />
                     ))}
@@ -101,6 +108,7 @@ export function ResourceFilters({
               </Dialog.Portal>
             </Dialog.Root>
           ) : null}
+          {extraActions}
           {route.primaryActionLabel && route.createPath && canCreate ? (
             <Button asChild className="shrink-0 justify-center">
               <Link href={route.createPath as Route}>
@@ -119,15 +127,17 @@ function FilterControl({
   filter,
   value,
   onChange,
+  parentValue = "",
 }: {
   filter: RouteFilterConfig;
   value: string;
   onChange: (value: string) => void;
+  parentValue?: string;
 }) {
   const query = useQuery({
-    queryKey: ["toolbar-filter-options", filter.key, filter.optionsEndpoint, filter.optionCollection],
+    queryKey: ["toolbar-filter-options", filter.key, filter.optionsEndpoint, filter.optionCollection, parentValue],
     enabled: Boolean(filter.optionsEndpoint),
-    queryFn: () => fetchFilterOptions(filter),
+    queryFn: () => fetchFilterOptions(filter, parentValue),
   });
 
   const apiOptions = filterRowsFromResponse(query.data, filter.optionCollection).map((row) => optionFromRow(row, filter.optionValue, filter.optionLabel));
@@ -172,9 +182,14 @@ function localizeFilterOptions(filter: RouteFilterConfig, options: { value: stri
   }));
 }
 
-async function fetchFilterOptions(filter: RouteFilterConfig) {
+async function fetchFilterOptions(filter: RouteFilterConfig, parentValue = "") {
   try {
-    return await apiFetch<PageResponse<Record<string, unknown>> | Record<string, unknown>[] | Record<string, unknown>>(optionEndpointWithPaging(filter.optionsEndpoint));
+    // Bộ lọc phụ thuộc chỉ lấy các đơn vị thuộc giá trị đang chọn của bộ lọc cha.
+    const scoped =
+      filter.dependsOn && parentValue
+        ? `${filter.optionsEndpoint}${filter.optionsEndpoint?.includes("?") ? "&" : "?"}filters=${encodeURIComponent(JSON.stringify({ [filter.dependsOn.optionFilterField]: parentValue }))}`
+        : filter.optionsEndpoint;
+    return await apiFetch<PageResponse<Record<string, unknown>> | Record<string, unknown>[] | Record<string, unknown>>(optionEndpointWithPaging(scoped));
   } catch (error) {
     if (!filter.optionsEndpoint?.includes("/system/permissions/taxonomy") || !filter.optionCollection) throw error;
     const permissions = await apiFetch<PageResponse<Record<string, unknown>>>("/system/permissions?page=0&size=100");

@@ -8,7 +8,7 @@ import type { RouteConfig } from "@/config/routes/routes";
 
 export type ResourcePageSize = 10 | 20 | 50 | 100;
 
-export function useResourceQueryState(route: RouteConfig) {
+export function useResourceQueryState(route: RouteConfig, fixedFilters: Record<string, string> = {}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -49,16 +49,19 @@ export function useResourceQueryState(route: RouteConfig) {
       size,
       search,
       status: status === "all" ? undefined : status === "active",
-      filters: Object.fromEntries(
-        (route.filters ?? [])
-          .filter((filter) => filter.key !== "status")
-          .map((filter) => [filter.key, normalizeFilterValue(filterValues[filter.key], filter.type)]),
-      ),
+      filters: {
+        ...Object.fromEntries(
+          (route.filters ?? [])
+            .filter((filter) => filter.key !== "status")
+            .map((filter) => [filter.key, normalizeFilterValue(filterValues[filter.key], filter.type)]),
+        ),
+        ...fixedFilters,
+      },
       searchFields: route.searchFields,
       sortBy,
       sortDirection,
     }).toString();
-  }, [filterValues, page, route.filters, route.searchFields, search, size, sortBy, sortDirection, status]);
+  }, [filterValues, fixedFilters, page, route.filters, route.searchFields, search, size, sortBy, sortDirection, status]);
 
   function updateParam(key: string, value: string) {
     const next = new URLSearchParams(searchParams);
@@ -85,6 +88,8 @@ export function useResourceQueryState(route: RouteConfig) {
     const next = new URLSearchParams(searchParams);
     if (value) next.set(key, value);
     else next.delete(key);
+    // Đổi bộ lọc cha thì bỏ giá trị các bộ lọc con (giáo hạt -> giáo xứ) vì không còn thuộc lựa chọn mới.
+    dependentFilterKeys(route.filters ?? [], key).forEach((child) => next.delete(child));
     next.set("page", "1");
     router.replace(`${pathname}?${next.toString()}` as Route);
   }
@@ -123,6 +128,11 @@ export function useResourceQueryState(route: RouteConfig) {
     updateParam,
     resetFilters,
   };
+}
+
+function dependentFilterKeys(filters: NonNullable<RouteConfig["filters"]>, parentKey: string): string[] {
+  const direct = filters.filter((filter) => filter.dependsOn?.filterKey === parentKey).map((filter) => filter.key);
+  return direct.flatMap((key) => [key, ...dependentFilterKeys(filters, key)]);
 }
 
 function parseUrlPage(value: string | null) {

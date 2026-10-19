@@ -1,3 +1,4 @@
+import { registrationEntries } from "@/components/form/resource-form/registration-list-field";
 import { compactPayload, type ResourceFormSpec } from "@/components/form/resource-form/types";
 
 export const workflowFormSpecs: ResourceFormSpec[] = [
@@ -15,38 +16,44 @@ export const workflowFormSpecs: ResourceFormSpec[] = [
         label: "Khóa huấn luyện",
         type: "select",
         required: true,
-        optionsEndpoint: "/training/courses",
+        // Chỉ các khóa đang mở đăng ký trong phạm vi tài khoản.
+        optionsEndpoint: "/training/courses/registrable",
         optionValue: "courseCode",
         optionLabel: "courseName",
         section: "Khóa",
       },
       {
         name: "leaderIds",
-        label: "Huynh trưởng đăng ký",
-        type: "multiselect",
-        required: true,
-        optionsEndpoint: "/leaders",
-        optionValue: "id",
-        optionLabel: "fullName",
+        label: "Danh sách đăng ký",
+        type: "registration-list",
+        registrationList: { mode: "standard", courseField: "courseCode", otherField: "exceptionLeaders" },
+        helper: "Huynh trưởng đủ điều kiện theo loại khóa và số năm hoạt động của khóa.",
         section: "Danh sách đăng ký",
       },
-      { name: "exceptionReasonsText", label: "Lý do ngoại lệ", type: "textarea", helper: "Mỗi dòng: leaderId | lý do", section: "Ngoại lệ" },
+      {
+        name: "exceptionLeaders",
+        label: "Danh sách ngoại lệ",
+        type: "registration-list",
+        registrationList: { mode: "exception", courseField: "courseCode", otherField: "leaderIds" },
+        helper: "Huynh trưởng chưa đủ điều kiện, mỗi người kèm lí do. Không được trùng với danh sách đăng ký.",
+        section: "Ngoại lệ",
+      },
     ],
     mapSubmit: (values) => {
-      const payload = compactPayload(values);
-      delete payload.courseCode;
-      const reasons: Record<string, string> = {};
-      String(values.exceptionReasonsText ?? "")
-        .split("\n")
-        .map((line) => line.trim())
-        .filter(Boolean)
-        .forEach((line) => {
-          const [leaderId, ...reasonParts] = line.split("|");
-          const reason = reasonParts.join("|").trim();
-          if (leaderId?.trim() && reason) reasons[leaderId.trim()] = reason;
-        });
-      delete payload.exceptionReasonsText;
-      if (Object.keys(reasons).length) payload.exceptionReasonsByLeaderId = reasons;
+      const standard = registrationEntries(values.leaderIds);
+      const exceptions = registrationEntries(values.exceptionLeaders);
+      if (!standard.length && !exceptions.length) {
+        throw new Error("Cần lập danh sách đăng ký hoặc thêm ít nhất một huynh trưởng ngoại lệ");
+      }
+      const standardIds = new Set(standard.map((entry) => entry.id));
+      if (exceptions.some((entry) => standardIds.has(entry.id))) {
+        throw new Error("Danh sách đăng ký và danh sách ngoại lệ không được trùng huynh trưởng");
+      }
+      const payload: Record<string, unknown> = {};
+      if (standard.length) payload.leaderIds = standard.map((entry) => entry.id);
+      if (exceptions.length) {
+        payload.exceptionReasonsByLeaderId = Object.fromEntries(exceptions.map((entry) => [entry.id, entry.reason ?? ""]));
+      }
       return payload;
     },
   },

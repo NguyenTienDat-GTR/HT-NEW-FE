@@ -71,3 +71,13 @@ export function resolveOrganizingState(row: CourseStatusRow, now = new Date()): 
   if (!start || today < start) return "UPCOMING";
   return "ONGOING";
 }
+
+// Khóa đang trong thời gian diễn ra theo ngày bắt đầu/kết thúc (giờ Việt Nam), không phụ thuộc trạng thái đã lưu
+// (trạng thái lưu chỉ cập nhật khi sửa khóa hoặc khi job định kỳ chạy). Giống quy tắc kiểm tra của BE khi chấm điểm.
+export function isCourseWithinDates(row: Pick<CourseStatusRow, "startDate" | "endDate">, now = new Date()) {
+  const today = new Date(now.getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const start = typeof row.startDate === "string" ? row.startDate : undefined;
+  const end = typeof row.endDate === "string" ? row.endDate : undefined;
+  if (!start || today < start) return false;
+  return !end || today <= end;
+}

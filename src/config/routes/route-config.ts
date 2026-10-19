@@ -23,7 +23,7 @@ export type ResourceKind =
   | "account-permissions"
   | "audit-logs";
 
-export type ResourceAction = "view" | "create" | "edit" | "toggle" | "submit" | "approve" | "score" | "matrix" | "read";
+export type ResourceAction = "view" | "create" | "edit" | "toggle" | "submit" | "approve" | "reject" | "withdraw" | "remove" | "score" | "matrix" | "read";
 
 export type ResourceActionConfig = {
   label: string;
@@ -49,7 +49,35 @@ export type RouteFilterConfig = {
   optionValue?: string;
   optionLabel?: string;
   placeholder?: string;
+  // Bộ lọc phụ thuộc: danh sách lựa chọn chỉ gồm bản ghi thuộc giá trị đang chọn của bộ lọc cha
+  // (ví dụ giáo xứ theo giáo hạt). optionFilterField là trường lọc của API danh sách lựa chọn.
+  dependsOn?: { filterKey: string; optionFilterField: string };
 };
+
+// Bộ lọc đơn vị tổ chức dùng chung: giáo phận -> giáo hạt -> giáo xứ, mỗi cấp chỉ hiện đơn vị thuộc cấp cha đang chọn.
+export function deaneryUnitFilter(key: string, parentFilterKey?: string): RouteFilterConfig {
+  return {
+    key,
+    label: "Giáo hạt",
+    type: "select",
+    optionsEndpoint: "/deaneries",
+    optionValue: "id",
+    optionLabel: "name",
+    ...(parentFilterKey ? { dependsOn: { filterKey: parentFilterKey, optionFilterField: "diocese.id" } } : {}),
+  };
+}
+
+export function parishUnitFilter(key: string, parentFilterKey?: string, parentIsDiocese = false): RouteFilterConfig {
+  return {
+    key,
+    label: "Giáo xứ",
+    type: "select",
+    optionsEndpoint: "/parishes",
+    optionValue: "id",
+    optionLabel: "name",
+    ...(parentFilterKey ? { dependsOn: { filterKey: parentFilterKey, optionFilterField: parentIsDiocese ? "deanery.diocese.id" : "deanery.id" } } : {}),
+  };
+}
 
 const statusFilterOptions: RouteFilterOption[] = [
   { value: "all", label: "Tất cả" },
@@ -65,6 +93,26 @@ const unitTypeFilterLabels: Record<string, string> = {
 
 function unitTypeFilterOptions(values: string[]): RouteFilterOption[] {
   return values.map((value) => ({ value, label: unitTypeFilterLabels[value] ?? value }));
+}
+
+const participationStatusLabels: Record<string, string> = {
+  REGISTERED: "Đã đăng ký",
+  ATTENDED: "Đã tham dự",
+  COMPLETED: "Hoàn thành",
+  CANCELLED: "Đã hủy",
+  REJECTED: "Từ chối",
+};
+
+const approvalStatusLabels: Record<string, string> = {
+  PENDING: "Chờ xử lý",
+  SUBMITTED: "Đã gửi",
+  APPROVED: "Đã duyệt",
+  REJECTED: "Từ chối",
+  NOT_REQUIRED: "Không yêu cầu",
+};
+
+function labeledOptions(values: string[], labels: Record<string, string>): RouteFilterOption[] {
+  return values.map((value) => ({ value, label: labels[value] ?? value }));
 }
 
 export const leaderLevelOptions: RouteFilterOption[] = [
@@ -144,6 +192,10 @@ export function route(config: RouteConfig): RouteConfig {
       ...(updatePermissionPrefixes?.length ? { edit: { label: "Sửa", permissionPrefixes: updatePermissionPrefixes } } : {}),
       ...(togglePermissionPrefixes?.length ? { toggle: { label: "Đổi trạng thái", permissionPrefixes: togglePermissionPrefixes } } : {}),
       ...(approvePermissionPrefixes?.length ? { approve: { label: "Duyệt", permissionPrefixes: approvePermissionPrefixes } } : {}),
+      // Tài khoản có quyền duyệt hồ sơ tham dự cũng có quyền từ chối duyệt.
+      ...(approvePermissionPrefixes?.length && config.kind === "participations"
+        ? { reject: { label: "Từ chối", permissionPrefixes: approvePermissionPrefixes } }
+        : {}),
       ...(submitPermissionPrefixes?.length ? { submit: { label: "Gửi", permissionPrefixes: submitPermissionPrefixes } } : {}),
       ...(scorePermissionPrefixes?.length ? { score: { label: "Chấm điểm", permissionPrefixes: scorePermissionPrefixes } } : {}),
       ...config.actions,
@@ -177,8 +229,8 @@ function inferRouteFilters(config: RouteConfig): RouteFilterConfig[] {
       filters.push({ key: "deanery.id", label: "Giáo hạt", type: "select", optionsEndpoint: "/deaneries", optionValue: "id", optionLabel: "name" });
       break;
     case "leaders":
-      filters.push({ key: "parish.deanery.id", label: "Giáo hạt", type: "select", optionsEndpoint: "/deaneries", optionValue: "id", optionLabel: "name" });
-      filters.push({ key: "parish.id", label: "Giáo xứ", type: "select", optionsEndpoint: "/parishes", optionValue: "id", optionLabel: "name" });
+      filters.push(deaneryUnitFilter("parish.deanery.id"));
+      filters.push(parishUnitFilter("parish.id", "parish.deanery.id"));
       filters.push({
         key: "leaderLevel",
         label: "Cấp HT",
@@ -266,23 +318,15 @@ function inferRouteFilters(config: RouteConfig): RouteFilterConfig[] {
           key: "participationStatus",
           label: "Trạng thái tham dự",
           type: "select",
-          options: ["REGISTERED", "ATTENDED", "COMPLETED", "CANCELLED"].map((value) => ({ value, label: value })),
+          options: labeledOptions(["REGISTERED", "ATTENDED", "COMPLETED", "CANCELLED", "REJECTED"], participationStatusLabels),
         });
       }
-      if (columns.has("deaneryApprovalStatus")) {
+      if (columns.has("approvalStatus")) {
         filters.push({
-          key: "deaneryApprovalStatus",
-          label: "Duyệt giáo hạt",
+          key: "approvalStatus",
+          label: "Trạng thái duyệt",
           type: "select",
-          options: ["PENDING", "SUBMITTED", "APPROVED", "REJECTED"].map((value) => ({ value, label: value })),
-        });
-      }
-      if (columns.has("dioceseApprovalStatus")) {
-        filters.push({
-          key: "dioceseApprovalStatus",
-          label: "Duyệt giáo phận",
-          type: "select",
-          options: ["PENDING", "SUBMITTED", "APPROVED", "REJECTED"].map((value) => ({ value, label: value })),
+          options: labeledOptions(["PENDING", "SUBMITTED", "APPROVED", "REJECTED"], approvalStatusLabels),
         });
       }
       if (columns.has("certificateApprovalStatus")) {
@@ -290,7 +334,7 @@ function inferRouteFilters(config: RouteConfig): RouteFilterConfig[] {
           key: "certificateApprovalStatus",
           label: "Chứng nhận",
           type: "select",
-          options: ["PENDING", "SUBMITTED", "APPROVED", "REJECTED", "NOT_REQUIRED"].map((value) => ({ value, label: value })),
+          options: labeledOptions(["PENDING", "SUBMITTED", "APPROVED", "REJECTED", "NOT_REQUIRED"], approvalStatusLabels),
         });
       }
       break;
@@ -301,14 +345,14 @@ function inferRouteFilters(config: RouteConfig): RouteFilterConfig[] {
           key: "approvalStatus",
           label: "Trạng thái duyệt",
           type: "select",
-          options: ["PENDING", "SUBMITTED", "APPROVED", "REJECTED"].map((value) => ({ value, label: value })),
+          options: labeledOptions(["PENDING", "SUBMITTED", "APPROVED", "REJECTED"], approvalStatusLabels),
         });
       }
       break;
     case "accounts":
       filters.push({ key: "diocese.id", label: "Giáo phận", type: "select", optionsEndpoint: "/dioceses", optionValue: "id", optionLabel: "name" });
-      filters.push({ key: "deanery.id", label: "Giáo hạt", type: "select", optionsEndpoint: "/deaneries", optionValue: "id", optionLabel: "name" });
-      filters.push({ key: "parish.id", label: "Giáo xứ", type: "select", optionsEndpoint: "/parishes", optionValue: "id", optionLabel: "name" });
+      filters.push(deaneryUnitFilter("deanery.id", "diocese.id"));
+      filters.push(parishUnitFilter("parish.id", "deanery.id"));
       break;
     case "roles":
       filters.push({ key: "roleCode", label: "Mã vai trò", type: "text", placeholder: "Lọc theo mã vai trò" });
