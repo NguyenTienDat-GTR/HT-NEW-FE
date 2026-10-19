@@ -183,6 +183,7 @@ function prioritizeAndSendTail(keys: string[], headKeys: readonly string[], tail
 function detailLabel(route: RouteConfig, key: string) {
   if (route.kind === "accounts" && key === "primaryRoleName") return "Vai trò chính";
   if (route.kind === "accounts" && key === "secondaryRoleNames") return "Vai trò phụ";
+  if (route.kind === "courses" && key === "courseTypeName") return "Loại khóa";
   return columnLabels[key] ?? key;
 }
 
@@ -197,6 +198,7 @@ function shouldRenderKey(route: RouteConfig, row: Record<string, unknown>, key: 
   if (row[key] === undefined && !isAuditKey(key)) return false;
   if (route.kind === "accounts" && ["leaderId", "leaderFullName", "primaryRoleCode", "roleCodes", "roleNames", "deaneryId", "deaneryName", "parishId", "parishName"].includes(key)) return false;
   if (route.kind === "accounts" && key === "secondaryRoleNames" && Array.isArray(row[key]) && row[key].length === 0) return false;
+  if (route.kind === "courses" && ["courseCode", "courseTypeCode", "dioceseId", "deaneryId"].includes(key)) return false;
   if (key === "dioceseId" && typeof row.dioceseName === "string") return false;
   if (key === "deaneryId" && typeof row.deaneryName === "string") return false;
   if (key === "parishId" && typeof row.parishName === "string") return false;

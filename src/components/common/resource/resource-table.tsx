@@ -9,6 +9,7 @@ import { useAuthStore, type AuthUser } from "@/lib/auth/auth-store";
 import { canUseAction, isSuperAdmin } from "@/lib/auth/permissions";
 import { columnLabels, ResourceCell } from "./resource-format";
 import { fillRoute, getResourceId } from "./resource-actions";
+import { RegistrationToggleButton } from "@/modules/training-courses/components/registration-toggle-button";
 import type { ResourcePageSize } from "./use-resource-query-state";
 
 const systemRoleCodes = new Set(["SUPER_ADMIN", "ADMIN_DIOCESE", "ADMIN_DEANERY", "ADMIN_PARISH"]);
@@ -129,6 +130,7 @@ function RowActions({ route, row }: { route: RouteConfig; row: Record<string, un
           </Link>
         </Button>
       ) : null}
+      {route.kind === "courses" && canEdit ? <RegistrationToggleButton endpoint={route.endpoint ?? ""} id={id} row={row} /> : null}
       {canScore && scoreHref ? (
         <Button asChild aria-label="Chấm điểm" className="h-8 min-w-8 rounded-lg" size="icon" variant="icon">
           <Link href={scoreHref as Route}>

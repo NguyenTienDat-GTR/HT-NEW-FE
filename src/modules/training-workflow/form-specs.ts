@@ -30,15 +30,6 @@ export const workflowFormSpecs: ResourceFormSpec[] = [
         optionLabel: "fullName",
         section: "Danh sách đăng ký",
       },
-      {
-        name: "recipientUsernames",
-        label: "Tài khoản nhận thông báo",
-        type: "multiselect",
-        optionsEndpoint: "/system/accounts",
-        optionValue: "username",
-        optionLabel: "username",
-        section: "Thông báo",
-      },
       { name: "exceptionReasonsText", label: "Lý do ngoại lệ", type: "textarea", helper: "Mỗi dòng: leaderId | lý do", section: "Ngoại lệ" },
     ],
     mapSubmit: (values) => {

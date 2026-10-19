@@ -39,6 +39,11 @@ export type FormFieldSpec = {
   readOnlyOnEdit?: boolean;
   clearable?: boolean;
   switchLabels?: [string, string];
+  // Gợi ý động lấy từ API theo giá trị các trường khác (ví dụ điểm đạt tối đa theo loại khóa).
+  dynamicHelper?: {
+    buildEndpoint: (values: Record<string, unknown>) => string | undefined;
+    format: (data: unknown, values: Record<string, unknown>) => { text: string; invalid?: boolean } | undefined;
+  };
   section?: string;
 };
 

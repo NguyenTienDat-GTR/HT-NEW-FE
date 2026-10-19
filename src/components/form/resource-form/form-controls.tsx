@@ -49,6 +49,7 @@ export function FormField({ field, value, values, user, mode, onChange, onFieldC
         </label>
       ) : null}
       {field.helper ? <p className="text-xs leading-5 text-muted">{field.helper}</p> : null}
+      <DynamicHelper field={field} values={values} />
       {error ? <p className="text-xs font-semibold text-danger">{error}</p> : null}
     </div>
   );
@@ -141,7 +142,7 @@ function renderControl({
       onChange={(event) => onChange(type === "number" ? numericValue(event.target.value) : event.target.value)}
       placeholder={field.placeholder}
       type={type === "datetime" ? "datetime-local" : type}
-      value={String(value ?? "")}
+      value={type === "datetime" ? toDatetimeLocalValue(value) : String(value ?? "")}
     />
   );
 }
@@ -563,4 +564,26 @@ function optionEndpointWithPaging(endpoint: string | undefined, searchParam?: st
   const separator = endpoint.includes("?") ? "&" : "?";
   const search = searchParam && searchValue?.trim() ? `&${encodeURIComponent(searchParam)}=${encodeURIComponent(searchValue.trim())}` : "";
   return `${endpoint}${separator}page=0&size=100${search}`;
+}
+
+// Chuyển ISO-8601 có múi giờ từ BE sang giá trị của input datetime-local (giờ Việt Nam, UTC+7).
+function toDatetimeLocalValue(value: unknown) {
+  if (typeof value !== "string" || !value) return "";
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value)) return value;
+  const time = new Date(value).getTime();
+  if (Number.isNaN(time)) return value.slice(0, 16);
+  return new Date(time + 7 * 60 * 60 * 1000).toISOString().slice(0, 16);
+}
+
+function DynamicHelper({ field, values }: { field: FormFieldSpec; values?: Record<string, unknown> }) {
+  const endpoint = field.dynamicHelper?.buildEndpoint(values ?? {});
+  const query = useQuery({
+    queryKey: ["field-helper", field.name, endpoint],
+    enabled: Boolean(endpoint),
+    queryFn: () => apiFetch<unknown>(String(endpoint)),
+  });
+  if (!field.dynamicHelper || !endpoint || query.data === undefined) return null;
+  const helper = field.dynamicHelper.format(query.data, values ?? {});
+  if (!helper) return null;
+  return <p className={cn("text-xs leading-5", helper.invalid ? "font-semibold text-danger" : "text-muted")}>{helper.text}</p>;
 }

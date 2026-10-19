@@ -360,3 +360,14 @@ Còn lại / lưu ý cho phiên sau:
 - `src/lib/api/schema.d.ts` và `openapi/ht-management.json` CHƯA cập nhật (cần chạy BE rồi `npm run api:capture && npm run api:generate`); vẫn chứa schema `ScoreFormula*`.
 - Form chấm điểm (`participations` action `score` trong `modules/training-workflow/form-specs.ts`) vẫn nhập text `componentCode | score` và gửi `componentCode`, trong khi BE yêu cầu `componentId` - lỗi có từ trước; nên làm form lấy danh sách thành phần của khóa (id, tên, hệ số, cờ tính tổng kết) rồi gửi `componentId`. Response participation trả `componentScores[].coefficient/includeInFinal`.
 - Chưa test thủ công trên UI (BE/DB cần chạy); migration V057 chưa được chạy thử trên Postgres thật.
+
+## 2026-10-19 - Đóng/mở đăng ký, người nhận danh sách, điểm đạt, hiển thị tên (cùng branch `feature/score-component-weights`)
+
+BE tương ứng: `BE/project.md` mục "Training Course Registration Control and Recipients (V058)".
+
+- Danh sách khóa: cột "Trạng thái đăng ký" (`registrationOpen` + khung thời gian -> Đang mở / Đã đóng / Chưa đến giờ / Hết hạn, logic ở `src/modules/training-courses/registration-state.ts`). Nút khóa/mở khóa ở cột thao tác (`modules/training-courses/components/registration-toggle-button.tsx`, gọi `PATCH /training/courses/{code}/registration`), chỉ hiện với người có quyền sửa khóa; vô hiệu khi đã hết hạn đăng ký (phải gia hạn trước). BE tự đóng khi hết hạn.
+- Form khóa: thêm `recipientUsernames` (checkbox-list) lấy từ `GET /training/courses/recipient-candidates?courseTypeCode=` (lọc quyền duyệt + phạm vi tài khoản đăng nhập, phụ thuộc loại khóa đã chọn); khi sửa luôn gửi mảng (kể cả rỗng) để bỏ chọn được. Form đăng ký tham dự đã bỏ ô "Tài khoản nhận thông báo".
+- `FormFieldSpec.dynamicHelper` (types.ts + `DynamicHelper` trong form-controls.tsx): tip động lấy từ API; dùng cho `passingScore` (gọi `/training/courses/passing-score-limit`, đỏ khi vượt). BE vẫn chặn khi lưu.
+- Input `datetime` (form-controls.tsx `toDatetimeLocalValue`) đã load được giá trị khi sửa (ISO có múi giờ -> giờ VN UTC+7).
+- Chi tiết khóa (`detail-drawer.tsx`): ẩn `courseCode`, `courseTypeCode`, `dioceseId`, `deaneryId`; hiển thị `courseTypeName` (nhãn "Loại khóa"), `dioceseName`/`deaneryName`, người tạo/cập nhật (`createdBy`/`updatedBy`).
+- Kiểm thử: `npm run typecheck` PASS, eslint các thư mục đã sửa sạch, `vitest` 43/44 (1 fail sidebar có sẵn). Chưa test UI thật; `schema.d.ts` vẫn chưa regenerate. Migration V058 chưa chạy thử trên Postgres thật.

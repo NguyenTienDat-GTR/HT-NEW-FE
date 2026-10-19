@@ -56,12 +56,52 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
       { name: "endDate", label: "Ngày kết thúc", type: "date", required: true, section: "Thời gian" },
       { name: "registrationStartAt", label: "Mở đăng ký", type: "datetime", required: true, section: "Thời gian đăng ký" },
       { name: "registrationEndAt", label: "Đóng đăng ký", type: "datetime", required: true, section: "Thời gian đăng ký" },
-      { name: "passingScore", label: "Điểm đạt", type: "number", required: true, helper: "Điểm tổng kết (trung bình có hệ số) tối thiểu để đạt khóa.", section: "Cấu hình chấm điểm" },
+      {
+        name: "passingScore",
+        label: "Điểm đạt",
+        type: "number",
+        required: true,
+        helper: "Điểm tổng kết (trung bình có hệ số) tối thiểu để đạt khóa.",
+        dynamicHelper: {
+          buildEndpoint: (values) => {
+            const typeCode = String(values.courseTypeCode ?? "");
+            return typeCode ? `/training/courses/passing-score-limit?courseTypeCode=${encodeURIComponent(typeCode)}` : undefined;
+          },
+          format: (data, values) => {
+            const limit = (data as { maxPassingScore?: number | string | null; componentCount?: number } | null)?.maxPassingScore;
+            if (limit === null || limit === undefined) {
+              return { text: "Loại khóa này chưa có thành phần điểm nào được tính vào điểm tổng kết nên chưa giới hạn điểm đạt." };
+            }
+            const passing = Number(values.passingScore);
+            const invalid = Number.isFinite(passing) && values.passingScore !== "" && passing > Number(limit);
+            return {
+              text: `Điểm đạt không được lớn hơn ${Number(limit)} (điểm tối đa trung bình có hệ số của các thành phần điểm thuộc loại khóa đã chọn).`,
+              invalid,
+            };
+          },
+        },
+        section: "Cấu hình chấm điểm",
+      },
+      {
+        name: "recipientUsernames",
+        label: "Tài khoản nhận danh sách đăng ký",
+        type: "checkbox-list",
+        buildOptionsEndpoint: (values) => {
+          const typeCode = String(values.courseTypeCode ?? "");
+          return typeCode ? `/training/courses/recipient-candidates?courseTypeCode=${encodeURIComponent(typeCode)}` : undefined;
+        },
+        optionValue: "username",
+        optionLabelFields: ["fullName", "username"],
+        helper: "Chỉ hiển thị tài khoản có quyền duyệt danh sách đăng ký trong phạm vi của bạn. Bỏ trống để gửi cho tất cả tài khoản đủ quyền.",
+        section: "Người nhận danh sách đăng ký",
+      },
       { name: "additionalNotes", label: "Ghi chú", type: "textarea", clearable: true, section: "Ghi chú" },
     ],
     mapSubmit: (values, mode) => {
       const payload = compactPayload(values);
       if (mode === "edit") delete payload.courseCode;
+      // Gửi cả danh sách rỗng khi sửa để có thể bỏ chọn toàn bộ người nhận.
+      payload.recipientUsernames = Array.isArray(values.recipientUsernames) ? values.recipientUsernames : [];
       return payload;
     },
   },

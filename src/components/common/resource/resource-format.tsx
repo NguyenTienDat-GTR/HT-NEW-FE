@@ -1,3 +1,4 @@
+import { registrationStateLabels, resolveRegistrationState } from "@/modules/training-courses/registration-state";
 import type React from "react";
 import { formatVietnamDateValue } from "@/lib/date-format";
 import { cn, viNumber } from "@/lib/utils";
@@ -72,6 +73,8 @@ export const columnLabels: Record<string, string> = {
   loggedAt: "Thời gian",
   maxScore: "Điểm tối đa",
   coefficient: "Hệ số",
+  recipientUsernames: "Tài khoản nhận danh sách đăng ký",
+  registrationOpen: "Trạng thái đăng ký",
   includeInFinal: "Tính điểm tổng kết",
   moduleCode: "Module",
   name: "Tên",
@@ -172,6 +175,10 @@ export function ResourceCell({ column, row, value, displayMode = "table" }: Reso
   if (column === "leaderLevel" && typeof value === "string") return <LeaderLevelBadge value={value} />;
   if (leaderLevelColumns.has(column) && typeof value === "string") return <TextValue full={full}>{formatLeaderLevel(value)}</TextValue>;
   if (typeof value === "string" && unitTypeLabels[value]) return <TextValue full={full}>{unitTypeLabels[value]}</TextValue>;
+  if (column === "registrationOpen" && typeof value === "boolean") {
+    const state = resolveRegistrationState(row);
+    return <Badge tone={state === "OPEN" ? "success" : state === "NOT_STARTED" ? "neutral" : "warning"}>{registrationStateLabels[state]}</Badge>;
+  }
   if (column === "passed" && typeof value === "boolean") return <Badge tone={value ? "success" : "danger"}>{value ? "Đạt" : "Chưa đạt"}</Badge>;
   if (column === "locked" && typeof value === "boolean") return <Badge tone={value ? "warning" : "neutral"}>{value ? "Đã khóa" : "Có thể sửa"}</Badge>;
   if (typeof value === "string") {
