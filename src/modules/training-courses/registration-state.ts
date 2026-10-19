@@ -12,10 +12,10 @@ type CourseStatusRow = {
 };
 
 export const registrationStateLabels: Record<RegistrationState, string> = {
-  OPEN: "Đang mở đăng ký",
-  CLOSED: "Đã đóng đăng ký",
-  NOT_STARTED: "Chưa đến giờ đăng ký",
-  ENDED: "Đã hết hạn đăng ký",
+  OPEN: "Đang mở",
+  CLOSED: "Đã đóng",
+  NOT_STARTED: "Chưa đến giờ",
+  ENDED: "Đã hết hạn",
 };
 
 export const organizingStateLabels: Record<OrganizingState, string> = {

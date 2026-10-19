@@ -388,3 +388,8 @@ BE tương ứng: `BE/project.md` mục "Training Course Registration Control an
 - Nguyên nhân: mỗi lần đổi bộ lọc danh sách khóa bắn 1 request danh sách + 2 KPI trạng thái + 14 KPI theo mã loại khóa cũ (`SMTL_DT`...; mã loại khóa nay là UUID nên các KPI này vốn đã sai) -> vượt giới hạn đọc 120 request/phút của BE.
 - Đã bỏ KPI theo loại khóa trong `components/common/resource/resource-kpis.ts` (chỉ còn Tổng / Đang hoạt động / Tạm ngưng cho khóa) và cache KPI 60s + `keepPreviousData` trong `resource-list-runtime.tsx`. Các màn khác (leaders 9 KPI cấp bậc, positions 3) vẫn bắn nhiều request mỗi lần đổi bộ lọc - nếu gặp 429 tiếp thì gộp KPI thành một endpoint thống kê ở BE.
 - Message 429 từng bị mojibake do BE thiếu charset UTF-8 (đã sửa ở BE, xem `BE/project.md`).
+
+## 2026-10-19 - Thông báo đóng/mở đăng ký realtime qua socket + RabbitMQ
+
+- Bỏ polling 60s ở `useUnreadNotificationCount` (đã thêm trước đó). `modules/workspace/hooks/notifications-socket.ts` giữ một kết nối STOMP duy nhất (chỉ heartbeat khi rảnh); khi BE đẩy thông báo thì invalidate danh sách/số chưa đọc, và nếu `eventType` bắt đầu bằng `training.course.registration_` thì invalidate luôn `["resource","/training/courses"]` để trạng thái đăng ký cập nhật ngay.
+- BE: consumer RabbitMQ lưu thông báo rồi đẩy STOMP tới người đang online (xem `BE/project.md`); người offline đọc lại qua REST.

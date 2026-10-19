@@ -32,7 +32,7 @@ export const trainingRouteGroup: RouteGroup = {
         idField: "courseCode",
         kind: "courses",
         icon: GraduationCap,
-        columns: ["courseName", "courseTypeName", "hostYear", "location", "registrationEndAt", "registrationStatus", "organizingStatus", "status"],
+        columns: ["courseName", "courseTypeName", "hostYear", "location", "registrationStatus", "organizingStatus", "status"],
         searchFields: ["courseName", "location"],
         permissionPrefixes: ["training.course.read."],
         actionPermissionPrefixes: ["training.course.create.", "training.course.update.", "training.course.toggle."],

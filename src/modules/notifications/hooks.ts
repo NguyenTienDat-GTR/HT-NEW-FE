@@ -39,9 +39,6 @@ export function useUnreadNotificationCount() {
   return useQuery({
     queryKey: notificationKeys.unreadCount,
     queryFn: () => apiFetch<UnreadNotificationCount>("/system/notifications/unread-count"),
-    // Thông báo đóng/mở đăng ký đi qua RabbitMQ và chỉ được lưu (không đẩy socket) nên cần thăm dò định kỳ.
-    refetchInterval: 60_000,
-    refetchOnWindowFocus: true,
   });
 }
 
