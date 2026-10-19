@@ -7,12 +7,12 @@ import { Button } from "@/components/ui/button";
 import { apiMutation, getApiErrorMessage } from "@/lib/api/client";
 import { registrationStateLabels, resolveRegistrationState } from "../registration-state";
 
-// Đóng/mở đăng ký thủ công khi khóa còn trong thời gian đăng ký.
+// Đóng/mở đăng ký thủ công khi khóa đang trong thời gian đăng ký (hết hạn/chưa đến giờ thì hệ thống tự xử lý).
 export function RegistrationToggleButton({ endpoint, id, row }: { endpoint: string; id: string; row: Record<string, unknown> }) {
   const queryClient = useQueryClient();
   const state = resolveRegistrationState(row);
-  const ended = state === "ENDED";
-  const closed = state === "MANUALLY_CLOSED";
+  const closed = state === "CLOSED";
+  const toggleable = state === "OPEN" || state === "CLOSED";
   const mutation = useMutation({
     mutationFn: () => apiMutation(`${endpoint}/${encodeURIComponent(id)}/registration`, "PATCH", { open: closed }),
     onSuccess: async () => {
@@ -22,10 +22,16 @@ export function RegistrationToggleButton({ endpoint, id, row }: { endpoint: stri
     onError: (error) => toast.error(getApiErrorMessage(error)),
   });
 
-  const label = ended ? `${registrationStateLabels.ENDED}, hãy gia hạn thời gian đăng ký để mở lại` : closed ? "Mở đăng ký" : "Đóng đăng ký";
+  const label = !toggleable
+    ? state === "ENDED"
+      ? `${registrationStateLabels.ENDED}, hãy gia hạn thời gian đăng ký để mở lại`
+      : "Chưa đến giờ đăng ký, hệ thống sẽ tự mở khi đến giờ"
+    : closed
+      ? "Mở đăng ký"
+      : "Đóng đăng ký";
   return (
-    <Button aria-label={label} className="h-8 min-w-8 rounded-lg" disabled={ended || mutation.isPending} onClick={() => mutation.mutate()} size="icon" title={label} type="button" variant="icon">
-      {closed || ended ? <LockSimpleIcon size={16} /> : <LockSimpleOpenIcon size={16} />}
+    <Button aria-label={label} className="h-8 min-w-8 rounded-lg" disabled={!toggleable || mutation.isPending} onClick={() => mutation.mutate()} size="icon" title={label} type="button" variant="icon">
+      {closed || !toggleable ? <LockSimpleIcon size={16} /> : <LockSimpleOpenIcon size={16} />}
     </Button>
   );
 }

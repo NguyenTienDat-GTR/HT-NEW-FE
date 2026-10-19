@@ -1,4 +1,11 @@
-import { registrationStateLabels, resolveRegistrationState } from "@/modules/training-courses/registration-state";
+import {
+  organizingStateLabels,
+  organizingStateTones,
+  registrationStateLabels,
+  registrationStateTones,
+  resolveOrganizingState,
+  resolveRegistrationState,
+} from "@/modules/training-courses/registration-state";
 import type React from "react";
 import { formatVietnamDateValue } from "@/lib/date-format";
 import { cn, viNumber } from "@/lib/utils";
@@ -74,7 +81,9 @@ export const columnLabels: Record<string, string> = {
   maxScore: "Điểm tối đa",
   coefficient: "Hệ số",
   recipientUsernames: "Tài khoản nhận danh sách đăng ký",
-  registrationOpen: "Trạng thái đăng ký",
+  registrationOpen: "Đang mở đăng ký",
+  registrationStatus: "Trạng thái đăng ký",
+  organizingStatus: "Trạng thái tổ chức",
   includeInFinal: "Tính điểm tổng kết",
   moduleCode: "Module",
   name: "Tên",
@@ -175,9 +184,13 @@ export function ResourceCell({ column, row, value, displayMode = "table" }: Reso
   if (column === "leaderLevel" && typeof value === "string") return <LeaderLevelBadge value={value} />;
   if (leaderLevelColumns.has(column) && typeof value === "string") return <TextValue full={full}>{formatLeaderLevel(value)}</TextValue>;
   if (typeof value === "string" && unitTypeLabels[value]) return <TextValue full={full}>{unitTypeLabels[value]}</TextValue>;
-  if (column === "registrationOpen" && typeof value === "boolean") {
+  if (column === "registrationStatus" && typeof value === "string") {
     const state = resolveRegistrationState(row);
-    return <Badge tone={state === "OPEN" ? "success" : state === "NOT_STARTED" ? "neutral" : "warning"}>{registrationStateLabels[state]}</Badge>;
+    return <Badge tone={registrationStateTones[state]}>{registrationStateLabels[state]}</Badge>;
+  }
+  if (column === "organizingStatus" && typeof value === "string") {
+    const state = resolveOrganizingState(row);
+    return <Badge tone={organizingStateTones[state]}>{organizingStateLabels[state]}</Badge>;
   }
   if (column === "passed" && typeof value === "boolean") return <Badge tone={value ? "success" : "danger"}>{value ? "Đạt" : "Chưa đạt"}</Badge>;
   if (column === "locked" && typeof value === "boolean") return <Badge tone={value ? "warning" : "neutral"}>{value ? "Đã khóa" : "Có thể sửa"}</Badge>;
@@ -290,7 +303,7 @@ function Badge({
   className,
 }: {
   children: React.ReactNode;
-  tone?: "neutral" | "success" | "danger" | "warning";
+  tone?: "neutral" | "success" | "danger" | "warning" | "info";
   className?: string;
 }) {
   return (
@@ -300,7 +313,8 @@ function Badge({
         tone === "neutral" && "border-border bg-surface-1 text-muted",
         tone === "success" && "border-success/25 bg-success/10 text-success",
         tone === "danger" && "border-danger/25 bg-danger/10 text-danger",
-        tone === "warning" && "border-amber-300 bg-amber-50 text-amber-700",
+        tone === "warning" && "border-warning/30 bg-warning/10 text-[color-mix(in_oklab,var(--warning)_70%,black)]",
+        tone === "info" && "border-info/25 bg-info/10 text-info",
         className,
       )}
     >

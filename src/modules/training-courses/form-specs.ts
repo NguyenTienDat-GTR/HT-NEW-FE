@@ -85,7 +85,9 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
       {
         name: "recipientUsernames",
         label: "Tài khoản nhận danh sách đăng ký",
-        type: "checkbox-list",
+        type: "multiselect",
+        searchable: true,
+        placeholder: "Chọn người nhận danh sách đăng ký",
         buildOptionsEndpoint: (values) => {
           const typeCode = String(values.courseTypeCode ?? "");
           return typeCode ? `/training/courses/recipient-candidates?courseTypeCode=${encodeURIComponent(typeCode)}` : undefined;

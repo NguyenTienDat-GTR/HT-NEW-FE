@@ -304,6 +304,19 @@ function OptionControl({
     );
   }
 
+  if (field.searchable && multiple) {
+    return (
+      <SearchableMultiSelect
+        id={id}
+        onChange={onChange}
+        options={options}
+        placeholder={field.placeholder}
+        readonly={readonly || query.isLoading}
+        value={Array.isArray(value) ? value : []}
+      />
+    );
+  }
+
   if (field.searchable && !multiple) {
     return (
       <SearchableSelect
@@ -586,4 +599,105 @@ function DynamicHelper({ field, values }: { field: FormFieldSpec; values?: Recor
   const helper = field.dynamicHelper.format(query.data, values ?? {});
   if (!helper) return null;
   return <p className={cn("text-xs leading-5", helper.invalid ? "font-semibold text-danger" : "text-muted")}>{helper.text}</p>;
+}
+
+// Bỏ dấu + hạ chữ thường để tìm kiếm tiếng Việt không phân biệt dấu.
+function normalizeSearchText(value: string) {
+  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D").toLowerCase();
+}
+
+function SearchableMultiSelect({
+  id,
+  onChange,
+  options,
+  placeholder,
+  readonly,
+  value,
+}: {
+  id: string;
+  onChange: (value: FormValue) => void;
+  options: Option[];
+  placeholder?: string;
+  readonly?: boolean;
+  value: string[];
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const selected = useMemo(() => new Set(value), [value]);
+  const filteredOptions = useMemo(() => {
+    const keyword = normalizeSearchText(search.trim());
+    if (!keyword) return options;
+    return options.filter((option) => normalizeSearchText(`${option.label} ${option.value} ${option.group ?? ""}`).includes(keyword));
+  }, [options, search]);
+  const selectedOptions = options.filter((option) => selected.has(option.value));
+  const allFilteredSelected = filteredOptions.length > 0 && filteredOptions.every((option) => selected.has(option.value) || option.disabled);
+
+  function toggle(optionValue: string) {
+    onChange(selected.has(optionValue) ? value.filter((item) => item !== optionValue) : [...value, optionValue]);
+  }
+
+  function toggleAllFiltered() {
+    const filteredValues = filteredOptions.filter((option) => !option.disabled).map((option) => option.value);
+    if (allFilteredSelected) onChange(value.filter((item) => !filteredValues.includes(item)));
+    else onChange(Array.from(new Set([...value, ...filteredValues])));
+  }
+
+  return (
+    <div className="relative" onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOpen(false); }}>
+      <button
+        aria-expanded={open}
+        className="flex min-h-10 w-full flex-wrap items-center gap-1.5 rounded-[8px] border border-border bg-white px-2.5 py-1.5 text-left text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-4 focus:ring-[var(--primary-ring)] disabled:cursor-not-allowed disabled:bg-surface-1 disabled:opacity-70"
+        disabled={readonly}
+        id={id}
+        onClick={() => setOpen((current) => !current)}
+        type="button"
+      >
+        {selectedOptions.length === 0 ? <span className="text-muted">{placeholder ?? "Chọn người nhận"}</span> : null}
+        {selectedOptions.map((option) => (
+          <span className="inline-flex items-center gap-1 rounded-[6px] border border-primary/25 bg-primary/8 px-2 py-0.5 text-xs font-semibold text-primary" key={option.value}>
+            {option.label}
+            <span
+              aria-label={`Bỏ chọn ${option.label}`}
+              className="cursor-pointer px-0.5 hover:text-danger"
+              onClick={(event) => {
+                event.stopPropagation();
+                if (!readonly) toggle(option.value);
+              }}
+              role="button"
+            >
+              ×
+            </span>
+          </span>
+        ))}
+      </button>
+      {open && !readonly ? (
+        <div className="absolute z-30 mt-1 w-full rounded-[8px] border border-border bg-white p-2 shadow-lg">
+          <Input autoFocus className="h-9" onChange={(event) => setSearch(event.target.value)} placeholder="Tìm theo tên hoặc tài khoản" value={search} />
+          <div className="mt-2 flex items-center justify-between text-xs text-muted">
+            <span>Đã chọn {selectedOptions.length}/{options.length}</span>
+            {filteredOptions.length > 0 ? (
+              <button className="font-semibold text-primary hover:underline" onClick={toggleAllFiltered} type="button">
+                {allFilteredSelected ? "Bỏ chọn kết quả" : "Chọn tất cả kết quả"}
+              </button>
+            ) : null}
+          </div>
+          <div className="mt-1 max-h-64 overflow-y-auto">
+            {filteredOptions.length === 0 ? <p className="px-3 py-2 text-sm text-muted">Không có dữ liệu phù hợp</p> : null}
+            {filteredOptions.map((option) => (
+              <label
+                className={cn("flex cursor-pointer items-start gap-2 rounded-[6px] px-2 py-1.5 text-sm hover:bg-primary/8", option.disabled && "cursor-not-allowed opacity-60 hover:bg-transparent")}
+                key={option.value}
+              >
+                <input checked={selected.has(option.value)} className="mt-0.5 h-4 w-4 accent-primary" disabled={option.disabled} onChange={() => toggle(option.value)} type="checkbox" />
+                <span>
+                  <span className="block font-semibold">{option.label}</span>
+                  {option.label !== option.value ? <span className="block text-xs text-muted">{option.value}</span> : null}
+                </span>
+              </label>
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
 }

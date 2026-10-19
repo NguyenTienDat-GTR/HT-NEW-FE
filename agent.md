@@ -371,3 +371,14 @@ BE tương ứng: `BE/project.md` mục "Training Course Registration Control an
 - Input `datetime` (form-controls.tsx `toDatetimeLocalValue`) đã load được giá trị khi sửa (ISO có múi giờ -> giờ VN UTC+7).
 - Chi tiết khóa (`detail-drawer.tsx`): ẩn `courseCode`, `courseTypeCode`, `dioceseId`, `deaneryId`; hiển thị `courseTypeName` (nhãn "Loại khóa"), `dioceseName`/`deaneryName`, người tạo/cập nhật (`createdBy`/`updatedBy`).
 - Kiểm thử: `npm run typecheck` PASS, eslint các thư mục đã sửa sạch, `vitest` 43/44 (1 fail sidebar có sẵn). Chưa test UI thật; `schema.d.ts` vẫn chưa regenerate. Migration V058 chưa chạy thử trên Postgres thật.
+
+## 2026-10-19 - Bộ lọc/cột trạng thái khóa, tự chuyển trạng thái, thông báo RabbitMQ, picker người nhận có tìm kiếm (cùng branch `feature/score-component-weights`)
+
+BE tương ứng: `BE/project.md` mục "Training Course Registration Control and Recipients" (V059: `registrationStatus`, `organizingStatus`).
+
+- Bộ lọc danh sách khóa (`config/routes/route-config.ts` case `courses`): "Thời gian đăng ký" (`registrationStatus`: Đang mở / Chưa đến giờ / Đã đóng thủ công / Đã hết hạn) và "Thời gian tổ chức" (`organizingStatus`: Sắp diễn ra / Đang diễn ra / Đã kết thúc).
+- Cột bảng: `registrationStatus` và `organizingStatus` (thay `registrationOpen`) render Badge theo token màu (`success`, `info`, `warning` suy từ token `--warning`, `muted`); map tone/nhãn ở `modules/training-courses/registration-state.ts`, ưu tiên giá trị BE, fallback tính từ khung thời gian. Badge thêm tone `info`; tone `warning` đổi từ amber cứng sang token.
+- Nút khóa/mở khóa chỉ bật khi trạng thái OPEN/CLOSED; chưa đến giờ/hết hạn thì tự động (BE).
+- Picker người nhận danh sách đăng ký: field `multiselect` + `searchable: true` -> `SearchableMultiSelect` trong `form-controls.tsx` (dropdown, chip đã chọn, ô tìm theo tên/tài khoản không phân biệt dấu, "chọn tất cả kết quả").
+- Thông báo đóng/mở đăng ký đi qua RabbitMQ, chỉ lưu DB (không socket) nên `useUnreadNotificationCount` (`modules/notifications/hooks.ts`) thăm dò mỗi 60s và refetch khi focus lại cửa sổ.
+- Test: `tests/unit/registration-state.test.ts`; `npm run typecheck` PASS, eslint sạch, vitest 45/46 (1 fail sidebar có sẵn). Chưa test UI thật; `schema.d.ts` chưa regenerate; migration V059 chưa chạy thử trên Postgres thật.
