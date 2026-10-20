@@ -12,7 +12,8 @@ import { Panel } from "@/components/ui/panel";
 import type { RouteConfig } from "@/config/routes/routes";
 import { apiFetch, apiMutation, getApiErrorMessage } from "@/lib/api/client";
 import { useAuthStore } from "@/lib/auth/auth-store";
-import { canUseAction } from "@/lib/auth/permissions";
+import { canUseAction, hasPermissionPrefix } from "@/lib/auth/permissions";
+import { CertificateConfigView } from "@/modules/certificates/components/certificate-config-view";
 import { cn } from "@/lib/utils";
 import { resolveRouteForUser } from "@/modules/workspace/super-admin-route-overrides";
 import { FormField } from "./form-controls";
@@ -192,6 +193,19 @@ export function ResourceFormPage({
         </div>
       )}
 
+      {mode === "edit" &&
+      effectiveRoute.kind === "course-types" &&
+      requiresCertification(mergedValues) &&
+      hasPermissionPrefix(user, "training.certificate_config.read.") ? (
+        <Panel className="space-y-4 p-4 md:p-5">
+          <h2 className="text-sm font-semibold uppercase tracking-[0.04em] text-muted">Cấu hình chứng nhận</h2>
+          <CertificateConfigView
+            embedded
+            fixedScope={{ courseTypeCode: String(id), courseTypeName: String(mergedValues.typeName ?? "") }}
+          />
+        </Panel>
+      ) : null}
+
       <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-white/95 px-4 py-2.5 shadow-[var(--shadow-bottom-bar)] backdrop-blur">
         <div className={cn("mx-auto flex justify-end gap-3", leaderCreateLayout ? "max-w-[960px]" : "max-w-[1180px]")}>
           <Button asChild variant="outline">
@@ -225,6 +239,12 @@ function nextValuesForField(current: Record<string, unknown>, fieldName: string,
   const currentPrimary = String(current.primaryRoleCode ?? mergedValues.primaryRoleCode ?? "");
   const nextPrimary = currentPrimary && roleCodes.includes(currentPrimary) ? currentPrimary : roleCodes[0] ?? "";
   return { ...current, roleCodes, primaryRoleCode: nextPrimary };
+}
+
+// Loại khóa có yêu cầu chứng nhận khi có cấp độ đạt được (resultingLevel khác rỗng/NONE).
+function requiresCertification(values: Record<string, unknown>) {
+  const level = values.resultingLevel;
+  return typeof level === "string" && level !== "" && level !== "NONE";
 }
 
 function groupFields(fields: FormFieldSpec[]) {

@@ -5,6 +5,7 @@ import { AnalyticsView } from "@/modules/analytics/components/analytics-view";
 import { LeaderDetailPage } from "@/modules/leaders/components/leader-detail-page";
 import { CourseDetailPage } from "@/modules/training-courses/components/course-detail-page";
 import { ResourceFormPage } from "@/components/form/resource-form/resource-form-page";
+import { CertificateConfigView } from "@/modules/certificates/components/certificate-config-view";
 import type React from "react";
 import { Panel } from "@/components/ui/panel";
 import type { AuthUser } from "@/lib/auth/auth-store";
@@ -47,6 +48,7 @@ export function WorkspacePage({ segments }: { segments: string[] }) {
   else if (match.type === "score") content = <ResourceFormPage actionType="score" id={match.params.id} mode="edit" route={route} />;
   else if (route.kind === "dashboard") content = <DashboardView />;
   else if (route.kind === "analytics") content = <AnalyticsView />;
+  else if (route.kind === "certificate-config") content = <CertificateConfigView route={route} />;
   else content = <ModuleResourceRenderer route={route} />;
 
   return content;

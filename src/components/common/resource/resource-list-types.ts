@@ -17,6 +17,9 @@ export type ResourceListModuleConfig = {
   buildRemovePath?: (id: string) => string;
   buildWithdrawPath?: (id: string) => string;
   buildApproveBody?: (route: RouteConfig, note?: string, approved?: boolean) => unknown;
+  // Cho phép chọn nhiều hồ sơ và xuất PDF chứng nhận (một hoặc nhiều) qua pdfExportPath.
+  enablePdfExport?: boolean;
+  pdfExportPath?: string;
 };
 
 export type ResourceListRuntimeProps = {

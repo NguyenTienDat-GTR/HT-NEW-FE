@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Tip } from "@/components/ui/tip";
 import { Panel } from "@/components/ui/panel";
 import { rowsFromResponse } from "@/components/form/resource-form/api-utils";
-import { apiFetch, apiMutation, getApiErrorMessage, type PageResponse } from "@/lib/api/client";
+import { apiDownload, apiFetch, apiMutation, getApiErrorMessage, parseContentDispositionFilename, type PageResponse } from "@/lib/api/client";
 import { useAuthStore } from "@/lib/auth/auth-store";
 import { canUseAction } from "@/lib/auth/permissions";
 import { resolveRouteForUser } from "@/modules/workspace/super-admin-route-overrides";
@@ -98,12 +98,20 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
     queryFn: () => apiFetch<ScoreComponent[]>(`/training/courses/${encodeURIComponent(String(scoreCourseCode))}/score-components`),
   });
   const canBulkApprove = Boolean(config.bulkApprovePath) && canUseAction(user, effectiveRoute.actions?.approve);
-  const selectableIds = canBulkApprove
-    ? rows.filter((row) => isAwaitingApproval(row)).flatMap((row) => {
+  const canExportPdf = Boolean(config.enablePdfExport && config.pdfExportPath);
+  const [exporting, setExporting] = useState(false);
+  // Khi bật xuất PDF: cho chọn mọi dòng (xuất kiểm tra "đã duyệt" ở BE). Ngược lại, duyệt hàng loạt chỉ chọn hồ sơ đang chờ.
+  const selectableIds = canExportPdf
+    ? rows.flatMap((row) => {
         const id = getResourceId(effectiveRoute, row);
         return id ? [id] : [];
       })
-    : [];
+    : canBulkApprove
+      ? rows.filter((row) => isAwaitingApproval(row)).flatMap((row) => {
+          const id = getResourceId(effectiveRoute, row);
+          return id ? [id] : [];
+        })
+      : [];
 
   const closeQueryDialog = () => router.push((embedded ? embeddedTabHref(embedded) : effectiveRoute.path) as Route);
   const actionMutation = useMutation({
@@ -246,6 +254,42 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
       </Button>
     </Tip>
   ) : null;
+  async function exportPdf(ids: string[]) {
+    if (!config.pdfExportPath || ids.length === 0) return;
+    setExporting(true);
+    try {
+      const response = await apiDownload(config.pdfExportPath, {
+        method: "POST",
+        body: JSON.stringify({ certificateCodes: ids }),
+      });
+      const blob = await response.blob();
+      const filename = parseContentDispositionFilename(response.headers.get("content-disposition")) ?? "chung-nhan.pdf";
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      toast.success(`Đã xuất PDF ${ids.length} chứng nhận`);
+    } catch (error) {
+      toast.error(getApiErrorMessage(error));
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  const exportActions = canExportPdf ? (
+    <>
+      <span className="whitespace-nowrap text-sm text-muted">Đã chọn {selectedIds.length} hồ sơ</span>
+      <Tip disabled={selectedIds.length === 0} label="Xuất PDF chứng nhận cho các hồ sơ đã chọn (chỉ chứng nhận đã duyệt)">
+        <Button disabled={selectedIds.length === 0 || exporting} onClick={() => exportPdf(selectedIds)} size="sm" type="button">
+          {exporting ? "Đang xuất..." : "Xuất PDF"}
+        </Button>
+      </Tip>
+    </>
+  ) : null;
   const bulkActions = canBulkApprove ? (
     <>
       <span className="whitespace-nowrap text-sm text-muted">Đã chọn {selectedIds.filter((id) => selectableIds.includes(id)).length} hồ sơ</span>
@@ -261,7 +305,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
       </Tip>
     </>
   ) : null;
-  const selection = canBulkApprove
+  const selection = canBulkApprove || canExportPdf
     ? {
         selectedIds,
         selectableIds,
@@ -293,7 +337,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
           canCreate={canCreate}
           hideSearch={Boolean(embedded)}
           extraActions={saveScoresButton}
-          leadingActions={bulkActions}
+          leadingActions={bulkActions || exportActions ? <>{bulkActions}{exportActions}</> : null}
         />
         {scoreEntryEnabled && embedded?.scoreLocked === true ? (
           <div className="border-b border-warning/30 bg-warning/10 px-4 py-2 text-xs font-medium text-foreground">Điểm của khóa đang bị khóa chỉnh sửa. Cần mở khóa mới nhập được điểm.</div>
@@ -303,6 +347,8 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
         ) : null}
         <ResourceTable
           selection={selection}
+          onExportRow={canExportPdf ? (id) => exportPdf([id]) : undefined}
+          exportingRow={exporting}
           scoreEntry={scoreEntry}
           page={queryState.page}
           isLoading={query.isLoading}

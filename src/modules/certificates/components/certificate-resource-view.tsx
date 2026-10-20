@@ -14,6 +14,10 @@ export function CertificateResourceView({ route }: { route: RouteConfig }) {
         buildApproveBody,
         bulkApprovePath: route.moduleName === "certificate.approval" ? "/certificates/bulk-approval" : undefined,
         buildBulkBody,
+        // Danh sách & tab duyệt chứng nhận: cho chọn nhiều hồ sơ và xuất PDF (một hoặc nhiều) qua mail merge.
+        enablePdfExport: route.moduleName === "certificate.list" || route.moduleName === "certificate.approval",
+        pdfExportPath:
+          route.moduleName === "certificate.list" || route.moduleName === "certificate.approval" ? "/certificates/export-pdf" : undefined,
       }}
     />
   );
