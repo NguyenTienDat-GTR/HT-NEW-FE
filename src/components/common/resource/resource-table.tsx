@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowUUpLeftIcon, CaretDownIcon, CheckCircleIcon, EyeIcon, PencilSimpleIcon, TrashIcon, XCircleIcon } from "@phosphor-icons/react";
+import { ArrowUUpLeftIcon, CaretDownIcon, CheckCircleIcon, EyeIcon, FilePdfIcon, PencilSimpleIcon, TrashIcon, XCircleIcon } from "@phosphor-icons/react";
 import type { Route } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -27,12 +27,17 @@ export function ResourceTable({
   sortDirection,
   selection,
   scoreEntry,
+  onExportRow,
+  exportingRow,
   page = 0,
 }: {
   page?: number;
   scoreEntry?: ScoreEntry;
   // Chọn nhiều hồ sơ để duyệt/từ chối hàng loạt.
   selection?: { selectedIds: string[]; selectableIds: string[]; onToggle: (id: string) => void; onToggleAll: (on: boolean) => void };
+  // Xuất PDF một chứng nhận ngay trên dòng (chỉ hiện với chứng nhận đã duyệt).
+  onExportRow?: (id: string) => void;
+  exportingRow?: boolean;
   isLoading: boolean;
   rows: Record<string, unknown>[];
   route: RouteConfig;
@@ -93,7 +98,7 @@ export function ResourceTable({
             <th className="h-10 border-b border-border px-3 text-right font-semibold text-foreground">Thao tác</th>
           </tr>
         </thead>
-        <tbody>{isLoading ? <ResourceTableSkeleton columns={visibleColumns} size={size} /> : <ResourceRows columns={visibleColumns} indexOffset={embedded ? page * size : undefined} route={route} rows={rows} scoreEntry={scoreEntry} selection={selection} />}</tbody>
+        <tbody>{isLoading ? <ResourceTableSkeleton columns={visibleColumns} size={size} /> : <ResourceRows columns={visibleColumns} indexOffset={embedded ? page * size : undefined} route={route} rows={rows} scoreEntry={scoreEntry} selection={selection} onExportRow={onExportRow} exportingRow={exportingRow} />}</tbody>
       </table>
     </div>
   );
@@ -130,6 +135,8 @@ function ResourceRows({
   selection,
   scoreEntry,
   indexOffset,
+  onExportRow,
+  exportingRow,
 }: {
   // Có giá trị thì hiển thị cột STT bắt đầu từ offset (số hàng của các trang trước).
   indexOffset?: number;
@@ -138,6 +145,8 @@ function ResourceRows({
   route: RouteConfig;
   rows: Record<string, unknown>[];
   selection?: { selectedIds: string[]; selectableIds: string[]; onToggle: (id: string) => void; onToggleAll: (on: boolean) => void };
+  onExportRow?: (id: string) => void;
+  exportingRow?: boolean;
 }) {
   return rows.map((row, rowIndex) => {
     const rowId = getResourceId(route, row);
@@ -188,18 +197,21 @@ function ResourceRows({
         );
       })}
       <td className="sticky right-0 h-12 border-b border-surface-2 bg-white px-3 text-right shadow-(--shadow-table-sticky) transition-colors group-hover:bg-primary-soft">
-        <RowActions route={route} row={row} />
+        <RowActions route={route} row={row} onExportRow={onExportRow} exportingRow={exportingRow} />
       </td>
     </tr>
     );
   });
 }
 
-function RowActions({ route, row }: { route: RouteConfig; row: Record<string, unknown> }) {
+function RowActions({ route, row, onExportRow, exportingRow }: { route: RouteConfig; row: Record<string, unknown>; onExportRow?: (id: string) => void; exportingRow?: boolean }) {
   const user = useAuthStore((state) => state.user);
   const embedded = useEmbeddedResource();
   const id = getResourceId(route, row);
   if (!id) return <span className="text-xs text-muted">-</span>;
+
+  // Chỉ xuất PDF cho chứng nhận đã duyệt.
+  const canExportRow = Boolean(onExportRow) && route.kind === "certificates" && (row.approvalStatus === "APPROVED" || row.certificateApprovalStatus === "APPROVED");
 
   const editHref = fillRoute(route.editPath, { id });
   const detailHref = fillRoute(route.detailPath, { id });
@@ -214,10 +226,12 @@ function RowActions({ route, row }: { route: RouteConfig; row: Record<string, un
   // Chỉ người gửi đăng ký mới thu hồi được, và chỉ khi hồ sơ còn chờ duyệt (chưa duyệt hoặc từ chối).
   const actorId = user?.leaderId || user?.username;
   const canWithdraw = canUseAction(user, route.actions?.withdraw) && Boolean(actorId) && row.createdBy === actorId && isAwaitingApproval(row);
-  const canApprove = canUseAction(user, route.actions?.approve) && awaitingApproval;
+  // Khóa đã kết thúc thì không duyệt/từ chối chứng nhận được, chỉ xuất PDF.
+  const courseFinished = route.kind === "certificates" && row.courseFinished === true;
+  const canApprove = canUseAction(user, route.actions?.approve) && awaitingApproval && !courseFinished;
   // Hồ sơ đã có chứng nhận được duyệt thì không xóa được.
   const canRemove = canUseAction(user, route.actions?.remove) && row.certificateApprovalStatus !== "APPROVED";
-  const canReject = canUseAction(user, route.actions?.reject) && awaitingApproval;
+  const canReject = canUseAction(user, route.actions?.reject) && awaitingApproval && !courseFinished;
 
   return (
     <div className="inline-flex items-center gap-1">
@@ -282,6 +296,13 @@ function RowActions({ route, row }: { route: RouteConfig; row: Record<string, un
             <Link href={resourceActionHref(route.path, embedded, { reject: id }) as Route}>
               <XCircleIcon size={16} />
             </Link>
+          </Button>
+        </Tip>
+      ) : null}
+      {canExportRow ? (
+        <Tip label="Xuất PDF chứng nhận này">
+          <Button aria-label="Xuất PDF" className="h-8 min-w-8 rounded-lg" disabled={exportingRow} onClick={() => onExportRow?.(id)} size="icon" type="button" variant="icon">
+            <FilePdfIcon size={16} />
           </Button>
         </Tip>
       ) : null}

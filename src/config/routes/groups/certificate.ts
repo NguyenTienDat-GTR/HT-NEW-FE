@@ -1,4 +1,4 @@
-import { Certificate } from "@phosphor-icons/react";
+import { Certificate, Gear } from "@phosphor-icons/react";
 import { route, type RouteGroup } from "../route-config";
 
 export const certificateRouteGroup: RouteGroup = {
@@ -25,6 +25,19 @@ export const certificateRouteGroup: RouteGroup = {
         primaryActionLabel: "Tạo chứng nhận",
         filterLabels: ["Khóa", "Kết quả", "Trạng thái duyệt"],
         workflowHint: "Nếu chưa đạt passingScore, approve bắt buộc nhập approvalReason.",
+      }),
+      route({
+        path: "/certificates/config",
+        moduleName: "certificate.config",
+        title: "Cấu hình chứng nhận",
+        subtitle: "Người ký, ảnh nền và bố cục mail merge theo loại khóa hoặc cấu hình chung.",
+        endpoint: "/certificates/config",
+        idField: "id",
+        kind: "certificate-config",
+        icon: Gear,
+        columns: [],
+        permissionPrefixes: ["training.certificate_config.read."],
+        actionPermissionPrefixes: ["training.certificate_config.update."],
       }),
     ],
   };

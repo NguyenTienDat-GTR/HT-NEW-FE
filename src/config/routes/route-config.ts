@@ -15,6 +15,7 @@ export type ResourceKind =
   | "score-components"
   | "participations"
   | "certificates"
+  | "certificate-config"
   | "accounts"
   | "roles"
   | "permissions"

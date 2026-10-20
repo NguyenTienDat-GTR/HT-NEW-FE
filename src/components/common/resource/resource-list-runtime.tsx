@@ -9,11 +9,11 @@ import { Button } from "@/components/ui/button";
 import { Tip } from "@/components/ui/tip";
 import { Panel } from "@/components/ui/panel";
 import { rowsFromResponse } from "@/components/form/resource-form/api-utils";
-import { apiFetch, apiMutation, getApiErrorMessage, type PageResponse } from "@/lib/api/client";
+import { apiDownload, apiFetch, apiMutation, getApiErrorMessage, parseContentDispositionFilename, type PageResponse } from "@/lib/api/client";
 import { useAuthStore } from "@/lib/auth/auth-store";
 import { canUseAction } from "@/lib/auth/permissions";
 import { resolveRouteForUser } from "@/modules/workspace/super-admin-route-overrides";
-import { ApprovalDialog } from "./approval-dialog";
+import { ApprovalDialog, type CertificateSigner } from "./approval-dialog";
 import { embeddedTabHref, useEmbeddedResource, withReturnTo } from "./embedded-resource-context";
 import { ConfirmActionDialog } from "./confirm-action-dialog";
 import { DetailDrawer } from "./detail-drawer";
@@ -98,23 +98,40 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
     queryFn: () => apiFetch<ScoreComponent[]>(`/training/courses/${encodeURIComponent(String(scoreCourseCode))}/score-components`),
   });
   const canBulkApprove = Boolean(config.bulkApprovePath) && canUseAction(user, effectiveRoute.actions?.approve);
-  const selectableIds = canBulkApprove
-    ? rows.filter((row) => isAwaitingApproval(row)).flatMap((row) => {
+  const canExportPdf = Boolean(config.enablePdfExport && config.pdfExportPath);
+  const [exporting, setExporting] = useState(false);
+  // Khi bật xuất PDF: cho chọn mọi dòng (xuất kiểm tra "đã duyệt" ở BE). Ngược lại, duyệt hàng loạt chỉ chọn hồ sơ đang chờ.
+  const selectableIds = canExportPdf
+    ? rows.flatMap((row) => {
         const id = getResourceId(effectiveRoute, row);
         return id ? [id] : [];
+      })
+    : canBulkApprove
+      ? rows.filter((row) => isAwaitingApproval(row)).flatMap((row) => {
+          const id = getResourceId(effectiveRoute, row);
+          return id ? [id] : [];
+        })
+      : [];
+
+  // Hồ sơ có thể duyệt/từ chối hàng loạt: đang chờ duyệt và khóa chưa kết thúc (khóa đã kết thúc chỉ xuất PDF).
+  const rowById = (id: string) => rows.find((row) => getResourceId(effectiveRoute, row) === id);
+  const bulkApprovableIds = canBulkApprove
+    ? selectedIds.filter((id) => {
+        const row = rowById(id);
+        return Boolean(row) && isAwaitingApproval(row as Record<string, unknown>) && (row as Record<string, unknown>).courseFinished !== true;
       })
     : [];
 
   const closeQueryDialog = () => router.push((embedded ? embeddedTabHref(embedded) : effectiveRoute.path) as Route);
   const actionMutation = useMutation({
-    mutationFn: ({ action, id, note }: { action: "toggle" | "approve" | "reject" | "withdraw" | "remove"; id: string; note?: string }) => {
+    mutationFn: ({ action, id, note, signer }: { action: "toggle" | "approve" | "reject" | "withdraw" | "remove"; id: string; note?: string; signer?: CertificateSigner }) => {
       if (action === "remove") return apiMutation(config.buildRemovePath?.(id) ?? `${effectiveRoute.endpoint}/${encodeURIComponent(id)}`, "DELETE");
       if (action === "withdraw") return apiMutation(config.buildWithdrawPath?.(id) ?? `${effectiveRoute.endpoint}/${encodeURIComponent(id)}`, "DELETE");
       if (action === "toggle") return apiMutation(`${effectiveRoute.endpoint}/${encodeURIComponent(id)}/toggle-status`, "PATCH", { confirmationText: "Xác nhận" });
       if (action === "approve" || action === "reject") {
         const approved = action === "approve";
         const approvePath = config.buildApprovePath?.(effectiveRoute, rows, id, approved) ?? `${effectiveRoute.endpoint}/${encodeURIComponent(id)}/approve`;
-        const approveBody = config.buildApproveBody?.(effectiveRoute, note, approved) ?? { approved, review: note || undefined };
+        const approveBody = config.buildApproveBody?.(effectiveRoute, note, approved, signer) ?? { approved, review: note || undefined };
         return apiMutation(approvePath, "POST", approveBody);
       }
       throw new Error("Unsupported resource action");
@@ -127,17 +144,19 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
   });
 
   const bulkMutation = useMutation({
-    mutationFn: ({ approved, note, reasons }: { approved: boolean; note: string; reasons?: Record<string, string> }) =>
+    mutationFn: ({ approved, note, reasons, signer }: { approved: boolean; note: string; reasons?: Record<string, string>; signer?: CertificateSigner }) =>
       apiMutation<{ successCount: number; failedCount: number; failures: { leaderFullName?: string; reason: string }[] }>(
         config.bulkApprovePath ?? "",
         "POST",
-        config.buildBulkBody?.(selectedIds, approved, note, reasons) ?? { ids: selectedIds, approved, review: note || undefined, reviews: reasons },
+        config.buildBulkBody?.(bulkApprovableIds, approved, note, reasons, signer) ?? { ids: bulkApprovableIds, approved, review: note || undefined, reviews: reasons },
       ),
     onSuccess: async (result, variables) => {
       const action = variables.approved ? "Duyệt" : "Từ chối";
-      toast.success(`${action} ${result.successCount} hồ sơ thành công`);
+      if (result.successCount > 0) {
+        toast.success(`${action} ${result.successCount} hồ sơ thành công`);
+      }
       if (result.failedCount > 0) {
-        toast.error(`${result.failedCount} hồ sơ không xử lý được: ${result.failures.map((failure) => `${failure.leaderFullName ?? "Hồ sơ"} (${failure.reason})`).join("; ")}`);
+        toast.error(`${result.failedCount} hồ sơ không xử lý được: ${result.failures.map((failure) => `${failure.leaderFullName ?? "Hồ sơ"} (${failure.reason})`).join("; ")}`, { duration: 10000 });
       }
       setSelectedIds([]);
       setBulkMode(null);
@@ -246,22 +265,92 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
       </Button>
     </Tip>
   ) : null;
+  async function exportPdf(ids: string[]) {
+    if (!config.pdfExportPath || ids.length === 0) return;
+
+    // Kiểm tra ngay trên giao diện: chỉ cho xuất chứng nhận đã duyệt, nêu rõ chứng nhận nào chưa được duyệt.
+    const notApproved = ids
+      .map((id) => rows.find((row) => getResourceId(effectiveRoute, row) === id))
+      .filter((row): row is Record<string, unknown> => Boolean(row))
+      .filter((row) => (row.approvalStatus ?? row.certificateApprovalStatus) !== "APPROVED")
+      .map((row) => {
+        const name = String(row.leaderFullName ?? row.certificateCode ?? getResourceId(effectiveRoute, row) ?? "");
+        const status = (row.approvalStatus ?? row.certificateApprovalStatus) === "REJECTED" ? "bị từ chối" : "chưa duyệt";
+        return `${name} (${status})`;
+      });
+    if (notApproved.length) {
+      toast.error(`Chỉ xuất được chứng nhận đã duyệt. Vui lòng bỏ chọn ${notApproved.length} chứng nhận: ${notApproved.join("; ")}`, {
+        duration: 10000,
+      });
+      return;
+    }
+
+    // Xuất chạy nền: tạo job rồi hỏi trạng thái định kỳ, không khóa giao diện; tải về khi xong.
+    // Nhờ vậy xuất vài trăm chứng nhận một lần cũng không treo request.
+    const base = config.pdfExportPath;
+    const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+    setExporting(true);
+    const toastId = toast.loading(`Đang tạo PDF ${ids.length} chứng nhận...`);
+    try {
+      const submit = await apiFetch<{ jobId: string; status: string; error?: string }>(`${base}/jobs`, {
+        method: "POST",
+        body: JSON.stringify({ certificateCodes: ids }),
+      });
+      let status = submit.status;
+      let error = submit.error;
+      for (let attempt = 0; attempt < 200 && status === "PENDING"; attempt += 1) {
+        await sleep(1500);
+        const next = await apiFetch<{ status: string; error?: string }>(`${base}/jobs/${encodeURIComponent(submit.jobId)}`);
+        status = next.status;
+        error = next.error;
+      }
+      if (status !== "DONE") throw new Error(error || "Quá thời gian tạo PDF, vui lòng thử lại");
+
+      const response = await apiDownload(`${base}/jobs/${encodeURIComponent(submit.jobId)}/file`);
+      const blob = await response.blob();
+      const filename = parseContentDispositionFilename(response.headers.get("content-disposition")) ?? "chung-nhan.pdf";
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      toast.success(`Đã xuất PDF ${ids.length} chứng nhận`, { id: toastId });
+    } catch (error) {
+      toast.error(getApiErrorMessage(error), { id: toastId, duration: 10000 });
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  const exportActions = canExportPdf ? (
+    <>
+      <span className="whitespace-nowrap text-sm text-muted">Đã chọn {selectedIds.length} hồ sơ</span>
+      <Tip disabled={selectedIds.length === 0} label="Xuất PDF chứng nhận cho các hồ sơ đã chọn (chỉ chứng nhận đã duyệt)">
+        <Button disabled={selectedIds.length === 0 || exporting} onClick={() => exportPdf(selectedIds)} size="sm" type="button">
+          {exporting ? "Đang xuất..." : "Xuất PDF"}
+        </Button>
+      </Tip>
+    </>
+  ) : null;
   const bulkActions = canBulkApprove ? (
     <>
-      <span className="whitespace-nowrap text-sm text-muted">Đã chọn {selectedIds.filter((id) => selectableIds.includes(id)).length} hồ sơ</span>
-      <Tip disabled={selectedIds.length === 0} label="Duyệt tất cả hồ sơ đã chọn">
-        <Button disabled={selectedIds.length === 0} onClick={() => setBulkMode("approve")} size="sm" type="button">
+      <span className="whitespace-nowrap text-sm text-muted">Có thể duyệt {bulkApprovableIds.length} hồ sơ</span>
+      <Tip disabled={bulkApprovableIds.length === 0} label="Duyệt các hồ sơ đang chờ (khóa đã kết thúc sẽ bị bỏ qua)">
+        <Button disabled={bulkApprovableIds.length === 0} onClick={() => setBulkMode("approve")} size="sm" type="button">
           Duyệt đã chọn
         </Button>
       </Tip>
-      <Tip disabled={selectedIds.length === 0} label="Từ chối các hồ sơ đã chọn, bắt buộc nhập lý do">
-        <Button disabled={selectedIds.length === 0} onClick={() => setBulkMode("reject")} size="sm" type="button" variant="outline">
+      <Tip disabled={bulkApprovableIds.length === 0} label="Từ chối các hồ sơ đang chờ, bắt buộc nhập lý do (khóa đã kết thúc sẽ bị bỏ qua)">
+        <Button disabled={bulkApprovableIds.length === 0} onClick={() => setBulkMode("reject")} size="sm" type="button" variant="outline">
           Từ chối đã chọn
         </Button>
       </Tip>
     </>
   ) : null;
-  const selection = canBulkApprove
+  const selection = canBulkApprove || canExportPdf
     ? {
         selectedIds,
         selectableIds,
@@ -293,7 +382,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
           canCreate={canCreate}
           hideSearch={Boolean(embedded)}
           extraActions={saveScoresButton}
-          leadingActions={bulkActions}
+          leadingActions={bulkActions || exportActions ? <>{bulkActions}{exportActions}</> : null}
         />
         {scoreEntryEnabled && embedded?.scoreLocked === true ? (
           <div className="border-b border-warning/30 bg-warning/10 px-4 py-2 text-xs font-medium text-foreground">Điểm của khóa đang bị khóa chỉnh sửa. Cần mở khóa mới nhập được điểm.</div>
@@ -303,6 +392,8 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
         ) : null}
         <ResourceTable
           selection={selection}
+          onExportRow={canExportPdf ? (id) => exportPdf([id]) : undefined}
+          exportingRow={exporting}
           scoreEntry={scoreEntry}
           page={queryState.page}
           isLoading={query.isLoading}
@@ -341,19 +432,21 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
         title="Đổi trạng thái bản ghi"
       />
       <ApprovalDialog
+        captureSigner={config.captureSigner}
         loading={actionMutation.isPending}
         onClose={closeQueryDialog}
-        onConfirm={(note) => approveId && actionMutation.mutate({ action: "approve", id: approveId, note })}
+        onConfirm={(note, _reasons, signer) => approveId && actionMutation.mutate({ action: "approve", id: approveId, note, signer })}
         open={Boolean(approveId)}
       />
       <ApprovalDialog
         key={bulkMode ?? "bulk-closed"}
+        captureSigner={config.captureSigner}
         loading={bulkMutation.isPending}
         mode={bulkMode === "reject" ? "reject" : "approve"}
         onClose={() => setBulkMode(null)}
-        onConfirm={(note, reasons) => bulkMode && bulkMutation.mutate({ approved: bulkMode === "approve", note, reasons })}
-        items={selectedIds.map((id) => {
-          const row = rows.find((candidate) => getResourceId(effectiveRoute, candidate) === id);
+        onConfirm={(note, reasons, signer) => bulkMode && bulkMutation.mutate({ approved: bulkMode === "approve", note, reasons, signer })}
+        items={bulkApprovableIds.map((id) => {
+          const row = rowById(id);
           return { id, label: String(row?.leaderFullName ?? id) };
         })}
         open={bulkMode !== null}

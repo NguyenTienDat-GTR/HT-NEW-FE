@@ -15,7 +15,14 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
     fields: [
       { name: "typeName", label: "Tên loại khóa", required: true, section: "Thông tin loại khóa" },
       { name: "managementUnitType", label: "Cấp quản lý", type: "select", required: true, options: unitTypes, section: "Thông tin loại khóa" },
-      { name: "certificateShortCode", label: "Mã viết tắt chứng chỉ", section: "Thông tin loại khóa" },
+      {
+        name: "certificateShortCode",
+        label: "Mã viết tắt chứng chỉ",
+        // Bắt buộc khi loại khóa có cấp độ đạt được (có yêu cầu chứng nhận).
+        requiredWhen: (values) => typeof values.resultingLevel === "string" && values.resultingLevel !== "" && values.resultingLevel !== "NONE",
+        helper: "Dùng để sinh mã chứng chỉ, ví dụ HTI. Bắt buộc với loại khóa có cấp độ đạt được.",
+        section: "Thông tin loại khóa",
+      },
       { name: "requiredCurrentLevel", label: "Cấp hiện tại yêu cầu", type: "select", options: leaderLevels, section: "Điều kiện tham dự" },
       { name: "requiredMinAge", label: "Tuổi tối thiểu", type: "number", section: "Điều kiện tham dự" },
       { name: "requiredYearsActive", label: "Số năm sinh hoạt", type: "number", section: "Điều kiện tham dự" },
