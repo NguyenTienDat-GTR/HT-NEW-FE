@@ -9,6 +9,8 @@ export type EmbeddedResource = {
   basePath: string;
   tab: string;
   fixedFilters: Record<string, string>;
+  // Từ khóa tìm kiếm chung của trang chứa (dùng chung cho mọi tab).
+  search?: string;
   // Khóa có đang trong thời gian diễn ra không (false thì tab chấm điểm không cho nhập điểm).
   scoringOpen?: boolean;
   scoringHint?: string;

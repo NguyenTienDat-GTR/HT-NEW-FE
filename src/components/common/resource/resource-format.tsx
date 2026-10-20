@@ -296,7 +296,7 @@ function LeaderLevelBadge({ value }: { value: string }) {
       : value === "DU_TRUONG"
         ? "border-danger bg-danger text-white"
         : value.startsWith("HT_")
-          ? "border-amber-400 bg-danger text-white"
+          ? "border-amber-400 border-3 bg-danger text-white"
           : value.startsWith("HLV_")
             ? "border-purple-600 bg-purple-600 text-white"
             : undefined;

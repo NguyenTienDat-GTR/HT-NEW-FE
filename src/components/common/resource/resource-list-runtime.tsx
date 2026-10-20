@@ -10,7 +10,7 @@ import { Panel } from "@/components/ui/panel";
 import { rowsFromResponse } from "@/components/form/resource-form/api-utils";
 import { apiFetch, apiMutation, getApiErrorMessage, type PageResponse } from "@/lib/api/client";
 import { useAuthStore } from "@/lib/auth/auth-store";
-import { canUseAction, hasPermissionPrefix } from "@/lib/auth/permissions";
+import { canUseAction } from "@/lib/auth/permissions";
 import { resolveRouteForUser } from "@/modules/workspace/super-admin-route-overrides";
 import { ApprovalDialog } from "./approval-dialog";
 import { embeddedTabHref, useEmbeddedResource, withReturnTo } from "./embedded-resource-context";
@@ -45,7 +45,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
           : undefined,
       }
     : resolvedRoute;
-  const queryState = useResourceQueryState(effectiveRoute, embedded?.fixedFilters);
+  const queryState = useResourceQueryState(effectiveRoute, embedded?.fixedFilters, embedded?.search);
   const query = useQuery({
     queryKey: ["resource", effectiveRoute.endpoint, queryState.queryString],
     enabled: Boolean(effectiveRoute.endpoint && user),
@@ -238,25 +238,6 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
     })();
   }
 
-  // Admin giáo phận/giáo hạt (quyền lock) khóa hoặc mở chỉnh sửa điểm của khóa; khóa thì không nhập điểm được.
-  const canLockScore = Boolean(config.scoreEntry && scoreCourseCode) && hasPermissionPrefix(user, "training.participation.lock.");
-  const lockScoreMutation = useMutation({
-    mutationFn: (locked: boolean) => apiMutation(`/training/courses/${encodeURIComponent(String(scoreCourseCode))}/score-lock`, "PATCH", { locked }),
-    onSuccess: async (_data, locked) => {
-      toast.success(locked ? "Đã khóa chỉnh sửa điểm" : "Đã mở chỉnh sửa điểm");
-      await queryClient.invalidateQueries({ queryKey: ["resource-detail"] });
-    },
-  });
-  const lockScoreButton = canLockScore ? (
-    <Button
-      loading={lockScoreMutation.isPending}
-      onClick={() => lockScoreMutation.mutate(embedded?.scoreLocked !== true)}
-      type="button"
-      variant="outline"
-    >
-      {embedded?.scoreLocked === true ? "Mở chỉnh sửa điểm" : "Khóa chỉnh sửa điểm"}
-    </Button>
-  ) : null;
   const saveScoresButton = scoreEntryEnabled ? (
     <Button disabled={pendingScoreRowIds.length === 0 || embedded?.scoringOpen === false || embedded?.scoreLocked === true} onClick={saveScoresInBackground} type="button">
       {pendingScoreRowIds.length ? `Lưu điểm (${pendingScoreRowIds.length})` : savingScoreIds.length ? `Đang lưu ${savingScoreIds.length}...` : "Lưu điểm"}
@@ -303,12 +284,8 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
           updateParam={queryState.updateParam}
           resetFilters={queryState.resetFilters}
           canCreate={canCreate}
-          extraActions={
-            <>
-              {lockScoreButton}
-              {saveScoresButton}
-            </>
-          }
+          hideSearch={Boolean(embedded)}
+          extraActions={saveScoresButton}
           leadingActions={bulkActions}
         />
         {scoreEntryEnabled && embedded?.scoreLocked === true ? (

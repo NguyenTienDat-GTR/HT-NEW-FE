@@ -2,6 +2,9 @@ import { ChartBar, ClipboardText } from "@phosphor-icons/react";
 import { deaneryUnitFilter, parishUnitFilter, route, type RouteFilterConfig, type RouteGroup } from "../route-config";
 
 // Chỉ giữ các trạng thái còn phát sinh ở hai màn đăng ký và duyệt đăng ký.
+// Tìm kiếm chung: họ tên huynh trưởng (họ + tên), tên thánh, giáo xứ, giáo hạt.
+const participationSearchFields = ["leader.lastName+leader.firstName", "leader.holyName", "leader.parish.name", "leader.parish.deanery.name"];
+
 // Giáo hạt/giáo xứ của huynh trưởng (danh sách tùy chọn đã giới hạn theo phạm vi tài khoản).
 const unitFilters: RouteFilterConfig[] = [
   deaneryUnitFilter("leader.parish.deanery.id"),
@@ -74,6 +77,7 @@ export const trainingWorkflowRouteGroup: RouteGroup = {
         kind: "participations",
         icon: ClipboardText,
         columns: ["leaderFullName", "parishName", "deaneryName", "courseName", "eligible", "exceptionReason", "participationStatus", "status"],
+        searchFields: participationSearchFields,
         permissionPrefixes: ["training.participation.read.parish", "training.participation.submit."],
         actionPermissionPrefixes: ["training.participation.submit."],
         // Thu hồi đăng ký: người gửi (tài khoản có quyền gửi) được thu hồi hồ sơ của mình khi hồ sơ chưa được duyệt hoặc từ chối.
@@ -93,6 +97,7 @@ export const trainingWorkflowRouteGroup: RouteGroup = {
         kind: "participations",
         icon: ClipboardText,
         columns: ["leaderFullName", "parishName", "deaneryName", "courseName", "approvalStatus", "review", "status"],
+        searchFields: participationSearchFields,
         permissionPrefixes: ["training.participation.approve.deanery", "training.participation.approve.diocese"],
         actionPermissionPrefixes: ["training.participation.approve."],
         primaryActionLabel: "Duyệt hồ sơ",
@@ -109,6 +114,7 @@ export const trainingWorkflowRouteGroup: RouteGroup = {
         kind: "participations",
         icon: ClipboardText,
         columns: ["leaderFullName", "parishName", "deaneryName", "courseName", "participationStatus", "totalScore", "passed"],
+        searchFields: participationSearchFields,
         permissionPrefixes: [
           "training.participation.read.deanery",
           "training.participation.read.diocese",
@@ -133,6 +139,7 @@ export const trainingWorkflowRouteGroup: RouteGroup = {
         kind: "participations",
         icon: ChartBar,
         columns: ["leaderFullName", "parishName", "deaneryName", "courseName", "totalScore", "passed"],
+        searchFields: participationSearchFields,
         permissionPrefixes: ["training.participation.score.deanery", "training.participation.score.diocese"],
         actionPermissionPrefixes: ["training.participation.score."],
         filters: scoreFilters,

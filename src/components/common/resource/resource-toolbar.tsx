@@ -26,7 +26,10 @@ export function ResourceFilters({
   canCreate,
   extraActions,
   leadingActions,
+  hideSearch = false,
 }: {
+  // Ẩn ô tìm kiếm riêng khi trang chứa có ô tìm kiếm chung.
+  hideSearch?: boolean;
   extraActions?: ReactNode;
   // Khu vực thao tác đứng trước ô tìm kiếm (ví dụ chọn nhiều hồ sơ); khi có thì ô tìm kiếm được thu gọn.
   leadingActions?: ReactNode;
@@ -51,7 +54,7 @@ export function ResourceFilters({
     <div className="border-b border-border bg-white p-4">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         {leadingActions ? <div className="flex flex-wrap items-center gap-2 lg:items-end">{leadingActions}</div> : null}
-        <label className={leadingActions ? "relative w-full min-w-0 lg:w-72" : "relative min-w-0 flex-1"}>
+        <label className={hideSearch ? "hidden" : leadingActions ? "relative w-full min-w-0 lg:w-72" : "relative min-w-0 flex-1"}>
           <span className="mb-2 block text-xs font-semibold text-foreground">Tìm kiếm</span>
           <MagnifyingGlass className="pointer-events-none absolute left-3 top-[38px] h-4 w-4 text-muted" />
           <Input className="pl-9" onChange={(event) => setSearch(event.target.value)} placeholder={`Tìm kiếm ${route.title.toLowerCase()}`} value={search} />

@@ -8,11 +8,13 @@ import type { RouteConfig } from "@/config/routes/routes";
 
 export type ResourcePageSize = 10 | 20 | 50 | 100;
 
-export function useResourceQueryState(route: RouteConfig, fixedFilters: Record<string, string> = {}) {
+export function useResourceQueryState(route: RouteConfig, fixedFilters: Record<string, string> = {}, externalSearch?: string) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [search, setSearch] = useState(searchParams.get("search") ?? "");
+  const [localSearch, setSearch] = useState(searchParams.get("search") ?? "");
+  // Có ô tìm kiếm chung bên ngoài (chi tiết khóa) thì dùng từ khóa đó thay cho ô tìm kiếm riêng.
+  const search = externalSearch ?? localSearch;
 
   const page = parseUrlPage(searchParams.get("page")) - 1;
   const size = parsePageSize(searchParams.get("size"));
@@ -31,7 +33,7 @@ export function useResourceQueryState(route: RouteConfig, fixedFilters: Record<s
   );
 
   useEffect(() => {
-    if (search === urlSearch) return;
+    if (externalSearch !== undefined || search === urlSearch) return;
 
     const timer = window.setTimeout(() => {
       const next = new URLSearchParams(searchParams);
@@ -41,7 +43,7 @@ export function useResourceQueryState(route: RouteConfig, fixedFilters: Record<s
       router.replace(`${pathname}?${next.toString()}` as Route);
     }, 300);
     return () => window.clearTimeout(timer);
-  }, [pathname, router, search, searchParams, urlSearch]);
+  }, [externalSearch, pathname, router, search, searchParams, urlSearch]);
 
   const queryString = useMemo(() => {
     return serializeBaseSearch({
