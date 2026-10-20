@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Tip } from "@/components/ui/tip";
 import { Panel } from "@/components/ui/panel";
 import { rowsFromResponse } from "@/components/form/resource-form/api-utils";
 import { apiFetch, apiMutation, getApiErrorMessage, type PageResponse } from "@/lib/api/client";
@@ -112,7 +113,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
       if (action === "toggle") return apiMutation(`${effectiveRoute.endpoint}/${encodeURIComponent(id)}/toggle-status`, "PATCH", { confirmationText: "Xác nhận" });
       if (action === "approve" || action === "reject") {
         const approved = action === "approve";
-        const approvePath = config.buildApprovePath?.(effectiveRoute, rows, id) ?? `${effectiveRoute.endpoint}/${encodeURIComponent(id)}/approve`;
+        const approvePath = config.buildApprovePath?.(effectiveRoute, rows, id, approved) ?? `${effectiveRoute.endpoint}/${encodeURIComponent(id)}/approve`;
         const approveBody = config.buildApproveBody?.(effectiveRoute, note, approved) ?? { approved, review: note || undefined };
         return apiMutation(approvePath, "POST", approveBody);
       }
@@ -126,11 +127,11 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
   });
 
   const bulkMutation = useMutation({
-    mutationFn: ({ approved, note }: { approved: boolean; note: string }) =>
+    mutationFn: ({ approved, note, reasons }: { approved: boolean; note: string; reasons?: Record<string, string> }) =>
       apiMutation<{ successCount: number; failedCount: number; failures: { leaderFullName?: string; reason: string }[] }>(
         config.bulkApprovePath ?? "",
         "POST",
-        { ids: selectedIds, approved, review: note || undefined },
+        config.buildBulkBody?.(selectedIds, approved, note, reasons) ?? { ids: selectedIds, approved, review: note || undefined, reviews: reasons },
       ),
     onSuccess: async (result, variables) => {
       const action = variables.approved ? "Duyệt" : "Từ chối";
@@ -239,19 +240,25 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
   }
 
   const saveScoresButton = scoreEntryEnabled ? (
-    <Button disabled={pendingScoreRowIds.length === 0 || embedded?.scoringOpen === false || embedded?.scoreLocked === true} onClick={saveScoresInBackground} type="button">
-      {pendingScoreRowIds.length ? `Lưu điểm (${pendingScoreRowIds.length})` : savingScoreIds.length ? `Đang lưu ${savingScoreIds.length}...` : "Lưu điểm"}
-    </Button>
+    <Tip disabled label="Lưu điểm các hồ sơ đã nhập hoặc sửa trên bảng">
+      <Button disabled={pendingScoreRowIds.length === 0 || embedded?.scoringOpen === false || embedded?.scoreLocked === true} onClick={saveScoresInBackground} type="button">
+        {pendingScoreRowIds.length ? `Lưu điểm (${pendingScoreRowIds.length})` : savingScoreIds.length ? `Đang lưu ${savingScoreIds.length}...` : "Lưu điểm"}
+      </Button>
+    </Tip>
   ) : null;
   const bulkActions = canBulkApprove ? (
     <>
       <span className="whitespace-nowrap text-sm text-muted">Đã chọn {selectedIds.filter((id) => selectableIds.includes(id)).length} hồ sơ</span>
-      <Button disabled={selectedIds.length === 0} onClick={() => setBulkMode("approve")} size="sm" type="button">
-        Duyệt đã chọn
-      </Button>
-      <Button disabled={selectedIds.length === 0} onClick={() => setBulkMode("reject")} size="sm" type="button" variant="outline">
-        Từ chối đã chọn
-      </Button>
+      <Tip disabled={selectedIds.length === 0} label="Duyệt tất cả hồ sơ đã chọn">
+        <Button disabled={selectedIds.length === 0} onClick={() => setBulkMode("approve")} size="sm" type="button">
+          Duyệt đã chọn
+        </Button>
+      </Tip>
+      <Tip disabled={selectedIds.length === 0} label="Từ chối các hồ sơ đã chọn, bắt buộc nhập lý do">
+        <Button disabled={selectedIds.length === 0} onClick={() => setBulkMode("reject")} size="sm" type="button" variant="outline">
+          Từ chối đã chọn
+        </Button>
+      </Tip>
     </>
   ) : null;
   const selection = canBulkApprove
@@ -344,7 +351,11 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
         loading={bulkMutation.isPending}
         mode={bulkMode === "reject" ? "reject" : "approve"}
         onClose={() => setBulkMode(null)}
-        onConfirm={(note) => bulkMode && bulkMutation.mutate({ approved: bulkMode === "approve", note })}
+        onConfirm={(note, reasons) => bulkMode && bulkMutation.mutate({ approved: bulkMode === "approve", note, reasons })}
+        items={selectedIds.map((id) => {
+          const row = rows.find((candidate) => getResourceId(effectiveRoute, candidate) === id);
+          return { id, label: String(row?.leaderFullName ?? id) };
+        })}
         open={bulkMode !== null}
       />
       <ConfirmActionDialog

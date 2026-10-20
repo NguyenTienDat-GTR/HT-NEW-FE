@@ -147,6 +147,11 @@ export type RouteConfig = {
   primaryActionLabel?: string;
   filterLabels?: string[];
   filters?: RouteFilterConfig[];
+  // Bộ lọc nền luôn áp dụng cho danh sách (giá trị là tập cho phép), người dùng không đổi được.
+  baseFilters?: Record<string, string[]>;
+  // Cột hiển thị -> thuộc tính entity dùng để sắp xếp (có thể ghép nhiều trường bằng dấu +, ví dụ firstName+lastName).
+  // Giá trị null = cột tính ra ở response nên không sắp xếp được. Cột không khai báo dùng chính tên cột.
+  sortFields?: Record<string, string | null>;
   workflowHint?: string;
   actions?: Partial<Record<ResourceAction, ResourceActionConfig>>;
 };

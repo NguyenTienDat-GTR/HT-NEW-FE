@@ -6,6 +6,7 @@ import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { apiFetch, type PageResponse } from "@/lib/api/client";
+import { useDebouncedValue } from "@/lib/use-debounced-value";
 import type { AuthUser } from "@/lib/auth/auth-store";
 import { cn } from "@/lib/utils";
 import { optionFromRow, rowsFromResponse } from "./api-utils";
@@ -248,7 +249,9 @@ function OptionControl({
   onChange: (value: FormValue) => void;
   onFieldChange?: (fieldName: string, value: FormValue) => void;
 }) {
-  const [remoteSearch, setRemoteSearch] = useState("");
+  const [remoteSearchInput, setRemoteSearch] = useState("");
+  // Tìm kiếm tùy chọn qua API chỉ gửi request khi người dùng ngừng nhập.
+  const remoteSearch = useDebouncedValue(remoteSearchInput);
   const query = useQuery({
     queryKey: ["field-options", field.name, field.optionsEndpoint, field.optionSearchParam ? remoteSearch : ""],
     enabled: Boolean(field.optionsEndpoint),

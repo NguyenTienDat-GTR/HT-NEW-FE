@@ -25,6 +25,7 @@ export const columnLabels: Record<string, string> = {
   authProvider: "Nguồn đăng nhập",
   birthDate: "Ngày sinh",
   certificateApprovalStatus: "Duyệt chứng nhận",
+  finalResult: "Kết quả khóa",
   certificateRequestedAt: "Ngày yêu cầu chứng nhận",
   certificateApprovedAt: "Ngày duyệt chứng nhận",
   componentScores: "Điểm thành phần",
@@ -198,6 +199,11 @@ export function ResourceCell({ column, row, value, displayMode = "table" }: Reso
   if (column === "organizingStatus" && typeof value === "string") {
     const state = resolveOrganizingState(row);
     return <Badge tone={organizingStateTones[state]}>{organizingStateLabels[state]}</Badge>;
+  }
+  if (column === "finalResult") {
+    if (value === "PASSED") return <Badge tone="success">Đạt, được thăng cấp</Badge>;
+    if (value === "FAILED") return <Badge tone="danger">Không đạt</Badge>;
+    return <span className="text-muted">Chưa kết thúc</span>;
   }
   if (column === "passed" && typeof value === "boolean") return <Badge tone={value ? "success" : "danger"}>{value ? "Đạt" : "Chưa đạt"}</Badge>;
   if (column === "locked" && typeof value === "boolean") return <Badge tone={value ? "warning" : "neutral"}>{value ? "Đã khóa" : "Có thể sửa"}</Badge>;

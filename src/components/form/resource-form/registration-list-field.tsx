@@ -2,12 +2,13 @@
 
 import { MagnifyingGlass, Trash, UsersThree, X } from "@phosphor-icons/react";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { formatLeaderLevel } from "@/components/common/resource/resource-format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { apiFetch, type PageResponse } from "@/lib/api/client";
+import { useDebouncedValue } from "@/lib/use-debounced-value";
 import { cn } from "@/lib/utils";
 import { formatDate } from "@/modules/leaders/components/leader-detail-utils";
 import { optionFromRow, rowsFromResponse } from "./api-utils";
@@ -126,23 +127,20 @@ function RegistrationCandidateModal({
 }) {
   const exception = mode === "exception";
   const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [deaneryId, setDeaneryId] = useState("");
   const [parishId, setParishId] = useState("");
-  const [page, setPage] = useState(0);
+  // Trang gắn với từ khóa đã gửi: đổi từ khóa thì tự về trang đầu.
+  const debouncedSearch = useDebouncedValue(search).trim();
+  const [pageState, setPageState] = useState({ page: 0, forSearch: "" });
+  const page = pageState.forSearch === debouncedSearch ? pageState.page : 0;
+  const setPage = (next: number | ((current: number) => number)) =>
+    setPageState({ page: typeof next === "function" ? next(page) : next, forSearch: debouncedSearch });
   // Danh sách thường: chọn nhiều (giữ lại qua các trang/tìm kiếm). Ngoại lệ: chọn 1 người kèm lí do.
   const [selected, setSelected] = useState<Record<string, RegistrationEntry>>(() => Object.fromEntries(entries.map((entry) => [entry.id, entry])));
   const [singleId, setSingleId] = useState("");
   const [reason, setReason] = useState("");
   const [added, setAdded] = useState<RegistrationEntry[]>(entries);
 
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setDebouncedSearch(search.trim());
-      setPage(0);
-    }, 300);
-    return () => window.clearTimeout(timer);
-  }, [search]);
 
   const deaneriesQuery = useQuery({
     queryKey: ["registration-scope", "deaneries"],

@@ -1,4 +1,4 @@
-import { ChartBar, ClipboardText } from "@phosphor-icons/react";
+import { Certificate, ChartBar, ClipboardText } from "@phosphor-icons/react";
 import { deaneryUnitFilter, parishUnitFilter, route, type RouteFilterConfig, type RouteGroup } from "../route-config";
 
 // Chỉ giữ các trạng thái còn phát sinh ở hai màn đăng ký và duyệt đăng ký.
@@ -34,7 +34,6 @@ const approvalFilters: RouteFilterConfig[] = [
     type: "select",
     options: [
       { value: "PENDING", label: "Chờ xử lý" },
-      { value: "APPROVED", label: "Đã duyệt" },
       { value: "REJECTED", label: "Từ chối" },
     ],
   },
@@ -61,6 +60,21 @@ const scoreFilters: RouteFilterConfig[] = [
   ...unitFilters,
 ];
 
+const certificateApprovalFilters: RouteFilterConfig[] = [
+  { key: "course.courseCode", label: "Khóa", type: "text", placeholder: "Lọc theo mã khóa" },
+  {
+    key: "approvalStatus",
+    label: "Trạng thái",
+    type: "select",
+    options: [
+      { value: "PENDING", label: "Chờ duyệt" },
+      { value: "APPROVED", label: "Đã duyệt" },
+      { value: "REJECTED", label: "Từ chối" },
+    ],
+  },
+  ...unitFilters,
+];
+
 export const trainingWorkflowRouteGroup: RouteGroup = {
     moduleName: "training-workflow",
     label: "Quy trình huấn luyện",
@@ -77,6 +91,7 @@ export const trainingWorkflowRouteGroup: RouteGroup = {
         kind: "participations",
         icon: ClipboardText,
         columns: ["leaderFullName", "parishName", "deaneryName", "courseName", "eligible", "exceptionReason", "participationStatus", "status"],
+        sortFields: { leaderFullName: "leader.firstName+leader.lastName", parishName: "leader.parish.name", deaneryName: "leader.parish.deanery.name", courseName: "course.courseName", passed: "totalScore" },
         searchFields: participationSearchFields,
         permissionPrefixes: ["training.participation.read.parish", "training.participation.submit."],
         actionPermissionPrefixes: ["training.participation.submit."],
@@ -97,11 +112,14 @@ export const trainingWorkflowRouteGroup: RouteGroup = {
         kind: "participations",
         icon: ClipboardText,
         columns: ["leaderFullName", "parishName", "deaneryName", "courseName", "approvalStatus", "review", "status"],
+        sortFields: { leaderFullName: "leader.firstName+leader.lastName", parishName: "leader.parish.name", deaneryName: "leader.parish.deanery.name", courseName: "course.courseName", passed: "totalScore" },
         searchFields: participationSearchFields,
         permissionPrefixes: ["training.participation.approve.deanery", "training.participation.approve.diocese"],
         actionPermissionPrefixes: ["training.participation.approve."],
         primaryActionLabel: "Duyệt hồ sơ",
         filters: approvalFilters,
+        // Hồ sơ đã duyệt đăng ký chuyển sang danh sách tham dự: danh sách này chỉ giữ hồ sơ chờ duyệt và bị từ chối.
+        baseFilters: { approvalStatus: ["PENDING", "SUBMITTED", "REJECTED"] },
         filterLabels: ["Khóa", "Trạng thái duyệt"],
       }),
       route({
@@ -113,7 +131,8 @@ export const trainingWorkflowRouteGroup: RouteGroup = {
         idField: "id",
         kind: "participations",
         icon: ClipboardText,
-        columns: ["leaderFullName", "parishName", "deaneryName", "courseName", "participationStatus", "totalScore", "passed"],
+        columns: ["leaderFullName", "parishName", "deaneryName", "courseName", "participationStatus", "totalScore", "passed", "finalResult"],
+        sortFields: { leaderFullName: "leader.firstName+leader.lastName", parishName: "leader.parish.name", deaneryName: "leader.parish.deanery.name", courseName: "course.courseName", passed: "totalScore" },
         searchFields: participationSearchFields,
         permissionPrefixes: [
           "training.participation.read.deanery",
@@ -138,7 +157,8 @@ export const trainingWorkflowRouteGroup: RouteGroup = {
         idField: "id",
         kind: "participations",
         icon: ChartBar,
-        columns: ["leaderFullName", "parishName", "deaneryName", "courseName", "totalScore", "passed"],
+        columns: ["leaderFullName", "parishName", "deaneryName", "courseName", "totalScore", "passed", "finalResult"],
+        sortFields: { leaderFullName: "leader.firstName+leader.lastName", parishName: "leader.parish.name", deaneryName: "leader.parish.deanery.name", courseName: "course.courseName", passed: "totalScore" },
         searchFields: participationSearchFields,
         permissionPrefixes: ["training.participation.score.deanery", "training.participation.score.diocese"],
         actionPermissionPrefixes: ["training.participation.score."],
@@ -153,6 +173,29 @@ export const trainingWorkflowRouteGroup: RouteGroup = {
         primaryActionLabel: "Chấm điểm",
         filterLabels: ["Khóa", "Kết quả", "Chứng nhận"],
         workflowHint: "Request score phải gửi đúng và đủ component của formula, không vượt maxScore.",
+      }),
+      route({
+        path: "/certificates/approvals",
+        moduleName: "certificate.approval",
+        title: "Duyệt chứng nhận",
+        subtitle: "Hoàn tất chứng nhận và promotion sau khi hồ sơ đã chấm điểm.",
+        endpoint: "/certificates",
+        idField: "certificateCode",
+        kind: "certificates",
+        icon: Certificate,
+        searchFields: participationSearchFields,
+        filters: certificateApprovalFilters,
+        columns: ["leaderFullName", "courseName", "totalScore", "passingScore", "approvalReasonRequired", "approvalStatus"],
+        sortFields: { leaderFullName: "leader.firstName+leader.lastName", courseName: "course.courseName", totalScore: null, passingScore: "course.passingScore", approvalReasonRequired: null },
+        permissionPrefixes: ["training.certificate.approve.", "training.certificate.read."],
+        actionPermissionPrefixes: ["training.certificate.approve."],
+        actions: {
+          approve: { label: "Duyệt", permissionPrefixes: ["training.certificate.approve."] },
+          reject: { label: "Từ chối", permissionPrefixes: ["training.certificate.approve."] },
+        },
+        primaryActionLabel: "Duyệt chứng nhận",
+        filterLabels: ["Khóa", "Trạng thái"],
+        workflowHint: "Duyệt certificate có thể promote leader nhưng không được hạ cấp hiện tại.",
       }),
     ],
   };

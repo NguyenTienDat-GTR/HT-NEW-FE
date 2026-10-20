@@ -34,6 +34,12 @@ export function useNotificationsSocket() {
           void queryClient.invalidateQueries({ queryKey: ["system", "notifications"] });
           void queryClient.invalidateQueries({ queryKey: notificationKeys.unreadCount });
         });
+        // Chứng nhận đổi (chấm điểm, tạo, sửa, duyệt): tải lại màn chứng nhận, tab duyệt chứng nhận và bảng chấm điểm của khóa.
+        client.subscribe("/topic/certificate-events", () => {
+          void queryClient.invalidateQueries({ queryKey: ["resource", "/certificates"] });
+          void queryClient.invalidateQueries({ queryKey: ["resource", "/training/participants"] });
+          void queryClient.invalidateQueries({ queryKey: ["resource-detail", "/certificates"] });
+        });
         client.subscribe("/user/queue/auth-events", () => {
           void refreshAccessToken().then(async (nextToken) => {
             if (!nextToken) {

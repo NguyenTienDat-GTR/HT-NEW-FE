@@ -5,9 +5,11 @@ export type ResourceListModuleConfig = {
   moduleLabel: string;
   moduleDescription: string;
   canCreate?: (route: RouteConfig, user: AuthUser | null) => boolean;
-  buildApprovePath?: (route: RouteConfig, rows: Record<string, unknown>[], id: string) => string;
+  buildApprovePath?: (route: RouteConfig, rows: Record<string, unknown>[], id: string, approved?: boolean) => string;
   // Duyệt/từ chối nhiều hồ sơ một lần.
   bulkApprovePath?: string;
+  // Body gửi lên bulkApprovePath; reasons là lý do riêng theo id hồ sơ (khi từ chối).
+  buildBulkBody?: (ids: string[], approved: boolean, note: string, reasons?: Record<string, string>) => unknown;
   // Thu hồi một hồ sơ.
   // Bảng chấm điểm: thêm cột điểm thành phần nhập trực tiếp trên từng hồ sơ (khi nhúng trong chi tiết khóa).
   scoreEntry?: boolean;

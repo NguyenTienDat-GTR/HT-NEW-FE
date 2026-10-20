@@ -31,6 +31,9 @@ export const executiveBoardRouteGroup: RouteGroup = {
         kind: "executive-board",
         icon: IdentificationCard,
         columns: ["leaderFullName", "positionName", "unitType", "unitId", "startDate", "endDate", "status"],
+        sortFields: { leaderFullName: "leader.firstName+leader.lastName", positionName: "position.positionName" },
+        // Tìm theo thuộc tính entity (leaderFullName/positionName chỉ có ở response): họ tên, tên thánh, chức vụ.
+        searchFields: ["leader.lastName+leader.firstName", "leader.holyName", "position.positionName"],
         permissionPrefixes: ["organization.executive_board.read.", "organization.executive_board_assignment.read."],
         actionPermissionPrefixes: ["organization.executive_board.create.", "organization.executive_board.update.", "organization.executive_board_assignment.create.", "organization.executive_board_assignment.update.", "organization.executive_board_assignment.toggle."],
         primaryActionLabel: "Phân công",

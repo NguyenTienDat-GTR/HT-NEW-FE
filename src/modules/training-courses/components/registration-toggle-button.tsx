@@ -4,6 +4,7 @@ import { LockSimpleIcon, LockSimpleOpenIcon } from "@phosphor-icons/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Tip } from "@/components/ui/tip";
 import { apiMutation, getApiErrorMessage } from "@/lib/api/client";
 import { registrationStateLabels, resolveRegistrationState } from "../registration-state";
 
@@ -30,8 +31,10 @@ export function RegistrationToggleButton({ endpoint, id, row }: { endpoint: stri
       ? "Mở đăng ký"
       : "Đóng đăng ký";
   return (
-    <Button aria-label={label} className="h-8 min-w-8 rounded-lg" disabled={!toggleable || mutation.isPending} onClick={() => mutation.mutate()} size="icon" title={label} type="button" variant="icon">
-      {closed || !toggleable ? <LockSimpleIcon size={16} /> : <LockSimpleOpenIcon size={16} />}
-    </Button>
+    <Tip disabled={!toggleable || mutation.isPending} label={label}>
+      <Button aria-label={label} className="h-8 min-w-8 rounded-lg" disabled={!toggleable || mutation.isPending} onClick={() => mutation.mutate()} size="icon" type="button" variant="icon">
+        {closed || !toggleable ? <LockSimpleIcon size={16} /> : <LockSimpleOpenIcon size={16} />}
+      </Button>
+    </Tip>
   );
 }

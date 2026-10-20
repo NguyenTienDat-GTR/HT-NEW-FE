@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, LockSimple, LockSimpleOpen, MagnifyingGlass, PencilSimple } from "@phosphor-icons/react";
+import { ArrowLeft, Flag, LockSimple, LockSimpleOpen, MagnifyingGlass, PencilSimple } from "@phosphor-icons/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Route } from "next";
 import Link from "next/link";
@@ -14,10 +14,13 @@ import { formatVietnamDateValue } from "@/lib/date-format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Panel } from "@/components/ui/panel";
+import { Tip } from "@/components/ui/tip";
+import { ConfirmActionDialog } from "@/components/common/resource/confirm-action-dialog";
 import { findRoute, type RouteConfig } from "@/config/routes/routes";
 import { apiFetch, apiMutation, getApiErrorMessage } from "@/lib/api/client";
 import { useAuthStore } from "@/lib/auth/auth-store";
 import { canUseAction, hasPermissionPrefix } from "@/lib/auth/permissions";
+import { useDebouncedValue } from "@/lib/use-debounced-value";
 import { cn } from "@/lib/utils";
 import {
   isCourseWithinDates,
@@ -29,6 +32,7 @@ import {
   resolveRegistrationState,
   type StatusTone,
 } from "@/modules/training-courses/registration-state";
+import { CertificateResourceView } from "@/modules/certificates/components/certificate-resource-view";
 import { TrainingWorkflowResourceView } from "@/modules/training-workflow/components/training-workflow-resource-view";
 
 // Quy trình huấn luyện của một khóa: mỗi tab dùng lại đúng màn hình/logic của menu cũ, lọc theo khóa đang chọn.
@@ -37,6 +41,7 @@ const workflowTabs = [
   { key: "approvals", label: "Duyệt đăng ký", path: "/training/approvals" },
   { key: "participations", label: "Danh sách tham dự", path: "/training/participations" },
   { key: "scores", label: "Chấm điểm", path: "/training/scores" },
+  { key: "certificate-approvals", label: "Duyệt chứng nhận", path: "/certificates/approvals" },
 ] as const;
 
 const summaryColumns = ["courseTypeName", "hostYear", "yearsActive", "passingScore", "location", "startDate", "endDate", "registrationPeriod", "registrationStatus", "organizingStatus"];
@@ -46,9 +51,8 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const router = useRouter();
-  // Ô tìm kiếm chung cho cả 4 tab: nằm dưới thông tin khóa, giữ nguyên nội dung khi đổi tab.
+  // Ô tìm kiếm chung cho cả 5 tab: nằm dưới thông tin khóa, giữ nguyên nội dung khi đổi tab.
   const [searchText, setSearchText] = useState("");
-  const [search, setSearch] = useState("");
   const firstSearch = useRef(true);
 
   const courseQuery = useQuery({
@@ -70,23 +74,37 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
     },
   });
 
+  // Kết thúc khóa thủ công: chốt kết quả chung, thăng cấp hồ sơ đạt, khóa điểm.
+  const canFinish = hasPermissionPrefix(user, "training.course.finish.");
+  const [finishOpen, setFinishOpen] = useState(false);
+  const finishMutation = useMutation({
+    mutationFn: () => apiMutation(`${route.endpoint}/${encodeURIComponent(id)}/finish`, "POST"),
+    onSuccess: async () => {
+      toast.success("Đã kết thúc khóa huấn luyện");
+      setFinishOpen(false);
+      await queryClient.invalidateQueries({ queryKey: ["resource-detail", route.endpoint, id] });
+      await queryClient.invalidateQueries({ queryKey: ["resource"] });
+    },
+    onError: (error) => toast.error(getApiErrorMessage(error)),
+  });
+
+  const course = courseQuery.data;
   const tabs = useMemo(
     () =>
       workflowTabs.flatMap((tab) => {
+        // Khóa không có cấp độ đạt được thì không có chứng nhận nên không có tab duyệt chứng nhận.
+        if (tab.key === "certificate-approvals" && course?.certificateRequired === false) return [];
         const tabRoute = findRoute(tab.path);
         if (!tabRoute) return [];
         if (tabRoute.permissionPrefixes.length && !tabRoute.permissionPrefixes.some((prefix) => hasPermissionPrefix(user, prefix))) return [];
         return [{ ...tab, route: tabRoute }];
       }),
-    [user],
+    [user, course?.certificateRequired],
   );
   const activeTab = tabs.find((tab) => tab.key === searchParams.get("tab")) ?? tabs[0];
   const basePath = `/training/courses/${encodeURIComponent(id)}`;
 
-  useEffect(() => {
-    const timer = window.setTimeout(() => setSearch(searchText.trim()), 300);
-    return () => window.clearTimeout(timer);
-  }, [searchText]);
+  const search = useDebouncedValue(searchText).trim();
 
   // Đổi từ khóa thì về trang đầu của tab đang xem.
   useEffect(() => {
@@ -98,7 +116,6 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
   const editHref = fillRoute(route.editPath, { id });
-  const course = courseQuery.data;
 
   if (courseQuery.isError) {
     return (
@@ -122,7 +139,15 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
         <div className="flex flex-wrap items-start justify-between gap-3">
           <h1 className="text-xl font-semibold tracking-[0] text-foreground">{courseQuery.isLoading ? "Đang tải..." : String(course?.courseName ?? id)}</h1>
           <div className="flex flex-wrap items-center gap-2">
-            {canLockScore && course ? (
+            {canFinish && course && !course.finishedAt ? (
+              <Tip label="Kết thúc khóa, chốt kết quả và thăng cấp các hồ sơ đạt">
+                <Button onClick={() => setFinishOpen(true)} type="button" variant="outline">
+                  <Flag size={16} />
+                  Kết thúc khóa
+                </Button>
+              </Tip>
+            ) : null}
+            {canLockScore && course && !course.finishedAt ? (
               <Button
                 className={course.scoreLocked === true ? undefined : "border-success text-success hover:border-success hover:bg-success/10 hover:text-success"}
                 loading={lockScoreMutation.isPending}
@@ -167,6 +192,18 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
         </label>
       </section>
 
+      <ConfirmActionDialog
+        action="toggle"
+        confirmLabel="Kết thúc khóa"
+        description="Khóa sẽ chuyển sang đã kết thúc và điểm bị khóa. Hồ sơ có kết quả chưa đạt, chứng nhận chưa được duyệt hoặc bị từ chối sẽ có kết quả chung là không đạt và không được thăng cấp; các hồ sơ còn lại là đạt và được thăng cấp theo cấu hình của khóa. Không thể hoàn tác."
+        loading={finishMutation.isPending}
+        onClose={() => setFinishOpen(false)}
+        onConfirm={() => finishMutation.mutate()}
+        open={finishOpen}
+        requireConfirmText={false}
+        title="Kết thúc khóa huấn luyện"
+      />
+
       {tabs.length === 0 ? (
         <Panel className="p-6 text-sm text-muted">Bạn không có quyền xem quy trình huấn luyện của khóa này.</Panel>
       ) : (
@@ -203,7 +240,7 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
                 scoreLocked: course ? course.scoreLocked === true : undefined,
               }}
             >
-              <TrainingWorkflowResourceView route={activeTab.route} />
+              {activeTab.key === "certificate-approvals" ? <CertificateResourceView route={activeTab.route} /> : <TrainingWorkflowResourceView route={activeTab.route} />}
             </EmbeddedResourceProvider>
           ) : null}
         </>

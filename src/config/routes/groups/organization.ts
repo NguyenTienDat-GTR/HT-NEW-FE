@@ -16,6 +16,9 @@ export const organizationRouteGroup: RouteGroup = {
         kind: "dioceses",
         icon: Buildings,
         columns: ["name", "unionName", "deaneryCount", "parishCount", "leaderCount", "chaplain", "phoneNumber", "email", "status"],
+        sortFields: { deaneryCount: null, parishCount: null, leaderCount: null },
+        // Chỉ tìm theo thuộc tính entity (deaneryCount là số đếm tính ra, không tìm được).
+        searchFields: ["name", "unionName"],
         permissionPrefixes: ["organization.diocese.read."],
         actionPermissionPrefixes: ["organization.diocese.create.", "organization.diocese.update.", "organization.diocese.toggle."],
         primaryActionPermissionPrefixes: ["organization.diocese.create."],
@@ -32,6 +35,9 @@ export const organizationRouteGroup: RouteGroup = {
         kind: "deaneries",
         icon: Buildings,
         columns: ["name", "associationName", "parishCount", "leaderCount", "chaplain", "phoneNumber", "email", "status"],
+        sortFields: { parishCount: null, leaderCount: null },
+        // Chỉ tìm theo thuộc tính entity (parishCount là số đếm tính ra, không tìm được).
+        searchFields: ["name", "associationName"],
         permissionPrefixes: ["organization.deanery.read."],
         actionPermissionPrefixes: ["organization.deanery.create.", "organization.deanery.update.", "organization.deanery.toggle."],
         primaryActionPermissionPrefixes: ["organization.deanery.create."],
@@ -60,6 +66,9 @@ export const organizationRouteGroup: RouteGroup = {
         kind: "parishes",
         icon: Buildings,
         columns: ["name", "chapterName", "leaderCount", "deaneryId", "chaplain", "phoneNumber", "email", "status"],
+        sortFields: { leaderCount: null, deaneryId: "deanery.name" },
+        // Chỉ tìm theo thuộc tính entity (leaderCount là số đếm tính ra, không tìm được).
+        searchFields: ["name", "chapterName"],
         permissionPrefixes: ["organization.parish.read."],
         actionPermissionPrefixes: ["organization.parish.create.", "organization.parish.update.", "organization.parish.toggle."],
         primaryActionPermissionPrefixes: ["organization.parish.create."],
