@@ -34,7 +34,6 @@ const approvalFilters: RouteFilterConfig[] = [
     type: "select",
     options: [
       { value: "PENDING", label: "Chờ xử lý" },
-      { value: "APPROVED", label: "Đã duyệt" },
       { value: "REJECTED", label: "Từ chối" },
     ],
   },
@@ -117,6 +116,8 @@ export const trainingWorkflowRouteGroup: RouteGroup = {
         actionPermissionPrefixes: ["training.participation.approve."],
         primaryActionLabel: "Duyệt hồ sơ",
         filters: approvalFilters,
+        // Hồ sơ đã duyệt đăng ký chuyển sang danh sách tham dự: danh sách này chỉ giữ hồ sơ chờ duyệt và bị từ chối.
+        baseFilters: { approvalStatus: ["PENDING", "SUBMITTED", "REJECTED"] },
         filterLabels: ["Khóa", "Trạng thái duyệt"],
       }),
       route({
@@ -128,7 +129,7 @@ export const trainingWorkflowRouteGroup: RouteGroup = {
         idField: "id",
         kind: "participations",
         icon: ClipboardText,
-        columns: ["leaderFullName", "parishName", "deaneryName", "courseName", "participationStatus", "totalScore", "passed"],
+        columns: ["leaderFullName", "parishName", "deaneryName", "courseName", "participationStatus", "totalScore", "passed", "finalResult"],
         searchFields: participationSearchFields,
         permissionPrefixes: [
           "training.participation.read.deanery",
@@ -153,7 +154,7 @@ export const trainingWorkflowRouteGroup: RouteGroup = {
         idField: "id",
         kind: "participations",
         icon: ChartBar,
-        columns: ["leaderFullName", "parishName", "deaneryName", "courseName", "totalScore", "passed"],
+        columns: ["leaderFullName", "parishName", "deaneryName", "courseName", "totalScore", "passed", "finalResult"],
         searchFields: participationSearchFields,
         permissionPrefixes: ["training.participation.score.deanery", "training.participation.score.diocese"],
         actionPermissionPrefixes: ["training.participation.score."],

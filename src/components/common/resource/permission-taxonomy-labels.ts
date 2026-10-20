@@ -38,6 +38,7 @@ const taxonomyLabels: Record<PermissionTaxonomyKind, Record<string, string>> = {
     create: "Tạo",
     delete: "Xóa",
     export: "Xuất dữ liệu",
+    finish: "Kết thúc",
     lock: "Khóa/mở",
     manage: "Quản lý",
     read: "Xem",

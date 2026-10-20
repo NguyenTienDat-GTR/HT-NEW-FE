@@ -52,10 +52,13 @@ export function useResourceQueryState(route: RouteConfig, fixedFilters: Record<s
       search,
       status: status === "all" ? undefined : status === "active",
       filters: {
+        ...route.baseFilters,
         ...Object.fromEntries(
           (route.filters ?? [])
             .filter((filter) => filter.key !== "status")
-            .map((filter) => [filter.key, normalizeFilterValue(filterValues[filter.key], filter.type)]),
+            .map((filter) => [filter.key, normalizeFilterValue(filterValues[filter.key], filter.type)])
+            // Bộ lọc để trống không được ghi đè bộ lọc nền của route.
+            .filter(([, value]) => value !== undefined && value !== null && value !== ""),
         ),
         ...fixedFilters,
       },
@@ -63,7 +66,7 @@ export function useResourceQueryState(route: RouteConfig, fixedFilters: Record<s
       sortBy,
       sortDirection,
     }).toString();
-  }, [filterValues, fixedFilters, page, route.filters, route.searchFields, search, size, sortBy, sortDirection, status]);
+  }, [filterValues, fixedFilters, page, route.baseFilters, route.filters, route.searchFields, search, size, sortBy, sortDirection, status]);
 
   function updateParam(key: string, value: string) {
     const next = new URLSearchParams(searchParams);

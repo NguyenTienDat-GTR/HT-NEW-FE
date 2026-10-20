@@ -3,7 +3,7 @@ export type BaseSearchParams = {
   size?: 10 | 20 | 50 | 100;
   search?: string;
   searchFields?: string[];
-  filters?: Record<string, string | number | boolean | null | undefined>;
+  filters?: Record<string, string | number | boolean | string[] | null | undefined>;
   status?: boolean;
   sortBy?: string;
   sortDirection?: "ASC" | "DESC";

@@ -147,6 +147,8 @@ export type RouteConfig = {
   primaryActionLabel?: string;
   filterLabels?: string[];
   filters?: RouteFilterConfig[];
+  // Bộ lọc nền luôn áp dụng cho danh sách (giá trị là tập cho phép), người dùng không đổi được.
+  baseFilters?: Record<string, string[]>;
   workflowHint?: string;
   actions?: Partial<Record<ResourceAction, ResourceActionConfig>>;
 };
