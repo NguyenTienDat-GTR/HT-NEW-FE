@@ -1,4 +1,4 @@
-import { ChartBar, ClipboardText } from "@phosphor-icons/react";
+import { Certificate, ChartBar, ClipboardText } from "@phosphor-icons/react";
 import { deaneryUnitFilter, parishUnitFilter, route, type RouteFilterConfig, type RouteGroup } from "../route-config";
 
 // Chỉ giữ các trạng thái còn phát sinh ở hai màn đăng ký và duyệt đăng ký.
@@ -58,6 +58,21 @@ const participantFilters: RouteFilterConfig[] = [
 
 const scoreFilters: RouteFilterConfig[] = [
   { key: "course.courseCode", label: "Khóa", type: "text", placeholder: "Lọc theo mã khóa" },
+  ...unitFilters,
+];
+
+const certificateApprovalFilters: RouteFilterConfig[] = [
+  { key: "course.courseCode", label: "Khóa", type: "text", placeholder: "Lọc theo mã khóa" },
+  {
+    key: "approvalStatus",
+    label: "Trạng thái",
+    type: "select",
+    options: [
+      { value: "PENDING", label: "Chờ duyệt" },
+      { value: "APPROVED", label: "Đã duyệt" },
+      { value: "REJECTED", label: "Từ chối" },
+    ],
+  },
   ...unitFilters,
 ];
 
@@ -153,6 +168,28 @@ export const trainingWorkflowRouteGroup: RouteGroup = {
         primaryActionLabel: "Chấm điểm",
         filterLabels: ["Khóa", "Kết quả", "Chứng nhận"],
         workflowHint: "Request score phải gửi đúng và đủ component của formula, không vượt maxScore.",
+      }),
+      route({
+        path: "/certificates/approvals",
+        moduleName: "certificate.approval",
+        title: "Duyệt chứng nhận",
+        subtitle: "Hoàn tất chứng nhận và promotion sau khi hồ sơ đã chấm điểm.",
+        endpoint: "/certificates",
+        idField: "certificateCode",
+        kind: "certificates",
+        icon: Certificate,
+        searchFields: participationSearchFields,
+        filters: certificateApprovalFilters,
+        columns: ["leaderFullName", "courseName", "totalScore", "passingScore", "approvalReasonRequired", "approvalStatus"],
+        permissionPrefixes: ["training.certificate.approve.", "training.certificate.read."],
+        actionPermissionPrefixes: ["training.certificate.approve."],
+        actions: {
+          approve: { label: "Duyệt", permissionPrefixes: ["training.certificate.approve."] },
+          reject: { label: "Từ chối", permissionPrefixes: ["training.certificate.approve."] },
+        },
+        primaryActionLabel: "Duyệt chứng nhận",
+        filterLabels: ["Khóa", "Trạng thái"],
+        workflowHint: "Duyệt certificate có thể promote leader nhưng không được hạ cấp hiện tại.",
       }),
     ],
   };

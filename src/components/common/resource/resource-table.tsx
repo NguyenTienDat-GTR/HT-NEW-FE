@@ -4,6 +4,7 @@ import { ArrowUUpLeftIcon, CaretDownIcon, CheckCircleIcon, EyeIcon, PencilSimple
 import type { Route } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Tip } from "@/components/ui/tip";
 import type { RouteConfig } from "@/config/routes/routes";
 import { useAuthStore, type AuthUser } from "@/lib/auth/auth-store";
 import { canUseAction, isSuperAdmin } from "@/lib/auth/permissions";
@@ -205,7 +206,7 @@ function RowActions({ route, row }: { route: RouteConfig; row: Record<string, un
   // Tab chấm điểm nhập điểm trực tiếp trên bảng nên không cần nút chấm điểm ở từng hàng.
   const canScore = canUseAction(user, route.actions?.score) && route.moduleName !== "training.score";
   // Hồ sơ tham dự chỉ duyệt/từ chối khi đang chờ duyệt.
-  const awaitingApproval = route.kind !== "participations" || isAwaitingApproval(row);
+  const awaitingApproval = (route.kind !== "participations" && route.kind !== "certificates") || isAwaitingApproval(row);
   // Chỉ người gửi đăng ký mới thu hồi được, và chỉ khi hồ sơ còn chờ duyệt (chưa duyệt hoặc từ chối).
   const actorId = user?.leaderId || user?.username;
   const canWithdraw = canUseAction(user, route.actions?.withdraw) && Boolean(actorId) && row.createdBy === actorId && isAwaitingApproval(row);
@@ -217,56 +218,74 @@ function RowActions({ route, row }: { route: RouteConfig; row: Record<string, un
   return (
     <div className="inline-flex items-center gap-1">
       {canView ? (
-        <Button asChild aria-label="Xem chi tiết" className="h-8 min-w-8 rounded-lg" size="icon" variant="icon">
-          <Link href={(detailHref ?? resourceActionHref(route.path, embedded, { detail: id })) as Route}>
-            <EyeIcon size={16} />
-          </Link>
-        </Button>
+        <Tip label="Xem chi tiết hồ sơ">
+          <Button asChild aria-label="Xem chi tiết" className="h-8 min-w-8 rounded-lg" size="icon" variant="icon">
+            <Link href={(detailHref ?? resourceActionHref(route.path, embedded, { detail: id })) as Route}>
+              <EyeIcon size={16} />
+            </Link>
+          </Button>
+        </Tip>
       ) : null}
       {canEdit && editHref ? (
-        <Button asChild aria-label="Sửa" className="h-8 min-w-8 rounded-lg" size="icon" variant="icon">
-          <Link href={editHref as Route}>
-            <PencilSimpleIcon size={16} />
-          </Link>
-        </Button>
+        <Tip label="Chỉnh sửa thông tin">
+          <Button asChild aria-label="Sửa" className="h-8 min-w-8 rounded-lg" size="icon" variant="icon">
+            <Link href={editHref as Route}>
+              <PencilSimpleIcon size={16} />
+            </Link>
+          </Button>
+        </Tip>
       ) : null}
       {route.kind === "courses" && canEdit ? <RegistrationToggleButton endpoint={route.endpoint ?? ""} id={id} row={row} /> : null}
       {canScore && scoreHref ? (
-        <Button asChild aria-label="Chấm điểm" className="h-8 min-w-8 rounded-lg" size="icon" variant="icon">
-          <Link href={withReturnTo(scoreHref, embedded) as Route}>
-            <PencilSimpleIcon size={16} />
-          </Link>
-        </Button>
+        <Tip label="Chấm điểm hồ sơ này">
+          <Button asChild aria-label="Chấm điểm" className="h-8 min-w-8 rounded-lg" size="icon" variant="icon">
+            <Link href={withReturnTo(scoreHref, embedded) as Route}>
+              <PencilSimpleIcon size={16} />
+            </Link>
+          </Button>
+        </Tip>
       ) : null}
       {canApprove ? (
-        <Button asChild aria-label="Duyệt" className="h-8 min-w-8 rounded-lg" size="icon" variant="icon">
-          <Link href={resourceActionHref(route.path, embedded, { approve: id }) as Route}>
-            <CheckCircleIcon size={16} />
-          </Link>
-        </Button>
+        <Tip label="Duyệt hồ sơ này">
+          <Button asChild aria-label="Duyệt" className="h-8 min-w-8 rounded-lg" size="icon" variant="icon">
+            <Link href={resourceActionHref(route.path, embedded, { approve: id }) as Route}>
+              <CheckCircleIcon size={16} />
+            </Link>
+          </Button>
+        </Tip>
       ) : null}
       {canWithdraw ? (
-        <Button asChild aria-label="Thu hồi đăng ký" className="h-8 min-w-8 rounded-lg" size="icon" variant="icon">
-          <Link href={resourceActionHref(route.path, embedded, { withdraw: id }) as Route}>
-            <ArrowUUpLeftIcon size={16} />
-          </Link>
-        </Button>
+        <Tip label="Thu hồi đăng ký">
+          <Button asChild aria-label="Thu hồi đăng ký" className="h-8 min-w-8 rounded-lg" size="icon" variant="icon">
+            <Link href={resourceActionHref(route.path, embedded, { withdraw: id }) as Route}>
+              <ArrowUUpLeftIcon size={16} />
+            </Link>
+          </Button>
+        </Tip>
       ) : null}
       {canRemove ? (
-        <Button asChild aria-label="Xóa khỏi danh sách tham dự" className="h-8 min-w-8 rounded-lg text-danger" size="icon" variant="icon">
-          <Link href={resourceActionHref(route.path, embedded, { remove: id }) as Route}>
-            <TrashIcon size={16} />
-          </Link>
-        </Button>
+        <Tip label="Xóa khỏi danh sách tham dự">
+          <Button asChild aria-label="Xóa khỏi danh sách tham dự" className="h-8 min-w-8 rounded-lg text-danger" size="icon" variant="icon">
+            <Link href={resourceActionHref(route.path, embedded, { remove: id }) as Route}>
+              <TrashIcon size={16} />
+            </Link>
+          </Button>
+        </Tip>
       ) : null}
       {canReject ? (
-        <Button asChild aria-label="Từ chối" className="h-8 min-w-8 rounded-lg text-danger" size="icon" variant="icon">
-          <Link href={resourceActionHref(route.path, embedded, { reject: id }) as Route}>
-            <XCircleIcon size={16} />
-          </Link>
-        </Button>
+        <Tip label="Từ chối hồ sơ này, bắt buộc nhập lý do">
+          <Button asChild aria-label="Từ chối" className="h-8 min-w-8 rounded-lg text-danger" size="icon" variant="icon">
+            <Link href={resourceActionHref(route.path, embedded, { reject: id }) as Route}>
+              <XCircleIcon size={16} />
+            </Link>
+          </Button>
+        </Tip>
       ) : null}
-      {canToggle ? <StatusSwitch active={isToggleActive(route, row)} href={resourceActionHref(route.path, embedded, { toggle: id }) as Route} /> : null}
+      {canToggle ? (
+        <Tip label="Bật hoặc tắt trạng thái hoạt động">
+          <StatusSwitch active={isToggleActive(route, row)} href={resourceActionHref(route.path, embedded, { toggle: id }) as Route} />
+        </Tip>
+      ) : null}
     </div>
   );
 }

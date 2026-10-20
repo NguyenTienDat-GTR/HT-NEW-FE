@@ -7,6 +7,7 @@ import type { Route } from "next";
 import Link from "next/link";
 import { useMemo, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
+import { Tip } from "@/components/ui/tip";
 import { Input } from "@/components/ui/input";
 import { apiFetch, type PageResponse } from "@/lib/api/client";
 import type { RouteConfig } from "@/config/routes/routes";
@@ -52,7 +53,7 @@ export function ResourceFilters({
 
   return (
     <div className="border-b border-border bg-white p-4">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+      <div className={`flex flex-col gap-3 lg:flex-row lg:items-end ${hideSearch && !leadingActions ? "lg:justify-end" : "lg:justify-between"}`}>
         {leadingActions ? <div className="flex flex-wrap items-center gap-2 lg:items-end">{leadingActions}</div> : null}
         <label className={hideSearch ? "hidden" : leadingActions ? "relative w-full min-w-0 lg:w-72" : "relative min-w-0 flex-1"}>
           <span className="mb-2 block text-xs font-semibold text-foreground">Tìm kiếm</span>
@@ -63,6 +64,7 @@ export function ResourceFilters({
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
           {filters.length ? (
             <Dialog.Root>
+              <Tip label="Lọc danh sách theo điều kiện">
               <Dialog.Trigger asChild>
                 <Button className="shrink-0 justify-center" type="button" variant="outline">
                   <SlidersHorizontal size={18} />
@@ -74,6 +76,7 @@ export function ResourceFilters({
                   ) : null}
                 </Button>
               </Dialog.Trigger>
+              </Tip>
               <Dialog.Portal>
                 <Dialog.Overlay className="fixed inset-0 z-40 bg-slate-950/30 backdrop-blur-sm" />
                 <Dialog.Content className="fixed bottom-0 right-0 top-0 z-50 flex w-full max-w-[440px] flex-col border-l border-border bg-white shadow-[var(--shadow-elevated)] focus:outline-none">

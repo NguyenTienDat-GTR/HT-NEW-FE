@@ -29,6 +29,7 @@ import {
   resolveRegistrationState,
   type StatusTone,
 } from "@/modules/training-courses/registration-state";
+import { CertificateResourceView } from "@/modules/certificates/components/certificate-resource-view";
 import { TrainingWorkflowResourceView } from "@/modules/training-workflow/components/training-workflow-resource-view";
 
 // Quy trình huấn luyện của một khóa: mỗi tab dùng lại đúng màn hình/logic của menu cũ, lọc theo khóa đang chọn.
@@ -37,6 +38,7 @@ const workflowTabs = [
   { key: "approvals", label: "Duyệt đăng ký", path: "/training/approvals" },
   { key: "participations", label: "Danh sách tham dự", path: "/training/participations" },
   { key: "scores", label: "Chấm điểm", path: "/training/scores" },
+  { key: "certificate-approvals", label: "Duyệt chứng nhận", path: "/certificates/approvals" },
 ] as const;
 
 const summaryColumns = ["courseTypeName", "hostYear", "yearsActive", "passingScore", "location", "startDate", "endDate", "registrationPeriod", "registrationStatus", "organizingStatus"];
@@ -46,7 +48,7 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const router = useRouter();
-  // Ô tìm kiếm chung cho cả 4 tab: nằm dưới thông tin khóa, giữ nguyên nội dung khi đổi tab.
+  // Ô tìm kiếm chung cho cả 5 tab: nằm dưới thông tin khóa, giữ nguyên nội dung khi đổi tab.
   const [searchText, setSearchText] = useState("");
   const [search, setSearch] = useState("");
   const firstSearch = useRef(true);
@@ -203,7 +205,7 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
                 scoreLocked: course ? course.scoreLocked === true : undefined,
               }}
             >
-              <TrainingWorkflowResourceView route={activeTab.route} />
+              {activeTab.key === "certificate-approvals" ? <CertificateResourceView route={activeTab.route} /> : <TrainingWorkflowResourceView route={activeTab.route} />}
             </EmbeddedResourceProvider>
           ) : null}
         </>
