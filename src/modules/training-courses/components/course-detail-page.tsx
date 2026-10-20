@@ -20,6 +20,7 @@ import { findRoute, type RouteConfig } from "@/config/routes/routes";
 import { apiFetch, apiMutation, getApiErrorMessage } from "@/lib/api/client";
 import { useAuthStore } from "@/lib/auth/auth-store";
 import { canUseAction, hasPermissionPrefix } from "@/lib/auth/permissions";
+import { useDebouncedValue } from "@/lib/use-debounced-value";
 import { cn } from "@/lib/utils";
 import {
   isCourseWithinDates,
@@ -52,7 +53,6 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
   const router = useRouter();
   // Ô tìm kiếm chung cho cả 5 tab: nằm dưới thông tin khóa, giữ nguyên nội dung khi đổi tab.
   const [searchText, setSearchText] = useState("");
-  const [search, setSearch] = useState("");
   const firstSearch = useRef(true);
 
   const courseQuery = useQuery({
@@ -104,10 +104,7 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
   const activeTab = tabs.find((tab) => tab.key === searchParams.get("tab")) ?? tabs[0];
   const basePath = `/training/courses/${encodeURIComponent(id)}`;
 
-  useEffect(() => {
-    const timer = window.setTimeout(() => setSearch(searchText.trim()), 300);
-    return () => window.clearTimeout(timer);
-  }, [searchText]);
+  const search = useDebouncedValue(searchText).trim();
 
   // Đổi từ khóa thì về trang đầu của tab đang xem.
   useEffect(() => {

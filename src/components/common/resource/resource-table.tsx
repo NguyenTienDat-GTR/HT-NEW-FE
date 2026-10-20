@@ -66,15 +66,19 @@ export function ResourceTable({
             {embedded ? <th className="sticky top-0 z-10 h-10 w-12 border-b border-border bg-surface-1/95 px-3 font-semibold text-foreground">STT</th> : null}
             {visibleColumns.map((column) => (
               <th className="sticky top-0 z-10 h-10 border-b border-border bg-surface-1/95 px-3 font-semibold text-foreground" key={column}>
-                <button className="inline-flex h-8 cursor-pointer items-center gap-1 rounded-lg px-1 transition-colors hover:text-primary" onClick={() => sort(column)} type="button">
-                  {columnLabels[column] ?? column}
-                  {sortBy === column ? (
-                    <span className="inline-flex items-center gap-0.5 text-xs text-primary">
-                      <CaretDownIcon className={sortDirection === "ASC" ? "rotate-180" : undefined} size={12} weight="bold" />
-                      {sortDirection}
-                    </span>
-                  ) : null}
-                </button>
+                {route.sortFields?.[column] === null ? (
+                  <span className="inline-flex h-8 items-center px-1">{columnLabels[column] ?? column}</span>
+                ) : (
+                  <button className="inline-flex h-8 cursor-pointer items-center gap-1 rounded-lg px-1 transition-colors hover:text-primary" onClick={() => sort(column)} type="button">
+                    {columnLabels[column] ?? column}
+                    {sortBy === column ? (
+                      <span className="inline-flex items-center gap-0.5 text-xs text-primary">
+                        <CaretDownIcon className={sortDirection === "ASC" ? "rotate-180" : undefined} size={12} weight="bold" />
+                        {sortDirection}
+                      </span>
+                    ) : null}
+                  </button>
+                )}
               </th>
             ))}
             {scoreEntry?.components.map((component) => (

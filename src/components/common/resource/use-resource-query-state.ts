@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { serializeBaseSearch } from "@/lib/api/search";
 import type { RouteConfig } from "@/config/routes/routes";
+import { useDebouncedValue } from "@/lib/use-debounced-value";
 
 export type ResourcePageSize = 10 | 20 | 50 | 100;
 
@@ -15,6 +16,9 @@ export function useResourceQueryState(route: RouteConfig, fixedFilters: Record<s
   const [localSearch, setSearch] = useState(searchParams.get("search") ?? "");
   // Có ô tìm kiếm chung bên ngoài (chi tiết khóa) thì dùng từ khóa đó thay cho ô tìm kiếm riêng.
   const search = externalSearch ?? localSearch;
+  // Ô tìm kiếm riêng chỉ gửi request khi người dùng ngừng nhập; từ khóa bên ngoài đã được debounce ở nơi nhập.
+  const debouncedLocalSearch = useDebouncedValue(localSearch);
+  const requestSearch = externalSearch ?? debouncedLocalSearch;
 
   const page = parseUrlPage(searchParams.get("page")) - 1;
   const size = parsePageSize(searchParams.get("size"));
@@ -33,23 +37,21 @@ export function useResourceQueryState(route: RouteConfig, fixedFilters: Record<s
   );
 
   useEffect(() => {
-    if (externalSearch !== undefined || search === urlSearch) return;
+    if (externalSearch !== undefined || debouncedLocalSearch === urlSearch) return;
 
-    const timer = window.setTimeout(() => {
-      const next = new URLSearchParams(searchParams);
-      if (search) next.set("search", search);
-      else next.delete("search");
-      next.set("page", "1");
-      router.replace(`${pathname}?${next.toString()}` as Route);
-    }, 300);
-    return () => window.clearTimeout(timer);
-  }, [externalSearch, pathname, router, search, searchParams, urlSearch]);
+    const next = new URLSearchParams(searchParams);
+    if (debouncedLocalSearch) next.set("search", debouncedLocalSearch);
+    else next.delete("search");
+    next.set("page", "1");
+    router.replace(`${pathname}?${next.toString()}` as Route);
+  }, [debouncedLocalSearch, externalSearch, pathname, router, searchParams, urlSearch]);
 
   const queryString = useMemo(() => {
     return serializeBaseSearch({
-      page,
+      // Từ khóa vừa đổi mà URL chưa kịp về trang 1 thì gửi trang đầu luôn, tránh một request thừa với trang cũ.
+      page: externalSearch === undefined && requestSearch !== urlSearch ? 0 : page,
       size,
-      search,
+      search: requestSearch,
       status: status === "all" ? undefined : status === "active",
       filters: {
         ...route.baseFilters,
@@ -63,10 +65,10 @@ export function useResourceQueryState(route: RouteConfig, fixedFilters: Record<s
         ...fixedFilters,
       },
       searchFields: route.searchFields,
-      sortBy,
+      sortBy: sortBy ? (route.sortFields?.[sortBy] === undefined ? sortBy : (route.sortFields[sortBy] ?? undefined)) : undefined,
       sortDirection,
     }).toString();
-  }, [filterValues, fixedFilters, page, route.baseFilters, route.filters, route.searchFields, search, size, sortBy, sortDirection, status]);
+  }, [externalSearch, filterValues, fixedFilters, page, requestSearch, route.baseFilters, route.filters, route.searchFields, route.sortFields, size, sortBy, sortDirection, status, urlSearch]);
 
   function updateParam(key: string, value: string) {
     const next = new URLSearchParams(searchParams);

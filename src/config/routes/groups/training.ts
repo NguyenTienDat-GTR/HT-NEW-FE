@@ -16,6 +16,7 @@ export const trainingRouteGroup: RouteGroup = {
         kind: "course-types",
         icon: ListChecks,
         columns: ["typeName", "managementUnitType", "requiredCurrentLevel", "prerequisiteTypeName", "resultingLevel", "status"],
+        sortFields: { prerequisiteTypeName: "prerequisiteType.typeName" },
         searchFields: ["typeName"],
         permissionPrefixes: ["training.course_type.read."],
         actionPermissionPrefixes: ["training.course_type.create.", "training.course_type.update.", "training.course_type.toggle."],
@@ -34,6 +35,7 @@ export const trainingRouteGroup: RouteGroup = {
         kind: "courses",
         icon: GraduationCap,
         columns: ["courseName", "courseTypeName", "hostYear", "yearsActive", "location", "registrationStatus", "organizingStatus", "status"],
+        sortFields: { courseTypeName: "courseType.typeName" },
         searchFields: ["courseName", "location"],
         // Phạm vi giáo xứ chỉ xem các khóa đang mở đăng ký và đăng ký tham dự trong tab của khóa.
         permissionPrefixes: ["training.course.read.", "training.participation.submit.parish"],
@@ -52,6 +54,7 @@ export const trainingRouteGroup: RouteGroup = {
         kind: "score-components",
         icon: ChartBar,
         columns: ["name", "courseTypeName", "maxScore", "coefficient", "includeInFinal", "unitType", "displayOrder", "status"],
+        sortFields: { courseTypeName: "courseType.typeName" },
         searchFields: ["name"],
         permissionPrefixes: ["training.score_component.read."],
         actionPermissionPrefixes: ["training.score_component.create.", "training.score_component.update.", "training.score_component.toggle."],

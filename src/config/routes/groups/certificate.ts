@@ -16,6 +16,10 @@ export const certificateRouteGroup: RouteGroup = {
         kind: "certificates",
         icon: Certificate,
         columns: ["certificateCode", "leaderFullName", "courseName", "totalScore", "passingScore", "approvalStatus", "status"],
+        // Cột tính ra ở response không sắp xếp được; cột còn lại ánh xạ sang thuộc tính entity.
+        sortFields: { leaderFullName: "leader.firstName+leader.lastName", courseName: "course.courseName", totalScore: null, passingScore: "course.passingScore" },
+        // Tìm theo thuộc tính entity (leaderFullName/courseName chỉ có ở response): mã chứng nhận, họ tên, tên thánh, khóa.
+        searchFields: ["certificateCode", "leader.lastName+leader.firstName", "leader.holyName", "course.courseName", "course.courseCode"],
         permissionPrefixes: ["training.certificate.read."],
         actionPermissionPrefixes: ["training.certificate.create.", "training.certificate.approve.", "training.certificate.update.", "training.certificate.toggle."],
         primaryActionLabel: "Tạo chứng nhận",
