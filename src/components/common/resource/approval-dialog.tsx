@@ -8,7 +8,11 @@ import { cn } from "@/lib/utils";
 
 export type ApprovalDialogItem = { id: string; label: string };
 
+export type CertificateSigner = { signerType: "CHAPLAIN" | "OTHER"; signerName: string; signerTitle: string };
+
 type ReasonScope = "shared" | "individual";
+
+const inputClass = "w-full rounded-[8px] border border-border bg-white px-3 py-2 text-sm text-foreground shadow-sm focus:border-primary focus:outline-none";
 
 const textareaClass = "w-full rounded-[8px] border border-border bg-white px-3 py-3 text-sm text-foreground shadow-sm focus:border-primary focus:outline-none";
 
@@ -19,36 +23,48 @@ export function ApprovalDialog({
   open,
   mode = "approve",
   items,
+  captureSigner,
 }: {
   loading?: boolean;
   onClose: () => void;
   // reasons chỉ có khi từ chối nhiều hồ sơ: lý do của từng hồ sơ (lý do chung được sao chép cho mọi hồ sơ).
-  onConfirm: (note: string, reasons?: Record<string, string>) => void;
+  onConfirm: (note: string, reasons?: Record<string, string>, signer?: CertificateSigner) => void;
   open: boolean;
   mode?: "approve" | "reject";
   // Danh sách hồ sơ đang xử lý hàng loạt; từ 2 hồ sơ trở lên mới cho chọn lý do chung/riêng.
   items?: ApprovalDialogItem[];
+  // Khi duyệt chứng nhận: bắt buộc chọn người ký, ghi trực tiếp vào chứng nhận.
+  captureSigner?: boolean;
 }) {
   const [note, setNote] = useState("");
   const [scope, setScope] = useState<ReasonScope>("shared");
   const [reasons, setReasons] = useState<Record<string, string>>({});
+  const [signerType, setSignerType] = useState<"CHAPLAIN" | "OTHER">("CHAPLAIN");
+  const [signerName, setSignerName] = useState("");
+  const [signerTitle, setSignerTitle] = useState("");
   const reject = mode === "reject";
   const multi = reject && (items?.length ?? 0) >= 2;
   const individual = multi && scope === "individual";
+  const needSigner = Boolean(captureSigner) && !reject;
+  const missingSigner = needSigner && (!signerName.trim() || (signerType === "OTHER" && !signerTitle.trim()));
   // Từ chối phải nêu lý do: một lý do chung, hoặc đủ lý do cho từng hồ sơ.
   const missingReason = reject && (individual ? (items ?? []).some((item) => !reasons[item.id]?.trim()) : !note.trim());
   const missingCount = individual ? (items ?? []).filter((item) => !reasons[item.id]?.trim()).length : 0;
 
+  const signer: CertificateSigner | undefined = needSigner
+    ? { signerType, signerName: signerName.trim(), signerTitle: signerType === "OTHER" ? signerTitle.trim() : "Linh mục tuyên úy" }
+    : undefined;
+
   function confirm() {
     if (individual && items) {
-      onConfirm("", Object.fromEntries(items.map((item) => [item.id, reasons[item.id].trim()])));
+      onConfirm("", Object.fromEntries(items.map((item) => [item.id, reasons[item.id].trim()])), signer);
       return;
     }
     if (reject && items?.length) {
-      onConfirm(note, Object.fromEntries(items.map((item) => [item.id, note.trim()])));
+      onConfirm(note, Object.fromEntries(items.map((item) => [item.id, note.trim()])), signer);
       return;
     }
-    onConfirm(note);
+    onConfirm(note, undefined, signer);
   }
 
   return (
@@ -133,12 +149,36 @@ export function ApprovalDialog({
             />
           )}
 
+          {needSigner ? (
+            <div className="mt-4 space-y-3 rounded-[10px] border border-border p-3">
+              <span className="block text-sm font-semibold text-foreground">Người ký chứng nhận <span className="text-danger">*</span></span>
+              <div className="flex flex-wrap gap-4">
+                <label className="inline-flex items-center gap-2 text-sm">
+                  <input checked={signerType === "CHAPLAIN"} onChange={() => setSignerType("CHAPLAIN")} type="radio" />
+                  Linh mục tuyên úy
+                </label>
+                <label className="inline-flex items-center gap-2 text-sm">
+                  <input checked={signerType === "OTHER"} onChange={() => setSignerType("OTHER")} type="radio" />
+                  Khác
+                </label>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <input className={inputClass} onChange={(event) => setSignerName(event.target.value)} placeholder="Tên người ký" value={signerName} />
+                {signerType === "OTHER" ? (
+                  <input className={inputClass} onChange={(event) => setSignerTitle(event.target.value)} placeholder="Chức danh" value={signerTitle} />
+                ) : (
+                  <input className={cn(inputClass, "bg-surface-2 text-muted")} disabled value="Linh mục tuyên úy" />
+                )}
+              </div>
+            </div>
+          ) : null}
+
           <div className="mt-5 flex items-center justify-end gap-3">
             {missingCount > 0 ? <span className="mr-auto text-xs text-danger">Còn {missingCount} hồ sơ chưa nhập lý do</span> : null}
             <Button onClick={onClose} type="button" variant="outline">
               Hủy
             </Button>
-            <Button disabled={missingReason} loading={loading} onClick={confirm} type="button" variant={reject ? "destructive" : "primary"}>
+            <Button disabled={missingReason || missingSigner} loading={loading} onClick={confirm} type="button" variant={reject ? "destructive" : "primary"}>
               {reject ? "Từ chối" : "Duyệt"}
             </Button>
           </div>

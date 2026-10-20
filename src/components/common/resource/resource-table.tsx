@@ -226,10 +226,12 @@ function RowActions({ route, row, onExportRow, exportingRow }: { route: RouteCon
   // Chỉ người gửi đăng ký mới thu hồi được, và chỉ khi hồ sơ còn chờ duyệt (chưa duyệt hoặc từ chối).
   const actorId = user?.leaderId || user?.username;
   const canWithdraw = canUseAction(user, route.actions?.withdraw) && Boolean(actorId) && row.createdBy === actorId && isAwaitingApproval(row);
-  const canApprove = canUseAction(user, route.actions?.approve) && awaitingApproval;
+  // Khóa đã kết thúc thì không duyệt/từ chối chứng nhận được, chỉ xuất PDF.
+  const courseFinished = route.kind === "certificates" && row.courseFinished === true;
+  const canApprove = canUseAction(user, route.actions?.approve) && awaitingApproval && !courseFinished;
   // Hồ sơ đã có chứng nhận được duyệt thì không xóa được.
   const canRemove = canUseAction(user, route.actions?.remove) && row.certificateApprovalStatus !== "APPROVED";
-  const canReject = canUseAction(user, route.actions?.reject) && awaitingApproval;
+  const canReject = canUseAction(user, route.actions?.reject) && awaitingApproval && !courseFinished;
 
   return (
     <div className="inline-flex items-center gap-1">

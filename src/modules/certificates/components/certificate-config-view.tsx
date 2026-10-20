@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Eye, Plus, TextT, Trash, UploadSimple } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
@@ -13,9 +13,55 @@ import { hasPermissionPrefix } from "@/lib/auth/permissions";
 import type { RouteConfig } from "@/config/routes/routes";
 import { cn } from "@/lib/utils";
 
-type SignerType = "CHAPLAIN" | "OTHER";
+type FontFamily = "sans" | "serif" | "bevietnam" | "lobster" | "pacifico" | "patrickhand";
 
-type FontFamily = "sans" | "serif";
+const FONT_OPTIONS: { value: FontFamily; label: string }[] = [
+  { value: "sans", label: "Không chân (Sans)" },
+  { value: "serif", label: "Có chân (Serif)" },
+  { value: "bevietnam", label: "Be Vietnam Pro (Việt)" },
+  { value: "patrickhand", label: "Viết tay (Patrick Hand)" },
+  { value: "lobster", label: "Thư pháp (Lobster)" },
+  { value: "pacifico", label: "Thư pháp (Pacifico)" },
+];
+
+function fontStack(family: FontFamily): string {
+  switch (family) {
+    case "serif":
+      return "Georgia, 'Times New Roman', serif";
+    case "bevietnam":
+      return "'Be Vietnam Pro', Arial, sans-serif";
+    case "lobster":
+      return "'Lobster', cursive";
+    case "pacifico":
+      return "'Pacifico', cursive";
+    case "patrickhand":
+      return "'Patrick Hand', cursive";
+    default:
+      return "Arial, Helvetica, sans-serif";
+  }
+}
+
+const PAPER_OPTIONS = [
+  { value: "A4", label: "A4" },
+  { value: "A3", label: "A3" },
+  { value: "A5", label: "A5" },
+  { value: "LETTER", label: "Letter" },
+  { value: "LEGAL", label: "Legal" },
+];
+
+// Kích thước (mm) khổ dọc; dùng để tính tỉ lệ khung xem trước.
+const PAPER_MM: Record<string, { w: number; h: number }> = {
+  A3: { w: 297, h: 420 },
+  A4: { w: 210, h: 297 },
+  A5: { w: 148, h: 210 },
+  LETTER: { w: 216, h: 279 },
+  LEGAL: { w: 216, h: 356 },
+};
+
+function paperAspect(paperSize: string, orientation: string): number {
+  const mm = PAPER_MM[paperSize] ?? PAPER_MM.A4;
+  return orientation === "PORTRAIT" ? mm.w / mm.h : mm.h / mm.w;
+}
 
 type LayoutItem = {
   type: "FIELD" | "TEXT";
@@ -36,9 +82,8 @@ type ConfigResponse = {
   id?: string;
   courseTypeCode: string | null;
   courseTypeName?: string | null;
-  signerType?: SignerType;
-  signerName?: string;
-  signerTitle?: string;
+  paperSize?: string;
+  orientation?: string;
   backgroundImage?: string;
   fieldLayout?: LayoutItem[];
 };
@@ -47,8 +92,8 @@ type FieldCatalogItem = { key: string; label: string; group: string };
 
 const DEFAULT_SCOPE = "__default__";
 
-function blankForm(): { signerType: SignerType; signerName: string; signerTitle: string; backgroundImage: string; layout: LayoutItem[] } {
-  return { signerType: "CHAPLAIN", signerName: "", signerTitle: "", backgroundImage: "", layout: [] };
+function blankForm(): { paperSize: string; orientation: string; backgroundImage: string; layout: LayoutItem[] } {
+  return { paperSize: "A4", orientation: "LANDSCAPE", backgroundImage: "", layout: [] };
 }
 
 export function CertificateConfigView({
@@ -70,6 +115,18 @@ export function CertificateConfigView({
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [addFieldKey, setAddFieldKey] = useState<string>("");
   const [preview, setPreview] = useState(false);
+
+  // Nạp phông chữ (có dấu tiếng Việt) để xem trước khớp PDF; PDF dùng font nhúng ở BE.
+  useEffect(() => {
+    const href =
+      "https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,700;1,400;1,700&family=Lobster&family=Pacifico&family=Patrick+Hand&display=swap";
+    if (document.querySelector(`link[data-cert-fonts]`)) return;
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = href;
+    link.setAttribute("data-cert-fonts", "");
+    document.head.appendChild(link);
+  }, []);
 
   const configsQuery = useQuery({
     queryKey: ["certificate-config", "list"],
@@ -105,9 +162,8 @@ export function CertificateConfigView({
     setForm(
       configForScope
         ? {
-            signerType: configForScope.signerType ?? "CHAPLAIN",
-            signerName: configForScope.signerName ?? "",
-            signerTitle: configForScope.signerTitle ?? "",
+            paperSize: configForScope.paperSize ?? "A4",
+            orientation: configForScope.orientation ?? "LANDSCAPE",
             backgroundImage: configForScope.backgroundImage ?? "",
             layout: (configForScope.fieldLayout ?? []).map(normalizeItem),
           }
@@ -125,9 +181,8 @@ export function CertificateConfigView({
     if (!window.confirm("Thao tác này sẽ ghi đè nội dung đang chỉnh bằng cấu hình chung. Tiếp tục?")) return;
     setSelectedIndex(null);
     setForm({
-      signerType: defaultConfig.signerType ?? "CHAPLAIN",
-      signerName: defaultConfig.signerName ?? "",
-      signerTitle: defaultConfig.signerTitle ?? "",
+      paperSize: defaultConfig.paperSize ?? "A4",
+      orientation: defaultConfig.orientation ?? "LANDSCAPE",
       backgroundImage: defaultConfig.backgroundImage ?? "",
       layout: (defaultConfig.fieldLayout ?? []).map(normalizeItem),
     });
@@ -138,9 +193,8 @@ export function CertificateConfigView({
     mutationFn: () =>
       apiMutation("/certificates/config", "PUT", {
         courseTypeCode: scope === DEFAULT_SCOPE ? null : scope,
-        signerType: form.signerType,
-        signerName: form.signerName,
-        signerTitle: form.signerType === "OTHER" ? form.signerTitle : null,
+        paperSize: form.paperSize,
+        orientation: form.orientation,
         backgroundImage: form.backgroundImage || null,
         fieldLayout: form.layout,
       }),
@@ -155,9 +209,8 @@ export function CertificateConfigView({
     mutationFn: () =>
       apiMutation("/certificates/config", "PUT", {
         courseTypeCode: null,
-        signerType: form.signerType,
-        signerName: form.signerName,
-        signerTitle: form.signerType === "OTHER" ? form.signerTitle : null,
+        paperSize: form.paperSize,
+        orientation: form.orientation,
         backgroundImage: form.backgroundImage || null,
         fieldLayout: form.layout,
       }),
@@ -176,9 +229,9 @@ export function CertificateConfigView({
   function sampleValue(key?: string) {
     switch (key) {
       case "signerName":
-        return form.signerName || "Nguyễn Văn A";
+        return "Nguyễn Văn A";
       case "signerTitle":
-        return form.signerType === "OTHER" ? form.signerTitle || "Chức danh" : "Linh mục tuyên úy";
+        return "Linh mục tuyên úy";
       case "leaderFullName":
         return "Giuse Nguyễn Văn An";
       case "leaderBirthDate":
@@ -199,6 +252,12 @@ export function CertificateConfigView({
         return "KH-2026-01";
       case "hostYear":
         return "2026";
+      case "courseStartDate":
+        return "15/07/2026";
+      case "courseEndDate":
+        return "20/07/2026";
+      case "coursePeriod":
+        return "từ 15/07/2026 đến 20/07/2026";
       case "resultingLevel":
         return "Huynh trưởng cấp I";
       case "certificateCode":
@@ -259,10 +318,7 @@ export function CertificateConfigView({
     event.target.value = "";
   }
 
-  const canSave =
-    canManage &&
-    form.signerName.trim().length > 0 &&
-    (form.signerType !== "OTHER" || form.signerTitle.trim().length > 0);
+  const canSave = canManage;
 
   const selected = selectedIndex != null ? form.layout[selectedIndex] : null;
 
@@ -310,46 +366,9 @@ export function CertificateConfigView({
         </div>
       ) : null}
 
-      <Panel className="space-y-4 p-5">
-        <h2 className="text-lg font-semibold text-foreground">Người ký chứng nhận</h2>
-        <div className="flex flex-wrap gap-4">
-          <label className="inline-flex items-center gap-2 text-sm">
-            <input
-              checked={form.signerType === "CHAPLAIN"}
-              disabled={!canManage}
-              onChange={() => updateForm({ signerType: "CHAPLAIN" })}
-              type="radio"
-            />
-            Linh mục tuyên úy
-          </label>
-          <label className="inline-flex items-center gap-2 text-sm">
-            <input
-              checked={form.signerType === "OTHER"}
-              disabled={!canManage}
-              onChange={() => updateForm({ signerType: "OTHER" })}
-              type="radio"
-            />
-            Khác
-          </label>
-        </div>
-        <div className="grid max-w-2xl gap-4 sm:grid-cols-2">
-          <div>
-            <label className="mb-1 block text-sm font-medium text-foreground">Tên người ký <span className="text-danger">*</span></label>
-            <Input disabled={!canManage} onChange={(event) => updateForm({ signerName: event.target.value })} value={form.signerName} />
-          </div>
-          {form.signerType === "OTHER" ? (
-            <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">Chức danh <span className="text-danger">*</span></label>
-              <Input disabled={!canManage} onChange={(event) => updateForm({ signerTitle: event.target.value })} value={form.signerTitle} />
-            </div>
-          ) : (
-            <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">Chức danh</label>
-              <Input disabled value="Linh mục tuyên úy" />
-            </div>
-          )}
-        </div>
-      </Panel>
+      <p className="rounded-[10px] border border-dashed border-border bg-surface-2/50 px-4 py-3 text-sm text-muted">
+        Người ký được chọn khi <span className="font-semibold text-foreground">duyệt từng chứng nhận</span> và ghi trực tiếp vào chứng nhận đó; khi xuất PDF sẽ dùng người ký của chính chứng nhận.
+      </p>
 
       <Panel className="space-y-4 p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -368,6 +387,34 @@ export function CertificateConfigView({
               {form.backgroundImage ? "Đổi ảnh nền" : "Tải ảnh nền"}
               <input accept="image/*" className="sr-only" disabled={!canManage} onChange={handleUpload} type="file" />
             </label>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-end gap-3">
+          <div>
+            <label className="mb-1 block text-xs font-medium text-muted">Khổ giấy</label>
+            <select
+              className="h-10 rounded-[8px] border border-border bg-white px-3 text-sm"
+              disabled={!canManage}
+              value={form.paperSize}
+              onChange={(event) => updateForm({ paperSize: event.target.value })}
+            >
+              {PAPER_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-muted">Hướng in</label>
+            <select
+              className="h-10 rounded-[8px] border border-border bg-white px-3 text-sm"
+              disabled={!canManage}
+              value={form.orientation}
+              onChange={(event) => updateForm({ orientation: event.target.value })}
+            >
+              <option value="LANDSCAPE">Ngang</option>
+              <option value="PORTRAIT">Dọc</option>
+            </select>
           </div>
         </div>
 
@@ -401,6 +448,7 @@ export function CertificateConfigView({
             fieldLabel={fieldLabel}
             sampleValue={sampleValue}
             preview={preview}
+            aspect={paperAspect(form.paperSize, form.orientation)}
             selectedIndex={selectedIndex}
             onSelect={setSelectedIndex}
             onMove={(index, x, y) => updateItem(index, { x, y })}
@@ -432,8 +480,9 @@ export function CertificateConfigView({
                     onChange={(event) => selectedIndex != null && updateItem(selectedIndex, { fontFamily: event.target.value as FontFamily })}
                     value={selected.fontFamily}
                   >
-                    <option value="sans">Không chân (Sans)</option>
-                    <option value="serif">Có chân (Serif)</option>
+                    {FONT_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
                   </select>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -542,6 +591,7 @@ function CertificateCanvas({
   fieldLabel,
   sampleValue,
   preview,
+  aspect,
   selectedIndex,
   onSelect,
   onMove,
@@ -552,6 +602,7 @@ function CertificateCanvas({
   fieldLabel: (key?: string) => string;
   sampleValue: (key?: string) => string;
   preview: boolean;
+  aspect: number;
   selectedIndex: number | null;
   onSelect: (index: number) => void;
   onMove: (index: number, x: number, y: number) => void;
@@ -605,14 +656,15 @@ function CertificateCanvas({
     <div
       ref={containerRef}
       className="relative w-full select-none overflow-hidden rounded-[10px] border border-border bg-surface-2"
-      style={{ aspectRatio: "1.414 / 1", containerType: "size" }}
+      style={{ aspectRatio: `${aspect}`, containerType: "size" }}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerLeave={handlePointerUp}
     >
       {backgroundImage ? (
+        // Stretch đầy khung để khớp PDF (ảnh nền được vẽ full trang). Nên dùng ảnh đúng tỉ lệ khổ giấy.
         // eslint-disable-next-line @next/next/no-img-element
-        <img alt="Ảnh nền chứng nhận" className="absolute inset-0 h-full w-full object-contain" src={backgroundImage} />
+        <img alt="Ảnh nền chứng nhận" className="absolute inset-0 h-full w-full object-fill" src={backgroundImage} />
       ) : (
         <div className="flex h-full items-center justify-center text-sm text-muted">Chưa có ảnh nền</div>
       )}
@@ -637,7 +689,7 @@ function CertificateCanvas({
               transform: `translate(${translate}, -50%)`,
               fontSize: `clamp(8px, ${item.fontSize * 100}cqh, 80px)`,
               color: item.color,
-              fontFamily: item.fontFamily === "serif" ? "Georgia, 'Times New Roman', serif" : "Arial, Helvetica, sans-serif",
+              fontFamily: fontStack(item.fontFamily),
               fontWeight: item.bold ? 700 : 400,
               fontStyle: item.italic ? "italic" : "normal",
               textDecoration: item.underline ? "underline" : "none",
@@ -661,7 +713,7 @@ function normalizeItem(item: LayoutItem): LayoutItem {
     fontSize: typeof item.fontSize === "number" && item.fontSize > 0 ? item.fontSize : 0.04,
     color: item.color || "#000000",
     align: item.align === "left" || item.align === "right" ? item.align : "center",
-    fontFamily: item.fontFamily === "serif" ? "serif" : "sans",
+    fontFamily: FONT_OPTIONS.some((option) => option.value === item.fontFamily) ? item.fontFamily : "sans",
     bold: Boolean(item.bold),
     italic: Boolean(item.italic),
     underline: Boolean(item.underline),
