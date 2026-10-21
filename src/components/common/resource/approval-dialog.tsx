@@ -123,7 +123,7 @@ export function ApprovalDialog({
           </div>
 
           {exceptionReasons?.length ? (
-            <div className="mt-4 max-h-48 space-y-2 overflow-y-auto rounded-[10px] border border-warning/40 bg-warning/5 p-3">
+            <div className="mt-4 max-h-48 space-y-2 overflow-y-auto rounded-lg border border-warning/40 bg-warning/5 p-3">
               <p className="text-xs font-semibold uppercase text-warning">Lý do đặc cách</p>
               {exceptionReasons.map((item) => (
                 <div className="text-sm leading-6" key={item.id}>
@@ -135,7 +135,7 @@ export function ApprovalDialog({
           ) : null}
 
           {multi ? (
-            <div aria-label="Cách nhập lý do" className="mt-4 grid grid-cols-2 gap-1 rounded-[10px] bg-surface-1 p-1" role="radiogroup">
+            <div aria-label="Cách nhập lý do" className="mt-4 grid grid-cols-2 gap-1 rounded-lg bg-surface-1 p-1" role="radiogroup">
               {(
                 [
                   { value: "shared", label: "Lý do chung" },
@@ -186,7 +186,7 @@ export function ApprovalDialog({
           )}
 
           {levelItems.length ? (
-            <div className="mt-4 min-h-0 space-y-3 overflow-y-auto rounded-[10px] border border-border p-3">
+            <div className="mt-4 min-h-0 space-y-3 overflow-y-auto rounded-lg border border-border p-3">
               <div>
                 <span className="block text-sm font-semibold text-foreground">
                   Cấp độ đạt được sau khi hoàn thành khóa <span className="text-danger">*</span>
@@ -225,7 +225,7 @@ export function ApprovalDialog({
           ) : null}
 
           {needSigner ? (
-            <div className="mt-4 space-y-3 rounded-[10px] border border-border p-3">
+            <div className="mt-4 space-y-3 rounded-lg border border-border p-3">
               <span className="block text-sm font-semibold text-foreground">Người ký chứng nhận <span className="text-danger">*</span></span>
               <div className="flex flex-wrap gap-4">
                 <label className="inline-flex items-center gap-2 text-sm">

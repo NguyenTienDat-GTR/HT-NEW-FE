@@ -88,7 +88,7 @@ function StatusForm({ courseCode, courseName, endpoint, onClose }: { courseCode:
       {impactQuery.isError ? <p className="mt-4 text-sm text-danger">{getApiErrorMessage(impactQuery.error)}</p> : null}
 
       {impact && disabling ? (
-        <ul className="mt-4 list-disc space-y-1 rounded-[10px] border border-danger/20 bg-danger/5 py-3 pl-8 pr-3 text-sm text-foreground">
+        <ul className="mt-4 list-disc space-y-1 rounded-lg border border-danger/20 bg-danger/5 py-3 pl-8 pr-3 text-sm text-foreground">
           <li>Không thể thao tác bất cứ gì trong khóa này (đăng ký, duyệt, chấm điểm, kết thúc, sửa, duyệt chứng nhận) cho đến khi bật lại.</li>
           <li>
             {impact.approvedCertificates > 0 ? (
@@ -105,7 +105,7 @@ function StatusForm({ courseCode, courseName, endpoint, onClose }: { courseCode:
       ) : null}
 
       {impact && !disabling ? (
-        <ul className="mt-4 list-disc space-y-1 rounded-[10px] border border-success/25 bg-success/5 py-3 pl-8 pr-3 text-sm text-foreground">
+        <ul className="mt-4 list-disc space-y-1 rounded-lg border border-success/25 bg-success/5 py-3 pl-8 pr-3 text-sm text-foreground">
           <li>Khóa huấn luyện hoạt động trở lại, có thể thao tác bình thường.</li>
           <li>
             {impact.restorableCertificates > 0 ? (

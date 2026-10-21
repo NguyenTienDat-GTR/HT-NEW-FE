@@ -786,7 +786,7 @@ function StatusBadge({active}: { active: boolean }) {
 function LeaderDetailSkeleton() {
     return (
         <div className="space-y-5">
-            <div className="h-20 rounded-[12px] bg-surface-2 motion-safe:animate-pulse"/>
+            <div className="h-20 rounded-xl bg-surface-2 motion-safe:animate-pulse"/>
             <Panel className="p-5">
                 <div className="flex gap-4">
                     <div className="h-24 w-24 rounded-full bg-surface-2 motion-safe:animate-pulse"/>
@@ -797,8 +797,8 @@ function LeaderDetailSkeleton() {
                 </div>
             </Panel>
             <div className="grid gap-5 xl:grid-cols-2">
-                <div className="h-80 rounded-[12px] bg-surface-2 motion-safe:animate-pulse"/>
-                <div className="h-80 rounded-[12px] bg-surface-2 motion-safe:animate-pulse"/>
+                <div className="h-80 rounded-xl bg-surface-2 motion-safe:animate-pulse"/>
+                <div className="h-80 rounded-xl bg-surface-2 motion-safe:animate-pulse"/>
             </div>
         </div>
     );

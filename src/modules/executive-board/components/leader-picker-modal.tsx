@@ -109,7 +109,7 @@ function PickerContent({ selectedId, onClose, onSelect }: { selectedId?: string;
   const columnCount = 6 + (showParish ? 1 : 0) + (showDeanery ? 1 : 0);
 
   return (
-    <Dialog.Content className="fixed left-1/2 top-1/2 z-[61] flex max-h-[92vh] w-[calc(100vw-32px)] max-w-[1100px] -translate-x-1/2 -translate-y-1/2 flex-col rounded-[12px] bg-white shadow-xl focus:outline-none">
+    <Dialog.Content className="fixed left-1/2 top-1/2 z-[61] flex max-h-[92vh] w-[calc(100vw-32px)] max-w-[1100px] -translate-x-1/2 -translate-y-1/2 flex-col rounded-xl bg-white shadow-xl focus:outline-none">
       <div className="flex items-start justify-between gap-3 border-b border-border px-5 py-4">
         <div>
           <Dialog.Title className="text-lg font-semibold text-foreground">Chọn huynh trưởng</Dialog.Title>

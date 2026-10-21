@@ -493,7 +493,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
         {!query.isLoading && rows.length === 0 ? <ResourceListEmptyState route={effectiveRoute} /> : null}
 
         {query.isError && !query.isFetching ? (
-          <div className="mx-4 mb-4 rounded-[10px] border border-danger/30 bg-danger/5 p-3 text-sm font-medium text-danger">
+          <div className="mx-4 mb-4 rounded-lg border border-danger/30 bg-danger/5 p-3 text-sm font-medium text-danger">
             {getApiErrorMessage(query.error)}
           </div>
         ) : null}

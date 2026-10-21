@@ -494,7 +494,7 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
         {libraryQuery.isError ? <p className="text-sm text-danger">{getApiErrorMessage(libraryQuery.error)}</p> : null}
         {libraryQuery.isLoading ? <p className="text-sm text-muted">Đang tải thư viện…</p> : null}
         {libraryQuery.data && libraryItems.length === 0 ? (
-          <p className="rounded-[10px] border border-dashed border-border p-4 text-sm text-muted">
+          <p className="rounded-lg border border-dashed border-border p-4 text-sm text-muted">
             {filtering ? "Không có cấu hình nào khớp bộ lọc." : "Thư viện còn trống. Cấu hình đầu tiên bạn tạo sẽ tự động là cấu hình chung."}
           </p>
         ) : null}
@@ -505,7 +505,7 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
             return (
               <div
                 key={config.id}
-                className={cn("rounded-[10px] border p-3 transition-colors", active ? "border-primary bg-primary/5" : "border-border bg-white")}
+                className={cn("rounded-lg border p-3 transition-colors", active ? "border-primary bg-primary/5" : "border-border bg-white")}
               >
                 <ConfigPreviewTip config={config} fieldLabel={fieldLabel}>
                   <button className="block w-full text-left" onClick={() => selectConfig(config.id)} type="button">
@@ -554,12 +554,12 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
       </Panel>
 
       {!isNew && selectedConfig && !selectedConfig.editable ? (
-        <p className="rounded-[10px] border border-dashed border-border bg-surface-2/50 px-4 py-3 text-sm text-muted">
+        <p className="rounded-lg border border-dashed border-border bg-surface-2/50 px-4 py-3 text-sm text-muted">
           Cấu hình này thuộc cấp {SCOPE_LABELS[selectedConfig.scopeLevel].toLowerCase()}, bạn chỉ được xem và dùng. Muốn chỉnh sửa, hãy lưu thành một cấu hình mới của bạn.
         </p>
       ) : null}
 
-      <p className="rounded-[10px] border border-dashed border-border bg-surface-2/50 px-4 py-3 text-sm text-muted">
+      <p className="rounded-lg border border-dashed border-border bg-surface-2/50 px-4 py-3 text-sm text-muted">
         Người ký được chọn khi <span className="font-semibold text-foreground">duyệt từng chứng nhận</span> và ghi trực tiếp vào chứng nhận đó; khi xuất PDF sẽ dùng người ký của chính chứng nhận.
       </p>
 
@@ -679,7 +679,7 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
 
             <div className="space-y-3">
               {selected && selectedIndex != null ? (
-                <div className="space-y-3 rounded-[10px] border border-border p-3">
+                <div className="space-y-3 rounded-lg border border-border p-3">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-semibold text-foreground">
                       {selected.type === "TEXT" ? "Văn bản tĩnh" : selected.type === "QR" ? "Mã QR chứng nhận" : fieldLabel(selected.fieldKey)}
@@ -777,13 +777,13 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
                   )}
                 </div>
               ) : (
-                <p className="rounded-[10px] border border-dashed border-border p-4 text-sm text-muted">
+                <p className="rounded-lg border border-dashed border-border p-4 text-sm text-muted">
                   Chọn một phần tử trên ảnh để chỉnh nội dung, cỡ chữ, màu và vị trí. Kéo phần tử để đổi vị trí.
                 </p>
               )}
 
               {selectedConfig ? (
-                <div className="rounded-[10px] border border-border p-3 text-sm">
+                <div className="rounded-lg border border-border p-3 text-sm">
                   <p className="font-semibold text-foreground">Loại khóa đang dùng ({selectedConfig.usedByCount})</p>
                   {selectedConfig.usedByCount > 0 ? (
                     <ul className="mt-1 list-disc space-y-0.5 pl-4 text-muted">
@@ -900,7 +900,7 @@ function FilterSelect({
     <label className="block">
       <span className="mb-2 block text-xs font-semibold text-foreground">{label}</span>
       <select
-        className="h-11 w-full rounded-[10px] border border-border bg-white px-3 text-sm text-foreground shadow-sm transition-[border-color,box-shadow] focus:border-primary focus:outline-none focus:ring-4 focus:ring-[var(--primary-ring)]"
+        className="h-11 w-full rounded-lg border border-border bg-white px-3 text-sm text-foreground shadow-sm transition-[border-color,box-shadow] focus:border-primary focus:outline-none focus:ring-4 focus:ring-[var(--primary-ring)]"
         onChange={(event) => onChange(event.target.value)}
         value={value}
       >

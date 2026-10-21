@@ -50,7 +50,7 @@ export function ScoreStats({
   });
 
   if (query.isLoading) {
-    return <div className="h-9 w-72 rounded-[10px] bg-surface-2 motion-safe:animate-pulse" />;
+    return <div className="h-9 w-72 rounded-lg bg-surface-2 motion-safe:animate-pulse" />;
   }
   if (query.isError || !query.data) return null;
 
@@ -88,5 +88,5 @@ export function ScoreStats({
 }
 
 function Chip({ tone, children }: { tone: Tone; children: React.ReactNode }) {
-  return <span className={cn("inline-flex min-h-9 items-center gap-1.5 rounded-[10px] border px-3 py-1 text-xs", toneClass[tone])}>{children}</span>;
+  return <span className={cn("inline-flex min-h-9 items-center gap-1.5 rounded-lg border px-3 py-1 text-xs", toneClass[tone])}>{children}</span>;
 }

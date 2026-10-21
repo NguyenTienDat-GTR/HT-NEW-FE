@@ -175,7 +175,7 @@ export function CertificateDetailBody({ detail, split }: { detail: ReturnType<ty
     <>
       {detailQuery.isLoading ? <div className="h-40 rounded-xl border border-border bg-white motion-safe:animate-pulse" /> : null}
       {detailQuery.isError ? (
-        <div className="rounded-[10px] border border-danger/30 bg-danger/5 p-3 text-sm text-danger">{getApiErrorMessage(detailQuery.error)}</div>
+        <div className="rounded-lg border border-danger/30 bg-danger/5 p-3 text-sm text-danger">{getApiErrorMessage(detailQuery.error)}</div>
       ) : null}
       {row ? (
         <div className={cn("gap-4", split && !waiting ? "grid items-start lg:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)]" : "space-y-4")}>
@@ -288,10 +288,10 @@ function PreviewPanel({ preview, loading, error, approved }: { preview?: Preview
     <section className="rounded-xl border border-border bg-white p-5 shadow-sm">
       <h2 className="text-sm font-semibold text-foreground">Xem trước chứng nhận</h2>
       <div className="mt-3">
-        {loading ? <div className="aspect-[1.414/1] w-full rounded-[10px] bg-surface-2 motion-safe:animate-pulse" /> : null}
+        {loading ? <div className="aspect-[1.414/1] w-full rounded-lg bg-surface-2 motion-safe:animate-pulse" /> : null}
         {error ? <p className="text-sm text-danger">{error}</p> : null}
         {preview && !preview.configured ? (
-          <p className="rounded-[10px] border border-dashed border-border p-4 text-sm text-muted">
+          <p className="rounded-lg border border-dashed border-border p-4 text-sm text-muted">
             Chưa có cấu hình chứng nhận (riêng hoặc chung) cho khóa này nên chưa thể xem trước. Hãy tạo cấu hình trong Cấu hình chứng nhận.
           </p>
         ) : null}

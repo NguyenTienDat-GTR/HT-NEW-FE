@@ -40,12 +40,12 @@ export function ExecutiveBoardSection({ kind, unitId }: { kind: UnitKind; unitId
   const showDeanery = kind === "dioceses";
 
   return (
-    <section className="rounded-[12px] border border-border bg-white p-4 shadow-sm">
+    <section className="rounded-xl border border-border bg-white p-4 shadow-sm">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-xs font-semibold uppercase text-muted">Ban điều hành</h2>
         {query.data ? <span className="text-xs text-muted">{assignedCount}/{seats.length} vị trí đã có người</span> : null}
       </div>
-      {query.isLoading ? <div className="mt-3 h-32 rounded-[10px] bg-surface-2 motion-safe:animate-pulse" /> : null}
+      {query.isLoading ? <div className="mt-3 h-32 rounded-lg bg-surface-2 motion-safe:animate-pulse" /> : null}
       {query.isError ? <p className="mt-3 text-sm text-danger">{getApiErrorMessage(query.error)}</p> : null}
       {query.data && seats.length === 0 ? <p className="mt-3 text-sm text-muted">Chưa có chức vụ nào đang hoạt động ở cấp này.</p> : null}
       {seats.length ? (
@@ -64,7 +64,7 @@ function SeatCard({ seat, showParish, showDeanery }: { seat: Seat; showParish: b
   const unitLine = [showParish ? seat.leaderParishName : null, showDeanery ? seat.leaderDeaneryName : null].filter(Boolean).join(" · ");
 
   return (
-    <article className={cn("flex flex-col gap-3 rounded-[10px] border p-3", seat.chaplain ? "border-primary/40 bg-primary/5 md:col-span-2" : "border-border bg-surface-1/60")}>
+    <article className={cn("flex flex-col gap-3 rounded-lg border p-3", seat.chaplain ? "border-primary/40 bg-primary/5 md:col-span-2" : "border-border bg-surface-1/60")}>
       <div className="flex items-center justify-between gap-2">
         <h3 className="text-sm font-semibold text-foreground">{seat.positionName}</h3>
         <Badge tone={seat.assigned ? "success" : "neutral"}>{seat.assigned ? (seat.chaplain ? "Đã cập nhật" : "Đã phân công") : seat.chaplain ? "Chưa cập nhật" : "Chưa phân công"}</Badge>

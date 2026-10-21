@@ -240,7 +240,7 @@ function RegistrationCandidateModal({
 
   return (
     <div aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" role="dialog">
-      <div className="flex max-h-[92vh] w-full max-w-[1180px] flex-col rounded-[12px] bg-white shadow-xl">
+      <div className="flex max-h-[92vh] w-full max-w-[1180px] flex-col rounded-xl bg-white shadow-xl">
         <div className="flex items-start justify-between gap-3 border-b border-border px-5 py-4">
           <div>
             <h2 className="text-lg font-semibold text-foreground">{title}</h2>

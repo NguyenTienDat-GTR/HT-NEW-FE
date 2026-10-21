@@ -87,7 +87,7 @@ export function DashboardView() {
                 <span className="text-xs text-muted">{item.readAt ? "Đã đọc" : "Mới"}</span>
               </div>
             ))}
-            {!notificationsQuery.isLoading && !notificationsQuery.data?.content.length ? <p className="rounded-[10px] bg-surface-1 p-3 text-sm text-muted">Chưa có thông báo mới.</p> : null}
+            {!notificationsQuery.isLoading && !notificationsQuery.data?.content.length ? <p className="rounded-lg bg-surface-1 p-3 text-sm text-muted">Chưa có thông báo mới.</p> : null}
           </div>
         </Panel>
       </section>

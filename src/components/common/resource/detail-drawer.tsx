@@ -119,7 +119,7 @@ function GenericDetailDrawer({ id, onClose, route }: { id?: string | null; onClo
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto bg-slate-50 p-6">
             {query.isLoading ? <div className="h-40 rounded-xl border border-border bg-white motion-safe:animate-pulse" /> : null}
-            {query.isError ? <div className="rounded-[10px] border border-danger/30 bg-danger/5 p-3 text-sm text-danger">{getApiErrorMessage(query.error)}</div> : null}
+            {query.isError ? <div className="rounded-lg border border-danger/30 bg-danger/5 p-3 text-sm text-danger">{getApiErrorMessage(query.error)}</div> : null}
             {row && route.kind === "positions" ? <SectionedDetail row={row} sections={POSITION_SECTIONS} /> : null}
             {row && route.kind === "participations" ? <SectionedDetail row={row} sections={PARTICIPATION_SECTIONS} /> : null}
             {row && route.kind === "course-types" ? <SectionedDetail row={row} sections={COURSE_TYPE_SECTIONS} /> : null}

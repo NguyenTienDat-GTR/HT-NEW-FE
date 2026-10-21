@@ -122,7 +122,7 @@ export function LeaderLevelsView({ route }: { route?: RouteConfig }) {
       <div
         key={level.levelCode}
         className={cn(
-          "flex items-center gap-3 rounded-[12px] border bg-white p-3 transition-colors",
+          "flex items-center gap-3 rounded-xl border bg-white p-3 transition-colors",
           overCode === level.levelCode && dragCode && dragCode !== level.levelCode ? "border-primary bg-primary/5" : "border-border",
           dragCode === level.levelCode && "opacity-50",
         )}
@@ -226,9 +226,9 @@ export function LeaderLevelsView({ route }: { route?: RouteConfig }) {
   });
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-foreground">{route?.title ?? "Cấp độ huynh trưởng"}</h1>
+        <h1 className="text-2xl font-bold leading-8 text-foreground">{route?.title ?? "Cấp độ huynh trưởng"}</h1>
         <p className="mt-1 text-sm text-muted">{route?.subtitle}</p>
       </div>
 
@@ -259,7 +259,7 @@ export function LeaderLevelsView({ route }: { route?: RouteConfig }) {
         </div>
 
         {query.isError ? <p className="text-sm text-danger">{getApiErrorMessage(query.error)}</p> : null}
-        {query.isLoading ? <div className="h-40 rounded-[12px] border border-border bg-white motion-safe:animate-pulse" /> : null}
+        {query.isLoading ? <div className="h-40 rounded-xl border border-border bg-white motion-safe:animate-pulse" /> : null}
 
         <div className="space-y-0">
           {groups.map((group, groupIndex) => {
@@ -311,7 +311,7 @@ export function LeaderLevelsView({ route }: { route?: RouteConfig }) {
         </div>
 
         {dirty ? (
-          <div className="sticky bottom-3 z-10 flex flex-wrap items-center justify-between gap-3 rounded-[12px] border border-warning/40 bg-warning/10 px-4 py-3 shadow-sm">
+          <div className="sticky bottom-3 z-10 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 shadow-sm">
             <span className="text-sm font-medium text-foreground">Thứ tự / bậc đã thay đổi, chưa lưu. Điều kiện của từng cấp ở trên đã cập nhật theo bố cục mới.</span>
             <div className="flex gap-2">
               <Button onClick={() => setDraft(null)} size="sm" type="button" variant="outline">

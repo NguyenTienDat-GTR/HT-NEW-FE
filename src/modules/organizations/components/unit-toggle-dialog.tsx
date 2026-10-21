@@ -106,7 +106,7 @@ function ToggleForm({ endpoint, onClose, unitId, unitLabel, unitName }: { endpoi
       {impact && disabling ? <DisableImpact impact={impact} /> : null}
 
       {impact && !disabling ? (
-        <ul className="mt-4 list-disc space-y-1 rounded-[10px] border border-success/25 bg-success/5 py-3 pl-8 pr-3 text-sm text-foreground">
+        <ul className="mt-4 list-disc space-y-1 rounded-lg border border-success/25 bg-success/5 py-3 pl-8 pr-3 text-sm text-foreground">
           <li>Tài khoản thuộc đơn vị (và đơn vị con đang bật) đăng nhập và thao tác bình thường trở lại.</li>
           <li>Dữ liệu được mở khóa đúng như trước khi tắt; tài khoản đã bị khóa riêng vẫn giữ nguyên trạng thái khóa.</li>
         </ul>
@@ -158,7 +158,7 @@ function DisableImpact({ impact }: { impact: UnitToggleImpact }) {
   ];
   return (
     <div className="mt-4 space-y-3">
-      <dl className="grid grid-cols-2 gap-2 rounded-[10px] border border-danger/20 bg-danger/5 p-3 text-sm">
+      <dl className="grid grid-cols-2 gap-2 rounded-lg border border-danger/20 bg-danger/5 p-3 text-sm">
         {rows
           .filter(([, value]) => value > 0)
           .map(([label, value]) => (

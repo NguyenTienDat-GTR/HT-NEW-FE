@@ -150,13 +150,13 @@ function Scanner({ onDone }: { onDone: () => void }) {
 
   return (
     <div className="mt-4 space-y-3">
-      <div className="relative aspect-square w-full overflow-hidden rounded-[12px] bg-slate-900">
+      <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-slate-900">
         <video ref={videoRef} className="h-full w-full object-cover" muted playsInline />
         <canvas ref={canvasRef} className="hidden" />
         {starting ? <div className="absolute inset-0 grid place-items-center text-sm text-white/80">Đang mở camera…</div> : null}
-        <div className="pointer-events-none absolute inset-[18%] rounded-[12px] border-2 border-white/80" />
+        <div className="pointer-events-none absolute inset-[18%] rounded-xl border-2 border-white/80" />
       </div>
-      {error ? <p className="rounded-[10px] border border-danger/30 bg-danger/5 p-3 text-sm text-danger">{error}</p> : null}
+      {error ? <p className="rounded-lg border border-danger/30 bg-danger/5 p-3 text-sm text-danger">{error}</p> : null}
       <label className="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-[8px] border border-border bg-white px-3 text-sm font-semibold text-foreground shadow-sm transition-colors hover:border-primary hover:text-primary">
         <ImageSquare size={16} /> Chọn ảnh chứa mã QR
         <input accept="image/*" className="sr-only" onChange={scanFile} type="file" />
