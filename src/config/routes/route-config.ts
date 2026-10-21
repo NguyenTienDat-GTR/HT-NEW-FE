@@ -163,14 +163,17 @@ export function route(config: RouteConfig): RouteConfig {
     );
   const updatePermissionPrefixes =
     config.actionPermissionPrefixes?.filter((prefix) => prefix.includes(".update.") || prefix.includes(".manage.") || prefix.includes(".assign."));
+  // Giáo phận / giáo hạt / giáo xứ: nút bật/tắt chỉ phụ thuộc quyền toggle, không còn lệ thuộc quyền chỉnh sửa.
+  const organizationUnitKind = config.kind === "dioceses" || config.kind === "deaneries" || config.kind === "parishes";
   const togglePermissionPrefixes = config.actionPermissionPrefixes?.filter(
     (prefix) =>
       prefix.includes(".toggle.") ||
+      (!organizationUnitKind && (
       prefix.includes(".update.") ||
       prefix.includes(".manage.") ||
       prefix.includes(".assign.") ||
       // Thu hồi chứng nhận là hành động riêng, không phải bật/tắt trạng thái.
-      (prefix.includes(".revoke.") && config.kind !== "certificates"),
+      (prefix.includes(".revoke.") && config.kind !== "certificates"))),
   );
   const revokePermissionPrefixes =
     config.kind === "certificates" ? config.actionPermissionPrefixes?.filter((prefix) => prefix.includes(".revoke.")) : undefined;

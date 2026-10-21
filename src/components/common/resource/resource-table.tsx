@@ -371,7 +371,8 @@ function canToggleRow(route: RouteConfig, row: Record<string, unknown>, user: Au
   if (route.kind === "accounts") return !isOwnAccount(row, user) && !rowHasPrimaryRole(row, "SUPER_ADMIN");
   if (route.kind === "dioceses") return isSuperAdmin(user);
   if (route.kind === "deaneries") return hasRole(user, "ADMIN_DIOCESE");
-  if (route.kind === "parishes") return hasRole(user, "ADMIN_DEANERY");
+  // Admin giáo hạt bật/tắt giáo xứ trong giáo hạt; admin giáo phận bật/tắt giáo xứ trong giáo phận khi có quyền toggle.diocese.
+  if (route.kind === "parishes") return hasRole(user, "ADMIN_DEANERY") || (hasRole(user, "ADMIN_DIOCESE") && hasPermission(user, "organization.parish.toggle.diocese"));
   if (!isSuperAdmin(user)) return true;
   return route.kind === "permissions" || route.kind === "account-roles";
 }
