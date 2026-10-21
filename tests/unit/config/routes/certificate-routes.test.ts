@@ -26,3 +26,41 @@ describe("certificate reissue action", () => {
     expect(route?.actions?.toggle).toBeUndefined();
   });
 });
+
+describe("certificate list filters and search", () => {
+  const route = findRoute("/certificates");
+
+  it("lọc theo khóa, loại khóa có chứng nhận, trạng thái, giáo hạt, giáo xứ và năm cấp", () => {
+    const keys = (route?.filters ?? []).map((filter) => filter.key);
+    expect(keys).toEqual([
+      "course.courseCode",
+      "course.courseType.typeCode",
+      "approvalStatus",
+      "leader.parish.deanery.id",
+      "leader.parish.id",
+      "issueDate:year",
+    ]);
+    const status = route?.filters?.find((filter) => filter.key === "approvalStatus");
+    expect(status?.options?.map((option) => option.value)).toContain("REVOKED");
+    const year = route?.filters?.find((filter) => filter.key === "issueDate:year");
+    expect(year?.options).toHaveLength(10);
+    expect(year?.options?.[0].value).toBe(String(new Date().getFullYear()));
+  });
+
+  it("giáo xứ chỉ hiện các giáo xứ thuộc giáo hạt đang chọn", () => {
+    const parish = route?.filters?.find((filter) => filter.key === "leader.parish.id");
+    expect(parish?.dependsOn?.filterKey).toBe("leader.parish.deanery.id");
+  });
+
+  it("tìm được theo tên huynh trưởng (họ tên, tên họ, tên thánh) ngoài mã chứng nhận và khóa", () => {
+    expect(route?.searchFields).toEqual(
+      expect.arrayContaining([
+        "certificateCode",
+        "leader.lastName+leader.firstName",
+        "leader.firstName+leader.lastName",
+        "leader.holyName+leader.lastName+leader.firstName",
+        "course.courseName",
+      ]),
+    );
+  });
+});
