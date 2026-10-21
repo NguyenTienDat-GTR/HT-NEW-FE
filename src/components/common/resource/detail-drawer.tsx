@@ -102,6 +102,8 @@ function GenericDetailDrawer({ id, onClose, route }: { id?: string | null; onClo
               <Dialog.Description className="mt-1 text-sm text-muted">
                 {route.kind === "participations"
                   ? "Chi tiết hồ sơ tham dự"
+                  : route.kind === "course-types"
+                    ? typeof row?.typeName === "string" ? row.typeName : "Chi tiết loại khóa"
                   : route.kind === "positions"
                     ? typeof row?.positionName === "string" ? row.positionName : "Chi tiết chức vụ"
                     : route.kind === "executive-board"
@@ -120,9 +122,10 @@ function GenericDetailDrawer({ id, onClose, route }: { id?: string | null; onClo
             {query.isError ? <div className="rounded-[10px] border border-danger/30 bg-danger/5 p-3 text-sm text-danger">{getApiErrorMessage(query.error)}</div> : null}
             {row && route.kind === "positions" ? <SectionedDetail row={row} sections={POSITION_SECTIONS} /> : null}
             {row && route.kind === "participations" ? <SectionedDetail row={row} sections={PARTICIPATION_SECTIONS} /> : null}
+            {row && route.kind === "course-types" ? <SectionedDetail row={row} sections={COURSE_TYPE_SECTIONS} /> : null}
             {row && route.kind === "executive-board" ? <SectionedDetail row={row} sections={ASSIGNMENT_SECTIONS} /> : null}
             {row && (route.kind === "dioceses" || route.kind === "deaneries" || route.kind === "parishes") ? <UnitDetail id={String(id)} kind={route.kind} row={row} /> : null}
-            {row && route.kind !== "positions" && route.kind !== "executive-board" && route.kind !== "participations" && !isUnitKind ? (
+            {row && route.kind !== "positions" && route.kind !== "executive-board" && route.kind !== "participations" && route.kind !== "course-types" && !isUnitKind ? (
               <div className="space-y-3">
                 <dl className="grid auto-rows-min grid-cols-1 gap-3 md:grid-cols-2">
                   {keys.map((key) => (
@@ -213,6 +216,52 @@ const ASSIGNMENT_SECTIONS: DetailSection[] = [
     fields: [
       { key: "startDate", label: "Ngày bắt đầu" },
       { key: "endDate", label: "Ngày kết thúc" },
+    ],
+  },
+  AUDIT_SECTION,
+];
+
+const hasNumber = (value: unknown) => typeof value === "number";
+
+// Loại khóa huấn luyện: gom theo ý nghĩa, ẩn mã định danh (UUID), khóa tiên quyết hiển thị bằng tên.
+const COURSE_TYPE_SECTIONS: DetailSection[] = [
+  {
+    title: "Thông tin loại khóa",
+    fields: [
+      { key: "typeName", label: "Tên loại khóa", wide: true },
+      { key: "managementUnitType", label: "Cấp quản lý" },
+      { key: "certificateShortCode", label: "Mã viết tắt chứng chỉ", visible: (row) => hasText(row.certificateShortCode) },
+      { key: "status", label: "Trạng thái" },
+    ],
+  },
+  {
+    title: "Điều kiện tham dự",
+    fields: [
+      { key: "requiredCurrentLevel", label: "Cấp hiện tại yêu cầu", render: (row) => (hasText(row.requiredCurrentLevel) ? <ResourceCell column="requiredCurrentLevel" displayMode="detail" row={row} value={row.requiredCurrentLevel} /> : "Không yêu cầu") },
+      { key: "requiredMinAge", label: "Tuổi tối thiểu", render: (row) => (hasNumber(row.requiredMinAge) ? `${row.requiredMinAge} tuổi` : "Không yêu cầu") },
+      { key: "requiredYearsActive", label: "Số năm sinh hoạt", render: (row) => (hasNumber(row.requiredYearsActive) ? `${row.requiredYearsActive} năm` : "Không yêu cầu") },
+    ],
+  },
+  {
+    title: "Khóa tiên quyết và nâng cấp",
+    fields: [
+      { key: "prerequisiteTypeName", label: "Khóa tiên quyết", render: (row) => (hasText(row.prerequisiteTypeName) ? String(row.prerequisiteTypeName) : "Không có") },
+      {
+        key: "maxYearsAfterPrerequisite",
+        label: "Thời hạn tối đa sau khóa tiên quyết",
+        visible: (row) => hasText(row.prerequisiteTypeName),
+        render: (row) => (hasNumber(row.maxYearsAfterPrerequisite) ? `${row.maxYearsAfterPrerequisite} năm` : "Không giới hạn"),
+      },
+      {
+        key: "resultingLevel",
+        label: "Cấp độ khi hoàn thành",
+        render: (row) =>
+          hasText(row.resultingLevel) && row.resultingLevel !== "NONE" ? (
+            <ResourceCell column="resultingLevel" displayMode="detail" row={row} value={row.resultingLevel} />
+          ) : (
+            "Không có (không yêu cầu chứng nhận)"
+          ),
+      },
     ],
   },
   AUDIT_SECTION,
