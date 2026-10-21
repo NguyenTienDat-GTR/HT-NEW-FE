@@ -1,13 +1,16 @@
-// Mã QR chứng nhận chứa mã chứng nhận. Chấp nhận cả đường dẫn có chứa mã (lấy đoạn cuối).
+// Mã QR chứa link .../certificates/{mã}. Trình quét trong hệ thống chỉ lấy mã rồi điều hướng nội bộ một lần
+// (không mở lại link đầy đủ). Vẫn nhận mã trơn của các QR cũ.
 export function certificateCodeFromQr(raw: string): string | null {
   let text = raw.trim();
   if (!text) return null;
-  try {
-    const url = new URL(text);
-    text = url.pathname.split("/").filter(Boolean).pop() ?? "";
-    text = decodeURIComponent(text);
-  } catch {
-    // Không phải URL: dùng nguyên văn.
+  if (/^https?:\/\//i.test(text)) {
+    try {
+      const segments = new URL(text).pathname.split("/").filter(Boolean);
+      if (segments.length < 2 || segments[segments.length - 2] !== "certificates") return null;
+      text = decodeURIComponent(segments[segments.length - 1] ?? "");
+    } catch {
+      return null;
+    }
   }
   text = text.trim();
   // Mã chứng nhận dạng GPPC-HTI-2026-1: không chứa khoảng trắng hay ký tự đường dẫn.

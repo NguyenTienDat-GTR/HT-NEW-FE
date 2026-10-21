@@ -48,7 +48,7 @@ export function LoginView() {
             setAccessToken(data.accessToken);
             setUser(data.user);
             toast.success("Đăng nhập thành công");
-            const next = data.user.mustChangePassword ? "/change-password" : (searchParams.get("next") ?? "/dashboard");
+            const next = data.user.mustChangePassword ? "/change-password" : safeNextPath(searchParams.get("next"));
             router.replace(next as Route);
         } catch (error) {
             const message = getApiErrorMessage(error);
@@ -140,4 +140,9 @@ export function LoginView() {
             </section>
         </main>
     );
+}
+
+// Chỉ cho quay lại đường dẫn nội bộ sau đăng nhập (chặn chuyển hướng ra ngoài).
+function safeNextPath(next: string | null) {
+    return next && next.startsWith("/") && !next.startsWith("//") && !next.startsWith("/\\") ? next : "/dashboard";
 }
