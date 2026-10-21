@@ -25,7 +25,7 @@ export type ResourceKind =
   | "account-permissions"
   | "audit-logs";
 
-export type ResourceAction = "view" | "create" | "edit" | "toggle" | "submit" | "approve" | "reject" | "revoke" | "withdraw" | "remove" | "score" | "matrix" | "read";
+export type ResourceAction = "view" | "create" | "edit" | "toggle" | "submit" | "approve" | "reject" | "revoke" | "reissue" | "withdraw" | "remove" | "score" | "matrix" | "read";
 
 export type ResourceActionConfig = {
   label: string;
@@ -174,6 +174,8 @@ export function route(config: RouteConfig): RouteConfig {
   );
   const revokePermissionPrefixes =
     config.kind === "certificates" ? config.actionPermissionPrefixes?.filter((prefix) => prefix.includes(".revoke.")) : undefined;
+  const reissuePermissionPrefixes =
+    config.kind === "certificates" ? config.actionPermissionPrefixes?.filter((prefix) => prefix.includes(".reissue.")) : undefined;
   const approvePermissionPrefixes = config.actionPermissionPrefixes?.filter((prefix) => prefix.includes(".approve."));
   const submitPermissionPrefixes = config.actionPermissionPrefixes?.filter((prefix) => prefix.includes(".submit."));
   const scorePermissionPrefixes = config.actionPermissionPrefixes?.filter((prefix) => prefix.includes(".score."));
@@ -196,6 +198,7 @@ export function route(config: RouteConfig): RouteConfig {
         ? { reject: { label: "Từ chối", permissionPrefixes: approvePermissionPrefixes } }
         : {}),
       ...(revokePermissionPrefixes?.length ? { revoke: { label: "Thu hồi", permissionPrefixes: revokePermissionPrefixes } } : {}),
+      ...(reissuePermissionPrefixes?.length ? { reissue: { label: "Cấp lại", permissionPrefixes: reissuePermissionPrefixes } } : {}),
       ...(submitPermissionPrefixes?.length ? { submit: { label: "Gửi", permissionPrefixes: submitPermissionPrefixes } } : {}),
       ...(scorePermissionPrefixes?.length ? { score: { label: "Chấm điểm", permissionPrefixes: scorePermissionPrefixes } } : {}),
       ...config.actions,

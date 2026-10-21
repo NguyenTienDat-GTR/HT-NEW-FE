@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowUUpLeftIcon, CaretDownIcon, CheckCircleIcon, EyeIcon, FilePdfIcon, PencilSimpleIcon, ProhibitInsetIcon, TrashIcon, XCircleIcon } from "@phosphor-icons/react";
+import { ArrowsCounterClockwiseIcon, ArrowUUpLeftIcon, CaretDownIcon, CheckCircleIcon, EyeIcon, FilePdfIcon, PencilSimpleIcon, ProhibitInsetIcon, TrashIcon, XCircleIcon } from "@phosphor-icons/react";
 import type { Route } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -217,23 +217,28 @@ function RowActions({ route, row, onExportRow, exportingRow }: { route: RouteCon
   const detailHref = fillRoute(route.detailPath, { id });
   const scoreHref = fillRoute(route.actions?.score?.route, { id });
   const canView = canUseAction(user, route.actions?.view);
-  const canEdit = canShowEditAction(route, row, user);
+  // Khóa bị vô hiệu hóa (đang xem danh sách khóa hoặc đang ở trong khóa đó): chỉ xem, không thao tác gì (BE cũng chặn).
+  const courseDisabled = embedded?.courseDisabled === true || (route.kind === "courses" && row.status === false);
+  const canEdit = canShowEditAction(route, row, user) && !courseDisabled;
   const canToggle = canUseAction(user, route.actions?.toggle) && canToggleRow(route, row, user);
   // Tab chấm điểm nhập điểm trực tiếp trên bảng nên không cần nút chấm điểm ở từng hàng.
-  const canScore = canUseAction(user, route.actions?.score) && route.moduleName !== "training.score";
+  const canScore = canUseAction(user, route.actions?.score) && route.moduleName !== "training.score" && !courseDisabled;
   // Hồ sơ tham dự chỉ duyệt/từ chối khi đang chờ duyệt.
   const awaitingApproval = (route.kind !== "participations" && route.kind !== "certificates") || isAwaitingApproval(row);
   // Chỉ người gửi đăng ký mới thu hồi được, và chỉ khi hồ sơ còn chờ duyệt (chưa duyệt hoặc từ chối).
   const actorId = user?.leaderId || user?.username;
-  const canWithdraw = canUseAction(user, route.actions?.withdraw) && Boolean(actorId) && row.createdBy === actorId && isAwaitingApproval(row);
+  const canWithdraw = canUseAction(user, route.actions?.withdraw) && Boolean(actorId) && row.createdBy === actorId && isAwaitingApproval(row) && !courseDisabled;
   // Khóa đã kết thúc thì không duyệt/từ chối chứng nhận được, chỉ xuất PDF.
   const courseFinished = route.kind === "certificates" && row.courseFinished === true;
-  const canApprove = canUseAction(user, route.actions?.approve) && awaitingApproval && !courseFinished;
+  const canApprove = canUseAction(user, route.actions?.approve) && awaitingApproval && !courseFinished && !courseDisabled;
   // Hồ sơ đã có chứng nhận được duyệt thì không xóa được.
-  const canRemove = canUseAction(user, route.actions?.remove) && row.certificateApprovalStatus !== "APPROVED";
-  const canReject = canUseAction(user, route.actions?.reject) && awaitingApproval && !courseFinished;
+  const canRemove = canUseAction(user, route.actions?.remove) && row.certificateApprovalStatus !== "APPROVED" && !courseDisabled;
+  const canReject = canUseAction(user, route.actions?.reject) && awaitingApproval && !courseFinished && !courseDisabled;
   // Chỉ thu hồi được chứng nhận đã duyệt (kể cả khi khóa đã kết thúc).
-  const canRevoke = canUseAction(user, route.actions?.revoke) && route.kind === "certificates" && row.approvalStatus === "APPROVED";
+  const canRevoke = canUseAction(user, route.actions?.revoke) && route.kind === "certificates" && row.approvalStatus === "APPROVED" && !courseDisabled;
+  // Cấp lại chứng nhận bị thu hồi vì lý do khác; chứng nhận thu hồi do khóa bị vô hiệu hóa chỉ mở lại khi bật lại khóa.
+  const canReissue =
+    canUseAction(user, route.actions?.reissue) && route.kind === "certificates" && row.approvalStatus === "REVOKED" && row.revocationSource !== "COURSE_DISABLED" && !courseDisabled;
 
   return (
     <div className="inline-flex items-center gap-1">
@@ -255,7 +260,7 @@ function RowActions({ route, row, onExportRow, exportingRow }: { route: RouteCon
           </Button>
         </Tip>
       ) : null}
-      {route.kind === "courses" && canEdit ? <RegistrationToggleButton endpoint={route.endpoint ?? ""} id={id} row={row} /> : null}
+      {route.kind === "courses" && canEdit && !courseDisabled ? <RegistrationToggleButton endpoint={route.endpoint ?? ""} id={id} row={row} /> : null}
       {canScore && scoreHref ? (
         <Tip label="Chấm điểm hồ sơ này">
           <Button asChild aria-label="Chấm điểm" className="h-8 min-w-8 rounded-lg" size="icon" variant="icon">
@@ -306,6 +311,15 @@ function RowActions({ route, row, onExportRow, exportingRow }: { route: RouteCon
           <Button asChild aria-label="Thu hồi chứng nhận" className="h-8 min-w-8 rounded-lg text-danger" size="icon" variant="icon">
             <Link href={resourceActionHref(route.path, embedded, { revoke: id }) as Route}>
               <ProhibitInsetIcon size={16} />
+            </Link>
+          </Button>
+        </Tip>
+      ) : null}
+      {canReissue ? (
+        <Tip label="Cấp lại chứng nhận đã thu hồi, hồ sơ trở lại đạt và thăng cấp lại">
+          <Button asChild aria-label="Cấp lại chứng nhận" className="h-8 min-w-8 rounded-lg text-success" size="icon" variant="icon">
+            <Link href={resourceActionHref(route.path, embedded, { reissue: id }) as Route}>
+              <ArrowsCounterClockwiseIcon size={16} />
             </Link>
           </Button>
         </Tip>

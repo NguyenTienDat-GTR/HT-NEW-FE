@@ -10,7 +10,7 @@ export const certificateRouteGroup: RouteGroup = {
         path: "/certificates",
         moduleName: "certificate.list",
         title: "Chứng nhận",
-        subtitle: "Xem, xuất PDF và thu hồi chứng nhận. Chứng nhận được sinh tự động khi hồ sơ hoàn thành khóa huấn luyện.",
+        subtitle: "Xem, xuất PDF, thu hồi và cấp lại chứng nhận. Chứng nhận được sinh tự động khi hồ sơ hoàn thành khóa huấn luyện.",
         endpoint: "/certificates",
         idField: "certificateCode",
         kind: "certificates",
@@ -21,7 +21,7 @@ export const certificateRouteGroup: RouteGroup = {
         // Tìm theo thuộc tính entity (leaderFullName/courseName chỉ có ở response): mã chứng nhận, họ tên, tên thánh, khóa.
         searchFields: ["certificateCode", "leader.lastName+leader.firstName", "leader.holyName", "course.courseName", "course.courseCode"],
         permissionPrefixes: ["training.certificate.read."],
-        actionPermissionPrefixes: ["training.certificate.approve.", "training.certificate.revoke."],
+        actionPermissionPrefixes: ["training.certificate.approve.", "training.certificate.revoke.", "training.certificate.reissue."],
         filterLabels: ["Khóa", "Kết quả", "Trạng thái duyệt"],
         workflowHint: "Thu hồi chứng nhận đã duyệt sẽ chuyển hồ sơ của khóa liên kết thành không đạt.",
       }),

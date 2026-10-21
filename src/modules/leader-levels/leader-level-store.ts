@@ -8,15 +8,14 @@ import { useAuthStore } from "@/lib/auth/auth-store";
 export type LeaderLevelItem = {
   levelCode: string;
   levelName: string;
-  // Thứ tự càng lớn cấp càng cao.
+  // Bậc của cấp: số càng lớn cấp càng cao; các cấp cùng số là bằng cấp nhau.
   displayOrder: number;
   isSystem: boolean;
   description?: string | null;
-  // Cấp đứng ngay trước: điều kiện để đạt cấp này.
-  previousCode?: string | null;
-  previousName?: string | null;
+  // Các cấp của bậc ngay trước: điều kiện để đạt cấp này (rỗng với bậc thấp nhất).
+  previousCodes?: string[];
+  previousNames?: string[];
   // Chỉ có ở danh sách quản lý.
-  leaderCount?: number | null;
   courseTypeCount?: number | null;
   deletable?: boolean | null;
 };

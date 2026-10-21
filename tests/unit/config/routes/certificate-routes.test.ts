@@ -17,3 +17,12 @@ describe("certificate list route", () => {
     expect(route?.actions?.revoke?.permissionPrefixes).toEqual(["training.certificate.revoke."]);
   });
 });
+
+describe("certificate reissue action", () => {
+  it("cấp lại theo quyền training.certificate.reissue.*, tách khỏi thu hồi", () => {
+    const route = findRoute("/certificates");
+    expect(route?.actions?.reissue?.permissionPrefixes).toEqual(["training.certificate.reissue."]);
+    expect(route?.actions?.revoke?.permissionPrefixes).toEqual(["training.certificate.revoke."]);
+    expect(route?.actions?.toggle).toBeUndefined();
+  });
+});

@@ -2,8 +2,8 @@
 
 import * as Dialog from "@radix-ui/react-dialog";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowDown, ArrowUp, DotsSixVertical, LockSimple, PencilSimple, Plus, Trash, X } from "@phosphor-icons/react";
-import { useState } from "react";
+import { ArrowDown, ArrowUp, DotsSixVertical, Equals, LinkBreak, LockSimple, PencilSimple, Plus, Trash, X } from "@phosphor-icons/react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ConfirmActionDialog } from "@/components/common/resource/confirm-action-dialog";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,7 @@ import { hasPermissionPrefix } from "@/lib/auth/permissions";
 import type { RouteConfig } from "@/config/routes/routes";
 import { cn } from "@/lib/utils";
 import { LEADER_LEVELS_QUERY_KEY, setLeaderLevels, type LeaderLevelItem } from "../leader-level-store";
-import { moveCodeTo, moveItem, sameOrder } from "../reorder";
+import { buildRows, moveRow, sameRows, tierNumbers, toTiers, toggleLinked, type LevelRow } from "../reorder";
 
 const MANAGE_KEY = ["leader-levels", "manage"] as const;
 
@@ -36,22 +36,35 @@ export function LeaderLevelsView({ route }: { route?: RouteConfig }) {
     enabled: Boolean(user),
     queryFn: () => apiFetch<LeaderLevelItem[]>("/leader-levels"),
   });
-  const levels = query.data ?? [];
+  const levels = useMemo(() => query.data ?? [], [query.data]);
   const systemLevels = levels.filter((level) => level.isSystem);
   const movable = levels.filter((level) => !level.isSystem);
-  const serverOrder = movable.map((level) => level.levelCode);
+  const serverRows = useMemo(() => buildRows(movable), [movable]);
 
-  // Thứ tự đang kéo thả chưa lưu (null = giống máy chủ).
-  const [draft, setDraft] = useState<string[] | null>(null);
-  const order = draft ?? serverOrder;
-  const dirty = draft !== null && !sameOrder(draft, serverOrder);
+  // Bố cục đang kéo thả chưa lưu (null = giống máy chủ). Mỗi dòng có cờ "bằng cấp với dòng phía trên".
+  const [draft, setDraft] = useState<LevelRow[] | null>(null);
+  const editRows = draft ?? serverRows;
+  const dirty = draft !== null && !sameRows(draft, serverRows);
   const [dragCode, setDragCode] = useState<string | null>(null);
   const [overCode, setOverCode] = useState<string | null>(null);
   const [formTarget, setFormTarget] = useState<FormTarget | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<LeaderLevelItem | null>(null);
 
   const byCode = new Map(levels.map((level) => [level.levelCode, level]));
-  const rows = [...systemLevels, ...order.map((code) => byCode.get(code)).filter((level): level is LeaderLevelItem => Boolean(level))];
+  // Dòng hiển thị: cấp hệ thống (khởi đầu) rồi các cấp theo bố cục đang chỉnh.
+  const display = [
+    ...systemLevels.map((level) => ({ level, linked: false, system: true })),
+    ...editRows.flatMap((row) => {
+      const level = byCode.get(row.code);
+      return level ? [{ level, linked: row.linked, system: false }] : [];
+    }),
+  ];
+  const tiers = tierNumbers(display.map((item) => ({ code: item.level.levelCode, linked: item.linked })));
+  // Điều kiện của mỗi dòng tính theo bố cục đang chỉnh: các cấp của bậc ngay trước.
+  const previousNames = display.map((_, index) => {
+    const tier = tiers[index];
+    return display.filter((_, other) => tiers[other] === tier - 1).map((item) => item.level.levelName);
+  });
 
   async function refresh() {
     await queryClient.invalidateQueries({ queryKey: ["leader-levels"] });
@@ -61,7 +74,7 @@ export function LeaderLevelsView({ route }: { route?: RouteConfig }) {
   }
 
   const reorderMutation = useMutation({
-    mutationFn: () => apiMutation<LeaderLevelItem[]>("/leader-levels/reorder", "PUT", { levelCodes: order }),
+    mutationFn: () => apiMutation<LeaderLevelItem[]>("/leader-levels/reorder", "PUT", { tiers: toTiers(editRows) }),
     onSuccess: async () => {
       toast.success("Đã lưu thứ tự cấp độ");
       setDraft(null);
@@ -79,19 +92,24 @@ export function LeaderLevelsView({ route }: { route?: RouteConfig }) {
     },
   });
 
+  // Vị trí của dòng trong danh sách có thể chỉnh (không tính cấp hệ thống).
+  function editIndex(code: string) {
+    return editRows.findIndex((row) => row.code === code);
+  }
+
   function moveBy(code: string, delta: number) {
-    const from = order.indexOf(code);
-    setDraft(moveItem(order, from, from + delta));
+    const from = editIndex(code);
+    setDraft(moveRow(editRows, from, from + delta));
   }
 
   function handleDrop(targetCode: string) {
-    if (dragCode && dragCode !== targetCode) setDraft(moveCodeTo(order, dragCode, targetCode));
+    if (dragCode && dragCode !== targetCode) setDraft(moveRow(editRows, editIndex(dragCode), editIndex(targetCode)));
     setDragCode(null);
     setOverCode(null);
   }
 
-  // Ví dụ minh họa lấy từ dữ liệu thật: cấp thứ ba trở đi và điều kiện của nó.
-  const example = rows.find((level, index) => index >= 2 && level.previousName);
+  // Ví dụ minh họa lấy từ dữ liệu thật: cấp có điều kiện ở vị trí thứ ba trở đi.
+  const exampleIndex = display.findIndex((_, index) => index >= 2 && previousNames[index].length > 0);
 
   return (
     <div className="space-y-5">
@@ -106,15 +124,15 @@ export function LeaderLevelsView({ route }: { route?: RouteConfig }) {
             <h2 className="text-lg font-semibold text-foreground">Thang cấp độ của giáo phận</h2>
             <p className="text-sm text-muted">
               Cấp ở <span className="font-semibold text-foreground">phía dưới cao hơn</span> cấp ở phía trên. Để đạt một cấp, huynh trưởng phải đang ở{" "}
-              <span className="font-semibold text-foreground">cấp ngay phía trên</span> nó.
-              {example ? (
+              <span className="font-semibold text-foreground">cấp ngay phía trên</span> nó. Các cấp được nối bằng dấu <span className="font-semibold text-foreground">=</span> là bằng cấp nhau, cùng một bậc.
+              {exampleIndex >= 0 ? (
                 <>
-                  {" "}Ví dụ: để đạt <span className="font-semibold text-foreground">{example.levelName}</span> thì phải là{" "}
-                  <span className="font-semibold text-foreground">{example.previousName}</span>.
+                  {" "}Ví dụ: để đạt <span className="font-semibold text-foreground">{display[exampleIndex].level.levelName}</span> thì phải là{" "}
+                  <span className="font-semibold text-foreground">{previousNames[exampleIndex].join(" hoặc ")}</span>.
                 </>
               ) : null}
             </p>
-            {canUpdate ? <p className="text-xs text-muted">Kéo biểu tượng ⋮⋮ (hoặc dùng mũi tên) để đổi thứ tự, rồi bấm Lưu thứ tự. Danh mục này chỉ áp dụng cho giáo phận của bạn.</p> : null}
+            {canUpdate ? <p className="text-xs text-muted">Kéo biểu tượng ⋮⋮ (hoặc dùng mũi tên) để đổi thứ tự, bấm nút giữa hai dòng để cho hai cấp bằng cấp nhau hoặc tách ra, rồi bấm Lưu. Danh mục này chỉ áp dụng cho giáo phận của bạn.</p> : null}
           </div>
           {canCreate ? (
             <Button onClick={() => setFormTarget({ mode: "create" })} size="sm" type="button">
@@ -127,15 +145,32 @@ export function LeaderLevelsView({ route }: { route?: RouteConfig }) {
         {query.isLoading ? <div className="h-40 rounded-[12px] border border-border bg-white motion-safe:animate-pulse" /> : null}
 
         <ol className="space-y-0">
-          {rows.map((level, index) => {
-            const previous = index > 0 ? rows[index - 1] : undefined;
-            const draggable = canUpdate && !level.isSystem;
-            const position = order.indexOf(level.levelCode);
+          {display.map((item, index) => {
+            const level = item.level;
+            const previous = index > 0 ? display[index - 1] : undefined;
+            const draggable = canUpdate && !item.system;
+            const position = editIndex(level.levelCode);
+            const names = previousNames[index];
+            // Có thể nối / tách bằng cấp với dòng phía trên khi cả hai đều là cấp có thể chỉnh.
+            const canLink = canUpdate && previous !== undefined && !previous.system && !item.system;
             return (
               <li key={level.levelCode}>
                 {previous ? (
-                  <div aria-hidden className="ml-[27px] flex h-7 items-center gap-2 border-l-2 border-dashed border-border pl-4 text-xs text-muted">
-                    <ArrowDown size={12} /> lên cấp
+                  <div className="ml-[27px] flex h-8 items-center gap-2 border-l-2 border-dashed border-border pl-4 text-xs text-muted">
+                    {item.linked ? <Equals size={12} weight="bold" /> : <ArrowDown size={12} />}
+                    <span>{item.linked ? "bằng cấp với cấp phía trên" : "lên cấp"}</span>
+                    {canLink ? (
+                      <Tip label={item.linked ? "Tách thành bậc riêng" : "Cho bằng cấp với cấp phía trên"}>
+                        <button
+                          className="inline-flex items-center gap-1 rounded-md border border-border bg-white px-1.5 py-0.5 text-[11px] font-semibold text-foreground hover:border-primary hover:text-primary"
+                          onClick={() => setDraft(toggleLinked(editRows, position))}
+                          type="button"
+                        >
+                          {item.linked ? <LinkBreak size={12} /> : <Equals size={12} />}
+                          {item.linked ? "Tách" : "Bằng cấp"}
+                        </button>
+                      </Tip>
+                    ) : null}
                   </div>
                 ) : null}
                 <div
@@ -150,7 +185,7 @@ export function LeaderLevelsView({ route }: { route?: RouteConfig }) {
                     setOverCode(null);
                   }}
                   onDragOver={(event) => {
-                    if (!dragCode || level.isSystem) return;
+                    if (!dragCode || item.system) return;
                     event.preventDefault();
                     setOverCode(level.levelCode);
                   }}
@@ -160,38 +195,37 @@ export function LeaderLevelsView({ route }: { route?: RouteConfig }) {
                   }}
                   onDrop={(event) => {
                     event.preventDefault();
-                    if (!level.isSystem) handleDrop(level.levelCode);
+                    if (!item.system) handleDrop(level.levelCode);
                   }}
                 >
                   <span
-                    className={cn("grid h-9 w-9 shrink-0 place-items-center rounded-full text-sm font-semibold", level.isSystem ? "bg-surface-2 text-muted" : "bg-primary/10 text-primary")}
-                    title="Thứ tự cấp (càng lớn cấp càng cao)"
+                    className={cn("grid h-9 w-9 shrink-0 place-items-center rounded-full text-sm font-semibold", item.system ? "bg-surface-2 text-muted" : "bg-primary/10 text-primary")}
+                    title="Bậc của cấp (càng lớn cấp càng cao, cùng số là bằng cấp nhau)"
                   >
-                    {index}
+                    {tiers[index] - 1}
                   </span>
                   {draggable ? (
                     <span aria-hidden className="cursor-grab text-muted active:cursor-grabbing" title="Kéo để đổi thứ tự">
                       <DotsSixVertical size={20} weight="bold" />
                     </span>
                   ) : (
-                    <span aria-hidden className="text-muted" title={level.isSystem ? "Cấp hệ thống, không đổi thứ tự" : undefined}>
-                      {level.isSystem ? <LockSimple size={18} /> : <span className="inline-block w-[20px]" />}
+                    <span aria-hidden className="text-muted" title={item.system ? "Cấp hệ thống, không đổi thứ tự" : undefined}>
+                      {item.system ? <LockSimple size={18} /> : <span className="inline-block w-[20px]" />}
                     </span>
                   )}
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="truncate text-sm font-semibold text-foreground">{level.levelName}</span>
                       <code className="rounded bg-surface-2 px-1.5 py-0.5 text-[11px] text-muted">{level.levelCode}</code>
-                      {level.isSystem ? <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[11px] font-semibold text-muted">Cấp khởi đầu</span> : null}
+                      {item.system ? <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[11px] font-semibold text-muted">Cấp khởi đầu</span> : null}
                     </div>
                     <p className="mt-0.5 text-xs text-muted">
-                      {previous ? (
-                        <>Điều kiện: đang là <span className="font-semibold text-foreground">{previous.levelName}</span></>
+                      {names.length > 0 ? (
+                        <>Điều kiện: đang là <span className="font-semibold text-foreground">{names.join(" hoặc ")}</span></>
                       ) : (
                         "Chưa đạt cấp nào"
                       )}
-                      {" · "}
-                      {level.leaderCount ?? 0} huynh trưởng · {level.courseTypeCount ?? 0} loại khóa
+                      {(level.courseTypeCount ?? 0) > 0 ? ` · ${level.courseTypeCount} loại khóa` : ""}
                     </p>
                     {level.description ? <p className="mt-0.5 text-xs text-muted">{level.description}</p> : null}
                   </div>
@@ -201,7 +235,7 @@ export function LeaderLevelsView({ route }: { route?: RouteConfig }) {
                         <Button aria-label="Chuyển lên" disabled={position <= 0} onClick={() => moveBy(level.levelCode, -1)} size="icon" type="button" variant="ghost">
                           <ArrowUp size={16} />
                         </Button>
-                        <Button aria-label="Chuyển xuống" disabled={position >= order.length - 1} onClick={() => moveBy(level.levelCode, 1)} size="icon" type="button" variant="ghost">
+                        <Button aria-label="Chuyển xuống" disabled={position >= editRows.length - 1} onClick={() => moveBy(level.levelCode, 1)} size="icon" type="button" variant="ghost">
                           <ArrowDown size={16} />
                         </Button>
                       </>
@@ -213,7 +247,7 @@ export function LeaderLevelsView({ route }: { route?: RouteConfig }) {
                         </Button>
                       </Tip>
                     ) : null}
-                    {canDelete && !level.isSystem ? (
+                    {canDelete && !item.system ? (
                       <Tip disabled={!level.deletable} label={level.deletable ? "Xóa cấp độ" : "Đang được sử dụng nên không xóa được"}>
                         <Button aria-label="Xóa" className="text-danger" disabled={!level.deletable} onClick={() => setDeleteTarget(level)} size="icon" type="button" variant="ghost">
                           <Trash size={16} />
@@ -229,7 +263,7 @@ export function LeaderLevelsView({ route }: { route?: RouteConfig }) {
 
         {dirty ? (
           <div className="sticky bottom-3 z-10 flex flex-wrap items-center justify-between gap-3 rounded-[12px] border border-warning/40 bg-warning/10 px-4 py-3 shadow-sm">
-            <span className="text-sm font-medium text-foreground">Thứ tự đã thay đổi, chưa lưu. Điều kiện của từng cấp ở trên đã cập nhật theo thứ tự mới.</span>
+            <span className="text-sm font-medium text-foreground">Thứ tự / bậc đã thay đổi, chưa lưu. Điều kiện của từng cấp ở trên đã cập nhật theo bố cục mới.</span>
             <div className="flex gap-2">
               <Button onClick={() => setDraft(null)} size="sm" type="button" variant="outline">
                 Hoàn tác

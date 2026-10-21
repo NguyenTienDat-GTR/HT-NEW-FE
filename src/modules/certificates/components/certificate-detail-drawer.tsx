@@ -115,7 +115,20 @@ const SECTIONS: SectionSpec[] = [
     visible: (row) => row.approvalStatus === "REVOKED",
     fields: [
       { key: "revokedAt", label: "Ngày thu hồi", always: true },
+      {
+        key: "revocationSource",
+        label: "Nguồn thu hồi",
+        render: (value) => (value === "COURSE_DISABLED" ? "Khóa huấn luyện bị vô hiệu hóa (tự mở lại khi bật lại khóa)" : "Thu hồi thủ công"),
+      },
       { key: "revocationReason", label: "Lý do thu hồi", always: true, fullWidth: true },
+    ],
+  },
+  {
+    title: "Cấp lại chứng nhận",
+    visible: (row) => row.approvalStatus !== "REVOKED" && hasValue(row.reissuedAt),
+    fields: [
+      { key: "reissuedAt", label: "Ngày cấp lại", always: true },
+      { key: "reissueReason", label: "Lý do cấp lại", always: true, fullWidth: true },
     ],
   },
 ];
@@ -136,9 +149,11 @@ export function CertificateDetailDrawer({ id, onClose, endpoint }: { id?: string
     enabled: Boolean(id),
     queryFn: () => apiFetch<Detail>(`${endpoint}/${encodeURIComponent(String(id))}`),
   });
+  // Chứng nhận đã thu hồi không có bản xem trước (BE cũng từ chối), nên chỉ tải khi đã biết chứng nhận chưa bị thu hồi.
+  const revoked = detailQuery.data?.approvalStatus === "REVOKED";
   const previewQuery = useQuery({
     queryKey: ["certificate-preview", id, detailQuery.data?.approvalStatus],
-    enabled: Boolean(id),
+    enabled: Boolean(id) && detailQuery.data !== undefined && !revoked,
     queryFn: () => apiFetch<Preview>(`${endpoint}/${encodeURIComponent(String(id))}/preview`),
   });
   const row = detailQuery.data;
@@ -189,7 +204,14 @@ export function CertificateDetailDrawer({ id, onClose, endpoint }: { id?: string
             {row ? (
               <div className={cn("gap-4", expanded ? "grid items-start lg:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)]" : "space-y-4")}>
                 <div className={cn("space-y-4", expanded && "lg:order-2 lg:sticky lg:top-0")}>
-                  <PreviewPanel preview={previewQuery.data} loading={previewQuery.isLoading} error={previewQuery.isError ? getApiErrorMessage(previewQuery.error) : undefined} approved={row.approvalStatus === "APPROVED"} />
+                  {revoked ? (
+                    <section className="rounded-[12px] border border-danger/30 bg-danger/5 p-4 text-sm text-foreground shadow-sm">
+                      <h2 className="text-xs font-semibold uppercase tracking-[0.04em] text-danger">Xem trước chứng nhận</h2>
+                      <p className="mt-2">Chứng nhận đã bị thu hồi nên không hiển thị bản xem trước và không xuất PDF được.</p>
+                    </section>
+                  ) : (
+                    <PreviewPanel preview={previewQuery.data} loading={previewQuery.isLoading} error={previewQuery.isError ? getApiErrorMessage(previewQuery.error) : undefined} approved={row.approvalStatus === "APPROVED"} />
+                  )}
                 </div>
                 <div className={cn("space-y-4", expanded && "lg:order-1")}>
                   {SECTIONS.filter((section) => section.visible?.(row) ?? true).map((section) => (

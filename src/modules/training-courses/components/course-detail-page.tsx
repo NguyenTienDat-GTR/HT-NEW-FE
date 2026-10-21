@@ -1,7 +1,7 @@
 "use client";
 
-import { ArrowLeft, Flag, LockSimple, LockSimpleOpen, MagnifyingGlass, PencilSimple } from "@phosphor-icons/react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ArrowLeft, Flag, LockSimple, LockSimpleOpen, MagnifyingGlass, PencilSimple, Prohibit } from "@phosphor-icons/react";
+import { keepPreviousData, useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Route } from "next";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -17,7 +17,8 @@ import { Panel } from "@/components/ui/panel";
 import { Tip } from "@/components/ui/tip";
 import { ConfirmActionDialog } from "@/components/common/resource/confirm-action-dialog";
 import { findRoute, type RouteConfig } from "@/config/routes/routes";
-import { apiFetch, apiMutation, getApiErrorMessage } from "@/lib/api/client";
+import { apiFetch, apiMutation, getApiErrorMessage, type PageResponse } from "@/lib/api/client";
+import { serializeBaseSearch } from "@/lib/api/search";
 import { useAuthStore } from "@/lib/auth/auth-store";
 import { canUseAction, hasPermissionPrefix } from "@/lib/auth/permissions";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
@@ -89,6 +90,8 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
   });
 
   const course = courseQuery.data;
+  // Khóa bị vô hiệu hóa: chỉ xem, mọi thao tác trong khóa bị chặn.
+  const courseDisabled = course?.status === false;
   const tabs = useMemo(
     () =>
       workflowTabs.flatMap((tab) => {
@@ -102,6 +105,20 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
     [user, course?.certificateRequired],
   );
   const activeTab = tabs.find((tab) => tab.key === searchParams.get("tab")) ?? tabs[0];
+
+  // Số bản ghi của từng tab (tổng số dòng tab đó liệt kê, không tính ô tìm kiếm): dùng đúng endpoint và bộ lọc nền của tab.
+  const tabCountQueries = useQueries({
+    queries: tabs.map((tab) => ({
+      queryKey: ["resource", tab.route.endpoint, "tab-count", id, tab.route.baseFilters ?? null],
+      enabled: Boolean(tab.route.endpoint),
+      queryFn: () =>
+        apiFetch<PageResponse<Record<string, unknown>>>(
+          `${tab.route.endpoint}?${serializeBaseSearch({ page: 0, size: 10, filters: { ...tab.route.baseFilters, "course.courseCode": id } }).toString()}`,
+        ),
+      placeholderData: keepPreviousData,
+    })),
+  });
+  const tabCounts = Object.fromEntries(tabs.map((tab, index) => [tab.key, tabCountQueries[index]?.data?.totalElements]));
   const basePath = `/training/courses/${encodeURIComponent(id)}`;
 
   const search = useDebouncedValue(searchText).trim();
@@ -139,7 +156,7 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
         <div className="flex flex-wrap items-start justify-between gap-3">
           <h1 className="text-xl font-semibold tracking-[0] text-foreground">{courseQuery.isLoading ? "Đang tải..." : String(course?.courseName ?? id)}</h1>
           <div className="flex flex-wrap items-center gap-2">
-            {canFinish && course && !course.finishedAt ? (
+            {canFinish && course && !course.finishedAt && !courseDisabled ? (
               <Tip label="Kết thúc khóa, chốt kết quả và thăng cấp các hồ sơ đạt">
                 <Button onClick={() => setFinishOpen(true)} type="button" variant="outline">
                   <Flag size={16} />
@@ -147,7 +164,7 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
                 </Button>
               </Tip>
             ) : null}
-            {canLockScore && course && !course.finishedAt ? (
+            {canLockScore && course && !course.finishedAt && !courseDisabled ? (
               <Button
                 className={course.scoreLocked === true ? undefined : "border-success text-success hover:border-success hover:bg-success/10 hover:text-success"}
                 loading={lockScoreMutation.isPending}
@@ -159,7 +176,7 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
                 {course.scoreLocked === true ? "Mở chỉnh sửa điểm" : "Khóa chỉnh sửa điểm"}
               </Button>
             ) : null}
-            {editHref && canUseAction(user, route.actions?.edit) ? (
+            {editHref && canUseAction(user, route.actions?.edit) && !courseDisabled ? (
               <Button asChild variant="outline">
                 <Link href={editHref as Route}>
                   <PencilSimple size={16} />
@@ -180,6 +197,15 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
               </div>
             ))}
           </Panel>
+        ) : null}
+        {courseDisabled ? (
+          <div className="flex items-start gap-3 rounded-[12px] border border-danger/30 bg-danger/5 px-4 py-3 text-sm text-foreground" role="alert">
+            <Prohibit className="mt-0.5 shrink-0 text-danger" size={18} weight="bold" />
+            <p>
+              <span className="font-semibold">Khóa huấn luyện đã bị vô hiệu hóa.</span> Chỉ xem được, không thể thao tác bất cứ gì trong khóa. Các chứng nhận đã duyệt đã bị thu hồi; bật lại khóa ở danh sách khóa để mở lại
+              các chứng nhận đó.
+            </p>
+          </div>
         ) : null}
         <label className="relative block max-w-md">
           <MagnifyingGlass className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
@@ -223,6 +249,11 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
                   role="tab"
                 >
                   {tab.label}
+                  {tabCounts[tab.key] !== undefined ? (
+                    <span className={cn("ml-2 inline-flex min-w-6 items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-semibold", active ? "bg-primary/10 text-primary" : "bg-surface-2 text-muted")}>
+                      {tabCounts[tab.key]}
+                    </span>
+                  ) : null}
                 </Link>
               );
             })}
@@ -238,6 +269,7 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
                 scoringOpen: course ? isCourseWithinDates(course) : undefined,
                 scoringHint: course ? scoringWindowHint(course) : undefined,
                 scoreLocked: course ? course.scoreLocked === true : undefined,
+                courseDisabled,
               }}
             >
               {activeTab.key === "certificate-approvals" ? <CertificateResourceView route={activeTab.route} /> : <TrainingWorkflowResourceView route={activeTab.route} />}
