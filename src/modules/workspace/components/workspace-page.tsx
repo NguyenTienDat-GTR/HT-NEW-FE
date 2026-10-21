@@ -5,6 +5,7 @@ import { AnalyticsView } from "@/modules/analytics/components/analytics-view";
 import { LeaderDetailPage } from "@/modules/leaders/components/leader-detail-page";
 import { CourseDetailPage } from "@/modules/training-courses/components/course-detail-page";
 import { ResourceFormPage } from "@/components/form/resource-form/resource-form-page";
+import { CertificateDetailPage } from "@/modules/certificates/components/certificate-detail-page";
 import { CertificateConfigView } from "@/modules/certificates/components/certificate-config-view";
 import { LeaderLevelsView } from "@/modules/leader-levels/components/leader-levels-view";
 import type React from "react";
@@ -12,13 +13,31 @@ import { Panel } from "@/components/ui/panel";
 import type { AuthUser } from "@/lib/auth/auth-store";
 import { useAuthStore } from "@/lib/auth/auth-store";
 import { hasPermissionPrefix, isSuperAdmin } from "@/lib/auth/permissions";
-import { matchRoute } from "@/config/routes/routes";
+import { findRoute, matchRoute } from "@/config/routes/routes";
 import { ModuleResourceRenderer } from "./module-resource-renderer";
 
 export function WorkspacePage({ segments }: { segments: string[] }) {
   const user = useAuthStore((state) => state.user);
   const path = `/${segments.join("/")}`;
   const match = matchRoute(path);
+  // Đích khi quét mã QR: /certificates/{mã chứng nhận}. Cần đăng nhập (AuthGate) và quyền xem chứng nhận.
+  if (!match && segments.length === 2 && segments[0] === "certificates") {
+    const listRoute = findRoute("/certificates");
+    const allowed =
+      Boolean(listRoute) &&
+      !isHiddenForSuperAdmin(listRoute!, user) &&
+      listRoute!.permissionPrefixes.some((prefix) => hasPermissionPrefix(user, prefix));
+    if (user?.unitLocked) return null;
+    if (!allowed) {
+      return (
+        <Panel className="p-6">
+          <h1 className="text-2xl font-semibold text-foreground">403</h1>
+          <p className="mt-2 text-sm text-muted">Bạn không có quyền xem chứng nhận.</p>
+        </Panel>
+      );
+    }
+    return <CertificateDetailPage code={decodeURIComponent(segments[1] ?? "")} />;
+  }
   if (!match) {
     return (
       <div className="rounded-xl border border-border bg-white p-6 shadow-[var(--shadow-card)]">Không tìm thấy màn hình</div>

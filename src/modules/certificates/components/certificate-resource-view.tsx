@@ -1,5 +1,8 @@
 "use client";
 
+import { QrCode } from "@phosphor-icons/react";
+import { Button } from "@/components/ui/button";
+import { CertificateScanDialog } from "./certificate-scan-dialog";
 import { ResourceListRuntime } from "@/components/common/resource/resource-list-runtime";
 import type { CertificateSigner } from "@/components/common/resource/approval-dialog";
 import type { RouteConfig } from "@/config/routes/routes";
@@ -18,6 +21,18 @@ export function CertificateResourceView({ route }: { route: RouteConfig }) {
         bulkApprovePath: route.moduleName === "certificate.approval" ? "/certificates/bulk-approval" : undefined,
         buildBulkBody,
         // Danh sách & tab duyệt chứng nhận: cho chọn nhiều hồ sơ và xuất PDF (một hoặc nhiều) qua mail merge.
+        // Quét mã QR trên chứng nhận để mở trang chi tiết chứng nhận.
+        toolbarActions:
+          route.moduleName === "certificate.list" ? (
+            <CertificateScanDialog
+              tip="Quét mã QR trên chứng nhận để xem chi tiết"
+              trigger={
+                <Button size="sm" type="button" variant="outline">
+                  <QrCode size={16} /> Quét QR
+                </Button>
+              }
+            />
+          ) : undefined,
         enablePdfExport: route.moduleName === "certificate.list" || route.moduleName === "certificate.approval",
         pdfExportPath:
           route.moduleName === "certificate.list" || route.moduleName === "certificate.approval" ? "/certificates/export-pdf" : undefined,

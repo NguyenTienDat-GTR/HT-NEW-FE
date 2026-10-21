@@ -68,9 +68,14 @@ export function paperAspect(paperSize: string, orientation: string): number {
 }
 
 export type LayoutItem = {
-  type: "FIELD" | "TEXT";
+  // QR: mã QR chứa mã chứng nhận, chỉ được tạo lúc xuất PDF (hệ thống không lưu ảnh QR). x,y là tâm mã.
+  type: "FIELD" | "TEXT" | "QR";
   fieldKey?: string;
   text?: string;
+  // QR: cạnh mã theo tỉ lệ chiều cao trang (0..1).
+  size?: number;
+  // QR ở bản xem trước: ảnh QR thật do BE trả về (không lưu).
+  image?: string;
   x: number;
   y: number;
   fontSize: number;
@@ -146,9 +151,11 @@ export function isSameForm(a: DesignForm, b: DesignForm): boolean {
 
 export function normalizeItem(item: LayoutItem): LayoutItem {
   return {
-    type: item.type === "TEXT" ? "TEXT" : "FIELD",
+    type: item.type === "TEXT" ? "TEXT" : item.type === "QR" ? "QR" : "FIELD",
     fieldKey: item.fieldKey,
     text: item.text,
+    size: item.type === "QR" ? clamp(typeof item.size === "number" ? item.size : DEFAULT_QR_SIZE, MIN_QR_SIZE, MAX_QR_SIZE) : undefined,
+    image: item.image,
     x: typeof item.x === "number" ? item.x : 0.5,
     y: typeof item.y === "number" ? item.y : 0.5,
     fontSize: typeof item.fontSize === "number" && item.fontSize > 0 ? item.fontSize : 0.04,
@@ -160,6 +167,10 @@ export function normalizeItem(item: LayoutItem): LayoutItem {
     underline: Boolean(item.underline),
   };
 }
+
+export const DEFAULT_QR_SIZE = 0.15;
+export const MIN_QR_SIZE = 0.05;
+export const MAX_QR_SIZE = 0.5;
 
 export function clamp(value: number, min: number, max: number) {
   if (Number.isNaN(value)) return min;
@@ -303,6 +314,29 @@ export function CertificateCanvas({
       {guides.x != null ? <div className="pointer-events-none absolute top-0 bottom-0 z-20 w-px bg-primary/70" style={{ left: `${guides.x * 100}%` }} /> : null}
       {guides.y != null ? <div className="pointer-events-none absolute right-0 left-0 z-20 h-px bg-primary/70" style={{ top: `${guides.y * 100}%` }} /> : null}
       {layout.map((item, index) => {
+        if (item.type === "QR") {
+          const isQrSelected = !preview && index === selectedIndex;
+          const side = `${(item.size ?? DEFAULT_QR_SIZE) * 100}cqh`;
+          return (
+            <div
+              key={index}
+              onPointerDown={(event) => handlePointerDown(event, index)}
+              className={cn(
+                "absolute flex items-center justify-center bg-white text-[10px] font-semibold text-slate-700",
+                isQrSelected ? "outline-dashed outline-2 outline-primary" : "",
+                editable ? "cursor-move" : "cursor-default",
+              )}
+              style={{ left: `${item.x * 100}%`, top: `${item.y * 100}%`, width: side, height: side, transform: "translate(-50%, -50%)" }}
+            >
+              {item.image ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img alt="Mã QR chứng nhận" className="h-full w-full" draggable={false} src={item.image} />
+              ) : (
+                <QrPlaceholder />
+              )}
+            </div>
+          );
+        }
         const label = item.type === "TEXT" ? item.text ?? "" : preview ? sample(item.fieldKey) : `[${fieldLabel(item.fieldKey)}]`;
         const isSelected = !preview && index === selectedIndex;
         const translate = item.align === "center" ? "-50%" : item.align === "right" ? "-100%" : "0";
@@ -332,5 +366,24 @@ export function CertificateCanvas({
         );
       })}
     </div>
+  );
+}
+
+// Hình giữ chỗ mã QR trong trình soạn (mã thật chỉ sinh khi xuất PDF).
+function QrPlaceholder() {
+  return (
+    <svg aria-label="Mã QR (xem trước)" className="h-full w-full p-[6%]" viewBox="0 0 21 21" shapeRendering="crispEdges">
+      <rect width="21" height="21" fill="#fff" />
+      {[[0, 0], [14, 0], [0, 14]].map(([x, y]) => (
+        <g key={`${x}-${y}`}>
+          <rect x={x} y={y} width="7" height="7" fill="#111" />
+          <rect x={x + 1} y={y + 1} width="5" height="5" fill="#fff" />
+          <rect x={x + 2} y={y + 2} width="3" height="3" fill="#111" />
+        </g>
+      ))}
+      {[[9, 1], [11, 3], [9, 5], [8, 9], [10, 10], [12, 9], [14, 11], [16, 10], [18, 12], [9, 13], [11, 15], [13, 14], [15, 16], [17, 18], [9, 18], [12, 19], [19, 9], [16, 14]].map(([x, y]) => (
+        <rect key={`${x}-${y}`} x={x} y={y} width="2" height="2" fill="#111" />
+      ))}
+    </svg>
   );
 }

@@ -28,6 +28,6 @@ describe("Button", () => {
 
     const link = screen.getByRole("link", { name: "Dashboard" });
     expect(link).toHaveAttribute("href", "/dashboard");
-    expect(link).toHaveClass("rounded-[10px]");
+    expect(link).toHaveClass("rounded-[8px]");
   });
 });

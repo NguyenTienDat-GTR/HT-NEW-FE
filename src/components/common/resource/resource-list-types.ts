@@ -1,5 +1,6 @@
 import type { RouteConfig } from "@/config/routes/routes";
 import type { AuthUser } from "@/lib/auth/auth-store";
+import type { ReactNode } from "react";
 import type { CertificateSigner } from "./approval-dialog";
 
 export type ResourceListModuleConfig = {
@@ -24,6 +25,8 @@ export type ResourceListModuleConfig = {
   buildWithdrawPath?: (id: string) => string;
   // Cho phép chọn nhiều hồ sơ và xuất PDF chứng nhận (một hoặc nhiều) qua pdfExportPath.
   enablePdfExport?: boolean;
+  // Nút bổ sung trên thanh công cụ danh sách (vd quét mã QR chứng nhận).
+  toolbarActions?: ReactNode;
   pdfExportPath?: string;
 };
 
