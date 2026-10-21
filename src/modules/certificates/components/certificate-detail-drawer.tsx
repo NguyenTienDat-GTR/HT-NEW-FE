@@ -14,6 +14,9 @@ import { CertificateCanvas, paperAspect, useCertificateFonts, type LayoutItem } 
 type Detail = Record<string, unknown>;
 
 type PreviewItem = {
+  type?: "TEXT" | "QR";
+  size?: number;
+  image?: string;
   text: string;
   x: number;
   y: number;
@@ -139,11 +142,8 @@ function hasValue(value: unknown) {
   return !(typeof value === "string" && UUID_PATTERN.test(value));
 }
 
-// Drawer chi tiết chứng nhận: thông tin tiếng Việt gom theo nhóm, kèm ảnh xem trước chứng nhận; mở rộng để xem ảnh lớn.
-export function CertificateDetailDrawer({ id, onClose, endpoint }: { id?: string | null; onClose: () => void; endpoint: string }) {
-  const [expanded, setExpanded] = useState(false);
-  useCertificateFonts();
-
+// Tải chi tiết + bản xem trước chứng nhận (dùng chung cho drawer và trang chi tiết).
+export function useCertificateDetail(id: string | null | undefined, endpoint: string) {
   const detailQuery = useQuery({
     queryKey: ["resource-detail", endpoint, id],
     enabled: Boolean(id),
@@ -156,7 +156,49 @@ export function CertificateDetailDrawer({ id, onClose, endpoint }: { id?: string
     enabled: Boolean(id) && detailQuery.data !== undefined && !revoked,
     queryFn: () => apiFetch<Preview>(`${endpoint}/${encodeURIComponent(String(id))}/preview`),
   });
+  return { detailQuery, previewQuery, revoked };
+}
+
+// Nội dung chi tiết chứng nhận: thông tin gom nhóm + bản xem trước. split = bố cục 2 cột (thông tin | chứng nhận lớn).
+export function CertificateDetailBody({ detail, split }: { detail: ReturnType<typeof useCertificateDetail>; split: boolean }) {
+  const { detailQuery, previewQuery, revoked } = detail;
   const row = detailQuery.data;
+  return (
+    <>
+      {detailQuery.isLoading ? <div className="h-40 rounded-[12px] border border-border bg-white motion-safe:animate-pulse" /> : null}
+      {detailQuery.isError ? (
+        <div className="rounded-[10px] border border-danger/30 bg-danger/5 p-3 text-sm text-danger">{getApiErrorMessage(detailQuery.error)}</div>
+      ) : null}
+      {row ? (
+        <div className={cn("gap-4", split ? "grid items-start lg:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)]" : "space-y-4")}>
+          <div className={cn("space-y-4", split && "lg:order-2 lg:sticky lg:top-4")}>
+            {revoked ? (
+              <section className="rounded-[12px] border border-danger/30 bg-danger/5 p-4 text-sm text-foreground shadow-sm">
+                <h2 className="text-xs font-semibold uppercase tracking-[0.04em] text-danger">Xem trước chứng nhận</h2>
+                <p className="mt-2">Chứng nhận đã bị thu hồi nên không hiển thị bản xem trước và không xuất PDF được.</p>
+              </section>
+            ) : (
+              <PreviewPanel preview={previewQuery.data} loading={previewQuery.isLoading} error={previewQuery.isError ? getApiErrorMessage(previewQuery.error) : undefined} approved={row.approvalStatus === "APPROVED"} />
+            )}
+          </div>
+          <div className={cn("space-y-4", split && "lg:order-1")}>
+            {SECTIONS.filter((section) => section.visible?.(row) ?? true).map((section) => (
+              <Section key={section.title} row={row} section={section} />
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </>
+  );
+}
+
+// Drawer chi tiết chứng nhận: thông tin tiếng Việt gom theo nhóm, kèm ảnh xem trước chứng nhận; mở rộng để xem ảnh lớn.
+export function CertificateDetailDrawer({ id, onClose, endpoint }: { id?: string | null; onClose: () => void; endpoint: string }) {
+  const [expanded, setExpanded] = useState(false);
+  useCertificateFonts();
+
+  const detail = useCertificateDetail(id, endpoint);
+  const row = detail.detailQuery.data;
 
   return (
     <Dialog.Root open={Boolean(id)} onOpenChange={(open) => (!open ? onClose() : undefined)}>
@@ -197,29 +239,7 @@ export function CertificateDetailDrawer({ id, onClose, endpoint }: { id?: string
           </div>
 
           <div className="min-h-0 flex-1 overflow-y-auto bg-app-canvas/50 p-5">
-            {detailQuery.isLoading ? <div className="h-40 rounded-[12px] border border-border bg-white motion-safe:animate-pulse" /> : null}
-            {detailQuery.isError ? (
-              <div className="rounded-[10px] border border-danger/30 bg-danger/5 p-3 text-sm text-danger">{getApiErrorMessage(detailQuery.error)}</div>
-            ) : null}
-            {row ? (
-              <div className={cn("gap-4", expanded ? "grid items-start lg:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)]" : "space-y-4")}>
-                <div className={cn("space-y-4", expanded && "lg:order-2 lg:sticky lg:top-0")}>
-                  {revoked ? (
-                    <section className="rounded-[12px] border border-danger/30 bg-danger/5 p-4 text-sm text-foreground shadow-sm">
-                      <h2 className="text-xs font-semibold uppercase tracking-[0.04em] text-danger">Xem trước chứng nhận</h2>
-                      <p className="mt-2">Chứng nhận đã bị thu hồi nên không hiển thị bản xem trước và không xuất PDF được.</p>
-                    </section>
-                  ) : (
-                    <PreviewPanel preview={previewQuery.data} loading={previewQuery.isLoading} error={previewQuery.isError ? getApiErrorMessage(previewQuery.error) : undefined} approved={row.approvalStatus === "APPROVED"} />
-                  )}
-                </div>
-                <div className={cn("space-y-4", expanded && "lg:order-1")}>
-                  {SECTIONS.filter((section) => section.visible?.(row) ?? true).map((section) => (
-                    <Section key={section.title} row={row} section={section} />
-                  ))}
-                </div>
-              </div>
-            ) : null}
+            <CertificateDetailBody detail={detail} split={expanded} />
           </div>
         </Dialog.Content>
       </Dialog.Portal>
@@ -272,7 +292,7 @@ function PreviewPanel({ preview, loading, error, approved }: { preview?: Preview
               backgroundImage={preview.backgroundImage ?? ""}
               editable={false}
               fieldLabel={(key) => key ?? ""}
-              layout={preview.items.map<LayoutItem>((item) => ({ ...item, type: "TEXT" }))}
+              layout={preview.items.map<LayoutItem>((item) => ({ ...item, type: item.type === "QR" ? "QR" : "TEXT" }))}
               onMove={() => undefined}
               onSelect={() => undefined}
               preview

@@ -418,7 +418,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
           canCreate={canCreate}
           hideSearch={Boolean(embedded)}
           extraActions={saveScoresButton}
-          leadingActions={bulkActions || exportActions ? <>{bulkActions}{exportActions}</> : scoreStats}
+          leadingActions={bulkActions || exportActions || config.toolbarActions ? <>{config.toolbarActions}{bulkActions}{exportActions}</> : scoreStats}
         />
         {scoreEntryEnabled && embedded?.scoreLocked === true ? (
           <div className="border-b border-warning/30 bg-warning/10 px-4 py-2 text-xs font-medium text-foreground">Điểm của khóa đang bị khóa chỉnh sửa. Cần mở khóa mới nhập được điểm.</div>

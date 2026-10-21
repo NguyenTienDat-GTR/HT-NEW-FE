@@ -12,6 +12,7 @@ import {
   Eye,
   MagnifyingGlass,
   Plus,
+  QrCode,
   SlidersHorizontal,
   Star,
   TextT,
@@ -36,6 +37,9 @@ import {
   SCOPE_LABELS,
   blankForm,
   clamp,
+  DEFAULT_QR_SIZE,
+  MAX_QR_SIZE,
+  MIN_QR_SIZE,
   formFromConfig,
   isSameForm,
   paperAspect,
@@ -190,6 +194,15 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
     setSelectedIndex(form.layout.length);
   }
 
+  // Chỉ khi bố cục có phần tử QR thì khi xuất PDF mới sinh mã QR cho chứng nhận.
+  function addQr() {
+    history.set((current) => ({
+      ...current,
+      layout: [...current.layout, { type: "QR", size: DEFAULT_QR_SIZE, x: 0.88, y: 0.82, fontSize: 0.04, color: "#000000", align: "center", fontFamily: "sans", bold: false, italic: false, underline: false }],
+    }));
+    setSelectedIndex(form.layout.length);
+  }
+
   function removeItem(index: number) {
     history.set((current) => ({ ...current, layout: current.layout.filter((_, idx) => idx !== index) }));
     setSelectedIndex(null);
@@ -284,11 +297,10 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
       toast.success("Lưu cấu hình chứng nhận thành công");
       notifyRenamed(form.name.trim(), saved);
       await refresh();
-      if (isNew) {
-        setSelectedId(saved.id);
-      } else {
-        history.set((current) => (current.name === saved.name ? current : { ...current, name: saved.name }));
-      }
+      // Đã lưu: bản đang soạn trở thành bản đã lưu nên xóa lịch sử hoàn tác / làm lại.
+      history.load(formFromConfig(saved));
+      setSelectedIndex(null);
+      if (isNew) setSelectedId(saved.id);
     },
   });
 
@@ -301,6 +313,8 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
     onSuccess: async (saved) => {
       toast.success(`Đã tạo cấu hình mới "${saved.name}"`);
       await refresh();
+      history.load(formFromConfig(saved));
+      setSelectedIndex(null);
       setSelectedId(saved.id);
     },
   });
@@ -640,6 +654,11 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
               <Button onClick={addText} size="sm" type="button" variant="outline">
                 <TextT size={16} /> Thêm văn bản
               </Button>
+              <Tip label="Thêm mã QR chứa mã chứng nhận. Chỉ khi bố cục có mã QR thì khi xuất PDF hệ thống mới tạo mã QR (không lưu lại).">
+                <Button onClick={addQr} size="sm" type="button" variant="outline">
+                  <QrCode size={16} /> Thêm mã QR
+                </Button>
+              </Tip>
               <span className="text-xs text-muted">Ctrl+Z hoàn tác · Ctrl+Y làm lại</span>
             </div>
           ) : null}
@@ -663,18 +682,34 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
                 <div className="space-y-3 rounded-[10px] border border-border p-3">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-semibold text-foreground">
-                      {selected.type === "TEXT" ? "Văn bản tĩnh" : fieldLabel(selected.fieldKey)}
+                      {selected.type === "TEXT" ? "Văn bản tĩnh" : selected.type === "QR" ? "Mã QR chứng nhận" : fieldLabel(selected.fieldKey)}
                     </span>
                     <Button disabled={!canEditCurrent} onClick={() => removeItem(selectedIndex)} size="sm" type="button" variant="ghost">
                       <Trash size={16} />
                     </Button>
                   </div>
-                  {selected.type === "TEXT" ? (
+                  {selected.type === "QR" ? (
+                    <div className="space-y-2">
+                      <label className="mb-1 block text-xs font-medium text-muted">Kích thước mã QR (% chiều cao giấy)</label>
+                      <Input
+                        disabled={!canEditCurrent}
+                        max={Math.round(MAX_QR_SIZE * 100)}
+                        min={Math.round(MIN_QR_SIZE * 100)}
+                        onChange={(event) => updateItem(selectedIndex, { size: clamp(Number(event.target.value) / 100, MIN_QR_SIZE, MAX_QR_SIZE) }, "qrSize")}
+                        type="number"
+                        value={Math.round((selected.size ?? DEFAULT_QR_SIZE) * 100)}
+                      />
+                      <p className="text-xs text-muted">Mã QR chứa mã chứng nhận. Kéo để đặt vị trí (điểm kéo là tâm mã). Nên để đủ lớn và tương phản với nền để dễ quét.</p>
+                    </div>
+                  ) : null}
+                  {selected.type === "QR" ? null : selected.type === "TEXT" ? (
                     <div>
                       <label className="mb-1 block text-xs font-medium text-muted">Nội dung</label>
                       <Input disabled={!canEditCurrent} onChange={(event) => updateItem(selectedIndex, { text: event.target.value }, "text")} value={selected.text ?? ""} />
                     </div>
                   ) : null}
+                  {selected.type === "QR" ? null : (
+                  <>
                   <div>
                     <label className="mb-1 block text-xs font-medium text-muted">Phông chữ</label>
                     <select
@@ -738,6 +773,8 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
                       Gạch chân
                     </label>
                   </div>
+                  </>
+                  )}
                 </div>
               ) : (
                 <p className="rounded-[10px] border border-dashed border-border p-4 text-sm text-muted">
