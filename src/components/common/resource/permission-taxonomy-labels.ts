@@ -22,6 +22,7 @@ const taxonomyLabels: Record<PermissionTaxonomyKind, Record<string, string>> = {
     diocese: "Giáo phận",
     executive_board_assignment: "Phân công ban điều hành",
     leader: "Huynh trưởng",
+    leader_certificate: "Chứng nhận trong hồ sơ huynh trưởng",
     notification: "Thông báo",
     parish: "Giáo xứ",
     participation: "Tham dự khóa",
