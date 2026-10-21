@@ -84,10 +84,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <aside
         className={cn(
           "fixed inset-y-0 left-0 z-40 hidden border-r border-border bg-white shadow-[var(--shadow-sidebar)] transition-[width] duration-200 lg:flex lg:flex-col",
-          sidebarCollapsed ? "w-[76px]" : "w-[264px]",
+          sidebarCollapsed ? "w-[76px]" : "w-[260px]",
         )}
       >
-        <div className="flex h-[72px] items-center justify-between border-b border-border px-4">
+        <div className="flex h-16 items-center justify-between border-b border-border px-4">
           <BrandMark compact={sidebarCollapsed} />
           <TooltipIconButton label={sidebarCollapsed ? "Mở rộng menu" : "Thu gọn menu"} onClick={() => setSidebarCollapsed((value) => !value)}>
             <CaretLeft className={cn("h-5 w-5 transition-transform", sidebarCollapsed && "rotate-180")} />
@@ -105,7 +105,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {mobileOpen ? (
         <div className="fixed inset-0 z-50 bg-foreground/40 backdrop-blur-sm lg:hidden" onClick={() => setMobileOpen(false)}>
           <aside className="h-full w-[312px] bg-white shadow-[var(--shadow-elevated)]" onClick={(event) => event.stopPropagation()}>
-            <div className="flex h-[72px] items-center justify-between border-b border-border px-4">
+            <div className="flex h-16 items-center justify-between border-b border-border px-4">
               <BrandMark />
               <TooltipIconButton label="Đóng menu" onClick={() => setMobileOpen(false)}>
                 <CaretLeft className="h-5 w-5" />
@@ -116,9 +116,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       ) : null}
 
-      <div className={cn("transition-[padding] duration-200 lg:pl-[264px]", sidebarCollapsed && "lg:pl-[76px]")}>
-        <header className="sticky top-0 z-30 border-b border-border bg-white/88 backdrop-blur-xl">
-          <div className="mx-auto flex h-[72px] max-w-[1480px] items-center justify-between gap-4 px-4 lg:px-6">
+      <div className={cn("transition-[padding] duration-200 lg:pl-[260px]", sidebarCollapsed && "lg:pl-[76px]")}>
+        <header className="sticky top-0 z-30 border-b border-border bg-white/95 backdrop-blur-md">
+          <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 lg:px-8">
             <div className="flex min-w-0 items-center gap-3">
               <TooltipIconButton className="lg:hidden" label="Mở menu" onClick={() => setMobileOpen(true)}>
                 <List className="h-5 w-5" />
@@ -129,7 +129,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </div>
             </div>
 
-            <label className="hidden h-11 w-full max-w-[460px] items-center gap-3 rounded-[12px] border border-border bg-surface-1 px-3 text-sm text-muted shadow-inner md:flex">
+            <label className="hidden h-10 w-full max-w-[460px] items-center gap-3 rounded-lg border border-border bg-surface-1 px-3 text-sm text-muted md:flex">
               <MagnifyingGlass className="h-5 w-5" />
               <span className="truncate">Tìm kiếm nhanh...</span>
             </label>
@@ -145,7 +145,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   ) : null}
                 </Link>
               </Button>
-              <div className="hidden min-w-0 items-center gap-3 rounded-[12px] border border-border bg-white px-3 py-2 shadow-sm sm:flex">
+              <div className="hidden min-w-0 items-center gap-3 rounded-lg border border-border bg-white px-3 py-1.5 sm:flex">
                 <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/12 text-sm font-semibold text-primary">
                   {(user?.username ?? "HT").slice(0, 2).toUpperCase()}
                 </span>
@@ -161,7 +161,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </div>
           </div>
         </header>
-        <main className="mx-auto max-w-[1480px] px-4 py-5 lg:px-6 lg:py-6">{children}</main>
+        <main className="mx-auto max-w-7xl px-4 py-6 lg:px-8 lg:py-8">{children}</main>
       </div>
     </div>
   );
@@ -193,8 +193,8 @@ function SidebarNav({
               <Link
                 aria-label={route.title}
                 className={cn(
-                  "grid h-11 w-11 place-items-center rounded-[10px] text-muted transition-colors hover:bg-primary-soft hover:text-primary",
-                  active && "bg-primary-soft text-primary shadow-[inset_0_0_0_1px_var(--primary-ring)]",
+                  "grid h-10 w-10 place-items-center rounded-lg text-text-secondary transition-colors hover:bg-surface-hover hover:text-primary",
+                  active && "bg-primary-soft text-primary",
                 )}
                 href={route.path as Route}
                 key={route.path}
@@ -211,7 +211,7 @@ function SidebarNav({
   }
 
   return (
-    <nav className="flex flex-1 flex-col gap-2 overflow-y-auto px-3 py-4">
+    <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 py-4">
       {groups.map((group) => {
         const GroupIcon = group.icon;
         const groupActive = group.children.some((route) => route.path === pathname);
@@ -220,8 +220,8 @@ function SidebarNav({
           <div className="space-y-1" key={group.moduleName}>
             <button
               className={cn(
-                "flex h-10 w-full cursor-pointer items-center gap-3 rounded-[10px] px-3 text-left text-sm font-semibold text-foreground transition-colors hover:bg-primary-soft hover:text-primary",
-                groupActive && "bg-primary-soft text-primary",
+                "flex h-10 w-full cursor-pointer items-center gap-3 rounded-lg px-3 text-left text-sm font-semibold text-foreground transition-colors hover:bg-surface-hover hover:text-primary",
+                groupActive && "text-primary",
               )}
               onClick={() => toggleGroup(group.moduleName)}
               type="button"
@@ -231,15 +231,15 @@ function SidebarNav({
               <CaretDown className={cn("h-4 w-4 shrink-0 transition-transform", open && "rotate-180")} />
             </button>
             {open ? (
-              <div className="space-y-1 pl-3">
+              <div className="space-y-0.5 pl-3">
                 {group.children.map((route) => {
                   const active = pathname === route.path;
                   const Icon = route.icon;
                   return (
                     <Link
                       className={cn(
-                        "flex h-9 items-center gap-3 rounded-[8px] px-3 text-sm font-medium text-muted transition-colors hover:bg-primary-soft hover:text-primary",
-                        active && "bg-primary-soft text-primary shadow-[inset_3px_0_0_var(--primary)]",
+                        "relative flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium text-text-secondary transition-colors hover:bg-surface-hover hover:text-primary",
+                        active && "bg-primary-soft font-semibold text-primary before:absolute before:inset-y-2 before:left-0 before:w-[3px] before:rounded-full before:bg-primary",
                       )}
                       href={route.path as Route}
                       key={route.path}

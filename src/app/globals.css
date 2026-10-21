@@ -32,6 +32,7 @@
   --color-info: var(--info);
   --color-info-foreground: var(--info-foreground);
   --font-sans: var(--font-body);
+  --color-text-secondary: var(--text-secondary);
 }
 
 * {
@@ -102,4 +103,11 @@ textarea:focus-visible {
     scroll-behavior: auto !important;
     transition-duration: 0.001ms !important;
   }
+}
+
+/* Tabular figures for data-dense areas (tables, counts, dates). */
+table,
+.tabular-nums,
+[data-tnum] {
+  font-feature-settings: "tnum" 1, "cv02" 1, "cv04" 1;
 }
