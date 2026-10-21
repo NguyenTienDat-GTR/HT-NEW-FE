@@ -85,7 +85,9 @@ export const columnLabels: Record<string, string> = {
   isPrimary: "Vai trò chính",
   isSystem: "Vai trò hệ thống",
   lastName: "Họ",
+  leaderDeaneryName: "Giáo hạt",
   leaderFullName: "Huynh trưởng",
+  leaderParishName: "Giáo xứ",
   leaderCount: "Số Huynh trưởng",
   leaderId: "Huynh trưởng",
   leaderLevel: "Cấp HT",
@@ -177,6 +179,9 @@ type ResourceCellProps = {
 
 export function ResourceCell({ column, row, value, displayMode = "table" }: ResourceCellProps) {
   const full = displayMode === "detail";
+  if (column === "leaderFullName" && typeof value === "string" && typeof row.leaderHolyName === "string" && row.leaderHolyName.trim()) {
+    return <TextValue full={full}>{`${row.leaderHolyName.trim()} ${value}`}</TextValue>;
+  }
   if (column === "imageUrl") return <Avatar name={String(row.fullName ?? row.leaderFullName ?? row.username ?? "")} src={value} />;
   if (column === "status" && typeof value === "boolean") return <StatusBadge active={value} />;
   if (column === "effect" && typeof value === "string") return <EffectBadge effect={value} />;
@@ -246,7 +251,7 @@ function resolveRelatedDisplayValue(column: string, row: Record<string, unknown>
   return undefined;
 }
 
-function Avatar({ name, src }: { name: string; src: unknown }) {
+export function Avatar({ name, src }: { name: string; src: unknown }) {
   const initial = name.trim().charAt(0).toUpperCase() || "H";
   if (typeof src === "string" && src) {
     return (
@@ -306,7 +311,7 @@ function LeaderLevelBadge({ value }: { value: string }) {
   return className ? <Badge className={className}>{label}</Badge> : <Badge>{label}</Badge>;
 }
 
-function Badge({
+export function Badge({
   children,
   tone = "neutral",
   className,

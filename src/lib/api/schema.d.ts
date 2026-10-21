@@ -1726,8 +1726,12 @@ export interface components {
             status?: boolean;
             /** Format: date-time */
             createdAt?: string;
+            createdBy?: string;
+            createdByName?: string;
             /** Format: date-time */
             updatedAt?: string;
+            updatedBy?: string;
+            updatedByName?: string;
         };
         apiResponsePositionResponse: {
             success?: boolean;

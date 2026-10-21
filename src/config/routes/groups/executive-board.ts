@@ -12,14 +12,19 @@ export const executiveBoardRouteGroup: RouteGroup = {
         title: "Chức vụ",
         subtitle: "Thiết lập chức vụ theo cấp giáo phận, giáo hạt, giáo xứ.",
         endpoint: "/positions",
+        // Tạo/sửa chức vụ mở bằng modal trên trang danh sách (?create=1, ?edit=<mã>), không có trang riêng.
+        createPath: "/executive-board/positions?create=1",
+        editPath: "/executive-board/positions?edit=:id",
         idField: "positionCode",
         kind: "positions",
         icon: Crown,
-        columns: ["positionCode", "positionName", "positionType", "status"],
+        columns: ["displayOrder", "positionName", "positionType", "status"],
+        searchFields: ["positionName"],
+        sortFields: { displayOrder: "displayOrder" },
+        filters: [],
         permissionPrefixes: ["organization.position.read."],
         actionPermissionPrefixes: ["organization.position.create.", "organization.position.update.", "organization.position.toggle."],
         primaryActionLabel: "Thêm chức vụ",
-        filterLabels: ["Cấp áp dụng", "Trạng thái"],
       }),
       route({
         path: "/executive-board/assignments",
@@ -30,14 +35,21 @@ export const executiveBoardRouteGroup: RouteGroup = {
         idField: "id",
         kind: "executive-board",
         icon: IdentificationCard,
-        columns: ["leaderFullName", "positionName", "unitType", "unitId", "startDate", "endDate", "status"],
+        columns: ["leaderFullName", "positionName", "startDate", "endDate", "status"],
+        // Lọc theo năm: phân công có khoảng ngày bắt đầu - kết thúc giao với năm được chọn; danh sách năm lấy từ chính các phân công.
+        filters: [
+          { key: "startDate+endDate:overlapYear", label: "Năm", type: "select", optionsEndpoint: "/executive-board/assignments/years", optionValue: "year", optionLabel: "label" },
+        ],
+        // Phân công mở bằng modal trên trang danh sách (?create=1). Không sửa phân công để giữ lịch sử nhiệm kì:
+        // muốn đổi người thì vô hiệu hóa phân công cũ rồi tạo phân công mới.
+        createPath: "/executive-board/assignments?create=1",
+        actions: { edit: undefined },
         sortFields: { leaderFullName: "leader.firstName+leader.lastName", positionName: "position.positionName" },
         // Tìm theo thuộc tính entity (leaderFullName/positionName chỉ có ở response): họ tên, tên thánh, chức vụ.
         searchFields: ["leader.lastName+leader.firstName", "leader.holyName", "position.positionName"],
         permissionPrefixes: ["organization.executive_board.read.", "organization.executive_board_assignment.read."],
-        actionPermissionPrefixes: ["organization.executive_board.create.", "organization.executive_board.update.", "organization.executive_board_assignment.create.", "organization.executive_board_assignment.update.", "organization.executive_board_assignment.toggle."],
+        actionPermissionPrefixes: ["organization.executive_board_assignment.create.", "organization.executive_board_assignment.toggle."],
         primaryActionLabel: "Phân công",
-        filterLabels: ["Loại đơn vị", "Đơn vị", "Chức vụ", "Trạng thái"],
         workflowHint: "endDate không được trước startDate; mỗi chức vụ active-current chỉ có một leader trong một unit.",
       }),
     ],

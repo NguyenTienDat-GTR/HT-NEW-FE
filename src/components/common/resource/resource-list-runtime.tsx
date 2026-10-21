@@ -19,6 +19,8 @@ import { ConfirmActionDialog } from "./confirm-action-dialog";
 import { RevokeCertificateDialog } from "./revoke-certificate-dialog";
 import { CourseStatusDialog } from "@/modules/training-courses/components/course-status-dialog";
 import { DetailDrawer } from "./detail-drawer";
+import { PositionFormDialog } from "@/modules/executive-board/components/position-form-dialog";
+import { AssignmentFormDialog } from "@/modules/executive-board/components/assignment-form-dialog";
 import { getResourceId, isAwaitingApproval } from "./resource-actions";
 import { isInvalidScore, originalScore, runWithConcurrency, sameScore, type ScoreComponent, type ScoreDrafts, type ScoreEntry } from "./score-entry";
 import { ScoreStats } from "./score-stats";
@@ -87,6 +89,11 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
       });
   const rows = rowsFromResponse(query.data);
   const detailId = searchParams.get("detail");
+  const positionEditId = searchParams.get("edit");
+  const modalFormTarget = positionEditId ? ({ mode: "edit", id: positionEditId } as const) : searchParams.get("create") ? ({ mode: "create" } as const) : null;
+  const positionFormTarget = effectiveRoute.kind === "positions" ? modalFormTarget : null;
+  // Phân công không sửa được (giữ lịch sử nhiệm kì): chỉ mở modal tạo mới.
+  const assignmentFormTarget = effectiveRoute.kind === "executive-board" && !embedded && searchParams.get("create") ? ({ mode: "create" } as const) : null;
   const toggleId = searchParams.get("toggle");
   const approveId = searchParams.get("approve");
   const rejectId = searchParams.get("reject");
@@ -170,6 +177,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
       await queryClient.invalidateQueries({ queryKey: ["resource"] });
       await queryClient.invalidateQueries({ queryKey: ["resource-detail"] });
       await queryClient.invalidateQueries({ queryKey: ["certificate-preview"] });
+      await queryClient.invalidateQueries({ queryKey: ["executive-board-seats"] });
     },
   });
 
@@ -459,6 +467,8 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
       </Panel>
 
       <DetailDrawer id={detailId} onClose={closeQueryDialog} route={effectiveRoute} />
+      {effectiveRoute.kind === "positions" ? <PositionFormDialog onClose={closeQueryDialog} target={positionFormTarget} /> : null}
+      {effectiveRoute.kind === "executive-board" ? <AssignmentFormDialog onClose={closeQueryDialog} target={assignmentFormTarget} /> : null}
       {effectiveRoute.kind === "courses" ? (
         // Khóa huấn luyện: cảnh báo tác động lên chứng nhận, xác nhận và đối chiếu trạng thái đích ở BE.
         <CourseStatusDialog
@@ -474,7 +484,12 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
           onClose={closeQueryDialog}
           onConfirm={() => toggleId && actionMutation.mutate({ action: "toggle", id: toggleId })}
           open={Boolean(toggleId)}
-          title="Đổi trạng thái bản ghi"
+          title={effectiveRoute.kind === "executive-board" ? "Vô hiệu hóa phân công" : "Đổi trạng thái bản ghi"}
+          description={
+            effectiveRoute.kind === "executive-board"
+              ? "Phân công sẽ kết thúc từ hôm nay và không bật lại được (nhiệm kì được giữ lại trong lịch sử). Muốn huynh trưởng giữ chức vụ trở lại, hãy tạo phân công mới. Nhập chính xác Xác nhận để tiếp tục."
+              : undefined
+          }
         />
       )}
       <ApprovalDialog

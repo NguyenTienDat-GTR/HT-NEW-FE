@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { apiFetch, getApiErrorMessage } from "@/lib/api/client";
 import type { RouteConfig } from "@/config/routes/routes";
 import { useEmbeddedResource } from "./embedded-resource-context";
+import { UnitDetail } from "@/modules/organizations/components/unit-detail";
 import { CertificateDetailDrawer } from "@/modules/certificates/components/certificate-detail-drawer";
 import { ResourceCell, columnLabels, formatLeaderLevel } from "./resource-format";
 
@@ -80,6 +81,8 @@ function GenericDetailDrawer({ id, onClose, route }: { id?: string | null; onClo
   });
   const embedded = useEmbeddedResource();
   const row = query.data;
+  // Giáo phận / giáo hạt / giáo xứ: drawer rộng hơn để chứa ban điều hành của đơn vị.
+  const isUnitKind = route.kind === "dioceses" || route.kind === "deaneries" || route.kind === "parishes";
   const keys = row ? detailKeys(route, row, Boolean(embedded)) : route.columns;
   const rankHistoryQuery = useQuery({
     queryKey: ["leader-rank-history", id],
@@ -91,11 +94,19 @@ function GenericDetailDrawer({ id, onClose, route }: { id?: string | null; onClo
     <Dialog.Root open={Boolean(id)} onOpenChange={(open) => (!open ? onClose() : undefined)}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-40 bg-slate-950/30 backdrop-blur-sm" />
-        <Dialog.Content className="fixed bottom-0 right-0 top-0 z-50 flex w-full max-w-[760px] flex-col border-l border-border bg-white shadow-[var(--shadow-elevated)] focus:outline-none">
+        <Dialog.Content className={`fixed bottom-0 right-0 top-0 z-50 flex w-full ${isUnitKind ? "max-w-[1040px]" : "max-w-[760px]"} flex-col border-l border-border bg-white shadow-[var(--shadow-elevated)] focus:outline-none`}>
           <div className="flex items-start justify-between gap-4 border-b border-border p-5">
             <div>
               <Dialog.Title className="text-xl font-semibold text-foreground">{route.title}</Dialog.Title>
-              <Dialog.Description className="mt-1 text-sm text-muted">{route.kind === "participations" ? "Chi tiết hồ sơ tham dự" : `Chi tiết bản ghi ${id}`}</Dialog.Description>
+              <Dialog.Description className="mt-1 text-sm text-muted">
+                {route.kind === "participations"
+                  ? "Chi tiết hồ sơ tham dự"
+                  : route.kind === "positions"
+                    ? typeof row?.positionName === "string" ? row.positionName : "Chi tiết chức vụ"
+                    : route.kind === "executive-board"
+                    ? "Chi tiết phân công ban điều hành"
+                    : `Chi tiết bản ghi ${id}`}
+              </Dialog.Description>
             </div>
             <Dialog.Close asChild>
               <Button aria-label="Đóng" size="icon" variant="ghost">
@@ -106,7 +117,10 @@ function GenericDetailDrawer({ id, onClose, route }: { id?: string | null; onClo
           <div className="min-h-0 flex-1 overflow-y-auto bg-app-canvas/50 p-5">
             {query.isLoading ? <div className="h-40 rounded-[12px] border border-border bg-white motion-safe:animate-pulse" /> : null}
             {query.isError ? <div className="rounded-[10px] border border-danger/30 bg-danger/5 p-3 text-sm text-danger">{getApiErrorMessage(query.error)}</div> : null}
-            {row ? (
+            {row && route.kind === "positions" ? <SectionedDetail row={row} sections={POSITION_SECTIONS} /> : null}
+            {row && route.kind === "executive-board" ? <SectionedDetail row={row} sections={ASSIGNMENT_SECTIONS} /> : null}
+            {row && (route.kind === "dioceses" || route.kind === "deaneries" || route.kind === "parishes") ? <UnitDetail id={String(id)} kind={route.kind} row={row} /> : null}
+            {row && route.kind !== "positions" && route.kind !== "executive-board" && !isUnitKind ? (
               <div className="space-y-3">
                 <dl className="grid auto-rows-min grid-cols-1 gap-3 md:grid-cols-2">
                   {keys.map((key) => (
@@ -137,6 +151,86 @@ function GenericDetailDrawer({ id, onClose, route }: { id?: string | null; onClo
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
+  );
+}
+
+type DetailField = { key: string; label: string; wide?: boolean; value?: (row: Record<string, unknown>) => unknown };
+type DetailSection = { title: string; fields: DetailField[] };
+
+const AUDIT_SECTION: DetailSection = {
+  title: "Lịch sử ghi nhận",
+  fields: [
+    { key: "createdByName", label: "Người tạo" },
+    { key: "createdAt", label: "Ngày tạo" },
+    { key: "updatedByName", label: "Người cập nhật" },
+    { key: "updatedAt", label: "Ngày cập nhật" },
+  ],
+};
+
+const POSITION_SECTIONS: DetailSection[] = [
+  {
+    title: "Thông tin chức vụ",
+    fields: [
+      { key: "positionName", label: "Tên chức vụ", wide: true },
+      { key: "positionType", label: "Cấp áp dụng" },
+      { key: "displayOrder", label: "Thứ tự hiển thị" },
+      { key: "status", label: "Trạng thái" },
+    ],
+  },
+  AUDIT_SECTION,
+];
+
+const ASSIGNMENT_SECTIONS: DetailSection[] = [
+  {
+    title: "Thông tin phân công",
+    fields: [
+      {
+        key: "leaderName",
+        label: "Huynh trưởng",
+        wide: true,
+        value: (row) => [row.leaderHolyName, row.leaderFullName].filter((part) => typeof part === "string" && part.trim()).join(" "),
+      },
+      { key: "leaderParishName", label: "Giáo xứ" },
+      { key: "leaderDeaneryName", label: "Giáo hạt" },
+      { key: "positionName", label: "Chức vụ" },
+      { key: "unitType", label: "Cấp áp dụng" },
+      { key: "unitName", label: "Đơn vị" },
+      { key: "status", label: "Trạng thái" },
+    ],
+  },
+  {
+    title: "Thời gian hiệu lực",
+    fields: [
+      { key: "startDate", label: "Ngày bắt đầu" },
+      { key: "endDate", label: "Ngày kết thúc" },
+    ],
+  },
+  AUDIT_SECTION,
+];
+
+function SectionedDetail({ row, sections }: { row: Record<string, unknown>; sections: DetailSection[] }) {
+  return (
+    <div className="space-y-4">
+      {sections.map((section) => (
+        <section className="rounded-[12px] border border-border bg-white p-4 shadow-sm" key={section.title}>
+          <h2 className="text-xs font-semibold uppercase text-muted">{section.title}</h2>
+          <dl className="mt-3 grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
+            {section.fields.map(({ key, label, wide, value: getValue }) => {
+              const value = getValue ? getValue(row) : row[key];
+              const empty = value === null || value === undefined || value === "";
+              return (
+                <div className={wide ? "sm:col-span-2" : undefined} key={key}>
+                  <dt className="text-xs font-medium text-muted">{label}</dt>
+                  <dd className="mt-1 break-words text-sm leading-6 text-foreground">
+                    {empty ? <span className="text-muted">—</span> : <ResourceCell column={key} displayMode="detail" row={row} value={value} />}
+                  </dd>
+                </div>
+              );
+            })}
+          </dl>
+        </section>
+      ))}
+    </div>
   );
 }
 
