@@ -21,6 +21,7 @@ import { CourseStatusDialog } from "@/modules/training-courses/components/course
 import { DetailDrawer } from "./detail-drawer";
 import { getResourceId, isAwaitingApproval } from "./resource-actions";
 import { isInvalidScore, originalScore, runWithConcurrency, sameScore, type ScoreComponent, type ScoreDrafts, type ScoreEntry } from "./score-entry";
+import { ScoreStats } from "./score-stats";
 import { ResourceListEmptyState } from "./resource-list-empty-state";
 import { ResourceListHeader } from "./resource-list-header";
 import { buildResourceKpiQuerySpecs, buildResourceKpis, shouldShowResourceKpis } from "./resource-kpis";
@@ -365,6 +366,11 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
       </Tip>
     </>
   ) : null;
+  // Tab chấm điểm: thống kê còn bao nhiêu người và cột điểm nào chưa nhập, nằm cùng hàng với bộ lọc.
+  const scoreStats =
+    scoreEntryEnabled && scoreComponents.length > 0 && scoreCourseCode ? (
+      <ScoreStats components={scoreComponents} courseCode={scoreCourseCode} drafts={scoreDrafts} endpoint={effectiveRoute.endpoint ?? "/training/participants"} />
+    ) : null;
   const bulkActions = canBulkApprove ? (
     <>
       <span className="whitespace-nowrap text-sm text-muted">Có thể duyệt {bulkApprovableIds.length} hồ sơ</span>
@@ -412,7 +418,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
           canCreate={canCreate}
           hideSearch={Boolean(embedded)}
           extraActions={saveScoresButton}
-          leadingActions={bulkActions || exportActions ? <>{bulkActions}{exportActions}</> : null}
+          leadingActions={bulkActions || exportActions ? <>{bulkActions}{exportActions}</> : scoreStats}
         />
         {scoreEntryEnabled && embedded?.scoreLocked === true ? (
           <div className="border-b border-warning/30 bg-warning/10 px-4 py-2 text-xs font-medium text-foreground">Điểm của khóa đang bị khóa chỉnh sửa. Cần mở khóa mới nhập được điểm.</div>

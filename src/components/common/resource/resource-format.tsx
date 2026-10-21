@@ -17,7 +17,7 @@ export const columnLabels: Record<string, string> = {
   actionCode: "Thao tác",
   associationName: "Hiệp đoàn",
   approvedAt: "Ngày duyệt",
-  approvedParticipantCount: "Sa mạc sinh",
+  approvedParticipantCount: "Số sa mạc sinh",
   approvedBy: "Người duyệt",
   approvalReason: "Lý do duyệt",
   approvalReasonRequired: "Cần lý do duyệt",
