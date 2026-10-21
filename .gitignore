@@ -28,3 +28,6 @@ __pycache__/
 .vercel/
 build/
 next-env.d.ts
+
+# Claude Code local config
+.claude/
