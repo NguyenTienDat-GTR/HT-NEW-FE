@@ -530,7 +530,7 @@ function CertificateTab({leaderId}: { leaderId: string }) {
             <RelatedPanel
                 headerAction={<ViewModeToggle mode={viewMode} onChange={setViewMode}/>}
                 view={viewMode === "card" ? (
-                    <ul className="grid gap-5 p-5 md:grid-cols-2 xl:grid-cols-3">
+                    <ul className="grid gap-4 p-5 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                         {(query.data ?? []).map((row, index) => (
                             <li key={row.certificateCode ?? index}>
                                 <CertificateCard

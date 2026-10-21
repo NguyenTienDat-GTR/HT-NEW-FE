@@ -70,7 +70,7 @@ export function CertificateCard({ data, href, onOpen, showHolder = true, selecti
         accentClass(data.approvalStatus),
       )}
     >
-      <div className="flex flex-1 flex-col gap-4 p-5">
+      <div className="flex flex-1 flex-col gap-4 p-4">
         <div className="flex items-start justify-between gap-3">
           <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary-soft text-primary">
             <Certificate aria-hidden size={22} weight="fill" />
@@ -123,7 +123,7 @@ export function CertificateCard({ data, href, onOpen, showHolder = true, selecti
         </ul>
       </div>
 
-      <div className="flex items-center justify-between gap-3 border-t border-border bg-slate-50 px-5 py-3">
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-t border-border bg-slate-50 px-4 py-3">
         <div className="min-w-0">
           {hasScore ? (
             <p className="text-xs text-text-secondary">
