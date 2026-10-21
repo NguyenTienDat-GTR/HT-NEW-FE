@@ -1,8 +1,11 @@
-import { compactPayload, enumOptions, type ResourceFormSpec } from "@/components/form/resource-form/types";
+import { compactPayload, type ResourceFormSpec } from "@/components/form/resource-form/types";
 import { isSuperAdmin } from "@/lib/auth/permissions";
 import type { AuthUser } from "@/lib/auth/auth-store";
 
-const effectOptions = enumOptions(["ALLOW", "DENY"]);
+const effectOptions = [
+  { value: "ALLOW", label: "Cho phép" },
+  { value: "DENY", label: "Từ chối" },
+];
 const systemAdminRoleCodes = ["SUPER_ADMIN", "ADMIN_DIOCESE", "ADMIN_DEANERY", "ADMIN_PARISH"];
 const superAdminAccountRoleOptions = [
   { value: "SUPER_ADMIN", label: "Super admin" },
@@ -217,10 +220,10 @@ export const systemFormSpecs: ResourceFormSpec[] = [
   {
     kind: "role-permissions",
     actionType: "create",
-    createTitle: "Gán nhiều quyền cho vai trò",
-    description: "Chọn vai trò, effect và danh sách quyền bằng checkbox để thao tác nhanh.",
+    createTitle: "Phân quyền cho vai trò",
+    description: "Chọn vai trò và tick các quyền cần phân. Quyền phân ra luôn ở trạng thái cho phép.",
     buildEndpoint: () => "/system/role-permissions/bulk",
-    getInitialValues: () => ({ effect: "ALLOW", assignedAt: currentDatetimeLocal() }),
+    getInitialValues: () => ({ assignedAt: currentDatetimeLocal() }),
     fields: [
       {
         name: "roleCode",
@@ -234,7 +237,6 @@ export const systemFormSpecs: ResourceFormSpec[] = [
         readOnlyOnEdit: true,
         section: "Thiết lập",
       },
-      { name: "effect", label: "Effect", type: "radio", required: true, options: effectOptions, section: "Thiết lập" },
       {
         name: "permissionCodes",
         label: "Danh sách quyền chưa gán",
@@ -247,23 +249,21 @@ export const systemFormSpecs: ResourceFormSpec[] = [
         helper: "Chọn vai trò trước để chỉ hiển thị các quyền chưa được gán cho vai trò này.",
         section: "Quyền chưa gán",
       },
-      { name: "conditions", label: "Điều kiện metadata", type: "textarea", clearable: true, section: "Điều kiện" },
       { name: "assignedAt", label: "Ngày gán", type: "datetime", section: "Thời hạn" },
       { name: "expiresAt", label: "Ngày hết hạn", type: "datetime", clearable: true, section: "Thời hạn" },
     ],
-    mapSubmit: (values) => compactPayload(values),
+    mapSubmit: (values) => ({ ...compactPayload(values), effect: "ALLOW" }),
   },
   {
     kind: "role-permissions",
     actionType: "edit",
-    createTitle: "Gán quyền cho vai trò",
+    createTitle: "Phân quyền cho vai trò",
     editTitle: "Chỉnh sửa quyền của vai trò",
-    description: "Tách rõ ALLOW/DENY và thời hạn hiệu lực của quyền theo vai trò.",
+    description: "Điều chỉnh hiệu lực và thời hạn của quyền đã phân cho vai trò.",
     fields: [
       { name: "roleCode", label: "Vai trò", type: "select", required: true, optionsEndpoint: "/system/roles", optionValue: "roleCode", optionLabel: "roleName", readOnlyOnEdit: true, section: "Liên kết" },
       { name: "permissionCode", label: "Quyền", type: "select", required: true, optionsEndpoint: "/system/permissions", optionValue: "permissionCode", optionLabel: "permissionName", readOnlyOnEdit: true, section: "Liên kết" },
-      { name: "effect", label: "Effect", type: "radio", required: true, options: effectOptions, section: "Hiệu lực" },
-      { name: "conditions", label: "Điều kiện metadata", type: "textarea", clearable: true, section: "Hiệu lực" },
+      { name: "effect", label: "Hiệu lực", type: "radio", required: true, options: effectOptions, section: "Hiệu lực" },
       { name: "assignedAt", label: "Ngày gán", type: "datetime", section: "Hiệu lực" },
       { name: "expiresAt", label: "Ngày hết hạn", type: "datetime", clearable: true, section: "Hiệu lực" },
     ],
@@ -279,10 +279,9 @@ export const systemFormSpecs: ResourceFormSpec[] = [
   {
     kind: "account-permissions",
     actionType: "create",
-    createTitle: "Thêm nhiều quyền riêng tài khoản",
-    description: "Chọn tài khoản hợp lệ, effect và danh sách quyền bằng checkbox.",
+    createTitle: "Phân quyền cho tài khoản",
+    description: "Chọn tài khoản hợp lệ và tick các quyền cần phân. Quyền phân ra luôn ở trạng thái cho phép.",
     buildEndpoint: () => "/system/account-permissions/bulk",
-    getInitialValues: () => ({ effect: "ALLOW" }),
     fields: [
       {
         name: "username",
@@ -298,7 +297,6 @@ export const systemFormSpecs: ResourceFormSpec[] = [
         readOnlyOnEdit: true,
         section: "Thiết lập",
       },
-      { name: "effect", label: "Effect", type: "radio", required: true, options: effectOptions, section: "Thiết lập" },
       {
         name: "permissionCodes",
         label: "Danh sách quyền chưa gán",
@@ -308,23 +306,23 @@ export const systemFormSpecs: ResourceFormSpec[] = [
         optionValue: "permissionCode",
         optionLabel: "permissionName",
         readOnlyOnEdit: true,
-        helper: "Chọn tài khoản trước để chỉ hiển thị các quyền riêng chưa được gán cho account này.",
+        helper: "Chọn tài khoản trước để chỉ hiển thị các quyền chưa được phân cho tài khoản này.",
         section: "Quyền chưa gán",
       },
       { name: "reason", label: "Lý do", required: true, type: "textarea", section: "Lý do" },
       { name: "expiresAt", label: "Ngày hết hạn", type: "datetime", clearable: true, section: "Thời hạn" },
     ],
-    mapSubmit: (values) => compactPayload(values),
+    mapSubmit: (values) => ({ ...compactPayload(values), effect: "ALLOW" }),
   },
   {
     kind: "account-permissions",
     actionType: "edit",
-    editTitle: "Chỉnh sửa quyền riêng tài khoản",
-    description: "Override trực tiếp theo account, DENY ưu tiên ALLOW khi tính hiệu lực.",
+    editTitle: "Chỉnh sửa quyền của tài khoản",
+    description: "Điều chỉnh hiệu lực, lý do và thời hạn của quyền đã phân cho tài khoản (từ chối được ưu tiên hơn cho phép).",
     fields: [
       { name: "username", label: "Tài khoản", type: "select", required: true, optionsEndpoint: "/system/accounts", optionValue: "username", optionLabel: "username", readOnlyOnEdit: true, section: "Liên kết" },
       { name: "permissionCode", label: "Quyền", type: "select", required: true, optionsEndpoint: "/system/permissions", optionValue: "permissionCode", optionLabel: "permissionName", readOnlyOnEdit: true, section: "Liên kết" },
-      { name: "effect", label: "Effect", type: "radio", required: true, options: effectOptions, section: "Hiệu lực" },
+      { name: "effect", label: "Hiệu lực", type: "radio", required: true, options: effectOptions, section: "Hiệu lực" },
       { name: "reason", label: "Lý do", required: true, type: "textarea", section: "Hiệu lực" },
       { name: "expiresAt", label: "Ngày hết hạn", type: "datetime", clearable: true, section: "Hiệu lực" },
     ],

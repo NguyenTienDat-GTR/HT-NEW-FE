@@ -2,6 +2,7 @@
 
 import { keepPreviousData, useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Route } from "next";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
@@ -11,7 +12,7 @@ import { Panel } from "@/components/ui/panel";
 import { rowsFromResponse } from "@/components/form/resource-form/api-utils";
 import { apiDownload, apiFetch, apiMutation, getApiErrorMessage, parseContentDispositionFilename, type PageResponse } from "@/lib/api/client";
 import { useAuthStore } from "@/lib/auth/auth-store";
-import { canUseAction } from "@/lib/auth/permissions";
+import { canUseAction, hasPermissionPrefix, isSuperAdmin } from "@/lib/auth/permissions";
 import { resolveRouteForUser } from "@/modules/workspace/super-admin-route-overrides";
 import { ApprovalDialog, type CertificateSigner, type ExceptionLevelItem } from "./approval-dialog";
 import { embeddedTabHref, useEmbeddedResource, withReturnTo } from "./embedded-resource-context";
@@ -19,6 +20,7 @@ import { ConfirmActionDialog } from "./confirm-action-dialog";
 import { RevokeCertificateDialog } from "./revoke-certificate-dialog";
 import { CourseStatusDialog } from "@/modules/training-courses/components/course-status-dialog";
 import { DetailDrawer } from "./detail-drawer";
+import { PermissionRevokeDialog } from "@/modules/accounts/components/permission-revoke-dialog";
 import { PositionFormDialog } from "@/modules/executive-board/components/position-form-dialog";
 import { AssignmentFormDialog } from "@/modules/executive-board/components/assignment-form-dialog";
 import { getResourceId, isAwaitingApproval } from "./resource-actions";
@@ -89,6 +91,17 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
       });
   const rows = rowsFromResponse(query.data);
   const detailId = searchParams.get("detail");
+  // Thu hồi quyền hàng loạt của vai trò / tài khoản: modal mở bằng ?revokePermissions=1.
+  const permissionRevokeKind = effectiveRoute.kind === "role-permissions" ? "role" : effectiveRoute.kind === "account-permissions" ? "account" : null;
+  const canRevokePermissions =
+    permissionRevokeKind !== null &&
+    !embedded &&
+    (isSuperAdmin(user) || hasPermissionPrefix(user, permissionRevokeKind === "role" ? "system.role_permission.revoke." : "system.account_permission.manage."));
+  const permissionRevokeButton = canRevokePermissions ? (
+    <Button asChild className="shrink-0 justify-center" variant="outline">
+      <Link href={`${effectiveRoute.path}?revokePermissions=1` as Route}>Thu hồi quyền</Link>
+    </Button>
+  ) : null;
   const positionEditId = searchParams.get("edit");
   const modalFormTarget = positionEditId ? ({ mode: "edit", id: positionEditId } as const) : searchParams.get("create") ? ({ mode: "create" } as const) : null;
   const positionFormTarget = effectiveRoute.kind === "positions" ? modalFormTarget : null;
@@ -425,7 +438,12 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
           resetFilters={queryState.resetFilters}
           canCreate={canCreate}
           hideSearch={Boolean(embedded)}
-          extraActions={saveScoresButton}
+          extraActions={
+            <>
+              {saveScoresButton}
+              {permissionRevokeButton}
+            </>
+          }
           leadingActions={bulkActions || exportActions || config.toolbarActions ? <>{config.toolbarActions}{bulkActions}{exportActions}</> : scoreStats}
         />
         {scoreEntryEnabled && embedded?.scoreLocked === true ? (
@@ -467,6 +485,9 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
       </Panel>
 
       <DetailDrawer id={detailId} onClose={closeQueryDialog} route={effectiveRoute} />
+      {permissionRevokeKind && canRevokePermissions ? (
+        <PermissionRevokeDialog kind={permissionRevokeKind} onClose={closeQueryDialog} open={searchParams.get("revokePermissions") === "1"} />
+      ) : null}
       {effectiveRoute.kind === "positions" ? <PositionFormDialog onClose={closeQueryDialog} target={positionFormTarget} /> : null}
       {effectiveRoute.kind === "executive-board" ? <AssignmentFormDialog onClose={closeQueryDialog} target={assignmentFormTarget} /> : null}
       {effectiveRoute.kind === "courses" ? (

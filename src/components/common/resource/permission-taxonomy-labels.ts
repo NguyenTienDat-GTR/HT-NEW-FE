@@ -10,7 +10,7 @@ const taxonomyLabels: Record<PermissionTaxonomyKind, Record<string, string>> = {
   },
   resource: {
     account: "Tài khoản",
-    account_permission: "Quyền riêng tài khoản",
+    account_permission: "Phân quyền tài khoản",
     account_role: "Vai trò tài khoản",
     audit_log: "Nhật ký hệ thống",
     certificate: "Chứng nhận",
