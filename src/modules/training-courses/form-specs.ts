@@ -35,6 +35,15 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
         optionLabel: "typeName",
         section: "Nâng cấp",
       },
+      {
+        name: "maxYearsAfterPrerequisite",
+        label: "Thời hạn tối đa sau khóa tiên quyết (năm)",
+        type: "number",
+        min: 1,
+        visibleWhen: (values) => typeof values.prerequisiteTypeCode === "string" && values.prerequisiteTypeCode !== "",
+        helper: "Phải đi khóa này trong vòng bao nhiêu năm kể từ lần đạt khóa tiên quyết gần nhất. Để trống nếu không giới hạn.",
+        section: "Nâng cấp",
+      },
       { name: "resultingLevel", label: "Cấp độ khi hoàn thành", type: "select", ...leaderLevelSelect, section: "Nâng cấp" },
     ],
     mapSubmit: (values, mode) => {

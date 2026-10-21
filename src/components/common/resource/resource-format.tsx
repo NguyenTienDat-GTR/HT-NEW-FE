@@ -129,6 +129,7 @@ export const columnLabels: Record<string, string> = {
   requiredCurrentLevel: "Cấp yêu cầu",
   requiredMinAge: "Tuổi tối thiểu",
   requiredYearsActive: "Số năm sinh hoạt",
+  maxYearsAfterPrerequisite: "Thời hạn tối đa sau khóa tiên quyết (năm)",
   requirementCode: "Mã điều kiện",
   requirementName: "Điều kiện",
   resourceCode: "Đối tượng",
