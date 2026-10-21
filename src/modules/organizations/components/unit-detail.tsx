@@ -3,6 +3,8 @@
 import { Badge, ResourceCell } from "@/components/common/resource/resource-format";
 import { ExecutiveBoardSection } from "@/modules/executive-board/components/executive-board-section";
 import { cn } from "@/lib/utils";
+import { isLockedByParent } from "../types";
+import { UnitStatusHistory } from "./unit-status-history";
 
 export type UnitKind = "dioceses" | "deaneries" | "parishes";
 
@@ -76,7 +78,10 @@ export function UnitDetail({ kind, id, row }: { kind: UnitKind; id: string; row:
             <h2 className="mt-1 break-words text-xl font-semibold text-foreground">{String(row.name ?? "—")}</h2>
             {path.length ? <p className="mt-1 text-sm text-muted">{path.join(" › ")}</p> : null}
           </div>
-          {typeof row.status === "boolean" ? <Badge tone={row.status ? "success" : "neutral"}>{row.status ? "Đang hoạt động" : "Tạm ngưng"}</Badge> : null}
+          <div className="flex flex-wrap items-center gap-2">
+            {typeof row.status === "boolean" ? <Badge tone={row.status ? "success" : "neutral"}>{row.status ? "Đang hoạt động" : "Tạm ngưng"}</Badge> : null}
+            {isLockedByParent(row) ? <Badge tone="warning">Ngưng theo đơn vị cha</Badge> : null}
+          </div>
         </div>
         <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
           {STATS[kind].map((stat) => (
@@ -94,6 +99,8 @@ export function UnitDetail({ kind, id, row }: { kind: UnitKind; id: string; row:
       </div>
 
       <ExecutiveBoardSection kind={kind} unitId={id} />
+
+      <UnitStatusHistory endpoint={`/${kind}`} unitId={id} />
 
       <FieldsCard fields={AUDIT_FIELDS} row={row} title="Lịch sử ghi nhận" />
     </div>

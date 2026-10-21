@@ -78,6 +78,16 @@ describe("shouldHideStatusColumn", () => {
     ).toBe(true);
   });
 
+  it("keeps status when a row is enabled but locked by a disabled parent unit", () => {
+    expect(
+      shouldHideStatusColumn(
+        toggleRoute,
+        [{ id: "p1", name: "Parish", status: true, effectiveStatus: false }],
+        user(["organization.parish.toggle.deanery"], ["ADMIN_DEANERY"]),
+      ),
+    ).toBe(false);
+  });
+
   it("keeps status when the current user cannot render a toggle switch", () => {
     expect(shouldHideStatusColumn(toggleRoute, [{ id: "p1", name: "Parish", status: true }], user(["organization.parish.read.deanery"]))).toBe(false);
   });
