@@ -99,6 +99,7 @@ const SECTIONS: SectionSpec[] = [
       { key: "totalScore", label: "Tổng điểm" },
       { key: "passingScore", label: "Điểm đạt" },
       { key: "passed", label: "Đánh giá điểm" },
+      { key: "scoreNote", label: "Ghi chú", fullWidth: true },
     ],
   },
   {

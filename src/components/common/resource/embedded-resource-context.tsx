@@ -16,6 +16,8 @@ export type EmbeddedResource = {
   scoringHint?: string;
   // Khóa đang bị khóa chỉnh sửa điểm bởi admin.
   scoreLocked?: boolean;
+  // Khóa đã kết thúc: không sửa được điểm lẫn ghi chú.
+  courseFinished?: boolean;
   // Khóa đã bị vô hiệu hóa: chỉ xem, mọi thao tác trong khóa bị chặn (BE cũng chặn).
   courseDisabled?: boolean;
 };
