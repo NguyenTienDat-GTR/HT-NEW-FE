@@ -16,6 +16,8 @@ export type EmbeddedResource = {
   scoringHint?: string;
   // Khóa đang bị khóa chỉnh sửa điểm bởi admin.
   scoreLocked?: boolean;
+  // Khóa đã bị vô hiệu hóa: chỉ xem, mọi thao tác trong khóa bị chặn (BE cũng chặn).
+  courseDisabled?: boolean;
 };
 
 const EmbeddedResourceContext = createContext<EmbeddedResource | null>(null);

@@ -1,5 +1,34 @@
 import { Certificate, Gear } from "@phosphor-icons/react";
-import { route, type RouteGroup } from "../route-config";
+import { deaneryUnitFilter, parishUnitFilter, route, type RouteFilterConfig, type RouteGroup } from "../route-config";
+
+// Bộ lọc màn hình chứng nhận: khóa, loại khóa có cấp chứng nhận, trạng thái, giáo hạt, giáo xứ và năm cấp.
+// "issueDate:year" lọc theo năm của ngày cấp ở BE (khoảng 01/01 - 31/12).
+const certificateFilters: RouteFilterConfig[] = [
+  { key: "course.courseCode", label: "Khóa huấn luyện", type: "select", optionsEndpoint: "/training/courses", optionValue: "courseCode", optionLabel: "courseName" },
+  {
+    key: "course.courseType.typeCode",
+    label: "Loại khóa có chứng nhận",
+    type: "select",
+    optionsEndpoint: "/certificates/config/course-types",
+    optionValue: "typeCode",
+    optionLabel: "typeName",
+  },
+  {
+    key: "approvalStatus",
+    label: "Trạng thái",
+    type: "select",
+    options: [
+      { value: "PENDING", label: "Chờ duyệt" },
+      { value: "APPROVED", label: "Đã duyệt" },
+      { value: "REJECTED", label: "Từ chối" },
+      { value: "REVOKED", label: "Đã thu hồi" },
+    ],
+  },
+  deaneryUnitFilter("leader.parish.deanery.id"),
+  parishUnitFilter("leader.parish.id", "leader.parish.deanery.id"),
+  // Năm cấp: lấy các năm có chứng nhận thật trong DB (trong phạm vi người xem), nên không mất năm cũ và tự có năm mới.
+  { key: "issueDate:year", label: "Năm cấp", type: "select", optionsEndpoint: "/certificates/issue-years", optionValue: "year", optionLabel: "year" },
+];
 
 export const certificateRouteGroup: RouteGroup = {
     moduleName: "certificate",
@@ -10,34 +39,43 @@ export const certificateRouteGroup: RouteGroup = {
         path: "/certificates",
         moduleName: "certificate.list",
         title: "Chứng nhận",
-        subtitle: "Quản lý chứng nhận, duyệt ngoại lệ và khóa điểm sau approve.",
+        subtitle: "Xem, xuất PDF, thu hồi và cấp lại chứng nhận. Chứng nhận được sinh tự động khi hồ sơ hoàn thành khóa huấn luyện.",
         endpoint: "/certificates",
         idField: "certificateCode",
         kind: "certificates",
         icon: Certificate,
-        columns: ["certificateCode", "leaderFullName", "courseName", "totalScore", "passingScore", "approvalStatus", "status"],
+        columns: ["certificateCode", "leaderFullName", "courseName", "totalScore", "passingScore", "approvalStatus"],
         // Cột tính ra ở response không sắp xếp được; cột còn lại ánh xạ sang thuộc tính entity.
         sortFields: { leaderFullName: "leader.firstName+leader.lastName", courseName: "course.courseName", totalScore: null, passingScore: "course.passingScore" },
-        // Tìm theo thuộc tính entity (leaderFullName/courseName chỉ có ở response): mã chứng nhận, họ tên, tên thánh, khóa.
-        searchFields: ["certificateCode", "leader.lastName+leader.firstName", "leader.holyName", "course.courseName", "course.courseCode"],
+        // Tìm theo thuộc tính entity (leaderFullName/courseName chỉ có ở response): mã chứng nhận, tên huynh trưởng
+        // (họ tên, tên họ, tên thánh kèm họ tên), khóa.
+        searchFields: [
+          "certificateCode",
+          "leader.lastName+leader.firstName",
+          "leader.firstName+leader.lastName",
+          "leader.holyName+leader.lastName+leader.firstName",
+          "leader.holyName",
+          "course.courseName",
+          "course.courseCode",
+        ],
         permissionPrefixes: ["training.certificate.read."],
-        actionPermissionPrefixes: ["training.certificate.create.", "training.certificate.approve.", "training.certificate.update.", "training.certificate.toggle."],
-        primaryActionLabel: "Tạo chứng nhận",
-        filterLabels: ["Khóa", "Kết quả", "Trạng thái duyệt"],
-        workflowHint: "Nếu chưa đạt passingScore, approve bắt buộc nhập approvalReason.",
+        actionPermissionPrefixes: ["training.certificate.approve.", "training.certificate.revoke.", "training.certificate.reissue."],
+        filters: certificateFilters,
+        filterLabels: ["Khóa huấn luyện", "Loại khóa", "Trạng thái", "Giáo hạt", "Giáo xứ", "Năm cấp"],
+        workflowHint: "Thu hồi chứng nhận đã duyệt sẽ chuyển hồ sơ của khóa liên kết thành không đạt.",
       }),
       route({
         path: "/certificates/config",
         moduleName: "certificate.config",
         title: "Cấu hình chứng nhận",
-        subtitle: "Người ký, ảnh nền và bố cục mail merge theo loại khóa hoặc cấu hình chung.",
+        subtitle: "Thư viện cấu hình: ảnh nền và bố cục mail merge, dùng chung hoặc gán riêng cho từng loại khóa.",
         endpoint: "/certificates/config",
         idField: "id",
         kind: "certificate-config",
         icon: Gear,
         columns: [],
         permissionPrefixes: ["training.certificate_config.read."],
-        actionPermissionPrefixes: ["training.certificate_config.update."],
+        actionPermissionPrefixes: ["training.certificate_config.create.", "training.certificate_config.update.", "training.certificate_config.delete."],
       }),
     ],
   };

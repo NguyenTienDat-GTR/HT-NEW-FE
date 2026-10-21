@@ -1,5 +1,4 @@
 import { compactPayload, type ResourceFormSpec } from "@/components/form/resource-form/types";
-import { leaderLevelOptions } from "@/config/routes/route-config";
 
 export const organizationFormSpecs: ResourceFormSpec[] = [
   {
@@ -79,4 +78,9 @@ export const organizationFormSpecs: ResourceFormSpec[] = [
   },
 ];
 
-export const leaderLevels = leaderLevelOptions;
+// Ô chọn cấp độ lấy từ danh mục cấp độ (quản lý ở Hệ thống > Cấp độ).
+export const leaderLevelSelect = {
+  optionsEndpoint: "/leader-levels/options",
+  optionValue: "levelCode",
+  optionLabel: "levelName",
+} as const;

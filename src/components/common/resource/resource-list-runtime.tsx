@@ -13,12 +13,15 @@ import { apiDownload, apiFetch, apiMutation, getApiErrorMessage, parseContentDis
 import { useAuthStore } from "@/lib/auth/auth-store";
 import { canUseAction } from "@/lib/auth/permissions";
 import { resolveRouteForUser } from "@/modules/workspace/super-admin-route-overrides";
-import { ApprovalDialog, type CertificateSigner } from "./approval-dialog";
+import { ApprovalDialog, type CertificateSigner, type ExceptionLevelItem } from "./approval-dialog";
 import { embeddedTabHref, useEmbeddedResource, withReturnTo } from "./embedded-resource-context";
 import { ConfirmActionDialog } from "./confirm-action-dialog";
+import { RevokeCertificateDialog } from "./revoke-certificate-dialog";
+import { CourseStatusDialog } from "@/modules/training-courses/components/course-status-dialog";
 import { DetailDrawer } from "./detail-drawer";
 import { getResourceId, isAwaitingApproval } from "./resource-actions";
 import { isInvalidScore, originalScore, runWithConcurrency, sameScore, type ScoreComponent, type ScoreDrafts, type ScoreEntry } from "./score-entry";
+import { ScoreStats } from "./score-stats";
 import { ResourceListEmptyState } from "./resource-list-empty-state";
 import { ResourceListHeader } from "./resource-list-header";
 import { buildResourceKpiQuerySpecs, buildResourceKpis, shouldShowResourceKpis } from "./resource-kpis";
@@ -56,7 +59,9 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
     staleTime: 0,
   });
 
-  const canCreate = canUseAction(user, effectiveRoute.actions?.create) && (config.canCreate?.(effectiveRoute, user) ?? true);
+  // Khóa bị vô hiệu hóa: không tạo / duyệt / chấm điểm gì trong khóa (BE cũng chặn).
+  const courseDisabled = embedded?.courseDisabled === true;
+  const canCreate = canUseAction(user, effectiveRoute.actions?.create) && (config.canCreate?.(effectiveRoute, user) ?? true) && !courseDisabled;
   const pageData = asPageResponse(query.data, queryState.size);
   // Trong chi tiết khóa không hiển thị KPI (và không gọi các truy vấn KPI).
   const showKpis = !embedded && shouldShowResourceKpis(effectiveRoute);
@@ -86,18 +91,20 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
   const approveId = searchParams.get("approve");
   const rejectId = searchParams.get("reject");
   const withdrawId = searchParams.get("withdraw");
+  const revokeId = searchParams.get("revoke");
+  const reissueId = searchParams.get("reissue");
   const removeId = searchParams.get("remove");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkMode, setBulkMode] = useState<"approve" | "reject" | null>(null);
   const [scoreDrafts, setScoreDrafts] = useState<ScoreDrafts>({});
   const scoreCourseCode = embedded?.fixedFilters["course.courseCode"];
-  const scoreEntryEnabled = Boolean(config.scoreEntry && scoreCourseCode && canUseAction(user, effectiveRoute.actions?.score));
+  const scoreEntryEnabled = Boolean(config.scoreEntry && scoreCourseCode && canUseAction(user, effectiveRoute.actions?.score) && !courseDisabled);
   const scoreComponentsQuery = useQuery({
     queryKey: ["score-components", scoreCourseCode],
     enabled: scoreEntryEnabled,
     queryFn: () => apiFetch<ScoreComponent[]>(`/training/courses/${encodeURIComponent(String(scoreCourseCode))}/score-components`),
   });
-  const canBulkApprove = Boolean(config.bulkApprovePath) && canUseAction(user, effectiveRoute.actions?.approve);
+  const canBulkApprove = Boolean(config.bulkApprovePath) && canUseAction(user, effectiveRoute.actions?.approve) && !courseDisabled;
   const canExportPdf = Boolean(config.enablePdfExport && config.pdfExportPath);
   const [exporting, setExporting] = useState(false);
   // Khi bật xuất PDF: cho chọn mọi dòng (xuất kiểm tra "đã duyệt" ở BE). Ngược lại, duyệt hàng loạt chỉ chọn hồ sơ đang chờ.
@@ -122,33 +129,56 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
       })
     : [];
 
+  const revokeTarget = (id: string) => {
+    const row = rowById(id);
+    return {
+      code: id,
+      leaderName: row?.leaderFullName ? String(row.leaderFullName) : undefined,
+      courseName: row?.courseName ? String(row.courseName) : undefined,
+    };
+  };
+  // Hồ sơ ngoại lệ (chưa đủ điều kiện) phải được người duyệt chọn cấp độ đạt được sau khi hoàn thành khóa.
+  const exceptionItemFor = (id: string): ExceptionLevelItem | null => {
+    const row = rowById(id);
+    if (!config.exceptionLevel || !row || row.eligible !== false) return null;
+    const courseLevel = typeof row.courseResultingLevel === "string" ? row.courseResultingLevel : "";
+    if (!courseLevel || courseLevel === "NONE") return null;
+    return { id, label: String(row.leaderFullName ?? id), leaderLevel: String(row.leaderLevel ?? "NONE"), courseLevel };
+  };
+  const approveExceptionItems = approveId ? [exceptionItemFor(approveId)].filter((item): item is ExceptionLevelItem => item !== null) : [];
+  const bulkExceptionItems = bulkApprovableIds.map(exceptionItemFor).filter((item): item is ExceptionLevelItem => item !== null);
   const closeQueryDialog = () => router.push((embedded ? embeddedTabHref(embedded) : effectiveRoute.path) as Route);
   const actionMutation = useMutation({
-    mutationFn: ({ action, id, note, signer }: { action: "toggle" | "approve" | "reject" | "withdraw" | "remove"; id: string; note?: string; signer?: CertificateSigner }) => {
+    mutationFn: ({ action, id, note, signer, achievedLevel }: { action: "toggle" | "approve" | "reject" | "revoke" | "reissue" | "withdraw" | "remove"; id: string; note?: string; signer?: CertificateSigner; achievedLevel?: string }) => {
+      if (action === "revoke") return apiMutation(`${effectiveRoute.endpoint}/${encodeURIComponent(id)}/revoke`, "POST", { reason: note });
+      if (action === "reissue") return apiMutation(`${effectiveRoute.endpoint}/${encodeURIComponent(id)}/reissue`, "POST", { reason: note });
       if (action === "remove") return apiMutation(config.buildRemovePath?.(id) ?? `${effectiveRoute.endpoint}/${encodeURIComponent(id)}`, "DELETE");
       if (action === "withdraw") return apiMutation(config.buildWithdrawPath?.(id) ?? `${effectiveRoute.endpoint}/${encodeURIComponent(id)}`, "DELETE");
       if (action === "toggle") return apiMutation(`${effectiveRoute.endpoint}/${encodeURIComponent(id)}/toggle-status`, "PATCH", { confirmationText: "Xác nhận" });
       if (action === "approve" || action === "reject") {
         const approved = action === "approve";
         const approvePath = config.buildApprovePath?.(effectiveRoute, rows, id, approved) ?? `${effectiveRoute.endpoint}/${encodeURIComponent(id)}/approve`;
-        const approveBody = config.buildApproveBody?.(effectiveRoute, note, approved, signer) ?? { approved, review: note || undefined };
+        const approveBody = config.buildApproveBody?.(effectiveRoute, note, approved, signer, achievedLevel) ?? { approved, review: note || undefined };
         return apiMutation(approvePath, "POST", approveBody);
       }
       throw new Error("Unsupported resource action");
     },
     onSuccess: async (_data, variables) => {
-      toast.success(variables.action === "toggle" ? "Đổi trạng thái thành công" : variables.action === "reject" ? "Đã từ chối duyệt" : variables.action === "withdraw" ? "Đã thu hồi đăng ký" : variables.action === "remove" ? "Đã xóa hồ sơ khỏi danh sách tham dự" : "Duyệt thành công");
+      toast.success(variables.action === "toggle" ? "Đổi trạng thái thành công" : variables.action === "reject" ? "Đã từ chối duyệt" : variables.action === "revoke" ? "Đã thu hồi chứng nhận" : variables.action === "reissue" ? "Đã cấp lại chứng nhận" : variables.action === "withdraw" ? "Đã thu hồi đăng ký" : variables.action === "remove" ? "Đã xóa hồ sơ khỏi danh sách tham dự" : "Duyệt thành công");
       closeQueryDialog();
-      await queryClient.invalidateQueries({ queryKey: ["resource", effectiveRoute.endpoint] });
+      // Thao tác có thể đổi dữ liệu ở các danh sách khác (hồ sơ tham dự, chứng nhận, khóa) và ở drawer chi tiết đang mở.
+      await queryClient.invalidateQueries({ queryKey: ["resource"] });
+      await queryClient.invalidateQueries({ queryKey: ["resource-detail"] });
+      await queryClient.invalidateQueries({ queryKey: ["certificate-preview"] });
     },
   });
 
   const bulkMutation = useMutation({
-    mutationFn: ({ approved, note, reasons, signer }: { approved: boolean; note: string; reasons?: Record<string, string>; signer?: CertificateSigner }) =>
+    mutationFn: ({ approved, note, reasons, signer, achievedLevels }: { approved: boolean; note: string; reasons?: Record<string, string>; signer?: CertificateSigner; achievedLevels?: Record<string, string> }) =>
       apiMutation<{ successCount: number; failedCount: number; failures: { leaderFullName?: string; reason: string }[] }>(
         config.bulkApprovePath ?? "",
         "POST",
-        config.buildBulkBody?.(bulkApprovableIds, approved, note, reasons, signer) ?? { ids: bulkApprovableIds, approved, review: note || undefined, reviews: reasons },
+        config.buildBulkBody?.(bulkApprovableIds, approved, note, reasons, signer, achievedLevels) ?? { ids: bulkApprovableIds, approved, review: note || undefined, reviews: reasons, achievedLevels },
       ),
     onSuccess: async (result, variables) => {
       const action = variables.approved ? "Duyệt" : "Từ chối";
@@ -275,7 +305,8 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
       .filter((row) => (row.approvalStatus ?? row.certificateApprovalStatus) !== "APPROVED")
       .map((row) => {
         const name = String(row.leaderFullName ?? row.certificateCode ?? getResourceId(effectiveRoute, row) ?? "");
-        const status = (row.approvalStatus ?? row.certificateApprovalStatus) === "REJECTED" ? "bị từ chối" : "chưa duyệt";
+        const current = row.approvalStatus ?? row.certificateApprovalStatus;
+        const status = current === "REJECTED" ? "bị từ chối" : current === "REVOKED" ? "đã bị thu hồi" : "chưa duyệt";
         return `${name} (${status})`;
       });
     if (notApproved.length) {
@@ -335,6 +366,11 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
       </Tip>
     </>
   ) : null;
+  // Tab chấm điểm: thống kê còn bao nhiêu người và cột điểm nào chưa nhập, nằm cùng hàng với bộ lọc.
+  const scoreStats =
+    scoreEntryEnabled && scoreComponents.length > 0 && scoreCourseCode ? (
+      <ScoreStats components={scoreComponents} courseCode={scoreCourseCode} drafts={scoreDrafts} endpoint={effectiveRoute.endpoint ?? "/training/participants"} />
+    ) : null;
   const bulkActions = canBulkApprove ? (
     <>
       <span className="whitespace-nowrap text-sm text-muted">Có thể duyệt {bulkApprovableIds.length} hồ sơ</span>
@@ -382,7 +418,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
           canCreate={canCreate}
           hideSearch={Boolean(embedded)}
           extraActions={saveScoresButton}
-          leadingActions={bulkActions || exportActions ? <>{bulkActions}{exportActions}</> : null}
+          leadingActions={bulkActions || exportActions ? <>{bulkActions}{exportActions}</> : scoreStats}
         />
         {scoreEntryEnabled && embedded?.scoreLocked === true ? (
           <div className="border-b border-warning/30 bg-warning/10 px-4 py-2 text-xs font-medium text-foreground">Điểm của khóa đang bị khóa chỉnh sửa. Cần mở khóa mới nhập được điểm.</div>
@@ -423,28 +459,41 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
       </Panel>
 
       <DetailDrawer id={detailId} onClose={closeQueryDialog} route={effectiveRoute} />
-      <ConfirmActionDialog
-        action="toggle"
-        loading={actionMutation.isPending}
-        onClose={closeQueryDialog}
-        onConfirm={() => toggleId && actionMutation.mutate({ action: "toggle", id: toggleId })}
-        open={Boolean(toggleId)}
-        title="Đổi trạng thái bản ghi"
-      />
+      {effectiveRoute.kind === "courses" ? (
+        // Khóa huấn luyện: cảnh báo tác động lên chứng nhận, xác nhận và đối chiếu trạng thái đích ở BE.
+        <CourseStatusDialog
+          courseCode={toggleId}
+          courseName={toggleId ? String(rowById(toggleId)?.courseName ?? "") : undefined}
+          endpoint={effectiveRoute.endpoint ?? "/training/courses"}
+          onClose={closeQueryDialog}
+        />
+      ) : (
+        <ConfirmActionDialog
+          action="toggle"
+          loading={actionMutation.isPending}
+          onClose={closeQueryDialog}
+          onConfirm={() => toggleId && actionMutation.mutate({ action: "toggle", id: toggleId })}
+          open={Boolean(toggleId)}
+          title="Đổi trạng thái bản ghi"
+        />
+      )}
       <ApprovalDialog
+        key={approveId ?? "approve-closed"}
         captureSigner={config.captureSigner}
+        exceptionItems={approveExceptionItems}
         loading={actionMutation.isPending}
         onClose={closeQueryDialog}
-        onConfirm={(note, _reasons, signer) => approveId && actionMutation.mutate({ action: "approve", id: approveId, note, signer })}
+        onConfirm={(note, _reasons, signer, achievedLevels) => approveId && actionMutation.mutate({ action: "approve", id: approveId, note, signer, achievedLevel: achievedLevels?.[approveId] })}
         open={Boolean(approveId)}
       />
       <ApprovalDialog
         key={bulkMode ?? "bulk-closed"}
         captureSigner={config.captureSigner}
+        exceptionItems={bulkExceptionItems}
         loading={bulkMutation.isPending}
         mode={bulkMode === "reject" ? "reject" : "approve"}
         onClose={() => setBulkMode(null)}
-        onConfirm={(note, reasons, signer) => bulkMode && bulkMutation.mutate({ approved: bulkMode === "approve", note, reasons, signer })}
+        onConfirm={(note, reasons, signer, achievedLevels) => bulkMode && bulkMutation.mutate({ approved: bulkMode === "approve", note, reasons, signer, achievedLevels })}
         items={bulkApprovableIds.map((id) => {
           const row = rowById(id);
           return { id, label: String(row?.leaderFullName ?? id) };
@@ -472,6 +521,20 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
         open={Boolean(withdrawId)}
         requireConfirmText={false}
         title="Thu hồi đăng ký"
+      />
+      <RevokeCertificateDialog
+        loading={actionMutation.isPending}
+        onClose={closeQueryDialog}
+        onConfirm={(reason) => revokeId && actionMutation.mutate({ action: "revoke", id: revokeId, note: reason })}
+        target={revokeId ? revokeTarget(revokeId) : null}
+      />
+      <RevokeCertificateDialog
+        key={`reissue:${reissueId ?? ""}`}
+        loading={actionMutation.isPending}
+        mode="reissue"
+        onClose={closeQueryDialog}
+        onConfirm={(reason) => reissueId && actionMutation.mutate({ action: "reissue", id: reissueId, note: reason })}
+        target={reissueId ? revokeTarget(reissueId) : null}
       />
       <ApprovalDialog
         loading={actionMutation.isPending}

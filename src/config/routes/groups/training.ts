@@ -34,7 +34,8 @@ export const trainingRouteGroup: RouteGroup = {
         idField: "courseCode",
         kind: "courses",
         icon: GraduationCap,
-        columns: ["courseName", "courseTypeName", "hostYear", "yearsActive", "location", "registrationStatus", "organizingStatus", "status"],
+        columns: ["courseName", "courseTypeName", "hostYear", "location", "approvedParticipantCount", "registrationStatus", "organizingStatus", "status"],
+        // Số tham dự viên đã duyệt là cột tính ra ở response, không sắp xếp được.
         sortFields: { courseTypeName: "courseType.typeName" },
         searchFields: ["courseName", "location"],
         // Phạm vi giáo xứ chỉ xem các khóa đang mở đăng ký và đăng ký tham dự trong tab của khóa.

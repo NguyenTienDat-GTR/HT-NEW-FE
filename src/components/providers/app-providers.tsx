@@ -3,6 +3,13 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
 import { useState } from "react";
+import { useSyncLeaderLevels } from "@/modules/leader-levels/leader-level-store";
+
+// Tải danh mục cấp độ huynh trưởng một lần để mọi nhãn / ô chọn dùng chung.
+function LeaderLevelSync() {
+  useSyncLeaderLevels();
+  return null;
+}
 
 export function AppProviders({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -22,6 +29,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <LeaderLevelSync />
       <TooltipProvider delayDuration={250}>{children}</TooltipProvider>
     </QueryClientProvider>
   );

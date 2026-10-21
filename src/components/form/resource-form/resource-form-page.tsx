@@ -13,7 +13,7 @@ import type { RouteConfig } from "@/config/routes/routes";
 import { apiFetch, apiMutation, getApiErrorMessage } from "@/lib/api/client";
 import { useAuthStore } from "@/lib/auth/auth-store";
 import { canUseAction, hasPermissionPrefix } from "@/lib/auth/permissions";
-import { CertificateConfigView } from "@/modules/certificates/components/certificate-config-view";
+import { CertificateConfigPicker } from "@/modules/certificates/components/certificate-config-picker";
 import { cn } from "@/lib/utils";
 import { resolveRouteForUser } from "@/modules/workspace/super-admin-route-overrides";
 import { FormField } from "./form-controls";
@@ -199,10 +199,7 @@ export function ResourceFormPage({
       hasPermissionPrefix(user, "training.certificate_config.read.") ? (
         <Panel className="space-y-4 p-4 md:p-5">
           <h2 className="text-sm font-semibold uppercase tracking-[0.04em] text-muted">Cấu hình chứng nhận</h2>
-          <CertificateConfigView
-            embedded
-            fixedScope={{ courseTypeCode: String(id), courseTypeName: String(mergedValues.typeName ?? "") }}
-          />
+          <CertificateConfigPicker courseTypeCode={String(id)} courseTypeName={String(mergedValues.typeName ?? "")} />
         </Panel>
       ) : null}
 

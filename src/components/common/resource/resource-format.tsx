@@ -9,6 +9,7 @@ import {
 import type React from "react";
 import { formatVietnamDateValue } from "@/lib/date-format";
 import { cn, viNumber } from "@/lib/utils";
+import { leaderLevelName } from "@/modules/leader-levels/leader-level-store";
 import { formatPermissionTaxonomyValue, permissionTaxonomyKindFromColumn } from "./permission-taxonomy-labels";
 
 export const columnLabels: Record<string, string> = {
@@ -16,6 +17,7 @@ export const columnLabels: Record<string, string> = {
   actionCode: "Thao tác",
   associationName: "Hiệp đoàn",
   approvedAt: "Ngày duyệt",
+  approvedParticipantCount: "Số sa mạc sinh",
   approvedBy: "Người duyệt",
   approvalReason: "Lý do duyệt",
   approvalReasonRequired: "Cần lý do duyệt",
@@ -29,6 +31,9 @@ export const columnLabels: Record<string, string> = {
   certificateRequestedAt: "Ngày yêu cầu chứng nhận",
   certificateApprovedAt: "Ngày duyệt chứng nhận",
   componentScores: "Điểm thành phần",
+  revokedAt: "Ngày thu hồi",
+  revokedBy: "Người thu hồi",
+  revocationReason: "Lý do thu hồi",
   parishSubmittedAt: "Ngày gửi đăng ký",
   review: "Nhận xét",
   certificateCode: "Mã chứng nhận",
@@ -48,6 +53,8 @@ export const columnLabels: Record<string, string> = {
   prerequisiteTypeCode: "Khóa tiên quyết",
   prerequisiteTypeName: "Khóa tiên quyết",
   resultingLevel: "Cấp độ khi đạt",
+  courseResultingLevel: "Cấp độ đạt được của khóa",
+  targetLevel: "Cấp độ đạt được (ngoại lệ)",
   certificateShortCode: "Mã viết tắt chứng chỉ",
   createdAt: "Ngày tạo",
   createdBy: "Người tạo",
@@ -143,18 +150,6 @@ export const columnLabels: Record<string, string> = {
   username: "Tài khoản",
 };
 
-const levelLabels: Record<string, string> = {
-  NONE: "Chưa có cấp",
-  HT_XU: "Huynh trưởng xứ",
-  DU_TRUONG: "Dự trưởng",
-  HT_I: "Huynh trưởng cấp I",
-  HT_II: "Huynh trưởng cấp II",
-  HT_III: "Huynh trưởng cấp III",
-  HLV_I: "Huấn luyện viên cấp I",
-  HLV_II: "Huấn luyện viên cấp II",
-  HLV_III: "Huấn luyện viên cấp III",
-};
-
 const genderLabels: Record<string, string> = {
   NAM: "Nam",
   NU: "Nữ",
@@ -167,10 +162,10 @@ const unitTypeLabels: Record<string, string> = {
   // NONE: "Chưa có cấp",
 };
 
-const leaderLevelColumns = new Set(["requiredCurrentLevel", "resultingLevel"]);
+const leaderLevelColumns = new Set(["requiredCurrentLevel", "resultingLevel", "courseResultingLevel", "targetLevel"]);
 
 export function formatLeaderLevel(value: string) {
-  return levelLabels[value] ?? value;
+  return leaderLevelName(value);
 }
 
 type ResourceCellProps = {
@@ -279,10 +274,11 @@ function EffectBadge({ effect }: { effect: string }) {
 }
 
 function WorkflowBadge({ value }: { value: string }) {
-  const tone = value.includes("APPROVED") || value.includes("COMPLETED") ? "success" : value.includes("REJECTED") ? "danger" : "warning";
+  const tone = value.includes("APPROVED") || value.includes("COMPLETED") ? "success" : value.includes("REJECTED") || value.includes("REVOKED") ? "danger" : "warning";
   const label = value
     .replace("APPROVED", "Đã duyệt")
     .replace("REJECTED", "Từ chối")
+    .replace("REVOKED", "Đã thu hồi")
     .replace("PENDING", "Chờ xử lý")
     .replace("SUBMITTED", "Đã gửi")
     .replace("COMPLETED", "Hoàn thành")

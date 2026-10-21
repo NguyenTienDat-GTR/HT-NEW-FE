@@ -1,4 +1,4 @@
-import { Bell, FileText, LockKey, Medal, ShieldCheck } from "@phosphor-icons/react";
+import { Bell, FileText, LockKey, Medal, ShieldCheck, Stairs } from "@phosphor-icons/react";
 import { route, type RouteGroup } from "../route-config";
 
 export const systemRouteGroup: RouteGroup = {
@@ -364,6 +364,19 @@ export const systemRouteGroup: RouteGroup = {
       columns: ["title", "eventType", "courseCode", "readAt", "createdAt", "status"],
       permissionPrefixes: [],
       filterLabels: ["Tất cả", "Chưa đọc", "Đã đọc"],
+    }),
+    route({
+      path: "/system/leader-levels",
+      moduleName: "system.leader-level",
+      title: "Cấp độ huynh trưởng",
+      subtitle: "Danh mục cấp độ riêng của giáo phận bạn: kéo thả để đổi thứ tự, cấp ngay phía trên là điều kiện để đạt cấp kế tiếp.",
+      endpoint: "/leader-levels",
+      idField: "levelCode",
+      kind: "leader-levels",
+      icon: Stairs,
+      columns: [],
+      permissionPrefixes: ["system.leader_level.read."],
+      actionPermissionPrefixes: ["system.leader_level.create.", "system.leader_level.update.", "system.leader_level.delete."],
     }),
     route({
       path: "/system/audit-logs",

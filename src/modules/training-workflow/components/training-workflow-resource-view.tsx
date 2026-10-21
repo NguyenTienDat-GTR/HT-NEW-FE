@@ -13,6 +13,8 @@ export function TrainingWorkflowResourceView({ route }: { route: RouteConfig }) 
         moduleDescription: "Theo dõi đăng ký, duyệt, tham dự và chấm điểm theo trạng thái workflow.",
         buildApprovePath,
         buildApproveBody,
+        // Hồ sơ ngoại lệ: người duyệt chọn cấp độ đạt được sau khi hoàn thành khóa.
+        exceptionLevel: true,
         scoreEntry: route.moduleName === "training.score",
         bulkApprovePath: route.moduleName === "training.approval" ? "/training/registrations/bulk-approval" : undefined,
         buildRemovePath: (id) => `/training/participants/${encodeURIComponent(id)}`,
@@ -28,6 +30,6 @@ function buildApprovePath(route: RouteConfig, rows: Record<string, unknown>[], i
   return `/training/registrations/${encodeURIComponent(id)}/diocese-approval`;
 }
 
-function buildApproveBody(_route: RouteConfig, note?: string, approved = true) {
-  return { approved, review: note || undefined };
+function buildApproveBody(_route: RouteConfig, note?: string, approved = true, _signer?: unknown, achievedLevel?: string) {
+  return { approved, review: note || undefined, achievedLevel: approved ? achievedLevel : undefined };
 }
