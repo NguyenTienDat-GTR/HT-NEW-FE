@@ -16,13 +16,13 @@ export function sameOrder(left: readonly string[], right: readonly string[]) {
 }
 
 // Dựng các dòng từ danh sách cấp (đã sắp theo bậc tăng dần, không gồm cấp hệ thống): cùng displayOrder thì bằng cấp.
-export function buildRows(levels: readonly { levelCode: string; displayOrder: number }[]): LevelRow[] {
-  return levels.map((level, index) => ({ code: level.levelCode, linked: index > 0 && levels[index - 1].displayOrder === level.displayOrder }));
-}
-
-// Dòng đầu tiên không thể bằng cấp với dòng nào phía trên; chuẩn hóa để dữ liệu luôn hợp lệ.
-function normalized(rows: LevelRow[]): LevelRow[] {
-  return rows.map((row, index) => (index === 0 && row.linked ? { ...row, linked: false } : row));
+// `baseOrders` là các displayOrder của cấp hệ thống (cấp khởi đầu); dòng đầu cùng displayOrder với cấp khởi đầu thì
+// coi là bằng cấp với cấp khởi đầu (linked = true).
+export function buildRows(levels: readonly { levelCode: string; displayOrder: number }[], baseOrders: ReadonlySet<number> = new Set()): LevelRow[] {
+  return levels.map((level, index) => ({
+    code: level.levelCode,
+    linked: index > 0 ? levels[index - 1].displayOrder === level.displayOrder : baseOrders.has(level.displayOrder),
+  }));
 }
 
 // Kéo dòng ở vị trí `from` tới vị trí `to`. Dòng được kéo thành một bậc riêng (không còn bằng cấp với ai);
@@ -39,13 +39,18 @@ export function moveRow(rows: readonly LevelRow[], from: number, to: number): Le
   next.splice(target, 0, moved);
   // Dòng ngay sau vị trí chèn không còn bằng cấp với dòng phía trên cũ của nó.
   if (next[target + 1]) next[target + 1].linked = false;
-  return normalized(next);
+  return next;
 }
 
-// Đổi quan hệ bằng cấp giữa dòng `index` và dòng ngay phía trên nó.
+// Đổi quan hệ bằng cấp của dòng `index`: với dòng ngay phía trên, hoặc — nếu là dòng đầu — với cấp khởi đầu.
 export function toggleLinked(rows: readonly LevelRow[], index: number): LevelRow[] {
-  if (index <= 0 || index >= rows.length) return [...rows];
-  return normalized(rows.map((row, position) => (position === index ? { ...row, linked: !row.linked } : row)));
+  if (index < 0 || index >= rows.length) return [...rows];
+  return rows.map((row, position) => (position === index ? { ...row, linked: !row.linked } : row));
+}
+
+// Bậc thấp nhất có bằng cấp với cấp khởi đầu hay không (dòng đầu được đánh dấu linked).
+export function firstTierBase(rows: readonly LevelRow[]): boolean {
+  return rows[0]?.linked ?? false;
 }
 
 // Gộp các dòng liên tiếp bằng cấp nhau thành từng bậc, từ thấp đến cao (đúng dạng BE nhận).

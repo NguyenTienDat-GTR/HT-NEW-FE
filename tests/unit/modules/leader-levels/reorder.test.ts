@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildRows, moveItem, moveRow, sameOrder, sameRows, tierNumbers, toggleLinked, toTiers, type LevelRow } from "@/modules/leader-levels/reorder";
+import { buildRows, firstTierBase, moveItem, moveRow, sameOrder, sameRows, tierNumbers, toggleLinked, toTiers, type LevelRow } from "@/modules/leader-levels/reorder";
 
 const rows = (...items: Array<[string, boolean]>): LevelRow[] => items.map(([code, linked]) => ({ code, linked }));
 
@@ -40,9 +40,27 @@ describe("leader level tiers (cấp bằng nhau)", () => {
     expect(toTiers(toggleLinked(linked, 1))).toEqual([["A"], ["B"], ["C"]]);
   });
 
-  it("dòng đầu tiên không nối được lên trên", () => {
+  it("dòng đầu tiên nối / tách được với cấp khởi đầu", () => {
     const start = rows(["A", false], ["B", false]);
-    expect(toggleLinked(start, 0)).toEqual(start);
+    // Nối dòng đầu với cấp khởi đầu: dòng đầu linked = true, các bậc movable không đổi.
+    const linked = toggleLinked(start, 0);
+    expect(linked).toEqual(rows(["A", true], ["B", false]));
+    expect(firstTierBase(linked)).toBe(true);
+    expect(toTiers(linked)).toEqual([["A"], ["B"]]);
+    // Tách ra khỏi cấp khởi đầu.
+    expect(firstTierBase(toggleLinked(linked, 0))).toBe(false);
+  });
+
+  it("dựng dòng: dòng đầu cùng displayOrder với cấp khởi đầu thì bằng cấp với cấp khởi đầu", () => {
+    const built = buildRows(
+      [
+        { levelCode: "DU_TRUONG", displayOrder: 0 },
+        { levelCode: "HT_I", displayOrder: 1 },
+      ],
+      new Set([0]),
+    );
+    expect(built).toEqual(rows(["DU_TRUONG", true], ["HT_I", false]));
+    expect(firstTierBase(built)).toBe(true);
   });
 
   it("kéo một dòng thành bậc riêng và không nối nhầm các dòng còn lại", () => {
