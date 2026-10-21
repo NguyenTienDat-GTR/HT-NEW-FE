@@ -14,7 +14,7 @@ import { apiDownload, apiFetch, apiMutation, getApiErrorMessage, parseContentDis
 import { useAuthStore } from "@/lib/auth/auth-store";
 import { canUseAction } from "@/lib/auth/permissions";
 import { resolveRouteForUser } from "@/modules/workspace/super-admin-route-overrides";
-import { ApprovalDialog, type CertificateSigner, type ExceptionLevelItem } from "./approval-dialog";
+import { ApprovalDialog, type CertificateSigner, type ExceptionLevelItem, type ExceptionReasonItem } from "./approval-dialog";
 import { embeddedTabHref, useEmbeddedResource, withReturnTo } from "./embedded-resource-context";
 import { ConfirmActionDialog } from "./confirm-action-dialog";
 import { RevokeCertificateDialog } from "./revoke-certificate-dialog";
@@ -163,6 +163,13 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
     if (!courseLevel || courseLevel === "NONE") return null;
     return { id, label: String(row.leaderFullName ?? id), leaderLevel: String(row.leaderLevel ?? "NONE"), courseLevel };
   };
+  // Lý do đặc cách của hồ sơ đăng ký ngoại lệ (giáo xứ nêu khi đăng ký), hiện trong hộp thoại duyệt / từ chối.
+  const exceptionReasonFor = (id: string): ExceptionReasonItem | null => {
+    const row = rowById(id);
+    const reason = typeof row?.exceptionReason === "string" ? row.exceptionReason.trim() : "";
+    return reason ? { id, label: String(row?.leaderFullName ?? id), reason } : null;
+  };
+  const exceptionReasonsOf = (ids: string[]) => ids.map(exceptionReasonFor).filter((item): item is ExceptionReasonItem => item !== null);
   const approveExceptionItems = approveId ? [exceptionItemFor(approveId)].filter((item): item is ExceptionLevelItem => item !== null) : [];
   const bulkExceptionItems = bulkApprovableIds.map(exceptionItemFor).filter((item): item is ExceptionLevelItem => item !== null);
   const closeQueryDialog = () => router.push((embedded ? embeddedTabHref(embedded) : effectiveRoute.path) as Route);
@@ -554,6 +561,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
         key={approveId ?? "approve-closed"}
         captureSigner={config.captureSigner}
         exceptionItems={approveExceptionItems}
+        exceptionReasons={approveId ? exceptionReasonsOf([approveId]) : undefined}
         loading={actionMutation.isPending}
         onClose={closeQueryDialog}
         onConfirm={(note, _reasons, signer, achievedLevels) => approveId && actionMutation.mutate({ action: "approve", id: approveId, note, signer, achievedLevel: achievedLevels?.[approveId] })}
@@ -563,6 +571,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
         key={bulkMode ?? "bulk-closed"}
         captureSigner={config.captureSigner}
         exceptionItems={bulkExceptionItems}
+        exceptionReasons={bulkMode ? exceptionReasonsOf(bulkApprovableIds) : undefined}
         loading={bulkMutation.isPending}
         mode={bulkMode === "reject" ? "reject" : "approve"}
         onClose={() => setBulkMode(null)}
@@ -610,6 +619,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
         target={reissueId ? revokeTarget(reissueId) : null}
       />
       <ApprovalDialog
+        exceptionReasons={rejectId ? exceptionReasonsOf([rejectId]) : undefined}
         loading={actionMutation.isPending}
         mode="reject"
         onClose={closeQueryDialog}

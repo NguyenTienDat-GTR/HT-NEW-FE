@@ -9,6 +9,9 @@ import { getLeaderLevels, leaderLevelName, leaderLevelRank } from "@/modules/lea
 
 export type ApprovalDialogItem = { id: string; label: string };
 
+// Lý do đặc cách (ngoại lệ) mà giáo xứ nêu khi đăng ký hồ sơ chưa đủ điều kiện, hiển thị để người duyệt cân nhắc.
+export type ExceptionReasonItem = { id: string; label: string; reason: string };
+
 // Hồ sơ ngoại lệ cần người duyệt chọn cấp độ đạt được sau khi hoàn thành khóa.
 export type ExceptionLevelItem = { id: string; label: string; leaderLevel: string; courseLevel: string };
 
@@ -36,6 +39,7 @@ export function ApprovalDialog({
   items,
   captureSigner,
   exceptionItems,
+  exceptionReasons,
 }: {
   loading?: boolean;
   onClose: () => void;
@@ -49,6 +53,8 @@ export function ApprovalDialog({
   captureSigner?: boolean;
   // Khi duyệt: các hồ sơ ngoại lệ phải chọn cấp độ đạt được (bắt buộc cho từng hồ sơ).
   exceptionItems?: ExceptionLevelItem[];
+  // Hồ sơ đặc cách đang xử lý: hiện lý do đặc cách của từng hồ sơ trong hộp thoại (duyệt hoặc từ chối).
+  exceptionReasons?: ExceptionReasonItem[];
 }) {
   const [note, setNote] = useState("");
   const [scope, setScope] = useState<ReasonScope>("shared");
@@ -115,6 +121,18 @@ export function ApprovalDialog({
               </Button>
             </Dialog.Close>
           </div>
+
+          {exceptionReasons?.length ? (
+            <div className="mt-4 max-h-48 space-y-2 overflow-y-auto rounded-[10px] border border-warning/40 bg-warning/5 p-3">
+              <p className="text-xs font-semibold uppercase text-warning">Lý do đặc cách</p>
+              {exceptionReasons.map((item) => (
+                <div className="text-sm leading-6" key={item.id}>
+                  {exceptionReasons.length > 1 ? <span className="font-semibold text-foreground">{item.label}: </span> : null}
+                  <span className="whitespace-pre-wrap text-foreground">{item.reason}</span>
+                </div>
+              ))}
+            </div>
+          ) : null}
 
           {multi ? (
             <div aria-label="Cách nhập lý do" className="mt-4 grid grid-cols-2 gap-1 rounded-[10px] bg-surface-1 p-1" role="radiogroup">
