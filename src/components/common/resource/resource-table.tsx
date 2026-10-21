@@ -210,7 +210,7 @@ function ResourceRows({
   });
 }
 
-function RowActions({ route, row, onExportRow, exportingRow, scoreNotes }: { route: RouteConfig; row: Record<string, unknown>; onExportRow?: (id: string) => void; exportingRow?: boolean; scoreNotes?: ScoreNotes }) {
+export function RowActions({ route, row, onExportRow, exportingRow, scoreNotes }: { route: RouteConfig; row: Record<string, unknown>; onExportRow?: (id: string) => void; exportingRow?: boolean; scoreNotes?: ScoreNotes }) {
   const user = useAuthStore((state) => state.user);
   const embedded = useEmbeddedResource();
   const id = getResourceId(route, row);

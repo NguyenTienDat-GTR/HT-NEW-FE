@@ -28,6 +28,11 @@ export type ResourceListModuleConfig = {
   // Nút bổ sung trên thanh công cụ danh sách (vd quét mã QR chứng nhận).
   toolbarActions?: ReactNode;
   pdfExportPath?: string;
+  // Chế độ xem dạng thẻ (ngoài bảng): trang danh sách có công tắc Bảng / Thẻ, bỏ qua khi nhúng trong trang khác.
+  cardView?: {
+    render: (props: { rows: Record<string, unknown>[]; route: RouteConfig; isLoading: boolean }) => ReactNode;
+    defaultMode?: "table" | "card";
+  };
 };
 
 export type ResourceListRuntimeProps = {
