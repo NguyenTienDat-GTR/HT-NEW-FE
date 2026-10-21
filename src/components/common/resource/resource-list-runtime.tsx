@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
+import { Plus } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Tip } from "@/components/ui/tip";
 import { Panel } from "@/components/ui/panel";
@@ -447,6 +448,16 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
         moduleLabel={config.moduleLabel}
         route={effectiveRoute}
         embedded={Boolean(embedded)}
+        actions={
+          !embedded && effectiveRoute.primaryActionLabel && effectiveRoute.createPath && canCreate ? (
+            <Button asChild>
+              <Link href={effectiveRoute.createPath as Route}>
+                <Plus size={18} weight="bold" />
+                {effectiveRoute.primaryActionLabel}
+              </Link>
+            </Button>
+          ) : null
+        }
       />
 
       <Panel className="overflow-hidden">
@@ -461,6 +472,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
           resetFilters={queryState.resetFilters}
           canCreate={canCreate}
           hideSearch={Boolean(embedded)}
+          showCreate={Boolean(embedded)}
           extraActions={
             <>
               {saveScoresButton}

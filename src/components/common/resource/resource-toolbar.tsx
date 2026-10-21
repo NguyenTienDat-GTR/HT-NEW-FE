@@ -28,9 +28,12 @@ export function ResourceFilters({
   extraActions,
   leadingActions,
   hideSearch = false,
+  showCreate = true,
 }: {
   // Ẩn ô tìm kiếm riêng khi trang chứa có ô tìm kiếm chung.
   hideSearch?: boolean;
+  // false khi nút tạo mới đã được đặt ở đầu trang.
+  showCreate?: boolean;
   extraActions?: ReactNode;
   // Khu vực thao tác đứng trước ô tìm kiếm (ví dụ chọn nhiều hồ sơ); khi có thì ô tìm kiếm được thu gọn.
   leadingActions?: ReactNode;
@@ -55,7 +58,7 @@ export function ResourceFilters({
     <div className="border-b border-border bg-white p-5">
       <div className={`flex flex-col gap-3 lg:flex-row lg:items-end ${hideSearch && !leadingActions ? "lg:justify-end" : "lg:justify-between"}`}>
         {leadingActions ? <div className="flex flex-wrap items-center gap-2 lg:items-end">{leadingActions}</div> : null}
-        <label className={hideSearch ? "hidden" : leadingActions ? "relative w-full min-w-0 lg:w-72" : "relative min-w-0 flex-1"}>
+        <label className={hideSearch ? "hidden" : leadingActions ? "relative w-full min-w-0 lg:w-72" : "relative min-w-0 flex-1 lg:max-w-[480px]"}>
           <span className="mb-1.5 block text-[13px] font-medium text-text-secondary">Tìm kiếm</span>
           <MagnifyingGlass className="pointer-events-none absolute left-3 top-[34px] h-4 w-4 text-muted" />
           <Input className="pl-9" onChange={(event) => setSearch(event.target.value)} placeholder={`Tìm kiếm ${route.title.toLowerCase()}`} value={search} />
@@ -115,7 +118,7 @@ export function ResourceFilters({
             </Dialog.Root>
           ) : null}
           {extraActions}
-          {route.primaryActionLabel && route.createPath && canCreate ? (
+          {showCreate && route.primaryActionLabel && route.createPath && canCreate ? (
             <Button asChild className="shrink-0 justify-center">
               <Link href={route.createPath as Route}>
                 <Plus size={18} />
