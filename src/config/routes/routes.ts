@@ -36,7 +36,8 @@ export type RouteMatch =
   | { type: "create"; route: RouteConfig; params: Record<string, string> }
   | { type: "edit"; route: RouteConfig; params: Record<string, string> }
   | { type: "score"; route: RouteConfig; params: Record<string, string> }
-  | { type: "matrix"; route: RouteConfig; params: Record<string, string> };
+  | { type: "matrix"; route: RouteConfig; params: Record<string, string> }
+  | { type: "revoke"; route: RouteConfig; params: Record<string, string> };
 
 export function matchRoute(path: string): RouteMatch | undefined {
   const exact = findRoute(path);
@@ -49,6 +50,8 @@ export function matchRoute(path: string): RouteMatch | undefined {
 
     const editMatch = matchTemplate(routeConfig.editPath, path);
     if (editMatch) return { type: "edit", route: routeConfig, params: editMatch };
+
+    if (routeConfig.actions?.revoke?.route === path) return { type: "revoke", route: routeConfig, params: {} };
 
     const scoreMatch = routeConfig.actions?.score?.route ? matchTemplate(routeConfig.actions.score.route, path) : undefined;
     if (scoreMatch) return { type: "score", route: routeConfig, params: scoreMatch };

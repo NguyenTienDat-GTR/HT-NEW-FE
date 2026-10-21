@@ -220,6 +220,7 @@ export const systemRouteGroup: RouteGroup = {
           permissionPrefixes: ["system.role_permission.assign.", "system.role_permission.revoke."],
           route: "/system/role-permissions/manage/:roleCode",
         },
+        revoke: { label: "Thu hồi quyền", permissionPrefixes: ["system.role_permission.revoke."], route: "/system/role-permissions/revoke" },
       },
       primaryActionLabel: "Phân quyền",
       filterLabels: ["Vai trò", "Phân hệ", "Đối tượng", "Thao tác", "Phạm vi", "Hiệu lực"],
@@ -302,6 +303,9 @@ export const systemRouteGroup: RouteGroup = {
       ],
       permissionPrefixes: ["system.account_permission.manage."],
       actionPermissionPrefixes: ["system.account_permission.manage."],
+      actions: {
+        revoke: { label: "Thu hồi quyền", permissionPrefixes: ["system.account_permission.manage."], route: "/system/account-permissions/revoke" },
+      },
       primaryActionLabel: "Phân quyền",
       filterLabels: ["Tài khoản", "Phân hệ", "Đối tượng", "Thao tác", "Phạm vi", "Hiệu lực"],
       filters: [

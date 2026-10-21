@@ -32,7 +32,7 @@ export function ResourceFormPage({
   route: RouteConfig;
   mode: ResourceFormMode;
   id?: string;
-  actionType?: "create" | "edit" | "score" | "matrix";
+  actionType?: "create" | "edit" | "score" | "matrix" | "revoke";
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -41,7 +41,7 @@ export function ResourceFormPage({
   const effectiveRoute = resolveRouteForUser(route, user);
   const effectiveAction = actionType ?? mode;
   const spec = getFormSpec(effectiveRoute, effectiveAction, user);
-  const action = effectiveAction === "score" ? effectiveRoute.actions?.score : effectiveRoute.actions?.[mode];
+  const action = effectiveAction === "score" ? effectiveRoute.actions?.score : effectiveAction === "revoke" ? effectiveRoute.actions?.revoke : effectiveRoute.actions?.[mode];
   const canOpen = canUseAction(user, action);
   const [values, setValues] = useState<Record<string, unknown>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -93,7 +93,7 @@ export function ResourceFormPage({
       return apiMutation<Record<string, unknown>>(path, method, payload);
     },
     onSuccess: async () => {
-      toast.success(mode === "create" ? "Tạo mới thành công" : "Lưu cập nhật thành công");
+      toast.success(effectiveAction === "revoke" ? "Thu hồi quyền thành công" : mode === "create" ? "Tạo mới thành công" : "Lưu cập nhật thành công");
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["resource", effectiveRoute.endpoint] }),
         queryClient.invalidateQueries({ queryKey: ["resource-detail", effectiveRoute.endpoint] }),
