@@ -3,6 +3,7 @@
 import { QrCode } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { CertificateScanDialog } from "./certificate-scan-dialog";
+import { CertificateCardGrid } from "./certificate-card-grid";
 import { ResourceListRuntime } from "@/components/common/resource/resource-list-runtime";
 import type { CertificateSigner } from "@/components/common/resource/approval-dialog";
 import type { RouteConfig } from "@/config/routes/routes";
@@ -14,6 +15,8 @@ export function CertificateResourceView({ route }: { route: RouteConfig }) {
       config={{
         moduleLabel: "Chứng nhận",
         moduleDescription: "Quản lý chứng nhận, duyệt ngoại lệ và promotion sau khi hồ sơ đã chấm điểm.",
+        // Chế độ xem thẻ / bảng (chỉ khi không nhúng trong chi tiết khóa).
+        cardView: { render: (props) => <CertificateCardGrid {...props} />, defaultMode: "card" },
         buildApprovePath,
         buildApproveBody,
         // Duyệt chứng nhận bắt buộc chọn người ký, ghi trực tiếp vào chứng nhận.

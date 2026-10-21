@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { Plus, Rows, SquaresFour } from "@phosphor-icons/react";
+import { Plus } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Tip } from "@/components/ui/tip";
 import { Panel } from "@/components/ui/panel";
@@ -33,6 +33,7 @@ import type { ResourceListRuntimeProps } from "./resource-list-types";
 import { asPageResponse } from "./resource-list-utils";
 import { ResourcePagination } from "./resource-pagination";
 import { ResourceTable } from "./resource-table";
+import { ViewModeToggle } from "./view-mode-toggle";
 import { ResourceFilters } from "./resource-toolbar";
 import { useResourceQueryState } from "./use-resource-query-state";
 
@@ -477,26 +478,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
           showCreate={Boolean(embedded)}
           extraActions={
             <>
-              {config.cardView && !embedded ? (
-                <div aria-label="Chế độ xem" className="inline-flex rounded-lg bg-surface-2 p-1" role="group">
-                  {(
-                    [
-                      ["card", "Thẻ", SquaresFour],
-                      ["table", "Bảng", Rows],
-                    ] as const
-                  ).map(([mode, label, Icon]) => (
-                    <button
-                      aria-pressed={viewMode === mode}
-                      className={`inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md px-3 text-[13px] font-semibold transition-colors ${viewMode === mode ? "bg-white text-primary shadow-sm" : "text-text-secondary hover:text-foreground"}`}
-                      key={mode}
-                      onClick={() => setViewMode(mode)}
-                      type="button"
-                    >
-                      <Icon size={15} weight={viewMode === mode ? "fill" : "regular"} /> {label}
-                    </button>
-                  ))}
-                </div>
-              ) : null}
+              {config.cardView && !embedded ? <ViewModeToggle mode={viewMode} onChange={setViewMode} /> : null}
               {saveScoresButton}
               {permissionRevokeButton}
             </>
@@ -510,7 +492,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
           <div className="border-b border-warning/30 bg-warning/10 px-4 py-2 text-xs font-medium text-foreground">{embedded.scoringHint ?? "Chỉ chấm điểm được khi khóa đang diễn ra."}</div>
         ) : null}
         {showCards && config.cardView ? (
-          config.cardView.render({ rows, route: effectiveRoute, isLoading: query.isLoading })
+          config.cardView.render({ rows, route: effectiveRoute, isLoading: query.isLoading, selection, onExportRow: canExportPdf ? (id) => exportPdf([id]) : undefined, exportingRow: exporting })
         ) : (
         <ResourceTable
           selection={selection}

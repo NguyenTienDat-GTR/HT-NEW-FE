@@ -32,6 +32,8 @@ import {serializeBaseSearch} from "@/lib/api/search";
 import {useAuthStore} from "@/lib/auth/auth-store";
 import {canUseAction, hasPermissionPrefix} from "@/lib/auth/permissions";
 import {CertificateDetailDrawer} from "@/modules/certificates/components/certificate-detail-drawer";
+import {CertificateCard} from "@/modules/certificates/components/certificate-card";
+import {ViewModeToggle, type ViewMode} from "@/components/common/resource/view-mode-toggle";
 import {cn} from "@/lib/utils";
 import {formatLeaderLevel} from "@/components/common/resource/resource-format";
 import {
@@ -512,6 +514,7 @@ function CourseTab({leaderId}: { leaderId: string }) {
 function CertificateTab({leaderId}: { leaderId: string }) {
     const user = useAuthStore((state) => state.user);
     const [viewingCode, setViewingCode] = useState<string | null>(null);
+    const [viewMode, setViewMode] = useState<ViewMode>("card");
     // Admin giáo hạt / giáo xứ xem chứng nhận của huynh trưởng trong phạm vi quản lý (mọi cấp khóa, kể cả đã thu hồi)
     // ngay trong hồ sơ; các tài khoản khác dùng danh sách chứng nhận theo quyền ở menu Chứng nhận.
     const viaProfilePermission = hasPermissionPrefix(user, "organization.leader_certificate.read.");
@@ -525,6 +528,20 @@ function CertificateTab({leaderId}: { leaderId: string }) {
     return (
         <>
             <RelatedPanel
+                headerAction={<ViewModeToggle mode={viewMode} onChange={setViewMode}/>}
+                view={viewMode === "card" ? (
+                    <ul className="grid gap-5 p-5 md:grid-cols-2 xl:grid-cols-3">
+                        {(query.data ?? []).map((row, index) => (
+                            <li key={row.certificateCode ?? index}>
+                                <CertificateCard
+                                    data={row}
+                                    onOpen={row.certificateCode ? () => setViewingCode(row.certificateCode ?? null) : undefined}
+                                    showHolder={false}
+                                />
+                            </li>
+                        ))}
+                    </ul>
+                ) : undefined}
                 columns={["Chứng nhận", "Khóa học", "Ngày cấp", "Trạng thái", "Người ký", "Xem"]}
                 error={query.isError ? getApiErrorMessage(query.error) : undefined}
                 loading={query.isLoading}
@@ -628,7 +645,12 @@ function RelatedPanel({
                           rows,
                           loading,
                           error,
+                          headerAction,
+                          view,
                       }: {
+    headerAction?: ReactNode;
+    // Thay bảng bằng chế độ xem khác (vd thẻ) khi có dữ liệu.
+    view?: ReactNode;
     title: string;
     columns: string[];
     rows: unknown[][];
@@ -637,8 +659,9 @@ function RelatedPanel({
 }) {
     return (
         <Panel className="overflow-hidden">
-            <div className="border-b border-border p-5">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-5">
                 <h3 className="text-base font-semibold text-foreground">{title}</h3>
+                {headerAction}
             </div>
             {loading ? (
                 <div className="space-y-3 p-5">
@@ -650,7 +673,8 @@ function RelatedPanel({
             {error ? <p className="p-5 text-sm text-danger">{error}</p> : null}
             {!loading && !error && rows.length === 0 ?
                 <p className="p-5 text-sm text-muted">Chưa có dữ liệu liên quan.</p> : null}
-            {!loading && !error && rows.length ? (
+            {!loading && !error && rows.length && view ? view : null}
+            {!loading && !error && rows.length && !view ? (
                 <div className="max-w-full overflow-x-auto">
                     <table className="w-full min-w-[760px] border-separate border-spacing-0 text-left text-sm">
                         <thead>

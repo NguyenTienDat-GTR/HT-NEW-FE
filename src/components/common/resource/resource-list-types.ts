@@ -30,9 +30,19 @@ export type ResourceListModuleConfig = {
   pdfExportPath?: string;
   // Chế độ xem dạng thẻ (ngoài bảng): trang danh sách có công tắc Bảng / Thẻ, bỏ qua khi nhúng trong trang khác.
   cardView?: {
-    render: (props: { rows: Record<string, unknown>[]; route: RouteConfig; isLoading: boolean }) => ReactNode;
+    render: (props: CardViewProps) => ReactNode;
     defaultMode?: "table" | "card";
   };
+};
+
+// Dữ liệu và thao tác chung mà chế độ thẻ nhận từ danh sách (chọn nhiều, xuất PDF một dòng).
+export type CardViewProps = {
+  rows: Record<string, unknown>[];
+  route: RouteConfig;
+  isLoading: boolean;
+  selection?: { selectedIds: string[]; selectableIds: string[]; onToggle: (id: string) => void; onToggleAll: (on: boolean) => void };
+  onExportRow?: (id: string) => void;
+  exportingRow?: boolean;
 };
 
 export type ResourceListRuntimeProps = {
