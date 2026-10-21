@@ -26,8 +26,8 @@ const certificateFilters: RouteFilterConfig[] = [
   },
   deaneryUnitFilter("leader.parish.deanery.id"),
   parishUnitFilter("leader.parish.id", "leader.parish.deanery.id"),
-  // Năm cấp: 10 năm gần nhất, tính lại mỗi lần hiển thị nên tự tăng khi sang năm mới.
-  { key: "issueDate:year", label: "Năm cấp", type: "select", recentYears: 10 },
+  // Năm cấp: lấy các năm có chứng nhận thật trong DB (trong phạm vi người xem), nên không mất năm cũ và tự có năm mới.
+  { key: "issueDate:year", label: "Năm cấp", type: "select", optionsEndpoint: "/certificates/issue-years", optionValue: "year", optionLabel: "year" },
 ];
 
 export const certificateRouteGroup: RouteGroup = {

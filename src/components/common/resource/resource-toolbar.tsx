@@ -11,7 +11,7 @@ import { Tip } from "@/components/ui/tip";
 import { Input } from "@/components/ui/input";
 import { apiFetch, type PageResponse } from "@/lib/api/client";
 import type { RouteConfig } from "@/config/routes/routes";
-import { recentYearOptions, type RouteFilterConfig } from "@/config/routes/route-config";
+import type { RouteFilterConfig } from "@/config/routes/route-config";
 import { optionFromRow, rowsFromResponse } from "@/components/form/resource-form/api-utils";
 import { formatPermissionTaxonomyValue, permissionTaxonomyKindFromFilter } from "./permission-taxonomy-labels";
 
@@ -147,7 +147,7 @@ function FilterControl({
   });
 
   const apiOptions = filterRowsFromResponse(query.data, filter.optionCollection).map((row) => optionFromRow(row, filter.optionValue, filter.optionLabel));
-  const options = localizeFilterOptions(filter, filter.recentYears ? recentYearOptions(filter.recentYears) : (filter.options ?? apiOptions));
+  const options = localizeFilterOptions(filter, filter.options ?? apiOptions);
   const hasExplicitAllOption = options.some((option) => option.value === "all");
 
   if (filter.type === "text") {
