@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Avatar, Badge } from "@/components/common/resource/resource-format";
 import { apiFetch, getApiErrorMessage } from "@/lib/api/client";
+import { cn } from "@/lib/utils";
 import { formatDate } from "@/modules/leaders/components/leader-detail-utils";
 
 type UnitKind = "dioceses" | "deaneries" | "parishes";
@@ -10,6 +11,7 @@ type UnitKind = "dioceses" | "deaneries" | "parishes";
 type Seat = {
   positionCode: string;
   positionName: string;
+  chaplain?: boolean;
   assigned: boolean;
   assignmentId?: string;
   leaderHolyName?: string | null;
@@ -41,7 +43,7 @@ export function ExecutiveBoardSection({ kind, unitId }: { kind: UnitKind; unitId
     <section className="rounded-[12px] border border-border bg-white p-4 shadow-sm">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-xs font-semibold uppercase text-muted">Ban điều hành</h2>
-        {query.data ? <span className="text-xs text-muted">{assignedCount}/{seats.length} chức vụ đã phân công</span> : null}
+        {query.data ? <span className="text-xs text-muted">{assignedCount}/{seats.length} vị trí đã có người</span> : null}
       </div>
       {query.isLoading ? <div className="mt-3 h-32 rounded-[10px] bg-surface-2 motion-safe:animate-pulse" /> : null}
       {query.isError ? <p className="mt-3 text-sm text-danger">{getApiErrorMessage(query.error)}</p> : null}
@@ -62,10 +64,10 @@ function SeatCard({ seat, showParish, showDeanery }: { seat: Seat; showParish: b
   const unitLine = [showParish ? seat.leaderParishName : null, showDeanery ? seat.leaderDeaneryName : null].filter(Boolean).join(" · ");
 
   return (
-    <article className="flex flex-col gap-3 rounded-[10px] border border-border bg-surface-1/60 p-3">
+    <article className={cn("flex flex-col gap-3 rounded-[10px] border p-3", seat.chaplain ? "border-primary/40 bg-primary/5 md:col-span-2" : "border-border bg-surface-1/60")}>
       <div className="flex items-center justify-between gap-2">
         <h3 className="text-sm font-semibold text-foreground">{seat.positionName}</h3>
-        <Badge tone={seat.assigned ? "success" : "neutral"}>{seat.assigned ? "Đã phân công" : "Chưa phân công"}</Badge>
+        <Badge tone={seat.assigned ? "success" : "neutral"}>{seat.assigned ? (seat.chaplain ? "Đã cập nhật" : "Đã phân công") : seat.chaplain ? "Chưa cập nhật" : "Chưa phân công"}</Badge>
       </div>
       {seat.assigned ? (
         <>
@@ -76,15 +78,17 @@ function SeatCard({ seat, showParish, showDeanery }: { seat: Seat; showParish: b
               {unitLine ? <p className="truncate text-xs text-muted">{unitLine}</p> : null}
             </div>
           </div>
+          {seat.chaplain ? null : (
           <dl className="grid gap-1 text-xs">
             <ContactRow label="Email" value={seat.leaderEmail} />
             <ContactRow label="Số điện thoại" value={seat.leaderPhoneNumber} />
             <ContactRow label="Bắt đầu" value={seat.startDate ? formatDate(seat.startDate) : null} />
             <ContactRow label="Kết thúc" value={seat.endDate ? formatDate(seat.endDate) : "Chưa xác định"} />
           </dl>
+          )}
         </>
       ) : (
-        <p className="text-sm text-muted">Chưa có huynh trưởng được phân công.</p>
+        <p className="text-sm text-muted">{seat.chaplain ? "Chưa cập nhật linh mục tuyên úy của đơn vị." : "Chưa có huynh trưởng được phân công."}</p>
       )}
     </article>
   );

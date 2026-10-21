@@ -45,19 +45,23 @@ function PositionForm({ target, onClose }: { target: PositionFormTarget; onClose
   const detailQuery = useQuery({
     queryKey: ["resource-detail", "/positions", editing ? target.id : null],
     enabled: editing,
-    queryFn: () => apiFetch<{ positionName?: string; positionType?: string }>(`/positions/${encodeURIComponent(editing ? target.id : "")}`),
+    queryFn: () => apiFetch<{ positionName?: string; positionType?: string; displayOrder?: number }>(`/positions/${encodeURIComponent(editing ? target.id : "")}`),
   });
   const [name, setName] = useState<string | undefined>();
   const [type, setType] = useState<string | undefined>();
+  const [order, setOrder] = useState<string | undefined>();
 
   const currentName = name ?? detailQuery.data?.positionName ?? "";
   // Chỉ có một cấp được phép thì chọn sẵn cấp đó.
   const currentType = type ?? detailQuery.data?.positionType ?? (allowedTypes.length === 1 ? allowedTypes[0]?.value : undefined) ?? "";
+  // Để trống thì BE xếp cuối cấp; linh mục tuyên úy luôn là thứ tự 0 nên chức vụ bắt đầu từ 1.
+  const currentOrder = order ?? (detailQuery.data?.displayOrder !== undefined ? String(detailQuery.data.displayOrder) : "");
+  const orderInvalid = currentOrder !== "" && (!Number.isInteger(Number(currentOrder)) || Number(currentOrder) < 1);
   const typeAllowed = allowedTypes.some((item) => item.value === currentType);
 
   const mutation = useMutation({
     mutationFn: () => {
-      const payload = { positionName: currentName.trim(), positionType: currentType };
+      const payload = { positionName: currentName.trim(), positionType: currentType, displayOrder: currentOrder === "" ? undefined : Number(currentOrder) };
       return editing ? apiMutation(`/positions/${encodeURIComponent(target.id)}`, "PUT", payload) : apiMutation("/positions", "POST", payload);
     },
     onSuccess: async () => {
@@ -116,12 +120,26 @@ function PositionForm({ target, onClose }: { target: PositionFormTarget; onClose
             ))}
           </div>
         </fieldset>
+        <label className="block">
+          <span className="mb-1 block text-xs font-semibold text-foreground">Thứ tự hiển thị</span>
+          <Input
+            disabled={editing && detailQuery.isLoading}
+            inputMode="numeric"
+            min={1}
+            onChange={(event) => setOrder(event.target.value)}
+            placeholder="Để trống để xếp cuối cùng"
+            type="number"
+            value={currentOrder}
+          />
+          <span className="mt-1 block text-xs text-muted">Bắt đầu từ 1; linh mục tuyên úy luôn đứng đầu (thứ tự 0).</span>
+          {orderInvalid ? <span className="mt-1 block text-xs text-danger">Thứ tự phải là số nguyên từ 1 trở lên.</span> : null}
+        </label>
       </div>
       <div className="mt-5 flex justify-end gap-3">
         <Button onClick={onClose} type="button" variant="outline">
           Hủy
         </Button>
-        <Button disabled={!currentName.trim() || !typeAllowed} loading={mutation.isPending} onClick={() => mutation.mutate()} type="button">
+        <Button disabled={!currentName.trim() || !typeAllowed || orderInvalid} loading={mutation.isPending} onClick={() => mutation.mutate()} type="button">
           {editing ? "Lưu cập nhật" : "Tạo mới"}
         </Button>
       </div>

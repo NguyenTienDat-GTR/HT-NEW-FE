@@ -5,10 +5,9 @@ import { UsersThree, X } from "@phosphor-icons/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { rowsFromResponse } from "@/components/form/resource-form/api-utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { apiFetch, apiMutation, getApiErrorMessage, type PageResponse } from "@/lib/api/client";
+import { apiFetch, apiMutation, getApiErrorMessage } from "@/lib/api/client";
 import { useAuthStore, type AuthUser } from "@/lib/auth/auth-store";
 import { hasPermission } from "@/lib/auth/permissions";
 import { LeaderPickerModal, leaderDisplayName, type PickedLeader } from "./leader-picker-modal";
@@ -16,6 +15,13 @@ import { LeaderPickerModal, leaderDisplayName, type PickedLeader } from "./leade
 // Phân công không sửa được (giữ lịch sử nhiệm kì): chỉ có modal tạo mới.
 type AssignmentFormTarget = { mode: "create" };
 type UnitLevel = "DIOCESE" | "DEANERY" | "PARISH";
+type BoardSeat = { positionCode: string; positionName: string; chaplain: boolean; assigned: boolean };
+
+// Ngày hiện tại theo giờ máy (YYYY-MM-DD) làm ngày bắt đầu mặc định.
+function todayIso() {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+}
 
 const LEVEL_LABELS: Record<UnitLevel, string> = { DIOCESE: "Giáo phận", DEANERY: "Giáo hạt", PARISH: "Giáo xứ" };
 
@@ -44,12 +50,13 @@ function AssignmentForm({ onClose }: { onClose: () => void }) {
   const scope = ownCreateScope(user);
   const unitType = scope?.unitType;
 
-  const positionsQuery = useQuery({
-    queryKey: ["field-options", "assignment-positions", unitType],
-    enabled: Boolean(unitType),
-    queryFn: () => apiFetch<PageResponse<Record<string, unknown>>>("/positions?page=0&size=100&status=true"),
+  // Ban điều hành hiện tại của đơn vị: chỉ cho chọn chức vụ đang hoạt động và chưa có người được phân công (bỏ mục tuyên úy).
+  const boardQuery = useQuery({
+    queryKey: ["executive-board-seats", unitType, scope?.unitId],
+    enabled: Boolean(unitType && scope?.unitId),
+    queryFn: () => apiFetch<BoardSeat[]>(`/executive-board/boards/${unitType}/${encodeURIComponent(String(scope?.unitId))}`),
   });
-  const positions = rowsFromResponse(positionsQuery.data).filter((row) => row.positionType === unitType && row.status !== false);
+  const positions = (boardQuery.data ?? []).filter((seat) => !seat.chaplain && !seat.assigned);
 
   const [leader, setLeader] = useState<PickedLeader | null>(null);
   const [positionCode, setPositionCode] = useState<string | undefined>();
@@ -60,7 +67,7 @@ function AssignmentForm({ onClose }: { onClose: () => void }) {
   const currentLeaderId = leader?.id ?? "";
   const currentLeaderName = leader ? leaderDisplayName(leader) : "";
   const currentPosition = positionCode ?? "";
-  const currentStart = startDate ?? "";
+  const currentStart = startDate ?? todayIso();
   const currentEnd = endDate ?? "";
   const dateInvalid = Boolean(currentStart && currentEnd && currentEnd < currentStart);
   const missingUnit = !scope || !scope.unitId;
@@ -134,10 +141,10 @@ function AssignmentForm({ onClose }: { onClose: () => void }) {
             onChange={(event) => setPositionCode(event.target.value)}
             value={currentPosition}
           >
-            <option value="">Chọn chức vụ</option>
+            <option value="">{positions.length ? "Chọn chức vụ" : "Không còn chức vụ trống"}</option>
             {positions.map((row) => (
-              <option key={String(row.positionCode)} value={String(row.positionCode)}>
-                {String(row.positionName)}
+              <option key={row.positionCode} value={row.positionCode}>
+                {row.positionName}
               </option>
             ))}
           </select>

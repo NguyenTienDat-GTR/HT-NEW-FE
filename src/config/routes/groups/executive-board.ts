@@ -1,11 +1,6 @@
 import { Crown, IdentificationCard } from "@phosphor-icons/react";
 import { route, type RouteGroup } from "../route-config";
 
-function assignmentYearOptions() {
-  const current = new Date().getFullYear();
-  return Array.from({ length: 12 }, (_, index) => String(current + 1 - index)).map((year) => ({ value: year, label: `Năm ${year}` }));
-}
-
 export const executiveBoardRouteGroup: RouteGroup = {
     moduleName: "executive-board",
     label: "Ban điều hành",
@@ -23,8 +18,9 @@ export const executiveBoardRouteGroup: RouteGroup = {
         idField: "positionCode",
         kind: "positions",
         icon: Crown,
-        columns: ["positionName", "positionType", "status"],
+        columns: ["displayOrder", "positionName", "positionType", "status"],
         searchFields: ["positionName"],
+        sortFields: { displayOrder: "displayOrder" },
         filters: [],
         permissionPrefixes: ["organization.position.read."],
         actionPermissionPrefixes: ["organization.position.create.", "organization.position.update.", "organization.position.toggle."],
@@ -40,8 +36,10 @@ export const executiveBoardRouteGroup: RouteGroup = {
         kind: "executive-board",
         icon: IdentificationCard,
         columns: ["leaderFullName", "positionName", "startDate", "endDate", "status"],
-        // Lọc theo năm: phân công có khoảng ngày bắt đầu - kết thúc giao với năm được chọn.
-        filters: [{ key: "startDate+endDate:overlapYear", label: "Năm", type: "select", options: assignmentYearOptions() }],
+        // Lọc theo năm: phân công có khoảng ngày bắt đầu - kết thúc giao với năm được chọn; danh sách năm lấy từ chính các phân công.
+        filters: [
+          { key: "startDate+endDate:overlapYear", label: "Năm", type: "select", optionsEndpoint: "/executive-board/assignments/years", optionValue: "year", optionLabel: "label" },
+        ],
         // Phân công mở bằng modal trên trang danh sách (?create=1). Không sửa phân công để giữ lịch sử nhiệm kì:
         // muốn đổi người thì vô hiệu hóa phân công cũ rồi tạo phân công mới.
         createPath: "/executive-board/assignments?create=1",
@@ -50,7 +48,7 @@ export const executiveBoardRouteGroup: RouteGroup = {
         // Tìm theo thuộc tính entity (leaderFullName/positionName chỉ có ở response): họ tên, tên thánh, chức vụ.
         searchFields: ["leader.lastName+leader.firstName", "leader.holyName", "position.positionName"],
         permissionPrefixes: ["organization.executive_board.read.", "organization.executive_board_assignment.read."],
-        actionPermissionPrefixes: ["organization.executive_board.create.", "organization.executive_board.update.", "organization.executive_board_assignment.create.", "organization.executive_board_assignment.update.", "organization.executive_board_assignment.toggle."],
+        actionPermissionPrefixes: ["organization.executive_board_assignment.create.", "organization.executive_board_assignment.toggle."],
         primaryActionLabel: "Phân công",
         workflowHint: "endDate không được trước startDate; mỗi chức vụ active-current chỉ có một leader trong một unit.",
       }),

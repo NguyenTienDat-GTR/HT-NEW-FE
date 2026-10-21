@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { apiFetch, getApiErrorMessage } from "@/lib/api/client";
 import type { RouteConfig } from "@/config/routes/routes";
 import { useEmbeddedResource } from "./embedded-resource-context";
-import { ExecutiveBoardSection } from "@/modules/executive-board/components/executive-board-section";
+import { UnitDetail } from "@/modules/organizations/components/unit-detail";
 import { CertificateDetailDrawer } from "@/modules/certificates/components/certificate-detail-drawer";
 import { ResourceCell, columnLabels, formatLeaderLevel } from "./resource-format";
 
@@ -119,7 +119,8 @@ function GenericDetailDrawer({ id, onClose, route }: { id?: string | null; onClo
             {query.isError ? <div className="rounded-[10px] border border-danger/30 bg-danger/5 p-3 text-sm text-danger">{getApiErrorMessage(query.error)}</div> : null}
             {row && route.kind === "positions" ? <SectionedDetail row={row} sections={POSITION_SECTIONS} /> : null}
             {row && route.kind === "executive-board" ? <SectionedDetail row={row} sections={ASSIGNMENT_SECTIONS} /> : null}
-            {row && route.kind !== "positions" && route.kind !== "executive-board" ? (
+            {row && (route.kind === "dioceses" || route.kind === "deaneries" || route.kind === "parishes") ? <UnitDetail id={String(id)} kind={route.kind} row={row} /> : null}
+            {row && route.kind !== "positions" && route.kind !== "executive-board" && !isUnitKind ? (
               <div className="space-y-3">
                 <dl className="grid auto-rows-min grid-cols-1 gap-3 md:grid-cols-2">
                   {keys.map((key) => (
@@ -137,9 +138,6 @@ function GenericDetailDrawer({ id, onClose, route }: { id?: string | null; onClo
                     </div>
                   ))}
                 </dl>
-                {route.kind === "dioceses" || route.kind === "deaneries" || route.kind === "parishes" ? (
-                  <ExecutiveBoardSection kind={route.kind} unitId={String(id)} />
-                ) : null}
                 {route.kind === "leaders" ? (
                   <LeaderRankHistory
                     error={rankHistoryQuery.isError ? getApiErrorMessage(rankHistoryQuery.error) : undefined}
@@ -175,6 +173,7 @@ const POSITION_SECTIONS: DetailSection[] = [
     fields: [
       { key: "positionName", label: "Tên chức vụ", wide: true },
       { key: "positionType", label: "Cấp áp dụng" },
+      { key: "displayOrder", label: "Thứ tự hiển thị" },
       { key: "status", label: "Trạng thái" },
     ],
   },
