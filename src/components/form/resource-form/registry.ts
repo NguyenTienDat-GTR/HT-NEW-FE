@@ -10,7 +10,7 @@ import { isSuperAdmin } from "@/lib/auth/permissions";
 
 const specs = [...organizationFormSpecs, ...personnelFormSpecs, ...trainingFormSpecs, ...systemFormSpecs, ...workflowFormSpecs];
 
-export function getFormSpec(route: RouteConfig, actionType: "create" | "edit" | "score" | "matrix" = "create", user?: AuthUser | null): ResourceFormSpec | undefined {
+export function getFormSpec(route: RouteConfig, actionType: "create" | "edit" | "score" | "matrix" | "revoke" = "create", user?: AuthUser | null): ResourceFormSpec | undefined {
   const matchingSpecs = specs.filter((spec) => isVisibleForUser(spec, user));
   const orderedSpecs = isSuperAdmin(user)
     ? [...matchingSpecs.filter((spec) => spec.superAdminOnly), ...matchingSpecs.filter((spec) => !spec.superAdminOnly)]

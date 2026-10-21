@@ -55,7 +55,7 @@ export type ResourceFormMode = "create" | "edit";
 export type ResourceFormSpec = {
   kind: ResourceKind;
   moduleName?: string;
-  actionType?: "create" | "edit" | "score" | "matrix";
+  actionType?: "create" | "edit" | "score" | "matrix" | "revoke";
   title?: string;
   createTitle?: string;
   editTitle?: string;

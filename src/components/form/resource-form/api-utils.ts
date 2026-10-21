@@ -1,4 +1,5 @@
 import type { PageResponse } from "@/lib/api/client";
+import { formatPermissionTaxonomyValue } from "@/components/common/resource/permission-taxonomy-labels";
 import type { Option } from "./types";
 
 export function rowsFromResponse<T extends Record<string, unknown>>(data: PageResponse<T> | T[] | undefined): T[] {
@@ -20,7 +21,12 @@ export function optionFromRow(row: Record<string, unknown>, valueKey = "id", lab
   return {
     value: String(value ?? ""),
     label: String(label ?? ""),
-    group: moduleCode && resourceCode ? `${moduleCode} / ${resourceCode}` : moduleCode,
+    // Nhóm quyền theo phân hệ / đối tượng, hiển thị bằng tiếng Việt.
+    group: moduleCode && resourceCode
+      ? `${formatPermissionTaxonomyValue("module", moduleCode)} / ${formatPermissionTaxonomyValue("resource", resourceCode)}`
+      : moduleCode
+        ? formatPermissionTaxonomyValue("module", moduleCode)
+        : undefined,
     disabled: row.disabled === true,
     disabledReason: typeof row.disabledReason === "string" ? row.disabledReason : undefined,
   };

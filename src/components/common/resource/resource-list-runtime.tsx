@@ -2,6 +2,7 @@
 
 import { keepPreviousData, useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Route } from "next";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
@@ -89,6 +90,14 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
       });
   const rows = rowsFromResponse(query.data);
   const detailId = searchParams.get("detail");
+  // Thu hồi quyền hàng loạt của vai trò / tài khoản: trang riêng giống trang phân quyền.
+  const permissionRevokeAction = effectiveRoute.kind === "role-permissions" || effectiveRoute.kind === "account-permissions" ? effectiveRoute.actions?.revoke : undefined;
+  const permissionRevokeButton =
+    permissionRevokeAction?.route && !embedded && canUseAction(user, permissionRevokeAction) ? (
+      <Button asChild className="shrink-0 justify-center" variant="outline">
+        <Link href={permissionRevokeAction.route as Route}>{permissionRevokeAction.label}</Link>
+      </Button>
+    ) : null;
   const positionEditId = searchParams.get("edit");
   const modalFormTarget = positionEditId ? ({ mode: "edit", id: positionEditId } as const) : searchParams.get("create") ? ({ mode: "create" } as const) : null;
   const positionFormTarget = effectiveRoute.kind === "positions" ? modalFormTarget : null;
@@ -425,7 +434,12 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
           resetFilters={queryState.resetFilters}
           canCreate={canCreate}
           hideSearch={Boolean(embedded)}
-          extraActions={saveScoresButton}
+          extraActions={
+            <>
+              {saveScoresButton}
+              {permissionRevokeButton}
+            </>
+          }
           leadingActions={bulkActions || exportActions || config.toolbarActions ? <>{config.toolbarActions}{bulkActions}{exportActions}</> : scoreStats}
         />
         {scoreEntryEnabled && embedded?.scoreLocked === true ? (

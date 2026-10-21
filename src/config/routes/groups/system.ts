@@ -195,12 +195,13 @@ export const systemRouteGroup: RouteGroup = {
       path: "/system/role-permissions",
       moduleName: "system.role-permission",
       title: "Phân quyền vai trò",
-      subtitle: "Grant hoặc revoke permission cho role được phép quản lý.",
+      subtitle: "Phân quyền hoặc thu hồi quyền cho các vai trò thuộc phạm vi quản lý.",
       endpoint: "/system/role-permissions",
       idField: "id",
       kind: "role-permissions",
       icon: LockKey,
-      columns: ["roleCode", "permissionCode", "effect", "assignedAt", "expiresAt"],
+      columns: ["roleName", "permissionName", "effect", "assignedAt", "expiresAt"],
+      sortFields: { roleName: "role.roleName", permissionName: "permission.permissionName" },
       searchFields: [
         "role.roleCode",
         "role.roleName",
@@ -219,8 +220,9 @@ export const systemRouteGroup: RouteGroup = {
           permissionPrefixes: ["system.role_permission.assign.", "system.role_permission.revoke."],
           route: "/system/role-permissions/manage/:roleCode",
         },
+        revoke: { label: "Thu hồi quyền", permissionPrefixes: ["system.role_permission.revoke."], route: "/system/role-permissions/revoke" },
       },
-      primaryActionLabel: "Gán nhiều quyền",
+      primaryActionLabel: "Phân quyền",
       filterLabels: ["Vai trò", "Phân hệ", "Đối tượng", "Thao tác", "Phạm vi", "Hiệu lực"],
       filters: [
         {
@@ -271,20 +273,24 @@ export const systemRouteGroup: RouteGroup = {
           key: "effect",
           label: "Hiệu lực",
           type: "select",
-          options: ["ALLOW", "DENY"].map((value) => ({ value, label: value })),
+          options: [
+            { value: "ALLOW", label: "Cho phép" },
+            { value: "DENY", label: "Từ chối" },
+          ],
         },
       ],
     }),
     route({
       path: "/system/account-permissions",
       moduleName: "system.account-permission",
-      title: "Quyền riêng tài khoản",
-      subtitle: "ALLOW hoặc DENY trực tiếp theo tài khoản.",
+      title: "Phân quyền tài khoản",
+      subtitle: "Phân quyền hoặc thu hồi quyền trực tiếp cho tài khoản.",
       endpoint: "/system/account-permissions",
       idField: "id",
       kind: "account-permissions",
       icon: Medal,
-      columns: ["username", "permissionCode", "effect", "reason", "expiresAt"],
+      columns: ["username", "permissionName", "effect", "reason", "expiresAt"],
+      sortFields: { username: "account.username", permissionName: "permission.permissionName" },
       searchFields: [
         "account.username",
         "permission.permissionCode",
@@ -297,7 +303,10 @@ export const systemRouteGroup: RouteGroup = {
       ],
       permissionPrefixes: ["system.account_permission.manage."],
       actionPermissionPrefixes: ["system.account_permission.manage."],
-      primaryActionLabel: "Thêm quyền riêng",
+      actions: {
+        revoke: { label: "Thu hồi quyền", permissionPrefixes: ["system.account_permission.manage."], route: "/system/account-permissions/revoke" },
+      },
+      primaryActionLabel: "Phân quyền",
       filterLabels: ["Tài khoản", "Phân hệ", "Đối tượng", "Thao tác", "Phạm vi", "Hiệu lực"],
       filters: [
         {

@@ -59,17 +59,17 @@ export function resolveRouteForUser(route: RouteConfig, user: AuthUser | null): 
     case "role-permissions":
       return {
         ...route,
-        subtitle: "Gán ALLOW/DENY cho một vai trò bằng danh sách checkbox.",
-        columns: ["roleCode", "permissionCode", "effect", "assignedAt", "expiresAt"],
-        primaryActionLabel: "Gán nhiều quyền",
+        subtitle: "Phân quyền hoặc thu hồi quyền cho vai trò do super-admin quản lý.",
+        columns: ["roleName", "permissionName", "effect", "assignedAt", "expiresAt"],
+        primaryActionLabel: "Phân quyền",
         filters: rolePermissionFiltersForUser(user),
       };
     case "account-permissions":
       return {
         ...route,
-        subtitle: "Gán ALLOW/DENY trực tiếp cho tài khoản hợp lệ bằng checkbox.",
-        columns: ["username", "permissionCode", "effect", "reason", "expiresAt"],
-        primaryActionLabel: "Thêm nhiều quyền riêng",
+        subtitle: "Phân quyền hoặc thu hồi quyền trực tiếp cho tài khoản do super-admin tạo.",
+        columns: ["username", "permissionName", "effect", "reason", "expiresAt"],
+        primaryActionLabel: "Phân quyền",
         filters: accountPermissionFilters(),
       };
     default:

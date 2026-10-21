@@ -65,6 +65,7 @@ export function WorkspacePage({ segments }: { segments: string[] }) {
     content = <CourseDetailPage id={match.params.id} route={route} />;
   } else if (match.type === "create") content = <ResourceFormPage mode="create" route={route} />;
   else if (match.type === "edit") content = <ResourceFormPage id={match.params.id} mode="edit" route={route} />;
+  else if (match.type === "revoke") content = <ResourceFormPage actionType="revoke" mode="create" route={route} />;
   else if (match.type === "score") content = <ResourceFormPage actionType="score" id={match.params.id} mode="edit" route={route} />;
   else if (route.kind === "dashboard") content = <DashboardView />;
   else if (route.kind === "analytics") content = <AnalyticsView />;
