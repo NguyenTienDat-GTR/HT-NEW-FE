@@ -2,6 +2,7 @@
 
 import * as Dialog from "@radix-ui/react-dialog";
 import { X } from "@phosphor-icons/react";
+import type { ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { apiFetch, getApiErrorMessage } from "@/lib/api/client";
@@ -101,6 +102,8 @@ function GenericDetailDrawer({ id, onClose, route }: { id?: string | null; onClo
               <Dialog.Description className="mt-1 text-sm text-muted">
                 {route.kind === "participations"
                   ? "Chi tiết hồ sơ tham dự"
+                  : route.kind === "course-types"
+                    ? typeof row?.typeName === "string" ? row.typeName : "Chi tiết loại khóa"
                   : route.kind === "positions"
                     ? typeof row?.positionName === "string" ? row.positionName : "Chi tiết chức vụ"
                     : route.kind === "executive-board"
@@ -118,9 +121,11 @@ function GenericDetailDrawer({ id, onClose, route }: { id?: string | null; onClo
             {query.isLoading ? <div className="h-40 rounded-[12px] border border-border bg-white motion-safe:animate-pulse" /> : null}
             {query.isError ? <div className="rounded-[10px] border border-danger/30 bg-danger/5 p-3 text-sm text-danger">{getApiErrorMessage(query.error)}</div> : null}
             {row && route.kind === "positions" ? <SectionedDetail row={row} sections={POSITION_SECTIONS} /> : null}
+            {row && route.kind === "participations" ? <SectionedDetail row={row} sections={PARTICIPATION_SECTIONS} /> : null}
+            {row && route.kind === "course-types" ? <SectionedDetail row={row} sections={COURSE_TYPE_SECTIONS} /> : null}
             {row && route.kind === "executive-board" ? <SectionedDetail row={row} sections={ASSIGNMENT_SECTIONS} /> : null}
             {row && (route.kind === "dioceses" || route.kind === "deaneries" || route.kind === "parishes") ? <UnitDetail id={String(id)} kind={route.kind} row={row} /> : null}
-            {row && route.kind !== "positions" && route.kind !== "executive-board" && !isUnitKind ? (
+            {row && route.kind !== "positions" && route.kind !== "executive-board" && route.kind !== "participations" && route.kind !== "course-types" && !isUnitKind ? (
               <div className="space-y-3">
                 <dl className="grid auto-rows-min grid-cols-1 gap-3 md:grid-cols-2">
                   {keys.map((key) => (
@@ -154,8 +159,16 @@ function GenericDetailDrawer({ id, onClose, route }: { id?: string | null; onClo
   );
 }
 
-type DetailField = { key: string; label: string; wide?: boolean; value?: (row: Record<string, unknown>) => unknown };
-type DetailSection = { title: string; fields: DetailField[] };
+type DetailField = {
+  key: string;
+  label: string;
+  wide?: boolean;
+  value?: (row: Record<string, unknown>) => unknown;
+  // Hiển thị tùy biến (bỏ qua ResourceCell) và điều kiện hiển thị của riêng trường.
+  render?: (row: Record<string, unknown>) => ReactNode;
+  visible?: (row: Record<string, unknown>, embedded: boolean) => boolean;
+};
+type DetailSection = { title: string; fields: DetailField[]; visible?: (row: Record<string, unknown>) => boolean };
 
 const AUDIT_SECTION: DetailSection = {
   title: "Lịch sử ghi nhận",
@@ -208,21 +221,131 @@ const ASSIGNMENT_SECTIONS: DetailSection[] = [
   AUDIT_SECTION,
 ];
 
+const hasNumber = (value: unknown) => typeof value === "number";
+
+// Loại khóa huấn luyện: gom theo ý nghĩa, ẩn mã định danh (UUID), khóa tiên quyết hiển thị bằng tên.
+const COURSE_TYPE_SECTIONS: DetailSection[] = [
+  {
+    title: "Thông tin loại khóa",
+    fields: [
+      { key: "typeName", label: "Tên loại khóa", wide: true },
+      { key: "managementUnitType", label: "Cấp quản lý" },
+      { key: "certificateShortCode", label: "Mã viết tắt chứng chỉ", visible: (row) => hasText(row.certificateShortCode) },
+      { key: "status", label: "Trạng thái" },
+    ],
+  },
+  {
+    title: "Điều kiện tham dự",
+    fields: [
+      { key: "requiredCurrentLevel", label: "Cấp hiện tại yêu cầu", render: (row) => (hasText(row.requiredCurrentLevel) ? <ResourceCell column="requiredCurrentLevel" displayMode="detail" row={row} value={row.requiredCurrentLevel} /> : "Không yêu cầu") },
+      { key: "requiredMinAge", label: "Tuổi tối thiểu", render: (row) => (hasNumber(row.requiredMinAge) ? `${row.requiredMinAge} tuổi` : "Không yêu cầu") },
+      { key: "requiredYearsActive", label: "Số năm sinh hoạt", render: (row) => (hasNumber(row.requiredYearsActive) ? `${row.requiredYearsActive} năm` : "Không yêu cầu") },
+    ],
+  },
+  {
+    title: "Khóa tiên quyết và nâng cấp",
+    fields: [
+      { key: "prerequisiteTypeName", label: "Khóa tiên quyết", render: (row) => (hasText(row.prerequisiteTypeName) ? String(row.prerequisiteTypeName) : "Không có") },
+      {
+        key: "maxYearsAfterPrerequisite",
+        label: "Thời hạn tối đa sau khóa tiên quyết",
+        visible: (row) => hasText(row.prerequisiteTypeName),
+        render: (row) => (hasNumber(row.maxYearsAfterPrerequisite) ? `${row.maxYearsAfterPrerequisite} năm` : "Không giới hạn"),
+      },
+      {
+        key: "resultingLevel",
+        label: "Cấp độ khi hoàn thành",
+        render: (row) =>
+          hasText(row.resultingLevel) && row.resultingLevel !== "NONE" ? (
+            <ResourceCell column="resultingLevel" displayMode="detail" row={row} value={row.resultingLevel} />
+          ) : (
+            "Không có (không yêu cầu chứng nhận)"
+          ),
+      },
+    ],
+  },
+  AUDIT_SECTION,
+];
+
+const hasText = (value: unknown) => typeof value === "string" && value.trim() !== "";
+
+// Hồ sơ tham dự (4 tab của khóa: đăng ký, duyệt đăng ký, danh sách tham dự, chấm điểm): gom theo ý nghĩa, ẩn mã định danh.
+const PARTICIPATION_SECTIONS: DetailSection[] = [
+  {
+    title: "Huynh trưởng",
+    fields: [
+      { key: "leaderFullName", label: "Họ và tên", wide: true },
+      { key: "leaderLevel", label: "Cấp huynh trưởng" },
+      { key: "parishName", label: "Giáo xứ" },
+      { key: "deaneryName", label: "Giáo hạt" },
+    ],
+  },
+  {
+    title: "Đăng ký tham dự",
+    fields: [
+      { key: "courseName", label: "Khóa huấn luyện", wide: true, visible: (_row, embedded) => !embedded },
+      { key: "registrationDate", label: "Ngày đăng ký" },
+      { key: "participationStatus", label: "Trạng thái tham dự" },
+      { key: "eligible", label: "Đủ điều kiện", render: (row) => (row.eligible === false ? "Chưa đủ điều kiện (hồ sơ ngoại lệ)" : "Đủ điều kiện") },
+      { key: "parishSubmittedAt", label: "Giáo xứ gửi lúc", visible: (row) => hasText(row.parishSubmittedAt) },
+      { key: "exceptionReason", label: "Lý do ngoại lệ", wide: true, visible: (row) => hasText(row.exceptionReason) },
+    ],
+  },
+  {
+    title: "Phê duyệt đăng ký",
+    fields: [
+      { key: "approvalStatus", label: "Trạng thái duyệt" },
+      {
+        key: "approvedBy",
+        label: "Người duyệt",
+        // Mã định danh (UUID) không hiển thị; chỉ hiện khi hệ thống tự duyệt.
+        render: (row) => (row.approvedBy === "SYSTEM_AUTO_APPROVAL" ? "Hệ thống tự duyệt" : <span className="text-muted">—</span>),
+        visible: (row) => row.approvedBy === "SYSTEM_AUTO_APPROVAL",
+      },
+      { key: "review", label: "Ghi chú", wide: true, visible: (row) => hasText(row.review) },
+    ],
+  },
+  {
+    title: "Kết quả khóa huấn luyện",
+    visible: (row) => row.totalScore !== null && row.totalScore !== undefined || Array.isArray(row.componentScores) && row.componentScores.length > 0 || hasText(row.scoreNote),
+    fields: [
+      { key: "componentScores", label: "Điểm thành phần", wide: true, render: (row) => <ComponentScoreList scores={row.componentScores} />, visible: (row) => Array.isArray(row.componentScores) && row.componentScores.length > 0 },
+      { key: "totalScore", label: "Tổng điểm" },
+      { key: "passingScore", label: "Điểm đạt" },
+      { key: "passed", label: "Đánh giá điểm" },
+      { key: "finalResult", label: "Kết quả chung", visible: (row) => hasText(row.finalResult) },
+      { key: "courseResultingLevel", label: "Cấp độ khi đạt", visible: (row) => hasText(row.courseResultingLevel) && row.courseResultingLevel !== "NONE" },
+      { key: "targetLevel", label: "Cấp độ đạt được (ngoại lệ)", visible: (row) => hasText(row.targetLevel) },
+      { key: "scoreNote", label: "Nhận xét", wide: true },
+    ],
+  },
+  {
+    title: "Chứng nhận",
+    visible: (row) => hasText(row.certificateApprovalStatus) && row.certificateApprovalStatus !== "NOT_REQUIRED",
+    fields: [
+      { key: "certificateApprovalStatus", label: "Trạng thái chứng nhận" },
+      { key: "certificateRequestedAt", label: "Ngày yêu cầu", visible: (row) => hasText(row.certificateRequestedAt) },
+      { key: "certificateApprovedAt", label: "Ngày duyệt", visible: (row) => hasText(row.certificateApprovedAt) },
+    ],
+  },
+];
+
 function SectionedDetail({ row, sections }: { row: Record<string, unknown>; sections: DetailSection[] }) {
+  const embedded = Boolean(useEmbeddedResource());
   return (
     <div className="space-y-4">
-      {sections.map((section) => (
+      {sections.filter((section) => section.visible?.(row) ?? true).map((section) => (
         <section className="rounded-[12px] border border-border bg-white p-4 shadow-sm" key={section.title}>
           <h2 className="text-xs font-semibold uppercase text-muted">{section.title}</h2>
           <dl className="mt-3 grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
-            {section.fields.map(({ key, label, wide, value: getValue }) => {
+            {section.fields.filter((field) => field.visible?.(row, embedded) ?? true).map(({ key, label, wide, value: getValue, render }) => {
               const value = getValue ? getValue(row) : row[key];
-              const empty = value === null || value === undefined || value === "";
+              const empty = !render && (value === null || value === undefined || value === "");
               return (
                 <div className={wide ? "sm:col-span-2" : undefined} key={key}>
                   <dt className="text-xs font-medium text-muted">{label}</dt>
                   <dd className="mt-1 break-words text-sm leading-6 text-foreground">
-                    {empty ? <span className="text-muted">—</span> : <ResourceCell column={key} displayMode="detail" row={row} value={value} />}
+                    {render ? render(row) : empty ? <span className="text-muted">—</span> : <ResourceCell column={key} displayMode="detail" row={row} value={value} />}
                   </dd>
                 </div>
               );

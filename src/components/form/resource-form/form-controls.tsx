@@ -47,7 +47,7 @@ export function FormField({ field, value, values, user, mode, onChange, onFieldC
             onChange={(event) => onChange(event.target.checked ? "__CLEAR__" : "")}
             type="checkbox"
           />
-          Xóa giá trị khi lưu
+          {field.clearLabel ?? "Xóa giá trị khi lưu"}
         </label>
       ) : null}
       {field.helper ? <p className="text-xs leading-5 text-muted">{field.helper}</p> : null}

@@ -11,7 +11,8 @@ import { canUseAction, hasPermission, isSuperAdmin } from "@/lib/auth/permission
 import { columnLabels, ResourceCell } from "./resource-format";
 import { useEmbeddedResource, resourceActionHref, withReturnTo } from "./embedded-resource-context";
 import { fillRoute, getResourceId, isAwaitingApproval } from "./resource-actions";
-import type { ScoreEntry } from "./score-entry";
+import type { ScoreEntry, ScoreNotes } from "./score-entry";
+import { ScoreNoteAction } from "./score-note-action";
 import { RegistrationToggleButton } from "@/modules/training-courses/components/registration-toggle-button";
 import type { ResourcePageSize } from "./use-resource-query-state";
 
@@ -197,14 +198,14 @@ function ResourceRows({
         );
       })}
       <td className="sticky right-0 h-12 border-b border-surface-2 bg-white px-3 text-right shadow-(--shadow-table-sticky) transition-colors group-hover:bg-primary-soft">
-        <RowActions route={route} row={row} onExportRow={onExportRow} exportingRow={exportingRow} />
+        <RowActions route={route} row={row} onExportRow={onExportRow} exportingRow={exportingRow} scoreNotes={scoreEntry?.notes} />
       </td>
     </tr>
     );
   });
 }
 
-function RowActions({ route, row, onExportRow, exportingRow }: { route: RouteConfig; row: Record<string, unknown>; onExportRow?: (id: string) => void; exportingRow?: boolean }) {
+function RowActions({ route, row, onExportRow, exportingRow, scoreNotes }: { route: RouteConfig; row: Record<string, unknown>; onExportRow?: (id: string) => void; exportingRow?: boolean; scoreNotes?: ScoreNotes }) {
   const user = useAuthStore((state) => state.user);
   const embedded = useEmbeddedResource();
   const id = getResourceId(route, row);
@@ -242,6 +243,7 @@ function RowActions({ route, row, onExportRow, exportingRow }: { route: RouteCon
 
   return (
     <div className="inline-flex items-center gap-1">
+      {scoreNotes ? <ScoreNoteAction notes={scoreNotes} row={row} rowId={id} /> : null}
       {canView ? (
         <Tip label="Xem chi tiết hồ sơ">
           <Button asChild aria-label="Xem chi tiết" className="h-8 min-w-8 rounded-lg" size="icon" variant="icon">
@@ -369,7 +371,8 @@ function canToggleRow(route: RouteConfig, row: Record<string, unknown>, user: Au
   if (route.kind === "accounts") return !isOwnAccount(row, user) && !rowHasPrimaryRole(row, "SUPER_ADMIN");
   if (route.kind === "dioceses") return isSuperAdmin(user);
   if (route.kind === "deaneries") return hasRole(user, "ADMIN_DIOCESE");
-  if (route.kind === "parishes") return hasRole(user, "ADMIN_DEANERY");
+  // Admin giáo hạt bật/tắt giáo xứ trong giáo hạt; admin giáo phận bật/tắt giáo xứ trong giáo phận khi có quyền toggle.diocese.
+  if (route.kind === "parishes") return hasRole(user, "ADMIN_DEANERY") || (hasRole(user, "ADMIN_DIOCESE") && hasPermission(user, "organization.parish.toggle.diocese"));
   if (!isSuperAdmin(user)) return true;
   return route.kind === "permissions" || route.kind === "account-roles";
 }

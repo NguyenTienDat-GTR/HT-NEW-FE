@@ -3,6 +3,7 @@
 import {
     BookOpen,
     Certificate as CertificateIcon,
+    Eye,
     ClockCounterClockwise,
     EnvelopeSimple,
     FloppyDisk,
@@ -18,7 +19,7 @@ import {
 import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 import type {Route} from "next";
 import Link from "next/link";
-import type {ReactNode} from "react";
+import {isValidElement, type ReactNode} from "react";
 import {useMemo, useState} from "react";
 import {toast} from "sonner";
 import {FormField} from "@/components/form/resource-form/form-controls";
@@ -29,7 +30,8 @@ import type {RouteConfig} from "@/config/routes/routes";
 import {apiFetch, getApiErrorMessage, type PageResponse} from "@/lib/api/client";
 import {serializeBaseSearch} from "@/lib/api/search";
 import {useAuthStore} from "@/lib/auth/auth-store";
-import {canUseAction} from "@/lib/auth/permissions";
+import {canUseAction, hasPermissionPrefix} from "@/lib/auth/permissions";
+import {CertificateDetailDrawer} from "@/modules/certificates/components/certificate-detail-drawer";
 import {cn} from "@/lib/utils";
 import {formatLeaderLevel} from "@/components/common/resource/resource-format";
 import {
@@ -508,24 +510,47 @@ function CourseTab({leaderId}: { leaderId: string }) {
 }
 
 function CertificateTab({leaderId}: { leaderId: string }) {
+    const user = useAuthStore((state) => state.user);
+    const [viewingCode, setViewingCode] = useState<string | null>(null);
+    // Admin giáo hạt / giáo xứ xem chứng nhận của huynh trưởng trong phạm vi quản lý (mọi cấp khóa, kể cả đã thu hồi)
+    // ngay trong hồ sơ; các tài khoản khác dùng danh sách chứng nhận theo quyền ở menu Chứng nhận.
+    const viaProfilePermission = hasPermissionPrefix(user, "organization.leader_certificate.read.");
     const query = useQuery({
-        queryKey: ["leader-detail-certificates", leaderId],
-        queryFn: () => apiFetch<PageResponse<CertificateRow>>(`/certificates?${leaderRelatedQuery({"leader.id": leaderId}, "issueDate")}`),
+        queryKey: ["leader-detail-certificates", leaderId, viaProfilePermission],
+        queryFn: async () =>
+            viaProfilePermission
+                ? apiFetch<CertificateRow[]>(`/leaders/${encodeURIComponent(leaderId)}/certificates`)
+                : (await apiFetch<PageResponse<CertificateRow>>(`/certificates?${leaderRelatedQuery({"leader.id": leaderId}, "issueDate")}`)).content,
     });
     return (
-        <RelatedPanel
-            columns={["Chứng nhận", "Khóa học", "Ngày cấp", "Trạng thái", "Người ký"]}
-            error={query.isError ? getApiErrorMessage(query.error) : undefined}
-            loading={query.isLoading}
-            rows={(query.data?.content ?? []).map((row) => [
-                row.certificateName ?? row.certificateCode,
-                row.courseName ?? row.courseCode,
-                formatDate(row.issueDate),
-                workflowLabel(row.approvalStatus),
-                row.signedBy,
-            ])}
-            title="Chứng nhận"
-        />
+        <>
+            <RelatedPanel
+                columns={["Chứng nhận", "Khóa học", "Ngày cấp", "Trạng thái", "Người ký", "Xem"]}
+                error={query.isError ? getApiErrorMessage(query.error) : undefined}
+                loading={query.isLoading}
+                rows={(query.data ?? []).map((row) => [
+                    row.certificateName ?? row.certificateCode,
+                    row.courseName ?? row.courseCode,
+                    formatDate(row.issueDate),
+                    workflowLabel(row.approvalStatus),
+                    row.signedBy,
+                    row.certificateCode ? (
+                        <Button
+                            aria-label="Xem chi tiết chứng nhận"
+                            className="h-8 min-w-8 rounded-lg"
+                            onClick={() => setViewingCode(row.certificateCode ?? null)}
+                            size="icon"
+                            type="button"
+                            variant="icon"
+                        >
+                            <Eye size={16}/>
+                        </Button>
+                    ) : null,
+                ])}
+                title="Chứng nhận"
+            />
+            <CertificateDetailDrawer endpoint="/certificates" id={viewingCode} onClose={() => setViewingCode(null)}/>
+        </>
     );
 }
 
@@ -644,7 +669,7 @@ function RelatedPanel({
                                 {row.map((cell, cellIndex) => (
                                     <td className="border-b border-surface-2 px-4 py-3 text-foreground"
                                         key={`${rowIndex}-${cellIndex}`}>
-                                        {displayValue(cell)}
+                                        {isValidElement(cell) ? cell : displayValue(cell)}
                                     </td>
                                 ))}
                             </tr>

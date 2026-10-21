@@ -69,7 +69,7 @@ export function ResourceFormPage({
     .filter((field) => field.visibleWhen?.(mergedValues, mode) ?? true)
     .map((field) => ({
       ...field,
-      optionsEndpoint: field.buildOptionsEndpoint?.(mergedValues) ?? field.optionsEndpoint,
+      optionsEndpoint: field.buildOptionsEndpoint?.(mergedValues) ?? field.optionsEndpointForUser?.(user) ?? field.optionsEndpoint,
       required: field.requiredWhen?.(mergedValues, mode) ?? field.required,
       readOnlyOnEdit: field.readOnlyOnEdit || (field.readOnlyWhen?.(mergedValues, mode) ?? false),
     }));

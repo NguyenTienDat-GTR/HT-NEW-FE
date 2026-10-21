@@ -14,7 +14,7 @@ import { apiDownload, apiFetch, apiMutation, getApiErrorMessage, parseContentDis
 import { useAuthStore } from "@/lib/auth/auth-store";
 import { canUseAction } from "@/lib/auth/permissions";
 import { resolveRouteForUser } from "@/modules/workspace/super-admin-route-overrides";
-import { ApprovalDialog, type CertificateSigner, type ExceptionLevelItem } from "./approval-dialog";
+import { ApprovalDialog, type CertificateSigner, type ExceptionLevelItem, type ExceptionReasonItem } from "./approval-dialog";
 import { embeddedTabHref, useEmbeddedResource, withReturnTo } from "./embedded-resource-context";
 import { ConfirmActionDialog } from "./confirm-action-dialog";
 import { RevokeCertificateDialog } from "./revoke-certificate-dialog";
@@ -23,7 +23,7 @@ import { DetailDrawer } from "./detail-drawer";
 import { PositionFormDialog } from "@/modules/executive-board/components/position-form-dialog";
 import { AssignmentFormDialog } from "@/modules/executive-board/components/assignment-form-dialog";
 import { getResourceId, isAwaitingApproval } from "./resource-actions";
-import { isInvalidScore, originalScore, runWithConcurrency, sameScore, type ScoreComponent, type ScoreDrafts, type ScoreEntry } from "./score-entry";
+import { isInvalidScore, originalNote, originalScore, runWithConcurrency, sameScore, type ScoreComponent, type ScoreDrafts, type ScoreEntry, type ScoreNoteDrafts } from "./score-entry";
 import { ScoreStats } from "./score-stats";
 import { ResourceListEmptyState } from "./resource-list-empty-state";
 import { ResourceListHeader } from "./resource-list-header";
@@ -113,6 +113,8 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkMode, setBulkMode] = useState<"approve" | "reject" | null>(null);
   const [scoreDrafts, setScoreDrafts] = useState<ScoreDrafts>({});
+  // Nhận xét kết quả khóa của hồ sơ nhập ở tab chấm điểm: tạm lưu khi đóng hộp nhận xét, gửi server khi bấm nút lưu.
+  const [noteDrafts, setNoteDrafts] = useState<ScoreNoteDrafts>({});
   const scoreCourseCode = embedded?.fixedFilters["course.courseCode"];
   const scoreEntryEnabled = Boolean(config.scoreEntry && scoreCourseCode && canUseAction(user, effectiveRoute.actions?.score) && !courseDisabled);
   const scoreComponentsQuery = useQuery({
@@ -161,6 +163,13 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
     if (!courseLevel || courseLevel === "NONE") return null;
     return { id, label: String(row.leaderFullName ?? id), leaderLevel: String(row.leaderLevel ?? "NONE"), courseLevel };
   };
+  // Lý do đặc cách của hồ sơ đăng ký ngoại lệ (giáo xứ nêu khi đăng ký), hiện trong hộp thoại duyệt / từ chối.
+  const exceptionReasonFor = (id: string): ExceptionReasonItem | null => {
+    const row = rowById(id);
+    const reason = typeof row?.exceptionReason === "string" ? row.exceptionReason.trim() : "";
+    return reason ? { id, label: String(row?.leaderFullName ?? id), reason } : null;
+  };
+  const exceptionReasonsOf = (ids: string[]) => ids.map(exceptionReasonFor).filter((item): item is ExceptionReasonItem => item !== null);
   const approveExceptionItems = approveId ? [exceptionItemFor(approveId)].filter((item): item is ExceptionLevelItem => item !== null) : [];
   const bulkExceptionItems = bulkApprovableIds.map(exceptionItemFor).filter((item): item is ExceptionLevelItem => item !== null);
   const closeQueryDialog = () => router.push((embedded ? embeddedTabHref(embedded) : effectiveRoute.path) as Route);
@@ -211,10 +220,24 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
     },
   });
   const scoreComponents = scoreComponentsQuery.data ?? [];
-  const dirtyScoreRowIds = Object.keys(scoreDrafts);
+  const dirtyScoreRowIds = Array.from(new Set([...Object.keys(scoreDrafts), ...Object.keys(noteDrafts)]));
   const scoreEntry: ScoreEntry | undefined =
     scoreEntryEnabled && scoreComponents.length
       ? {
+          notes: {
+            drafts: noteDrafts,
+            // Sửa được nhận xét cả khi điểm đã khóa; chỉ chặn khi khóa kết thúc hoặc bị vô hiệu hóa.
+            editable: embedded?.courseFinished !== true && !courseDisabled,
+            valueOf: (rowId, row) => noteDrafts[rowId]?.note ?? originalNote(row),
+            isDirty: (rowId) => noteDrafts[rowId] !== undefined,
+            onChange: (rowId, row, value) =>
+              setNoteDrafts((current) => {
+                const next = { ...current };
+                if (value.trim() === originalNote(row).trim()) delete next[rowId];
+                else next[rowId] = { row, note: value };
+                return next;
+              }),
+          },
           components: scoreComponents,
           drafts: scoreDrafts,
           // Chứng nhận đã duyệt thì khóa điểm (BE cũng chặn).
@@ -240,11 +263,13 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
   const pendingScoreRowIds = dirtyScoreRowIds.filter((id) => !savingScoreIds.includes(id));
 
   function saveScoresInBackground() {
-    const snapshot = Object.entries(scoreDrafts).filter(([id]) => !savingScoreIdsRef.current.has(id));
-    if (snapshot.length === 0) return;
-    const jobs: { id: string; label: string; values: Record<string, string>; body: unknown }[] = [];
+    const scoreSnapshot = Object.entries(scoreDrafts).filter(([id]) => !savingScoreIdsRef.current.has(id));
+    const noteOnlyIds = Object.keys(noteDrafts).filter((id) => !scoreDrafts[id] && !savingScoreIdsRef.current.has(id));
+    if (scoreSnapshot.length === 0 && noteOnlyIds.length === 0) return;
+    type Job = { id: string; label: string; values: Record<string, string>; note?: string; kind: "score" | "note"; body: unknown };
+    const jobs: Job[] = [];
     const problems: string[] = [];
-    for (const [id, draft] of snapshot) {
+    for (const [id, draft] of scoreSnapshot) {
       const label = String(draft.row.leaderFullName ?? id);
       const entries = scoreComponents.map((component) => ({ component, text: draft.values[component.id] ?? originalScore(draft.row, component.id) }));
       const missing = entries.filter((entry) => entry.text.trim() === "");
@@ -257,29 +282,39 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
         problems.push(`${label}: điểm ${invalid.component.name} phải từ 0 đến ${Number(invalid.component.maxScore)}`);
         continue;
       }
+      const note = noteDrafts[id]?.note;
       jobs.push({
         id,
         label,
         values: { ...draft.values },
+        note,
+        kind: "score",
         body: {
           componentScores: entries.map((entry) => ({ componentId: entry.component.id, score: Number(entry.text) })),
           review: typeof draft.row.review === "string" ? draft.row.review : undefined,
+          scoreNote: note,
         },
       });
+    }
+    // Hồ sơ chỉ sửa nhận xét (kể cả khi điểm đã khóa): gửi riêng, không động tới điểm.
+    for (const id of noteOnlyIds) {
+      const draft = noteDrafts[id];
+      if (!draft) continue;
+      jobs.push({ id, label: String(draft.row.leaderFullName ?? id), values: {}, note: draft.note, kind: "note", body: { note: draft.note } });
     }
     if (problems.length) toast.error(`${problems.length} hồ sơ chưa hợp lệ: ${problems.join("; ")}`);
     if (jobs.length === 0) return;
 
     jobs.forEach((job) => savingScoreIdsRef.current.add(job.id));
     setSavingScoreIds((current) => [...current, ...jobs.map((job) => job.id)]);
-    const toastId = toast.loading(`Đang lưu điểm ${jobs.length} hồ sơ...`);
+    const toastId = toast.loading(`Đang lưu ${jobs.length} hồ sơ...`);
 
     // Không await: tác vụ tự chạy nền, kết quả báo qua toast. Tối đa 4 request song song.
     void (async () => {
       const results = await runWithConcurrency(jobs, 4, (job) =>
-        apiFetch(`/training/participations/${encodeURIComponent(job.id)}/score`, { method: "PATCH", body: JSON.stringify(job.body) }),
+        apiFetch(`/training/participations/${encodeURIComponent(job.id)}/${job.kind === "note" ? "score-note" : "score"}`, { method: "PATCH", body: JSON.stringify(job.body) }),
       );
-      const saved: typeof jobs = [];
+      const saved: Job[] = [];
       const failures: string[] = [];
       results.forEach((result, index) => {
         const job = jobs[index];
@@ -292,23 +327,39 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
       // Chỉ bỏ bản nháp nếu người dùng chưa sửa tiếp trong lúc lưu.
       setScoreDrafts((current) => {
         const next = { ...current };
-        saved.forEach((job) => {
+        saved.filter((job) => job.kind === "score").forEach((job) => {
           const draft = next[job.id];
           if (draft && JSON.stringify(draft.values) === JSON.stringify(job.values)) delete next[job.id];
         });
         return next;
       });
+      setNoteDrafts((current) => {
+        const next = { ...current };
+        saved.forEach((job) => {
+          if (job.note !== undefined && next[job.id]?.note === job.note) delete next[job.id];
+        });
+        return next;
+      });
       if (failures.length) toast.error(`${failures.length} hồ sơ chưa lưu được: ${failures.join("; ")}`, { id: toastId });
-      else toast.success(`Đã lưu điểm ${saved.length} hồ sơ`, { id: toastId });
-      if (saved.length && failures.length) toast.success(`Đã lưu điểm ${saved.length} hồ sơ`);
-      if (saved.length) await queryClient.invalidateQueries({ queryKey: ["resource", effectiveRoute.endpoint] });
+      else toast.success(`Đã lưu ${saved.length} hồ sơ`, { id: toastId });
+      if (saved.length && failures.length) toast.success(`Đã lưu ${saved.length} hồ sơ`);
+      if (saved.length) {
+        await queryClient.invalidateQueries({ queryKey: ["resource", effectiveRoute.endpoint] });
+        await queryClient.invalidateQueries({ queryKey: ["resource-detail"] });
+      }
     })();
   }
 
   const saveScoresButton = scoreEntryEnabled ? (
-    <Tip disabled label="Lưu điểm các hồ sơ đã nhập hoặc sửa trên bảng">
-      <Button disabled={pendingScoreRowIds.length === 0 || embedded?.scoringOpen === false || embedded?.scoreLocked === true} onClick={saveScoresInBackground} type="button">
-        {pendingScoreRowIds.length ? `Lưu điểm (${pendingScoreRowIds.length})` : savingScoreIds.length ? `Đang lưu ${savingScoreIds.length}...` : "Lưu điểm"}
+    <Tip disabled label={embedded?.scoreLocked === true ? "Điểm đã khóa: chỉ lưu nhận xét các hồ sơ đã sửa" : "Lưu điểm và nhận xét các hồ sơ đã nhập hoặc sửa trên bảng"}>
+      <Button disabled={pendingScoreRowIds.length === 0 || embedded?.courseFinished === true} onClick={saveScoresInBackground} type="button">
+        {pendingScoreRowIds.length
+          ? `${embedded?.scoreLocked === true ? "Lưu nhận xét" : "Lưu"} (${pendingScoreRowIds.length})`
+          : savingScoreIds.length
+            ? `Đang lưu ${savingScoreIds.length}...`
+            : embedded?.scoreLocked === true
+              ? "Lưu nhận xét"
+              : "Lưu"}
       </Button>
     </Tip>
   ) : null;
@@ -510,6 +561,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
         key={approveId ?? "approve-closed"}
         captureSigner={config.captureSigner}
         exceptionItems={approveExceptionItems}
+        exceptionReasons={approveId ? exceptionReasonsOf([approveId]) : undefined}
         loading={actionMutation.isPending}
         onClose={closeQueryDialog}
         onConfirm={(note, _reasons, signer, achievedLevels) => approveId && actionMutation.mutate({ action: "approve", id: approveId, note, signer, achievedLevel: achievedLevels?.[approveId] })}
@@ -519,6 +571,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
         key={bulkMode ?? "bulk-closed"}
         captureSigner={config.captureSigner}
         exceptionItems={bulkExceptionItems}
+        exceptionReasons={bulkMode ? exceptionReasonsOf(bulkApprovableIds) : undefined}
         loading={bulkMutation.isPending}
         mode={bulkMode === "reject" ? "reject" : "approve"}
         onClose={() => setBulkMode(null)}
@@ -566,6 +619,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
         target={reissueId ? revokeTarget(reissueId) : null}
       />
       <ApprovalDialog
+        exceptionReasons={rejectId ? exceptionReasonsOf([rejectId]) : undefined}
         loading={actionMutation.isPending}
         mode="reject"
         onClose={closeQueryDialog}

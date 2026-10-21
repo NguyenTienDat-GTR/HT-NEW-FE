@@ -11,7 +11,20 @@ export type ScoreComponent = {
 // Bản nháp điểm chưa lưu: giữ cả hàng để lưu được kể cả khi người dùng đã sang trang khác.
 export type ScoreDrafts = Record<string, { row: Record<string, unknown>; values: Record<string, string> }>;
 
+// Nhận xét nháp của hồ sơ (tạm lưu ở giao diện, chỉ gửi server khi bấm nút lưu).
+export type ScoreNoteDrafts = Record<string, { row: Record<string, unknown>; note: string }>;
+
+export type ScoreNotes = {
+  drafts: ScoreNoteDrafts;
+  // false khi khóa đã kết thúc hoặc bị vô hiệu hóa.
+  editable: boolean;
+  valueOf: (rowId: string, row: Record<string, unknown>) => string;
+  isDirty: (rowId: string) => boolean;
+  onChange: (rowId: string, row: Record<string, unknown>, value: string) => void;
+};
+
 export type ScoreEntry = {
+  notes: ScoreNotes;
   components: ScoreComponent[];
   drafts: ScoreDrafts;
   isEditable: (row: Record<string, unknown>) => boolean;
@@ -19,6 +32,10 @@ export type ScoreEntry = {
   isInvalid: (component: ScoreComponent, value: string) => boolean;
   onChange: (rowId: string, row: Record<string, unknown>, componentId: string, value: string) => void;
 };
+
+export function originalNote(row: Record<string, unknown>): string {
+  return typeof row.scoreNote === "string" ? row.scoreNote : "";
+}
 
 export function originalScore(row: Record<string, unknown>, componentId: string): string {
   const list = Array.isArray(row.componentScores) ? (row.componentScores as { componentId?: string; score?: number | string | null }[]) : [];

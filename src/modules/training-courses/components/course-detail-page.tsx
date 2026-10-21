@@ -269,6 +269,7 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
                 scoringOpen: course ? isCourseWithinDates(course) : undefined,
                 scoringHint: course ? scoringWindowHint(course) : undefined,
                 scoreLocked: course ? course.scoreLocked === true : undefined,
+                courseFinished: course ? Boolean(course.finishedAt) : undefined,
                 courseDisabled,
               }}
             >

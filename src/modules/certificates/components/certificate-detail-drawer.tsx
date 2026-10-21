@@ -99,6 +99,7 @@ const SECTIONS: SectionSpec[] = [
       { key: "totalScore", label: "Tổng điểm" },
       { key: "passingScore", label: "Điểm đạt" },
       { key: "passed", label: "Đánh giá điểm" },
+      { key: "scoreNote", label: "Nhận xét", fullWidth: true },
     ],
   },
   {
@@ -151,18 +152,25 @@ export function useCertificateDetail(id: string | null | undefined, endpoint: st
   });
   // Chứng nhận đã thu hồi không có bản xem trước (BE cũng từ chối), nên chỉ tải khi đã biết chứng nhận chưa bị thu hồi.
   const revoked = detailQuery.data?.approvalStatus === "REVOKED";
+  // Chứng nhận đang chờ xử lý (chờ gửi / chờ duyệt) chưa phải chứng nhận chính thức: không có bản xem trước và nhóm thông tin chứng nhận.
+  const waiting = isWaitingStatus(detailQuery.data?.approvalStatus);
   const previewQuery = useQuery({
     queryKey: ["certificate-preview", id, detailQuery.data?.approvalStatus],
-    enabled: Boolean(id) && detailQuery.data !== undefined && !revoked,
+    enabled: Boolean(id) && detailQuery.data !== undefined && !revoked && !waiting,
     queryFn: () => apiFetch<Preview>(`${endpoint}/${encodeURIComponent(String(id))}/preview`),
   });
-  return { detailQuery, previewQuery, revoked };
+  return { detailQuery, previewQuery, revoked, waiting };
+}
+
+function isWaitingStatus(status: unknown) {
+  return status === "PENDING" || status === "SUBMITTED";
 }
 
 // Nội dung chi tiết chứng nhận: thông tin gom nhóm + bản xem trước. split = bố cục 2 cột (thông tin | chứng nhận lớn).
 export function CertificateDetailBody({ detail, split }: { detail: ReturnType<typeof useCertificateDetail>; split: boolean }) {
-  const { detailQuery, previewQuery, revoked } = detail;
+  const { detailQuery, previewQuery, revoked, waiting } = detail;
   const row = detailQuery.data;
+  const sections = waiting ? SECTIONS.filter((section) => section.title !== "Thông tin chứng nhận") : SECTIONS;
   return (
     <>
       {detailQuery.isLoading ? <div className="h-40 rounded-[12px] border border-border bg-white motion-safe:animate-pulse" /> : null}
@@ -170,7 +178,8 @@ export function CertificateDetailBody({ detail, split }: { detail: ReturnType<ty
         <div className="rounded-[10px] border border-danger/30 bg-danger/5 p-3 text-sm text-danger">{getApiErrorMessage(detailQuery.error)}</div>
       ) : null}
       {row ? (
-        <div className={cn("gap-4", split ? "grid items-start lg:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)]" : "space-y-4")}>
+        <div className={cn("gap-4", split && !waiting ? "grid items-start lg:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)]" : "space-y-4")}>
+          {waiting ? null : (
           <div className={cn("space-y-4", split && "lg:order-2 lg:sticky lg:top-4")}>
             {revoked ? (
               <section className="rounded-[12px] border border-danger/30 bg-danger/5 p-4 text-sm text-foreground shadow-sm">
@@ -181,8 +190,9 @@ export function CertificateDetailBody({ detail, split }: { detail: ReturnType<ty
               <PreviewPanel preview={previewQuery.data} loading={previewQuery.isLoading} error={previewQuery.isError ? getApiErrorMessage(previewQuery.error) : undefined} approved={row.approvalStatus === "APPROVED"} />
             )}
           </div>
-          <div className={cn("space-y-4", split && "lg:order-1")}>
-            {SECTIONS.filter((section) => section.visible?.(row) ?? true).map((section) => (
+          )}
+          <div className={cn("space-y-4", split && !waiting && "lg:order-1")}>
+            {sections.filter((section) => section.visible?.(row) ?? true).map((section) => (
               <Section key={section.title} row={row} section={section} />
             ))}
           </div>

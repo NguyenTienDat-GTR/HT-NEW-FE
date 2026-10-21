@@ -24,6 +24,8 @@ export type FormFieldSpec = {
   options?: Option[];
   optionsEndpoint?: string;
   buildOptionsEndpoint?: (values: Record<string, unknown>) => string | undefined;
+  // Endpoint lấy lựa chọn phụ thuộc tài khoản (ví dụ chỉ loại khóa thuộc cấp quản lý của mình).
+  optionsEndpointForUser?: (user: AuthUser | null) => string | undefined;
   optionValue?: string;
   optionLabel?: string;
   optionLabelFields?: string[];
@@ -41,6 +43,8 @@ export type FormFieldSpec = {
   readOnlyOnCreate?: boolean;
   readOnlyOnEdit?: boolean;
   clearable?: boolean;
+  // Nhãn ô đánh dấu xóa giá trị khi sửa (mặc định "Xóa giá trị khi lưu").
+  clearLabel?: string;
   switchLabels?: [string, string];
   // Gợi ý động lấy từ API theo giá trị các trường khác (ví dụ điểm đạt tối đa theo loại khóa).
   dynamicHelper?: {

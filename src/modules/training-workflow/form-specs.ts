@@ -73,7 +73,7 @@ export const workflowFormSpecs: ResourceFormSpec[] = [
         helper: "Mỗi dòng: componentCode | score",
         section: "Chấm điểm",
       },
-      { name: "review", label: "Nhận xét", type: "textarea", clearable: true, section: "Chấm điểm" },
+      { name: "review", label: "Ghi chú", type: "textarea", clearable: true, section: "Chấm điểm" },
     ],
     mapSubmit: (values) => {
       const componentScores = String(values.componentScoresText ?? "")
