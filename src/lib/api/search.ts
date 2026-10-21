@@ -1,6 +1,6 @@
 export type BaseSearchParams = {
   page?: number;
-  size?: 10 | 20 | 50 | 100;
+  size?: 10 | 20 | 30 | 50 | 100;
   search?: string;
   searchFields?: string[];
   filters?: Record<string, string | number | boolean | string[] | null | undefined>;
