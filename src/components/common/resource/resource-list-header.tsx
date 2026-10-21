@@ -18,6 +18,7 @@ export function ResourceListHeader({
         <span>{moduleLabel}</span>
       </div>
       <h1 className="text-2xl font-bold leading-8 text-foreground">{route.title}</h1>
+      {route.subtitle ? <p className="max-w-[78ch] text-sm leading-5 text-text-secondary">{route.subtitle}</p> : null}
     </section>
   );
 }

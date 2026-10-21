@@ -260,14 +260,14 @@ export function Avatar({ name, src }: { name: string; src: unknown }) {
     return (
       <span
         aria-label={name || "Ảnh đại diện"}
-        className="inline-flex h-10 w-10 rounded-full border border-border bg-cover bg-center shadow-sm"
+        className="inline-flex h-9 w-9 shrink-0 rounded-full border border-border bg-cover bg-center"
         role="img"
         style={{ backgroundImage: `url(${src})` }}
       />
     );
   }
   return (
-    <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-primary text-sm font-semibold text-white shadow-[var(--shadow-accent)]">
+    <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-soft text-sm font-semibold text-primary">
       {initial}
     </span>
   );

@@ -220,8 +220,8 @@ function SidebarNav({
           <div className="space-y-1" key={group.moduleName}>
             <button
               className={cn(
-                "flex h-10 w-full cursor-pointer items-center gap-3 rounded-lg px-3 text-left text-sm font-semibold text-foreground transition-colors hover:bg-surface-hover hover:text-primary",
-                groupActive && "text-primary",
+                "flex h-10 w-full cursor-pointer items-center gap-3 rounded-lg px-3 text-left text-[13px] font-semibold uppercase tracking-wide text-muted transition-colors hover:bg-surface-hover hover:text-primary",
+                groupActive && "text-foreground",
               )}
               onClick={() => toggleGroup(group.moduleName)}
               type="button"
