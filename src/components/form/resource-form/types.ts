@@ -41,6 +41,8 @@ export type FormFieldSpec = {
   readOnlyOnCreate?: boolean;
   readOnlyOnEdit?: boolean;
   clearable?: boolean;
+  // Nhãn ô đánh dấu xóa giá trị khi sửa (mặc định "Xóa giá trị khi lưu").
+  clearLabel?: string;
   switchLabels?: [string, string];
   // Gợi ý động lấy từ API theo giá trị các trường khác (ví dụ điểm đạt tối đa theo loại khóa).
   dynamicHelper?: {

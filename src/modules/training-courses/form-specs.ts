@@ -40,6 +40,8 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
         label: "Thời hạn tối đa sau khóa tiên quyết (năm)",
         type: "number",
         min: 1,
+        clearable: true,
+        clearLabel: "Đặt về không giới hạn",
         visibleWhen: (values) => typeof values.prerequisiteTypeCode === "string" && values.prerequisiteTypeCode !== "",
         helper: "Phải đi khóa này trong vòng bao nhiêu năm kể từ lần đạt khóa tiên quyết gần nhất. Để trống nếu không giới hạn.",
         section: "Nâng cấp",
@@ -49,6 +51,13 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
     mapSubmit: (values, mode) => {
       const payload = compactPayload(values);
       if (mode === "edit") delete payload.typeCode;
+      // Ô "Đặt về không giới hạn": gửi cờ xóa riêng cho thời hạn sau khóa tiên quyết.
+      if (Array.isArray(payload.clearFields) && payload.clearFields.includes("maxYearsAfterPrerequisite")) {
+        payload.clearMaxYearsAfterPrerequisite = true;
+        const rest = payload.clearFields.filter((field) => field !== "maxYearsAfterPrerequisite");
+        if (rest.length) payload.clearFields = rest;
+        else delete payload.clearFields;
+      }
       return payload;
     },
   },
