@@ -27,9 +27,10 @@ export const notificationKeys = {
   unreadCount: ["system", "notifications", "unread-count"] as const,
 };
 
-export function useNotifications(params: BaseSearchParams = {}) {
+export function useNotifications(params: BaseSearchParams = {}, options: { enabled?: boolean } = {}) {
   const queryString = serializeBaseSearch(params).toString();
   return useQuery({
+    enabled: options.enabled ?? true,
     queryKey: notificationKeys.list(params),
     queryFn: () => apiFetch<PageResponse<NotificationItem>>(`/system/notifications?${queryString}`),
   });
@@ -47,6 +48,23 @@ export function useMarkNotificationRead() {
   return useMutation({
     mutationFn: (id: string) => apiFetch<NotificationItem>(`/system/notifications/${id}/read`, { method: "PATCH" }),
     onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["system", "notifications"] });
+      void queryClient.invalidateQueries({ queryKey: notificationKeys.unreadCount });
+      void queryClient.invalidateQueries({ queryKey: ["resource", "/system/notifications"] });
+    },
+  });
+}
+
+/** BE chưa có endpoint "đọc tất cả": đánh dấu lần lượt các thông báo chưa đọc đang hiển thị (theo lô nhỏ để tránh giới hạn tần suất). */
+export function useMarkAllNotificationsRead() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (ids: string[]) => {
+      for (let index = 0; index < ids.length; index += 4) {
+        await Promise.all(ids.slice(index, index + 4).map((id) => apiFetch<NotificationItem>(`/system/notifications/${id}/read`, { method: "PATCH" })));
+      }
+    },
+    onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: ["system", "notifications"] });
       void queryClient.invalidateQueries({ queryKey: notificationKeys.unreadCount });
       void queryClient.invalidateQueries({ queryKey: ["resource", "/system/notifications"] });

@@ -1,6 +1,7 @@
 "use client";
 
-import { Bell, CaretDown, CaretLeft, List, MagnifyingGlass, SignOut } from "@phosphor-icons/react";
+import { CaretDown, CaretLeft, List, MagnifyingGlass, SignOut } from "@phosphor-icons/react";
+import * as Popover from "@radix-ui/react-popover";
 import { useQueryClient } from "@tanstack/react-query";
 import type { Route } from "next";
 import Link from "next/link";
@@ -8,14 +9,13 @@ import { usePathname, useRouter } from "next/navigation";
 import type React from "react";
 import { useMemo, useState } from "react";
 import { BrandMark } from "@/components/brand/brand-mark";
-import { Button } from "@/components/ui/button";
 import { TooltipIconButton } from "@/components/ui/tooltip-icon-button";
 import { apiFetch } from "@/lib/api/client";
 import { useAuthStore, type AuthUser } from "@/lib/auth/auth-store";
 import { hasPermissionPrefix, isSuperAdmin } from "@/lib/auth/permissions";
 import { cn } from "@/lib/utils";
 import { routeGroups, type RouteConfig, type RouteGroup } from "@/config/routes/routes";
-import { useUnreadNotificationCount } from "@/modules/notifications/hooks";
+import { NotificationPopover } from "@/modules/notifications/components/notification-popover";
 import { useNotificationsSocket } from "@/modules/workspace/hooks/notifications-socket";
 
 const defaultOpenGroups: Record<string, boolean> = {
@@ -34,7 +34,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(defaultOpenGroups);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const unreadCountQuery = useUnreadNotificationCount();
   useNotificationsSocket();
 
   const visibleGroups = useMemo(
@@ -87,12 +86,24 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           sidebarCollapsed ? "w-[76px]" : "w-[260px]",
         )}
       >
-        <div className="flex h-16 items-center justify-between border-b border-border px-4">
+        <div className={cn("flex h-16 items-center border-b border-border px-4", sidebarCollapsed && "justify-center px-0")}>
           <BrandMark compact={sidebarCollapsed} />
-          <TooltipIconButton label={sidebarCollapsed ? "Mở rộng menu" : "Thu gọn menu"} onClick={() => setSidebarCollapsed((value) => !value)}>
-            <CaretLeft className={cn("h-5 w-5 transition-transform", sidebarCollapsed && "rotate-180")} />
-          </TooltipIconButton>
+          {!sidebarCollapsed ? (
+            <div className="ml-3 min-w-0">
+              <p className="truncate text-sm font-bold text-foreground">HT Management</p>
+              <p className="truncate text-xs text-muted">Quản lí huynh trưởng</p>
+            </div>
+          ) : null}
         </div>
+        <button
+          aria-label={sidebarCollapsed ? "Mở rộng menu" : "Thu gọn menu"}
+          className="absolute -right-3 top-5 z-10 grid h-6 w-6 cursor-pointer place-items-center rounded-full border border-border bg-white text-text-secondary shadow-sm transition-colors hover:border-primary hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+          onClick={() => setSidebarCollapsed((value) => !value)}
+          title={sidebarCollapsed ? "Mở rộng menu" : "Thu gọn menu"}
+          type="button"
+        >
+          <CaretLeft className={cn("h-3.5 w-3.5 transition-transform", sidebarCollapsed && "rotate-180")} weight="bold" />
+        </button>
         {nav}
         {!sidebarCollapsed ? (
           <div className="border-t border-border p-4 text-xs leading-5 text-muted">
@@ -135,16 +146,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </label>
 
             <div className="flex min-w-0 items-center gap-2">
-              <Button asChild className="relative px-3" variant="ghost">
-                <Link href="/notifications" aria-label="Thông báo">
-                  <Bell size={20} />
-                  {unreadCountQuery.data?.unreadCount ? (
-                    <span className="absolute right-1 top-1 grid h-5 min-w-5 place-items-center rounded-full bg-danger px-1 text-[11px] font-bold text-white">
-                      {notificationBadgeLabel(unreadCountQuery.data.unreadCount)}
-                    </span>
-                  ) : null}
-                </Link>
-              </Button>
+              <NotificationPopover />
               <div className="hidden min-w-0 items-center gap-3 rounded-lg border border-border bg-white px-3 py-1.5 sm:flex">
                 <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/12 text-sm font-semibold text-primary">
                   {(user?.username ?? "HT").slice(0, 2).toUpperCase()}
@@ -185,27 +187,56 @@ function SidebarNav({
   if (sidebarCollapsed) {
     return (
       <nav className="flex flex-1 flex-col items-center gap-2 overflow-y-auto px-3 py-4">
-        {groups.flatMap((group) =>
-          group.children.map((route) => {
-            const active = pathname === route.path;
-            const Icon = route.icon;
-            return (
-              <Link
-                aria-label={route.title}
-                className={cn(
-                  "grid h-10 w-10 place-items-center rounded-lg text-text-secondary transition-colors hover:bg-surface-hover hover:text-primary",
-                  active && "bg-primary-soft text-primary",
-                )}
-                href={route.path as Route}
-                key={route.path}
-                onClick={onNavigate}
-                title={route.title}
-              >
-                <Icon size={21} weight={active ? "fill" : "regular"} />
-              </Link>
-            );
-          }),
-        )}
+        {groups.map((group) => {
+          const GroupIcon = group.icon;
+          const groupActive = group.children.some((route) => route.path === pathname);
+          return (
+            <Popover.Root key={group.moduleName}>
+              <Popover.Trigger asChild>
+                <button
+                  aria-label={group.label}
+                  className={cn(
+                    "grid h-10 w-10 cursor-pointer place-items-center rounded-lg text-text-secondary transition-colors hover:bg-surface-hover hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary",
+                    groupActive && "bg-primary-soft text-primary",
+                  )}
+                  title={group.label}
+                  type="button"
+                >
+                  <GroupIcon size={21} weight={groupActive ? "fill" : "regular"} />
+                </button>
+              </Popover.Trigger>
+              <Popover.Portal>
+                <Popover.Content
+                  align="start"
+                  className="z-50 w-60 rounded-xl border border-border bg-white p-2 shadow-[var(--shadow-elevated)] focus:outline-none"
+                  side="right"
+                  sideOffset={12}
+                >
+                  <p className="px-3 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wide text-muted">{group.label}</p>
+                  {group.children.map((route) => {
+                    const active = pathname === route.path;
+                    const Icon = route.icon;
+                    return (
+                      <Popover.Close asChild key={route.path}>
+                        <Link
+                          className={cn(
+                            "flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium text-text-secondary transition-colors hover:bg-surface-hover hover:text-primary",
+                            active && "bg-primary-soft font-semibold text-primary",
+                          )}
+                          href={route.path as Route}
+                          onClick={onNavigate}
+                        >
+                          <Icon size={18} weight={active ? "fill" : "regular"} />
+                          <span className="truncate">{route.title}</span>
+                        </Link>
+                      </Popover.Close>
+                    );
+                  })}
+                </Popover.Content>
+              </Popover.Portal>
+            </Popover.Root>
+          );
+        })}
       </nav>
     );
   }
@@ -266,10 +297,7 @@ export function canSeeRoute(route: RouteConfig, user: AuthUser | null) {
   return route.permissionPrefixes.length === 0 || route.permissionPrefixes.some((prefix) => hasPermissionPrefix(user, prefix));
 }
 
-export function notificationBadgeLabel(unreadCount?: number | null) {
-  if (!unreadCount || unreadCount <= 0) return null;
-  return unreadCount > 99 ? "99+" : String(unreadCount);
-}
+export { notificationBadgeLabel } from "@/modules/notifications/notification-meta";
 
 function isHiddenForSuperAdmin(route: RouteConfig) {
   return (
