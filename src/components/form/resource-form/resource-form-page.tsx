@@ -94,7 +94,10 @@ export function ResourceFormPage({
     },
     onSuccess: async () => {
       toast.success(mode === "create" ? "Tạo mới thành công" : "Lưu cập nhật thành công");
-      await queryClient.invalidateQueries({ queryKey: ["resource", effectiveRoute.endpoint] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["resource", effectiveRoute.endpoint] }),
+        queryClient.invalidateQueries({ queryKey: ["resource-detail", effectiveRoute.endpoint] }),
+      ]);
       router.push((returnTo ?? effectiveRoute.path) as Route);
     },
     onError: (error) => {

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Tip } from "@/components/ui/tip";
 import type { RouteConfig } from "@/config/routes/routes";
 import { useAuthStore, type AuthUser } from "@/lib/auth/auth-store";
-import { canUseAction, isSuperAdmin } from "@/lib/auth/permissions";
+import { canUseAction, hasPermission, isSuperAdmin } from "@/lib/auth/permissions";
 import { columnLabels, ResourceCell } from "./resource-format";
 import { useEmbeddedResource, resourceActionHref, withReturnTo } from "./embedded-resource-context";
 import { fillRoute, getResourceId, isAwaitingApproval } from "./resource-actions";
@@ -343,6 +343,7 @@ function RowActions({ route, row, onExportRow, exportingRow }: { route: RouteCon
 function canEditRow(route: RouteConfig, row: Record<string, unknown>, user: AuthUser | null) {
   if (route.kind === "accounts") return false;
   if (route.kind === "leaders") return false;
+  if (route.kind === "positions") return hasPositionPermission(user, "update", row);
   if (!isSuperAdmin(user) && isSystemRoleRow(route, row)) return false;
   if (!isSuperAdmin(user)) return true;
   return route.kind !== "dioceses" && route.kind !== "deaneries" && route.kind !== "parishes";
@@ -352,7 +353,12 @@ export function canShowEditAction(route: RouteConfig, row: Record<string, unknow
   return canUseAction(user, route.actions?.edit) && canEditRow(route, row, user);
 }
 
+function hasPositionPermission(user: AuthUser | null, action: "update" | "toggle", row: Record<string, unknown>) {
+  return typeof row.positionType === "string" && hasPermission(user, `organization.position.${action}.${row.positionType.toLowerCase()}`);
+}
+
 function canToggleRow(route: RouteConfig, row: Record<string, unknown>, user: AuthUser | null) {
+  if (route.kind === "positions") return hasPositionPermission(user, "toggle", row);
   if (!isSuperAdmin(user) && isSystemRoleRow(route, row)) return false;
   if (route.kind === "accounts") return !isOwnAccount(row, user) && !rowHasPrimaryRole(row, "SUPER_ADMIN");
   if (route.kind === "dioceses") return isSuperAdmin(user);

@@ -44,17 +44,6 @@ export const personnelFormSpecs: ResourceFormSpec[] = [
     },
   },
   {
-    kind: "positions",
-    createTitle: "Thêm chức vụ",
-    editTitle: "Chỉnh sửa chức vụ",
-    description: "Chức vụ theo cấp áp dụng trong ban điều hành.",
-    fields: [
-      { name: "positionName", label: "Tên chức vụ", required: true, section: "Thông tin chức vụ" },
-      { name: "positionType", label: "Loại chức vụ", type: "radio", required: true, options: unitTypeOptions, section: "Thông tin chức vụ" },
-    ],
-    mapSubmit: compactPayload,
-  },
-  {
     kind: "executive-board",
     createTitle: "Thêm phân công ban điều hành",
     editTitle: "Chỉnh sửa phân công ban điều hành",

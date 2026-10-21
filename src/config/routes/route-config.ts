@@ -243,14 +243,6 @@ function inferRouteFilters(config: RouteConfig): RouteFilterConfig[] {
         optionLabel: "levelName",
       });
       break;
-    case "positions":
-      filters.push({
-        key: "positionType",
-        label: "Cấp áp dụng",
-        type: "select",
-        options: unitTypeFilterOptions(["DIOCESE", "DEANERY", "PARISH"]),
-      });
-      break;
     case "executive-board":
       filters.push({
         key: "unitType",
