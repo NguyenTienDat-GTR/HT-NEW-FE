@@ -177,6 +177,9 @@ type ResourceCellProps = {
 
 export function ResourceCell({ column, row, value, displayMode = "table" }: ResourceCellProps) {
   const full = displayMode === "detail";
+  if (column === "leaderFullName" && typeof value === "string" && typeof row.leaderHolyName === "string" && row.leaderHolyName.trim()) {
+    return <TextValue full={full}>{`${row.leaderHolyName.trim()} ${value}`}</TextValue>;
+  }
   if (column === "imageUrl") return <Avatar name={String(row.fullName ?? row.leaderFullName ?? row.username ?? "")} src={value} />;
   if (column === "status" && typeof value === "boolean") return <StatusBadge active={value} />;
   if (column === "effect" && typeof value === "string") return <EffectBadge effect={value} />;

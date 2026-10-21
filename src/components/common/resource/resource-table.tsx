@@ -343,7 +343,7 @@ function RowActions({ route, row, onExportRow, exportingRow }: { route: RouteCon
 function canEditRow(route: RouteConfig, row: Record<string, unknown>, user: AuthUser | null) {
   if (route.kind === "accounts") return false;
   if (route.kind === "leaders") return false;
-  if (route.kind === "positions") return hasPositionPermission(user, "update", row);
+  if (route.kind === "positions" || route.kind === "executive-board") return hasScopedRowPermission(route, user, "update", row);
   if (!isSuperAdmin(user) && isSystemRoleRow(route, row)) return false;
   if (!isSuperAdmin(user)) return true;
   return route.kind !== "dioceses" && route.kind !== "deaneries" && route.kind !== "parishes";
@@ -353,12 +353,18 @@ export function canShowEditAction(route: RouteConfig, row: Record<string, unknow
   return canUseAction(user, route.actions?.edit) && canEditRow(route, row, user);
 }
 
-function hasPositionPermission(user: AuthUser | null, action: "update" | "toggle", row: Record<string, unknown>) {
-  return typeof row.positionType === "string" && hasPermission(user, `organization.position.${action}.${row.positionType.toLowerCase()}`);
+// Chức vụ và phân công ban điều hành: chỉ thao tác trên dòng thuộc đúng cấp mình được cấp quyền.
+// Phân công không có quyền toggle riêng, đổi trạng thái dùng quyền update.
+function hasScopedRowPermission(route: RouteConfig, user: AuthUser | null, action: "update" | "toggle", row: Record<string, unknown>) {
+  const level = route.kind === "positions" ? row.positionType : row.unitType;
+  if (typeof level !== "string") return false;
+  const resource = route.kind === "positions" ? "position" : "executive_board_assignment";
+  const permissionAction = route.kind === "positions" ? action : "update";
+  return hasPermission(user, `organization.${resource}.${permissionAction}.${level.toLowerCase()}`);
 }
 
 function canToggleRow(route: RouteConfig, row: Record<string, unknown>, user: AuthUser | null) {
-  if (route.kind === "positions") return hasPositionPermission(user, "toggle", row);
+  if (route.kind === "positions" || route.kind === "executive-board") return hasScopedRowPermission(route, user, "toggle", row);
   if (!isSuperAdmin(user) && isSystemRoleRow(route, row)) return false;
   if (route.kind === "accounts") return !isOwnAccount(row, user) && !rowHasPrimaryRole(row, "SUPER_ADMIN");
   if (route.kind === "dioceses") return isSuperAdmin(user);

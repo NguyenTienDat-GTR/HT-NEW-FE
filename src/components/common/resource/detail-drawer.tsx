@@ -100,6 +100,8 @@ function GenericDetailDrawer({ id, onClose, route }: { id?: string | null; onClo
                   ? "Chi tiết hồ sơ tham dự"
                   : route.kind === "positions"
                     ? typeof row?.positionName === "string" ? row.positionName : "Chi tiết chức vụ"
+                    : route.kind === "executive-board"
+                    ? "Chi tiết phân công ban điều hành"
                     : `Chi tiết bản ghi ${id}`}
               </Dialog.Description>
             </div>
@@ -112,8 +114,9 @@ function GenericDetailDrawer({ id, onClose, route }: { id?: string | null; onClo
           <div className="min-h-0 flex-1 overflow-y-auto bg-app-canvas/50 p-5">
             {query.isLoading ? <div className="h-40 rounded-[12px] border border-border bg-white motion-safe:animate-pulse" /> : null}
             {query.isError ? <div className="rounded-[10px] border border-danger/30 bg-danger/5 p-3 text-sm text-danger">{getApiErrorMessage(query.error)}</div> : null}
-            {row && route.kind === "positions" ? <PositionDetail row={row} /> : null}
-            {row && route.kind !== "positions" ? (
+            {row && route.kind === "positions" ? <SectionedDetail row={row} sections={POSITION_SECTIONS} /> : null}
+            {row && route.kind === "executive-board" ? <SectionedDetail row={row} sections={ASSIGNMENT_SECTIONS} /> : null}
+            {row && route.kind !== "positions" && route.kind !== "executive-board" ? (
               <div className="space-y-3">
                 <dl className="grid auto-rows-min grid-cols-1 gap-3 md:grid-cols-2">
                   {keys.map((key) => (
@@ -147,38 +150,69 @@ function GenericDetailDrawer({ id, onClose, route }: { id?: string | null; onClo
   );
 }
 
-const POSITION_SECTIONS: { title: string; fields: { key: string; label: string }[] }[] = [
+type DetailField = { key: string; label: string; wide?: boolean; value?: (row: Record<string, unknown>) => unknown };
+type DetailSection = { title: string; fields: DetailField[] };
+
+const AUDIT_SECTION: DetailSection = {
+  title: "Lịch sử ghi nhận",
+  fields: [
+    { key: "createdByName", label: "Người tạo" },
+    { key: "createdAt", label: "Ngày tạo" },
+    { key: "updatedByName", label: "Người cập nhật" },
+    { key: "updatedAt", label: "Ngày cập nhật" },
+  ],
+};
+
+const POSITION_SECTIONS: DetailSection[] = [
   {
     title: "Thông tin chức vụ",
     fields: [
-      { key: "positionName", label: "Tên chức vụ" },
+      { key: "positionName", label: "Tên chức vụ", wide: true },
       { key: "positionType", label: "Cấp áp dụng" },
       { key: "status", label: "Trạng thái" },
     ],
   },
-  {
-    title: "Lịch sử ghi nhận",
-    fields: [
-      { key: "createdByName", label: "Người tạo" },
-      { key: "createdAt", label: "Ngày tạo" },
-      { key: "updatedByName", label: "Người cập nhật" },
-      { key: "updatedAt", label: "Ngày cập nhật" },
-    ],
-  },
+  AUDIT_SECTION,
 ];
 
-function PositionDetail({ row }: { row: Record<string, unknown> }) {
+const ASSIGNMENT_SECTIONS: DetailSection[] = [
+  {
+    title: "Thông tin phân công",
+    fields: [
+      {
+        key: "leaderName",
+        label: "Huynh trưởng",
+        wide: true,
+        value: (row) => [row.leaderHolyName, row.leaderFullName].filter((part) => typeof part === "string" && part.trim()).join(" "),
+      },
+      { key: "positionName", label: "Chức vụ" },
+      { key: "unitType", label: "Cấp áp dụng" },
+      { key: "unitName", label: "Đơn vị" },
+      { key: "status", label: "Trạng thái" },
+    ],
+  },
+  {
+    title: "Thời gian hiệu lực",
+    fields: [
+      { key: "startDate", label: "Ngày bắt đầu" },
+      { key: "endDate", label: "Ngày kết thúc" },
+    ],
+  },
+  AUDIT_SECTION,
+];
+
+function SectionedDetail({ row, sections }: { row: Record<string, unknown>; sections: DetailSection[] }) {
   return (
     <div className="space-y-4">
-      {POSITION_SECTIONS.map((section) => (
+      {sections.map((section) => (
         <section className="rounded-[12px] border border-border bg-white p-4 shadow-sm" key={section.title}>
           <h2 className="text-xs font-semibold uppercase text-muted">{section.title}</h2>
           <dl className="mt-3 grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
-            {section.fields.map(({ key, label }) => {
-              const value = row[key];
+            {section.fields.map(({ key, label, wide, value: getValue }) => {
+              const value = getValue ? getValue(row) : row[key];
               const empty = value === null || value === undefined || value === "";
               return (
-                <div className={key === "positionName" ? "sm:col-span-2" : undefined} key={key}>
+                <div className={wide ? "sm:col-span-2" : undefined} key={key}>
                   <dt className="text-xs font-medium text-muted">{label}</dt>
                   <dd className="mt-1 break-words text-sm leading-6 text-foreground">
                     {empty ? <span className="text-muted">—</span> : <ResourceCell column={key} displayMode="detail" row={row} value={value} />}

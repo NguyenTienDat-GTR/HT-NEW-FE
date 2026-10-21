@@ -20,6 +20,7 @@ import { RevokeCertificateDialog } from "./revoke-certificate-dialog";
 import { CourseStatusDialog } from "@/modules/training-courses/components/course-status-dialog";
 import { DetailDrawer } from "./detail-drawer";
 import { PositionFormDialog } from "@/modules/executive-board/components/position-form-dialog";
+import { AssignmentFormDialog } from "@/modules/executive-board/components/assignment-form-dialog";
 import { getResourceId, isAwaitingApproval } from "./resource-actions";
 import { isInvalidScore, originalScore, runWithConcurrency, sameScore, type ScoreComponent, type ScoreDrafts, type ScoreEntry } from "./score-entry";
 import { ScoreStats } from "./score-stats";
@@ -89,8 +90,9 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
   const rows = rowsFromResponse(query.data);
   const detailId = searchParams.get("detail");
   const positionEditId = searchParams.get("edit");
-  const positionFormTarget =
-    effectiveRoute.kind !== "positions" ? null : positionEditId ? ({ mode: "edit", id: positionEditId } as const) : searchParams.get("create") ? ({ mode: "create" } as const) : null;
+  const modalFormTarget = positionEditId ? ({ mode: "edit", id: positionEditId } as const) : searchParams.get("create") ? ({ mode: "create" } as const) : null;
+  const positionFormTarget = effectiveRoute.kind === "positions" ? modalFormTarget : null;
+  const assignmentFormTarget = effectiveRoute.kind === "executive-board" && !embedded ? modalFormTarget : null;
   const toggleId = searchParams.get("toggle");
   const approveId = searchParams.get("approve");
   const rejectId = searchParams.get("reject");
@@ -464,6 +466,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
 
       <DetailDrawer id={detailId} onClose={closeQueryDialog} route={effectiveRoute} />
       {effectiveRoute.kind === "positions" ? <PositionFormDialog onClose={closeQueryDialog} target={positionFormTarget} /> : null}
+      {effectiveRoute.kind === "executive-board" ? <AssignmentFormDialog onClose={closeQueryDialog} target={assignmentFormTarget} /> : null}
       {effectiveRoute.kind === "courses" ? (
         // Khóa huấn luyện: cảnh báo tác động lên chứng nhận, xác nhận và đối chiếu trạng thái đích ở BE.
         <CourseStatusDialog

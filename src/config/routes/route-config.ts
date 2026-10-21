@@ -243,15 +243,6 @@ function inferRouteFilters(config: RouteConfig): RouteFilterConfig[] {
         optionLabel: "levelName",
       });
       break;
-    case "executive-board":
-      filters.push({
-        key: "unitType",
-        label: "Loại đơn vị",
-        type: "select",
-        options: unitTypeFilterOptions(["DIOCESE", "DEANERY", "PARISH"]),
-      });
-      filters.push({ key: "position.positionCode", label: "Mã chức vụ", type: "text", placeholder: "Lọc theo mã chức vụ" });
-      break;
     case "course-types":
       filters.push({
         key: "managementUnitType",
