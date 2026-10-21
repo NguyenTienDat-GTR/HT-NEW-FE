@@ -63,12 +63,12 @@ export function LeaderCreateFormLayout({
   const stepFields = getLeaderCreateStepFields(fields, currentStep);
 
   return (
-    <Panel className="overflow-hidden rounded-[12px]">
-      <div className="px-5 py-6 md:px-10 md:py-8">
+    <Panel className="overflow-hidden">
+      <div className="px-6 py-8 md:px-10">
         <Stepper currentStep={currentStep} onStepSelect={onStepSelect} />
 
         <div className="mt-10">
-          <h2 className="text-xl font-semibold tracking-[0] text-foreground">{step.title}</h2>
+          <h2 className="text-lg font-semibold leading-[26px] tracking-[0] text-foreground">{step.title}</h2>
           {currentStep === 0 ? (
             <PersonalStepLayout
               errors={errors}
@@ -81,7 +81,7 @@ export function LeaderCreateFormLayout({
               values={values}
             />
           ) : (
-            <div className="mt-7 grid gap-x-6 gap-y-6 md:grid-cols-2 xl:grid-cols-3">
+            <div className="mt-8 grid gap-x-6 gap-y-6 md:grid-cols-2 xl:grid-cols-3">
               {stepFields.map((field) => (
                 <div className="w-full max-w-64" key={field.name}>
                   <FormField
@@ -125,10 +125,10 @@ function Stepper({ currentStep, onStepSelect }: { currentStep: number; onStepSel
             >
               <span
                 className={cn(
-                  "inline-flex h-10 w-10 items-center justify-center rounded-full border text-sm font-semibold transition-colors",
-                  active && "border-primary bg-primary text-white shadow-[var(--shadow-accent)]",
-                  completed && "border-primary bg-primary/10 text-primary",
-                  !active && !completed && "border-border bg-surface-1 text-muted",
+                  "inline-flex h-9 w-9 items-center justify-center rounded-full border text-sm font-semibold transition-colors",
+                  active && "border-primary bg-primary text-white",
+                  completed && "border-primary bg-primary-soft text-primary",
+                  !active && !completed && "border-border bg-white text-muted",
                 )}
               >
                 {completed ? <Check size={17} weight="bold" /> : index + 1}
@@ -164,7 +164,7 @@ function PersonalStepLayout({
 }) {
   return (
     <div className="mt-7 grid items-start gap-5 lg:grid-cols-[280px_minmax(0,1fr)]">
-      <section className="rounded-[12px] border border-border bg-surface-1/60 p-4">
+      <section className="rounded-xl border border-border bg-slate-50 p-5">
         <h3 className="text-base font-semibold tracking-[0] text-foreground">Ảnh đại diện</h3>
         {imageField ? (
           <div className="mt-5">
@@ -173,7 +173,7 @@ function PersonalStepLayout({
         ) : null}
       </section>
 
-      <section className="rounded-[12px] border border-border bg-white p-4 md:p-5">
+      <section className="rounded-xl border border-border bg-white p-6">
         <h3 className="text-base font-semibold tracking-[0] text-foreground">Thông tin cá nhân</h3>
         <div className="mt-5 grid gap-x-5 gap-y-5 xl:grid-cols-6">
           {fields.map((field) => (
@@ -205,7 +205,7 @@ function AvatarPicker({ value, onChange }: { value?: string | null; onChange: (v
       {imageSource ? (
         <span
           aria-label="Ảnh đại diện đã chọn"
-          className="mx-auto block h-24 w-24 shrink-0 rounded-full border border-border bg-cover bg-center shadow-sm"
+          className="mx-auto block h-24 w-24 shrink-0 rounded-full border-2 border-white bg-cover bg-center ring-1 ring-border"
           role="img"
           style={{ backgroundImage: `url(${imageSource})` }}
         />
@@ -233,7 +233,7 @@ function AvatarPicker({ value, onChange }: { value?: string | null; onChange: (v
             type="file"
           />
           <label
-            className="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-[8px] border border-border bg-white px-3 text-sm font-semibold text-foreground shadow-sm transition-colors hover:border-primary hover:text-primary"
+            className="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-lg border border-input bg-white px-3 text-sm font-semibold text-foreground transition-colors hover:bg-slate-50 hover:text-primary"
             htmlFor={inputId}
           >
             <UploadSimple size={16} />

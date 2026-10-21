@@ -141,14 +141,14 @@ export function ResourceFormPage({
   }
 
   return (
-    <div className={cn("mx-auto space-y-4 pb-20", leaderCreateLayout ? "max-w-[960px]" : horizontalSections ? "max-w-[1180px]" : "max-w-[860px]")}>
+    <div className={cn("mx-auto space-y-6 pb-24", leaderCreateLayout ? "max-w-[960px]" : horizontalSections ? "max-w-[1180px]" : "max-w-[860px]")}>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <Link className="mb-2 inline-flex items-center gap-2 text-xs font-semibold text-primary" href={(returnTo ?? effectiveRoute.path) as Route}>
             <ArrowLeft size={16} />
             Quay lại danh sách
           </Link>
-          <h1 className="text-2xl font-semibold tracking-[0] text-foreground">{title}</h1>
+          <h1 className="text-2xl font-bold leading-8 tracking-[0] text-foreground">{title}</h1>
           {leaderCreateLayout ? null : <p className="mt-1 max-w-[72ch] text-sm leading-5 text-muted">{spec.description ?? effectiveRoute.subtitle}</p>}
         </div>
       </div>
@@ -167,13 +167,13 @@ export function ResourceFormPage({
           values={mergedValues}
         />
       ) : (
-        <div className={horizontalSections ? sectionGridClass(sections.length) : "space-y-3"}>
+        <div className={horizontalSections ? sectionGridClass(sections.length) : "space-y-6"}>
           {detailQuery.isLoading ? (
             <Panel className="h-72 animate-pulse" />
           ) : (
             sections.map(([section, fields]) => (
-              <Panel className={cn(compactAccountForm || horizontalSections ? "p-4 md:p-5" : "p-4", horizontalSections && "h-full")} key={section}>
-                <h2 className="mb-3 text-sm font-semibold uppercase tracking-[0.04em] text-muted">{section}</h2>
+              <Panel className={cn(compactAccountForm || horizontalSections ? "p-6" : "p-6", horizontalSections && "h-full")} key={section}>
+                <h2 className="mb-4 border-l-4 border-primary pl-3 text-lg font-semibold leading-[26px] text-foreground">{section}</h2>
                 <div className={fieldGridClass(compactAccountForm, horizontalSections)}>
                   {fields.map((field) => (
                     <div className={fieldLayoutClass(field, horizontalSections)} key={field.name}>
@@ -200,13 +200,13 @@ export function ResourceFormPage({
       effectiveRoute.kind === "course-types" &&
       requiresCertification(mergedValues) &&
       hasPermissionPrefix(user, "training.certificate_config.read.") ? (
-        <Panel className="space-y-4 p-4 md:p-5">
-          <h2 className="text-sm font-semibold uppercase tracking-[0.04em] text-muted">Cấu hình chứng nhận</h2>
+        <Panel className="space-y-4 p-6">
+          <h2 className="border-l-4 border-primary pl-3 text-lg font-semibold leading-[26px] text-foreground">Cấu hình chứng nhận</h2>
           <CertificateConfigPicker courseTypeCode={String(id)} courseTypeName={String(mergedValues.typeName ?? "")} />
         </Panel>
       ) : null}
 
-      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-white/95 px-4 py-2.5 shadow-[var(--shadow-bottom-bar)] backdrop-blur">
+      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-white/95 px-4 py-3 shadow-[var(--shadow-bottom-bar)] backdrop-blur-md">
         <div className={cn("mx-auto flex justify-end gap-3", leaderCreateLayout ? "max-w-[960px]" : "max-w-[1180px]")}>
           <Button asChild variant="outline">
             <Link href={(returnTo ?? effectiveRoute.path) as Route}>{leaderCreateLayout ? "Hủy" : <><X size={16} />Hủy</>}</Link>
@@ -272,9 +272,9 @@ function sectionGridClass(sectionCount: number) {
 }
 
 function fieldGridClass(compactAccountForm: boolean, horizontalSections: boolean) {
-  if (horizontalSections) return "grid gap-3";
-  if (compactAccountForm) return "grid gap-3 md:grid-cols-2";
-  return "grid gap-3 md:grid-cols-2 xl:grid-cols-3";
+  if (horizontalSections) return "grid gap-5";
+  if (compactAccountForm) return "grid gap-5 md:grid-cols-2";
+  return "grid gap-5 md:grid-cols-2 xl:grid-cols-3";
 }
 
 function fieldLayoutClass(field: FormFieldSpec, horizontalSections = false) {

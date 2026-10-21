@@ -22,8 +22,8 @@ export function CertificateScanDialog({ trigger, tip }: { trigger: ReactNode; ti
         <Dialog.Trigger asChild>{trigger}</Dialog.Trigger>
       )}
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-40 bg-slate-950/40 backdrop-blur-sm" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[min(92vw,520px)] -translate-x-1/2 -translate-y-1/2 rounded-[14px] border border-border bg-white p-5 shadow-[var(--shadow-elevated)] focus:outline-none">
+        <Dialog.Overlay className="fixed inset-0 z-40 bg-slate-900/45 backdrop-blur-[4px]" />
+        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[min(92vw,520px)] -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border bg-white p-5 shadow-[var(--shadow-elevated)] focus:outline-none">
           <div className="flex items-start justify-between gap-4">
             <div>
               <Dialog.Title className="text-lg font-semibold text-foreground">Quét mã QR chứng nhận</Dialog.Title>
@@ -150,13 +150,13 @@ function Scanner({ onDone }: { onDone: () => void }) {
 
   return (
     <div className="mt-4 space-y-3">
-      <div className="relative aspect-square w-full overflow-hidden rounded-[12px] bg-slate-900">
+      <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-slate-900">
         <video ref={videoRef} className="h-full w-full object-cover" muted playsInline />
         <canvas ref={canvasRef} className="hidden" />
         {starting ? <div className="absolute inset-0 grid place-items-center text-sm text-white/80">Đang mở camera…</div> : null}
-        <div className="pointer-events-none absolute inset-[18%] rounded-[12px] border-2 border-white/80" />
+        <div className="pointer-events-none absolute inset-[18%] rounded-xl border-2 border-white/80" />
       </div>
-      {error ? <p className="rounded-[10px] border border-danger/30 bg-danger/5 p-3 text-sm text-danger">{error}</p> : null}
+      {error ? <p className="rounded-lg border border-danger/30 bg-danger/5 p-3 text-sm text-danger">{error}</p> : null}
       <label className="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-[8px] border border-border bg-white px-3 text-sm font-semibold text-foreground shadow-sm transition-colors hover:border-primary hover:text-primary">
         <ImageSquare size={16} /> Chọn ảnh chứa mã QR
         <input accept="image/*" className="sr-only" onChange={scanFile} type="file" />

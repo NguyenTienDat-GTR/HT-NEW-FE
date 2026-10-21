@@ -35,7 +35,7 @@ export function ScoreNoteAction({ rowId, row, notes }: { rowId: string; row: Rec
       <Popover.Portal>
         <Popover.Content
           align="end"
-          className="z-[60] w-[320px] rounded-[12px] border border-border bg-white p-3 shadow-[var(--shadow-elevated)] focus:outline-none"
+          className="z-[60] w-[320px] rounded-xl border border-border bg-white p-3 shadow-[var(--shadow-elevated)] focus:outline-none"
           sideOffset={8}
         >
           <div className="mb-2 flex items-center justify-between gap-2">

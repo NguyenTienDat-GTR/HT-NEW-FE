@@ -29,7 +29,7 @@ export function PositionFormDialog({ target, onClose }: { target: PositionFormTa
   return (
     <Dialog.Root open={target !== null} onOpenChange={(open) => (!open ? onClose() : undefined)}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-40 bg-slate-950/30 backdrop-blur-sm" />
+        <Dialog.Overlay className="fixed inset-0 z-40 bg-slate-900/45 backdrop-blur-[4px]" />
         {/* key để xóa dữ liệu đã nhập khi mở lại cho chức vụ khác. */}
         {target ? <PositionForm key={target.mode === "edit" ? target.id : "create"} onClose={onClose} target={target} /> : null}
       </Dialog.Portal>
@@ -66,10 +66,9 @@ function PositionForm({ target, onClose }: { target: PositionFormTarget; onClose
     },
     onSuccess: async () => {
       toast.success(editing ? "Lưu cập nhật thành công" : "Tạo mới thành công");
-      // Danh sách, KPI, chi tiết và các ô chọn chức vụ ở form khác đều phải lấy lại dữ liệu mới.
+      // Danh sách, chi tiết và các ô chọn chức vụ ở form khác đều phải lấy lại dữ liệu mới.
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["resource", "/positions"] }),
-        queryClient.invalidateQueries({ queryKey: ["resource-kpi", "/positions"] }),
         queryClient.invalidateQueries({ queryKey: ["resource-detail", "/positions"] }),
         queryClient.invalidateQueries({ queryKey: ["field-options"] }),
         queryClient.invalidateQueries({ queryKey: ["executive-board-seats"] }),
@@ -80,7 +79,7 @@ function PositionForm({ target, onClose }: { target: PositionFormTarget; onClose
   });
 
   return (
-    <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[calc(100vw-32px)] max-w-[480px] -translate-x-1/2 -translate-y-1/2 rounded-[14px] border border-border bg-white p-5 shadow-2xl focus:outline-none">
+    <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[calc(100vw-32px)] max-w-[480px] -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border bg-white p-5 shadow-2xl focus:outline-none">
       <div className="flex items-start justify-between gap-4">
         <div>
           <Dialog.Title className="text-lg font-semibold text-foreground">{editing ? "Chỉnh sửa chức vụ" : "Thêm chức vụ"}</Dialog.Title>

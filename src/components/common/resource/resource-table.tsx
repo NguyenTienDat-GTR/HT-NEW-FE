@@ -8,7 +8,7 @@ import { Tip } from "@/components/ui/tip";
 import type { RouteConfig } from "@/config/routes/routes";
 import { useAuthStore, type AuthUser } from "@/lib/auth/auth-store";
 import { canUseAction, hasPermission, isSuperAdmin } from "@/lib/auth/permissions";
-import { columnLabels, ResourceCell } from "./resource-format";
+import { Avatar, columnLabels, ResourceCell } from "./resource-format";
 import { useEmbeddedResource, resourceActionHref, withReturnTo } from "./embedded-resource-context";
 import { fillRoute, getResourceId, isAwaitingApproval } from "./resource-actions";
 import type { ScoreEntry, ScoreNotes } from "./score-entry";
@@ -50,15 +50,18 @@ export function ResourceTable({
   const user = useAuthStore((state) => state.user);
   const embedded = useEmbeddedResource();
   // Trong chi tiết khóa, bảng đã thuộc về một khóa nên không cần cột khóa.
-  const visibleColumns = visibleResourceColumns(route, rows, user).filter((column) => !(embedded && column === "courseName"));
+  const visibleColumns = visibleResourceColumns(route, rows, user)
+    .filter((column) => !(embedded && column === "courseName"))
+    // Hồ sơ huynh trưởng: ảnh + tên thánh + họ tên gộp thành một ô nhận diện.
+    .filter((column) => !(route.kind === "leaders" && (column === "imageUrl" || column === "holyName")));
 
   return (
     <div className="max-w-full overflow-x-auto">
-      <table className="w-full min-w-270 border-separate border-spacing-0 text-left text-xs">
+      <table className="w-full min-w-270 border-separate border-spacing-0 text-left text-sm">
         <thead>
-          <tr className="bg-surface-1/90">
+          <tr className="bg-slate-50">
             {selection ? (
-              <th className="sticky top-0 z-10 h-10 w-10 border-b border-border bg-surface-1/95 px-3">
+              <th className="sticky top-0 z-10 h-11 w-10 border-b border-border bg-slate-50 px-3">
                 <input
                   aria-label="Chọn tất cả hồ sơ đang chờ duyệt"
                   checked={selection.selectableIds.length > 0 && selection.selectableIds.every((id) => selection.selectedIds.includes(id))}
@@ -69,14 +72,14 @@ export function ResourceTable({
                 />
               </th>
             ) : null}
-            {embedded ? <th className="sticky top-0 z-10 h-10 w-12 border-b border-border bg-surface-1/95 px-3 font-semibold text-foreground">STT</th> : null}
+            {embedded ? <th className="sticky top-0 z-10 h-10 w-12 border-b border-border bg-slate-50 px-3 text-xs font-semibold uppercase tracking-wide text-text-secondary">STT</th> : null}
             {visibleColumns.map((column) => (
-              <th className="sticky top-0 z-10 h-10 border-b border-border bg-surface-1/95 px-3 font-semibold text-foreground" key={column}>
+              <th className="sticky top-0 z-10 h-10 border-b border-border bg-slate-50 px-3 text-xs font-semibold uppercase tracking-wide text-text-secondary" key={column}>
                 {route.sortFields?.[column] === null ? (
-                  <span className="inline-flex h-8 items-center px-1">{columnLabels[column] ?? column}</span>
+                  <span className="inline-flex h-8 items-center px-1">{route.kind === "leaders" && column === "fullName" ? "Huynh trưởng" : (columnLabels[column] ?? column)}</span>
                 ) : (
                   <button className="inline-flex h-8 cursor-pointer items-center gap-1 rounded-lg px-1 transition-colors hover:text-primary" onClick={() => sort(column)} type="button">
-                    {columnLabels[column] ?? column}
+                    {route.kind === "leaders" && column === "fullName" ? "Huynh trưởng" : (columnLabels[column] ?? column)}
                     {sortBy === column ? (
                       <span className="inline-flex items-center gap-0.5 text-xs text-primary">
                         <CaretDownIcon className={sortDirection === "ASC" ? "rotate-180" : undefined} size={12} weight="bold" />
@@ -88,7 +91,7 @@ export function ResourceTable({
               </th>
             ))}
             {scoreEntry?.components.map((component) => (
-              <th className="sticky top-0 z-10 h-10 border-b border-border bg-surface-1/95 px-3 font-semibold text-foreground" key={component.id}>
+              <th className="sticky top-0 z-10 h-10 border-b border-border bg-slate-50 px-3 text-xs font-semibold uppercase tracking-wide text-text-secondary" key={component.id}>
                 <span className="block whitespace-nowrap">{component.name}</span>
                 <span className="block text-[10px] font-normal text-muted">
                   Tối đa {Number(component.maxScore)}
@@ -96,7 +99,7 @@ export function ResourceTable({
                 </span>
               </th>
             ))}
-            <th className="h-10 border-b border-border px-3 text-right font-semibold text-foreground">Thao tác</th>
+            <th className="h-11 border-b border-border bg-slate-50 px-3 text-right text-xs font-semibold uppercase tracking-wide text-text-secondary">Thao tác</th>
           </tr>
         </thead>
         <tbody>{isLoading ? <ResourceTableSkeleton columns={visibleColumns} size={size} /> : <ResourceRows columns={visibleColumns} indexOffset={embedded ? page * size : undefined} route={route} rows={rows} scoreEntry={scoreEntry} selection={selection} onExportRow={onExportRow} exportingRow={exportingRow} />}</tbody>
@@ -120,11 +123,11 @@ function ResourceTableSkeleton({ columns, size }: { columns: string[]; size: Res
   return Array.from({ length: size }).map((_, rowIndex) => (
     <tr key={rowIndex}>
       {columns.map((column) => (
-        <td className="h-12 border-b border-surface-2 px-3" key={column}>
+        <td className="h-14 border-b border-slate-100 px-3" key={column}>
           <span className="block h-3 w-24 rounded bg-surface-2 motion-safe:animate-pulse" />
         </td>
       ))}
-      <td className="sticky right-0 h-12 border-b border-surface-2 bg-white px-3 text-right shadow-(--shadow-table-sticky)">
+      <td className="sticky right-0 h-14 border-b border-slate-100 bg-white px-3 text-right shadow-(--shadow-table-sticky)">
         <span className="ml-auto block h-8 w-20 rounded bg-surface-2 motion-safe:animate-pulse" />
       </td>
     </tr>
@@ -155,9 +158,9 @@ function ResourceRows({
     const rowId = getResourceId(route, row);
     const selectable = Boolean(selection && rowId && selection.selectableIds.includes(rowId));
     return (
-    <tr className="group bg-white transition-colors hover:bg-primary/4" key={String(row.id ?? row.username ?? row.certificateCode ?? rowIndex)}>
+    <tr className="group bg-white transition-colors hover:bg-slate-50" key={String(row.id ?? row.username ?? row.certificateCode ?? rowIndex)}>
       {selection ? (
-        <td className="h-12 w-10 border-b border-surface-2 px-3 align-middle">
+        <td className="h-14 w-10 border-b border-slate-100 px-3 align-middle">
           {selectable && rowId ? (
             <input
               aria-label="Chọn hồ sơ"
@@ -169,10 +172,10 @@ function ResourceRows({
           ) : null}
         </td>
       ) : null}
-      {indexOffset !== undefined ? <td className="h-12 w-12 border-b border-surface-2 px-3 align-middle text-muted">{indexOffset + rowIndex + 1}</td> : null}
+      {indexOffset !== undefined ? <td className="h-14 w-12 border-b border-slate-100 px-3 align-middle text-muted">{indexOffset + rowIndex + 1}</td> : null}
       {columns.map((column) => (
-        <td className="h-12 border-b border-surface-2 px-3 align-middle" key={column}>
-          <ResourceCell column={column} row={row} value={row[column]} />
+        <td className="h-14 border-b border-slate-100 px-3 align-middle" key={column}>
+          {route.kind === "leaders" && column === "fullName" ? <LeaderIdentity row={row} /> : <ResourceCell column={column} row={row} value={row[column]} />}
         </td>
       ))}
       {scoreEntry?.components.map((component) => {
@@ -180,7 +183,7 @@ function ResourceRows({
         const editable = Boolean(rowId) && scoreEntry.isEditable(row);
         const invalid = scoreEntry.isInvalid(component, value);
         return (
-          <td className="h-12 border-b border-surface-2 px-3 align-middle" key={component.id}>
+          <td className="h-14 border-b border-slate-100 px-3 align-middle" key={component.id}>
             {editable && rowId ? (
               <input
                 aria-label={`${component.name} của ${String(row.leaderFullName ?? "")}`}
@@ -199,7 +202,7 @@ function ResourceRows({
           </td>
         );
       })}
-      <td className="sticky right-0 h-12 border-b border-surface-2 bg-white px-3 text-right shadow-(--shadow-table-sticky) transition-colors group-hover:bg-primary-soft">
+      <td className="sticky right-0 h-14 border-b border-slate-100 bg-white px-3 text-right shadow-(--shadow-table-sticky) transition-colors group-hover:bg-slate-50">
         <RowActions route={route} row={row} onExportRow={onExportRow} exportingRow={exportingRow} scoreNotes={scoreEntry?.notes} />
       </td>
     </tr>
@@ -207,7 +210,7 @@ function ResourceRows({
   });
 }
 
-function RowActions({ route, row, onExportRow, exportingRow, scoreNotes }: { route: RouteConfig; row: Record<string, unknown>; onExportRow?: (id: string) => void; exportingRow?: boolean; scoreNotes?: ScoreNotes }) {
+export function RowActions({ route, row, onExportRow, exportingRow, scoreNotes }: { route: RouteConfig; row: Record<string, unknown>; onExportRow?: (id: string) => void; exportingRow?: boolean; scoreNotes?: ScoreNotes }) {
   const user = useAuthStore((state) => state.user);
   const embedded = useEmbeddedResource();
   const id = getResourceId(route, row);
@@ -421,5 +424,21 @@ function StatusSwitch({ active, href }: { active: boolean; href: Route }) {
     >
       <span className={`block h-5 w-5 rounded-full shadow-sm ${active ? "bg-(--toggle-active)" : "bg-(--toggle-thumb)"}`} />
     </Link>
+  );
+}
+
+function LeaderIdentity({ row }: { row: Record<string, unknown> }) {
+  const holyName = typeof row.holyName === "string" ? row.holyName.trim() : "";
+  const fullName = typeof row.fullName === "string" ? row.fullName : "";
+  const code = typeof row.email === "string" ? row.email : "";
+  const displayName = `${holyName} ${fullName}`.trim();
+  return (
+    <div className="flex min-w-0 items-center gap-3">
+      <Avatar name={fullName || holyName} src={row.imageUrl} />
+      <div className="min-w-0">
+        <p className="truncate text-sm font-semibold text-foreground">{displayName || "—"}</p>
+        {code ? <p className="truncate text-xs text-muted">{code}</p> : null}
+      </div>
+    </div>
   );
 }

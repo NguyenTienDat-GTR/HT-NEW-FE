@@ -260,14 +260,14 @@ export function Avatar({ name, src }: { name: string; src: unknown }) {
     return (
       <span
         aria-label={name || "Ảnh đại diện"}
-        className="inline-flex h-10 w-10 rounded-full border border-border bg-cover bg-center shadow-sm"
+        className="inline-flex h-9 w-9 shrink-0 rounded-full border border-border bg-cover bg-center"
         role="img"
         style={{ backgroundImage: `url(${src})` }}
       />
     );
   }
   return (
-    <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-primary text-sm font-semibold text-white shadow-[var(--shadow-accent)]">
+    <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-soft text-sm font-semibold text-primary">
       {initial}
     </span>
   );
@@ -301,17 +301,13 @@ function WorkflowBadge({ value }: { value: string }) {
 function LeaderLevelBadge({ value }: { value: string }) {
   const label = formatLeaderLevel(value);
   const className =
-    value === "HT_XU"
-      ? "border-amber-400 bg-white text-danger"
-      : value === "DU_TRUONG"
-        ? "border-danger bg-danger text-white"
-        : value.startsWith("HT_")
-          ? "border-amber-400 border-3 bg-danger text-white"
-          : value.startsWith("HLV_")
-            ? "border-purple-600 bg-purple-600 text-white"
-            : undefined;
+    value === "HT_II"
+      ? "border-transparent bg-[var(--badge-level-mid-bg)] text-[var(--badge-level-mid-fg)]"
+      : value === "HT_III" || value.startsWith("HLV_")
+        ? "border-transparent bg-[var(--badge-level-high-bg)] text-[var(--badge-level-high-fg)]"
+        : "border-transparent bg-[var(--badge-level-low-bg)] text-[var(--badge-level-low-fg)]";
 
-  return className ? <Badge className={className}>{label}</Badge> : <Badge>{label}</Badge>;
+  return <Badge className={className}>{label}</Badge>;
 }
 
 export function Badge({
@@ -326,12 +322,12 @@ export function Badge({
   return (
     <span
       className={cn(
-        "inline-flex min-h-7 items-center rounded-[7px] border px-2.5 py-1 text-xs font-semibold",
-        tone === "neutral" && "border-border bg-surface-1 text-muted",
-        tone === "success" && "border-success/25 bg-success/10 text-success",
-        tone === "danger" && "border-danger/25 bg-danger/10 text-danger",
-        tone === "warning" && "border-warning/30 bg-warning/10 text-[color-mix(in_oklab,var(--warning)_70%,black)]",
-        tone === "info" && "border-info/25 bg-info/10 text-info",
+        "inline-flex min-h-6 items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold",
+        tone === "neutral" && "border-transparent bg-surface-2 text-text-secondary",
+        tone === "success" && "border-transparent bg-[var(--badge-success-bg)] text-[var(--badge-success-fg)]",
+        tone === "danger" && "border-transparent bg-[var(--badge-danger-bg)] text-[var(--badge-danger-fg)]",
+        tone === "warning" && "border-transparent bg-[var(--badge-warning-bg)] text-[var(--badge-warning-fg)]",
+        tone === "info" && "border-transparent bg-[var(--badge-level-mid-bg)] text-[var(--badge-level-mid-fg)]",
         className,
       )}
     >

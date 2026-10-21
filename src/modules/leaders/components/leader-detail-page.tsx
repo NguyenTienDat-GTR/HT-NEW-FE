@@ -32,6 +32,8 @@ import {serializeBaseSearch} from "@/lib/api/search";
 import {useAuthStore} from "@/lib/auth/auth-store";
 import {canUseAction, hasPermissionPrefix} from "@/lib/auth/permissions";
 import {CertificateDetailDrawer} from "@/modules/certificates/components/certificate-detail-drawer";
+import {CertificateCard} from "@/modules/certificates/components/certificate-card";
+import {ViewModeToggle, type ViewMode} from "@/components/common/resource/view-mode-toggle";
 import {cn} from "@/lib/utils";
 import {formatLeaderLevel} from "@/components/common/resource/resource-format";
 import {
@@ -124,11 +126,11 @@ export function LeaderDetailPage({id, route}: LeaderDetailPageProps) {
     } : leader;
 
     return (
-        <div className="space-y-5">
+        <div className="space-y-6">
             <div>
-                <h1 className="text-2xl font-semibold tracking-[0] text-foreground md:text-3xl">Chi tiết huynh
+                <h1 className="text-2xl font-bold leading-8 tracking-[0] text-foreground">Chi tiết huynh
                     trưởng</h1>
-                <nav aria-label="Breadcrumb" className="mt-3 flex flex-wrap items-center gap-2 text-sm text-muted">
+                <nav aria-label="Breadcrumb" className="mt-2 flex flex-wrap items-center gap-2 text-[13px] text-muted">
                     <Link className="font-medium text-primary hover:text-primary-hover" href="/dashboard">
                         Trang chủ
                     </Link>
@@ -142,7 +144,7 @@ export function LeaderDetailPage({id, route}: LeaderDetailPageProps) {
             </div>
 
             <Panel className="overflow-hidden">
-                <div className="flex flex-col gap-5 p-5 lg:flex-row lg:items-center lg:justify-between">
+                <div className="flex flex-col gap-6 p-6 lg:flex-row lg:items-center lg:justify-between">
                     <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center">
                         <EditableLeaderAvatar
                             editing={editingProfile && activeTab === "profile"}
@@ -151,13 +153,13 @@ export function LeaderDetailPage({id, route}: LeaderDetailPageProps) {
                         />
                         <div className="min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
-                                <h2 className="break-words text-2xl font-semibold tracking-[0] text-foreground">
+                                <h2 className="break-words text-[22px] font-bold leading-8 tracking-[0] text-foreground">
                                     {leader.holyName ? `${leader.holyName} ` : ""}{leader.fullName}
                                 </h2>
                                 {leader.leaderLevel ? <LevelBadge level={leader.leaderLevel}/> : null}
                                 <StatusBadge active={leader.status === true}/>
                             </div>
-                            <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted">
+                            <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm text-text-secondary">
                                 <HeaderFact icon={HouseLine} value={leader.parishName ?? leader.deaneryName}/>
                                 <HeaderFact icon={Phone} value={leader.phoneNumber}/>
                                 <HeaderFact icon={EnvelopeSimple} value={leader.email}/>
@@ -182,15 +184,15 @@ export function LeaderDetailPage({id, route}: LeaderDetailPageProps) {
                     ) : null}
                 </div>
 
-                <div className="flex max-w-full gap-2 overflow-x-auto border-t border-border px-4">
+                <div className="flex max-w-full gap-1 overflow-x-auto border-t border-border px-4 lg:px-6">
                     {tabs.map((tab) => {
                         const Icon = tab.icon;
                         const active = activeTab === tab.id;
                         return (
                             <button
                                 className={cn(
-                                    "inline-flex h-12 shrink-0 cursor-pointer items-center gap-2 border-b-2 px-3 text-sm font-semibold transition-colors",
-                                    active ? "border-primary text-primary" : "border-transparent text-muted hover:text-foreground",
+                                    "inline-flex h-12 shrink-0 cursor-pointer items-center gap-2 border-b-2 px-4 text-sm font-semibold transition-colors",
+                                    active ? "border-primary text-primary" : "border-transparent text-text-secondary hover:text-foreground",
                                 )}
                                 key={tab.id}
                                 onClick={() => {
@@ -276,7 +278,7 @@ function ProfileTab({
     });
 
     return (
-        <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.45fr)_minmax(360px,0.72fr)]">
+        <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(360px,0.72fr)]">
             <SectionCard icon={IdentificationCard} title="Thông tin cơ bản">
                 <div className="grid gap-x-6 gap-y-5 md:grid-cols-2 xl:grid-cols-3">
                     <ProfileField
@@ -421,13 +423,13 @@ function toLeaderUpdatePayload(values: LeaderEditValues) {
 
 function SectionCard({title, icon: Icon, children}: { title: string; icon: typeof User; children: ReactNode }) {
     return (
-        <Panel className="h-full rounded-[12px] p-5 md:p-7">
+        <Panel className="h-full p-6">
             <div className="mb-6 flex items-center gap-3">
                 <span
                     className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary shadow-[inset_0_0_0_1px_rgba(108,71,255,0.08)]">
                     <Icon size={21} weight="duotone"/>
                 </span>
-                <h3 className="text-lg font-semibold tracking-[0] text-foreground md:text-xl">{title}</h3>
+                <h3 className="text-lg font-semibold leading-[26px] tracking-[0] text-foreground">{title}</h3>
             </div>
             {children}
         </Panel>
@@ -467,8 +469,8 @@ function ProfileField({
 
     return (
         <div className="w-full max-w-64 space-y-1">
-            <p className="text-sm font-semibold tracking-[0] text-muted">{label}</p>
-            <p className="flex min-h-11 items-center rounded-[8px] border border-border bg-white px-4 py-2 text-sm font-medium leading-5 text-foreground shadow-sm">
+            <p className="text-[13px] font-medium tracking-[0] text-muted">{label}</p>
+            <p className="flex min-h-11 items-center rounded-lg border border-border bg-slate-50 px-4 py-2 text-sm font-medium leading-5 text-foreground">
                 {displayValue(value)}
             </p>
         </div>
@@ -512,6 +514,7 @@ function CourseTab({leaderId}: { leaderId: string }) {
 function CertificateTab({leaderId}: { leaderId: string }) {
     const user = useAuthStore((state) => state.user);
     const [viewingCode, setViewingCode] = useState<string | null>(null);
+    const [viewMode, setViewMode] = useState<ViewMode>("card");
     // Admin giáo hạt / giáo xứ xem chứng nhận của huynh trưởng trong phạm vi quản lý (mọi cấp khóa, kể cả đã thu hồi)
     // ngay trong hồ sơ; các tài khoản khác dùng danh sách chứng nhận theo quyền ở menu Chứng nhận.
     const viaProfilePermission = hasPermissionPrefix(user, "organization.leader_certificate.read.");
@@ -525,6 +528,20 @@ function CertificateTab({leaderId}: { leaderId: string }) {
     return (
         <>
             <RelatedPanel
+                headerAction={<ViewModeToggle mode={viewMode} onChange={setViewMode}/>}
+                view={viewMode === "card" ? (
+                    <ul className="grid gap-4 p-5 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                        {(query.data ?? []).map((row, index) => (
+                            <li key={row.certificateCode ?? index}>
+                                <CertificateCard
+                                    data={row}
+                                    onOpen={row.certificateCode ? () => setViewingCode(row.certificateCode ?? null) : undefined}
+                                    showHolder={false}
+                                />
+                            </li>
+                        ))}
+                    </ul>
+                ) : undefined}
                 columns={["Chứng nhận", "Khóa học", "Ngày cấp", "Trạng thái", "Người ký", "Xem"]}
                 error={query.isError ? getApiErrorMessage(query.error) : undefined}
                 loading={query.isLoading}
@@ -628,7 +645,12 @@ function RelatedPanel({
                           rows,
                           loading,
                           error,
+                          headerAction,
+                          view,
                       }: {
+    headerAction?: ReactNode;
+    // Thay bảng bằng chế độ xem khác (vd thẻ) khi có dữ liệu.
+    view?: ReactNode;
     title: string;
     columns: string[];
     rows: unknown[][];
@@ -637,8 +659,9 @@ function RelatedPanel({
 }) {
     return (
         <Panel className="overflow-hidden">
-            <div className="border-b border-border p-5">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-5">
                 <h3 className="text-base font-semibold text-foreground">{title}</h3>
+                {headerAction}
             </div>
             {loading ? (
                 <div className="space-y-3 p-5">
@@ -650,13 +673,14 @@ function RelatedPanel({
             {error ? <p className="p-5 text-sm text-danger">{error}</p> : null}
             {!loading && !error && rows.length === 0 ?
                 <p className="p-5 text-sm text-muted">Chưa có dữ liệu liên quan.</p> : null}
-            {!loading && !error && rows.length ? (
+            {!loading && !error && rows.length && view ? view : null}
+            {!loading && !error && rows.length && !view ? (
                 <div className="max-w-full overflow-x-auto">
                     <table className="w-full min-w-[760px] border-separate border-spacing-0 text-left text-sm">
                         <thead>
-                        <tr className="bg-surface-1">
+                        <tr className="bg-slate-50">
                             {columns.map((column) => (
-                                <th className="border-b border-border px-4 py-3 text-xs font-semibold uppercase text-muted"
+                                <th className="border-b border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide text-text-secondary"
                                     key={column}>
                                     {column}
                                 </th>
@@ -665,9 +689,9 @@ function RelatedPanel({
                         </thead>
                         <tbody>
                         {rows.map((row, rowIndex) => (
-                            <tr className="bg-white transition-colors hover:bg-primary/4" key={rowIndex}>
+                            <tr className="bg-white transition-colors hover:bg-slate-50" key={rowIndex}>
                                 {row.map((cell, cellIndex) => (
-                                    <td className="border-b border-surface-2 px-4 py-3 text-foreground"
+                                    <td className="border-b border-slate-100 px-4 py-3 text-foreground"
                                         key={`${rowIndex}-${cellIndex}`}>
                                         {isValidElement(cell) ? cell : displayValue(cell)}
                                     </td>
@@ -699,13 +723,13 @@ function EditableLeaderAvatar({
             {leader.imageUrl ? (
                 <span
                     aria-label={name}
-                    className="block h-24 w-24 rounded-full border border-border bg-cover bg-center shadow-sm"
+                    className="block h-20 w-20 rounded-full border-2 border-white bg-cover bg-center shadow-sm ring-1 ring-border"
                     role="img"
                     style={{backgroundImage: `url(${leader.imageUrl})`}}
                 />
             ) : (
                 <span
-                    className="flex h-24 w-24 items-center justify-center rounded-full bg-primary text-2xl font-semibold text-white shadow-[var(--shadow-accent)]">
+                    className="flex h-20 w-20 items-center justify-center rounded-full bg-primary text-2xl font-semibold text-white ring-1 ring-border">
                     {editing ? <ImageSquare size={28} weight="duotone"/> : initial}
                 </span>
             )}
@@ -759,10 +783,16 @@ function HeaderFact({icon: Icon, value}: { icon: typeof HouseLine; value: unknow
     );
 }
 
+function levelBadgeClass(level: string) {
+    if (level === "HT_II") return "bg-[var(--badge-level-mid-bg)] text-[var(--badge-level-mid-fg)]";
+    if (level === "HT_III" || level.startsWith("HLV_")) return "bg-[var(--badge-level-high-bg)] text-[var(--badge-level-high-fg)]";
+    return "bg-[var(--badge-level-low-bg)] text-[var(--badge-level-low-fg)]";
+}
+
 function LevelBadge({level}: { level: string }) {
     return (
         <span
-            className="inline-flex min-h-7 items-center rounded-[7px] border border-amber-300 bg-danger px-2.5 py-1 text-xs font-semibold text-white">
+            className={cn("inline-flex min-h-6 items-center rounded-full px-2.5 py-0.5 text-xs font-semibold", levelBadgeClass(level))}>
       {formatLeaderLevel(level)}
     </span>
     );
@@ -771,7 +801,7 @@ function LevelBadge({level}: { level: string }) {
 function StatusBadge({active}: { active: boolean }) {
     return (
         <span
-            className={cn("inline-flex min-h-7 items-center rounded-[7px] border px-2.5 py-1 text-xs font-semibold", active ? "border-success/25 bg-success/10 text-success" : "border-border bg-surface-1 text-muted")}>
+            className={cn("inline-flex min-h-6 items-center rounded-full px-2.5 py-0.5 text-xs font-semibold", active ? "bg-[var(--badge-success-bg)] text-[var(--badge-success-fg)]" : "bg-[var(--badge-danger-bg)] text-[var(--badge-danger-fg)]")}>
       {active ? "Đang hoạt động" : "Tạm ngưng"}
     </span>
     );
@@ -780,7 +810,7 @@ function StatusBadge({active}: { active: boolean }) {
 function LeaderDetailSkeleton() {
     return (
         <div className="space-y-5">
-            <div className="h-20 rounded-[12px] bg-surface-2 motion-safe:animate-pulse"/>
+            <div className="h-20 rounded-xl bg-surface-2 motion-safe:animate-pulse"/>
             <Panel className="p-5">
                 <div className="flex gap-4">
                     <div className="h-24 w-24 rounded-full bg-surface-2 motion-safe:animate-pulse"/>
@@ -791,8 +821,8 @@ function LeaderDetailSkeleton() {
                 </div>
             </Panel>
             <div className="grid gap-5 xl:grid-cols-2">
-                <div className="h-80 rounded-[12px] bg-surface-2 motion-safe:animate-pulse"/>
-                <div className="h-80 rounded-[12px] bg-surface-2 motion-safe:animate-pulse"/>
+                <div className="h-80 rounded-xl bg-surface-2 motion-safe:animate-pulse"/>
+                <div className="h-80 rounded-xl bg-surface-2 motion-safe:animate-pulse"/>
             </div>
         </div>
     );

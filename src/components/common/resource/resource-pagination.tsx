@@ -26,7 +26,7 @@ export function ResourcePagination({
   const isLastPage = currentPage >= totalPages;
 
   return (
-    <div className="flex flex-col gap-3 border-t border-border bg-white px-4 py-3 text-sm text-muted xl:flex-row xl:items-center xl:justify-between">
+    <div className="flex flex-col gap-3 border-t border-border bg-white px-5 py-4 text-[13px] text-muted xl:flex-row xl:items-center xl:justify-between">
       <span className="whitespace-nowrap font-medium">
         Tổng {viNumber.format(data?.totalElements ?? 0)} bản ghi, trang {currentPage}/{totalPages}
       </span>
@@ -35,7 +35,7 @@ export function ResourcePagination({
           <span className="whitespace-nowrap">Số dòng</span>
           <select
             aria-label="Số dòng mỗi trang"
-            className="h-10 rounded-[8px] border border-border bg-white px-3 text-sm text-foreground shadow-sm focus:border-primary focus:outline-none focus:ring-4 focus:ring-[var(--primary-ring)]"
+            className="h-9 rounded-lg border border-input bg-white px-3 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-[3px] focus:ring-[var(--primary-ring)]"
             onChange={(event) => updatePageSize(Number(event.target.value) as ResourcePageSize)}
             value={size}
           >

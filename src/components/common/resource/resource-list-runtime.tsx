@@ -1,11 +1,12 @@
 "use client";
 
-import { keepPreviousData, useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Route } from "next";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
+import { Plus } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Tip } from "@/components/ui/tip";
 import { Panel } from "@/components/ui/panel";
@@ -28,11 +29,11 @@ import { isInvalidScore, originalNote, originalScore, runWithConcurrency, sameSc
 import { ScoreStats } from "./score-stats";
 import { ResourceListEmptyState } from "./resource-list-empty-state";
 import { ResourceListHeader } from "./resource-list-header";
-import { buildResourceKpiQuerySpecs, buildResourceKpis, shouldShowResourceKpis } from "./resource-kpis";
 import type { ResourceListRuntimeProps } from "./resource-list-types";
 import { asPageResponse } from "./resource-list-utils";
 import { ResourcePagination } from "./resource-pagination";
 import { ResourceTable } from "./resource-table";
+import { ViewModeToggle } from "./view-mode-toggle";
 import { ResourceFilters } from "./resource-toolbar";
 import { useResourceQueryState } from "./use-resource-query-state";
 
@@ -67,28 +68,6 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
   const courseDisabled = embedded?.courseDisabled === true;
   const canCreate = canUseAction(user, effectiveRoute.actions?.create) && (config.canCreate?.(effectiveRoute, user) ?? true) && !courseDisabled;
   const pageData = asPageResponse(query.data, queryState.size);
-  // Trong chi tiết khóa không hiển thị KPI (và không gọi các truy vấn KPI).
-  const showKpis = !embedded && shouldShowResourceKpis(effectiveRoute);
-  const kpiQuerySpecs = buildResourceKpiQuerySpecs(effectiveRoute, queryState.queryString);
-  const kpiQueries = useQueries({
-    queries: kpiQuerySpecs.map((spec) => ({
-      queryKey: ["resource-kpi", effectiveRoute.endpoint, spec.id, spec.queryString],
-      enabled: Boolean(showKpis && effectiveRoute.endpoint && user),
-      queryFn: () => apiFetch<PageResponse<Record<string, unknown>>>(`${effectiveRoute.endpoint}?${spec.queryString}`),
-      // Cache KPI để đổi bộ lọc qua lại không bắn lại hàng loạt request (tránh chạm giới hạn 429).
-      staleTime: 60_000,
-      placeholderData: keepPreviousData,
-    })),
-  });
-  const kpiQueryTotals = Object.fromEntries(kpiQuerySpecs.map((spec, index) => [spec.id, kpiQueries[index]?.data?.totalElements ?? 0]));
-  // Trong chi tiết khóa không hiển thị thẻ KPI.
-  const kpis = embedded
-    ? []
-    : buildResourceKpis({
-        route: effectiveRoute,
-        pageData,
-        queryTotals: kpiQueryTotals,
-      });
   const rows = rowsFromResponse(query.data);
   const detailId = searchParams.get("detail");
   // Thu hồi quyền hàng loạt của vai trò / tài khoản: trang riêng giống trang phân quyền.
@@ -111,6 +90,8 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
   const revokeId = searchParams.get("revoke");
   const reissueId = searchParams.get("reissue");
   const removeId = searchParams.get("remove");
+  const [viewMode, setViewMode] = useState<"table" | "card">(config.cardView?.defaultMode ?? "table");
+  const showCards = Boolean(config.cardView) && !embedded && viewMode === "card";
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkMode, setBulkMode] = useState<"approve" | "reject" | null>(null);
   const [scoreDrafts, setScoreDrafts] = useState<ScoreDrafts>({});
@@ -465,13 +446,21 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
     : undefined;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <ResourceListHeader
-        kpis={kpis}
-        kpisLoading={query.isLoading || kpiQueries.some((kpiQuery) => kpiQuery.isLoading)}
         moduleLabel={config.moduleLabel}
         route={effectiveRoute}
         embedded={Boolean(embedded)}
+        actions={
+          !embedded && effectiveRoute.primaryActionLabel && effectiveRoute.createPath && canCreate ? (
+            <Button asChild>
+              <Link href={effectiveRoute.createPath as Route}>
+                <Plus size={18} weight="bold" />
+                {effectiveRoute.primaryActionLabel}
+              </Link>
+            </Button>
+          ) : null
+        }
       />
 
       <Panel className="overflow-hidden">
@@ -486,8 +475,10 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
           resetFilters={queryState.resetFilters}
           canCreate={canCreate}
           hideSearch={Boolean(embedded)}
+          showCreate={Boolean(embedded)}
           extraActions={
             <>
+              {config.cardView && !embedded ? <ViewModeToggle mode={viewMode} onChange={setViewMode} /> : null}
               {saveScoresButton}
               {permissionRevokeButton}
             </>
@@ -500,6 +491,9 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
         {scoreEntryEnabled && embedded?.scoringOpen === false ? (
           <div className="border-b border-warning/30 bg-warning/10 px-4 py-2 text-xs font-medium text-foreground">{embedded.scoringHint ?? "Chỉ chấm điểm được khi khóa đang diễn ra."}</div>
         ) : null}
+        {showCards && config.cardView ? (
+          config.cardView.render({ rows, route: effectiveRoute, isLoading: query.isLoading, selection, onExportRow: canExportPdf ? (id) => exportPdf([id]) : undefined, exportingRow: exporting })
+        ) : (
         <ResourceTable
           selection={selection}
           onExportRow={canExportPdf ? (id) => exportPdf([id]) : undefined}
@@ -514,11 +508,12 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
           sortBy={queryState.sortBy}
           sortDirection={queryState.sortDirection}
         />
+        )}
 
         {!query.isLoading && rows.length === 0 ? <ResourceListEmptyState route={effectiveRoute} /> : null}
 
         {query.isError && !query.isFetching ? (
-          <div className="mx-4 mb-4 rounded-[10px] border border-danger/30 bg-danger/5 p-3 text-sm font-medium text-danger">
+          <div className="mx-4 mb-4 rounded-lg border border-danger/30 bg-danger/5 p-3 text-sm font-medium text-danger">
             {getApiErrorMessage(query.error)}
           </div>
         ) : null}

@@ -49,7 +49,7 @@ export function LeaderPickerModal({
   return (
     <Dialog.Root open={open} onOpenChange={(next) => (!next ? onClose() : undefined)}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-[60] bg-slate-950/40" />
+        <Dialog.Overlay className="fixed inset-0 z-[60] bg-slate-900/45 backdrop-blur-[4px]" />
         {open ? <PickerContent onClose={onClose} onSelect={onSelect} selectedId={selectedId} /> : null}
       </Dialog.Portal>
     </Dialog.Root>
@@ -109,7 +109,7 @@ function PickerContent({ selectedId, onClose, onSelect }: { selectedId?: string;
   const columnCount = 6 + (showParish ? 1 : 0) + (showDeanery ? 1 : 0);
 
   return (
-    <Dialog.Content className="fixed left-1/2 top-1/2 z-[61] flex max-h-[92vh] w-[calc(100vw-32px)] max-w-[1100px] -translate-x-1/2 -translate-y-1/2 flex-col rounded-[12px] bg-white shadow-xl focus:outline-none">
+    <Dialog.Content className="fixed left-1/2 top-1/2 z-[61] flex max-h-[92vh] w-[calc(100vw-32px)] max-w-[1100px] -translate-x-1/2 -translate-y-1/2 flex-col rounded-xl bg-white shadow-xl focus:outline-none">
       <div className="flex items-start justify-between gap-3 border-b border-border px-5 py-4">
         <div>
           <Dialog.Title className="text-lg font-semibold text-foreground">Chọn huynh trưởng</Dialog.Title>
@@ -129,7 +129,7 @@ function PickerContent({ selectedId, onClose, onSelect }: { selectedId?: string;
         </div>
         {showDeanery ? (
           <select
-            className="h-10 rounded-[8px] border border-border bg-white px-3 text-sm"
+            className="h-10 cursor-pointer rounded-lg border border-input bg-white px-3 text-sm focus:border-primary focus:outline-none focus:ring-[3px] focus:ring-[var(--primary-ring)]"
             onChange={(event) => {
               setDeaneryId(event.target.value);
               setParishId("");
@@ -145,7 +145,7 @@ function PickerContent({ selectedId, onClose, onSelect }: { selectedId?: string;
           </select>
         ) : null}
         {showParish ? (
-          <select className="h-10 rounded-[8px] border border-border bg-white px-3 text-sm" onChange={(event) => setParishId(event.target.value)} value={parishId}>
+          <select className="h-10 cursor-pointer rounded-lg border border-input bg-white px-3 text-sm focus:border-primary focus:outline-none focus:ring-[3px] focus:ring-[var(--primary-ring)]" onChange={(event) => setParishId(event.target.value)} value={parishId}>
             <option value="">Tất cả giáo xứ</option>
             {parishOptions.map((option) => (
               <option key={option.value} value={option.value}>

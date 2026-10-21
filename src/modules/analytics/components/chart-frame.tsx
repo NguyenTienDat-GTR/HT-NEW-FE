@@ -33,9 +33,9 @@ export function ChartFrame({ title, description, rows, metricKeys, type = "area"
   if (!rows.length || !metricKeys.length) return <ChartEmpty title={title} description={description} />;
 
   return (
-    <Panel ref={ref} className="p-5">
+    <Panel ref={ref} className="p-6">
       <ChartHeader title={title} description={description} />
-      <div className="mt-4 h-[320px] rounded-[10px] bg-white">
+      <div className="mt-4 h-[320px] rounded-lg bg-white">
         <ResponsiveContainer height="100%" width="100%">
           {type === "bar" ? (
             <BarChart data={rows}>
@@ -88,7 +88,7 @@ export function ChartFrame({ title, description, rows, metricKeys, type = "area"
 export function ChartHeader({ title, description }: { title: string; description: string }) {
   return (
     <div>
-      <h2 className="text-base font-semibold text-foreground">{title}</h2>
+      <h2 className="text-lg font-semibold leading-[26px] text-foreground">{title}</h2>
       <p className="mt-1 text-sm text-muted">{description}</p>
     </div>
   );
@@ -111,7 +111,7 @@ function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: 
   if (!active || !payload?.length) return null;
   return (
     <motion.div
-      className="rounded-[8px] border border-border bg-white px-3 py-2 text-sm shadow-[var(--shadow-card)]"
+      className="rounded-lg border border-border bg-white px-3 py-2 text-sm shadow-sm"
       initial={{ opacity: 0, scale: 0.96 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.16 }}
@@ -148,9 +148,9 @@ export function ChartDataTable({ rows, metricKeys }: { rows: Record<string, unkn
           <tbody>
             {rows.map((row) => (
               <tr key={String(row.period)}>
-                <td className="border-b border-surface-2 py-2">{String(row.period)}</td>
+                <td className="border-b border-slate-100 py-2">{String(row.period)}</td>
                 {metricKeys.map((key) => (
-                  <td className="border-b border-surface-2 py-2" key={key}>
+                  <td className="border-b border-slate-100 py-2" key={key}>
                     {viNumber.format(Number(row[key] ?? 0))}
                   </td>
                 ))}
@@ -164,7 +164,7 @@ export function ChartDataTable({ rows, metricKeys }: { rows: Record<string, unkn
 }
 
 export function ChartSkeleton() {
-  return <Panel className="h-[420px] p-5 motion-safe:animate-pulse" />;
+  return <Panel className="h-[420px] p-6 motion-safe:animate-pulse" />;
 }
 
 export function ChartEmpty({ title, description, className }: { title: string; description: string; className?: string }) {

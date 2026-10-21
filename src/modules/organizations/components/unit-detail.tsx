@@ -70,12 +70,12 @@ export function UnitDetail({ kind, id, row }: { kind: UnitKind; id: string; row:
   );
 
   return (
-    <div className="space-y-4">
-      <section className="rounded-[12px] border border-border bg-white p-4 shadow-sm">
+    <div className="space-y-5">
+      <section className="rounded-xl border border-border bg-white p-5 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="text-xs font-semibold uppercase text-muted">{UNIT_LABEL[kind]}</p>
-            <h2 className="mt-1 break-words text-xl font-semibold text-foreground">{String(row.name ?? "—")}</h2>
+            <h2 className="mt-1 break-words text-lg font-semibold leading-[26px] text-foreground">{String(row.name ?? "—")}</h2>
             {path.length ? <p className="mt-1 text-sm text-muted">{path.join(" › ")}</p> : null}
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -85,7 +85,7 @@ export function UnitDetail({ kind, id, row }: { kind: UnitKind; id: string; row:
         </div>
         <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
           {STATS[kind].map((stat) => (
-            <div className={cn("rounded-[10px] border px-3 py-2.5", STAT_TONES[stat.tone])} key={stat.key}>
+            <div className={cn("rounded-lg border px-3 py-2.5", STAT_TONES[stat.tone])} key={stat.key}>
               <p className="text-xs font-medium opacity-80">{stat.label}</p>
               <p className="mt-0.5 text-2xl font-semibold">{typeof row[stat.key] === "number" ? (row[stat.key] as number).toLocaleString("vi-VN") : "0"}</p>
             </div>
@@ -109,8 +109,8 @@ export function UnitDetail({ kind, id, row }: { kind: UnitKind; id: string; row:
 
 function FieldsCard({ title, fields, row }: { title: string; fields: Field[]; row: Record<string, unknown> }) {
   return (
-    <section className="rounded-[12px] border border-border bg-white p-4 shadow-sm">
-      <h2 className="text-xs font-semibold uppercase text-muted">{title}</h2>
+    <section className="rounded-xl border border-border bg-white p-5 shadow-sm">
+      <h2 className="text-sm font-semibold text-foreground">{title}</h2>
       <dl className="mt-3 grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
         {fields.map(({ key, label }) => {
           const value = row[key];

@@ -173,16 +173,16 @@ export function CertificateDetailBody({ detail, split }: { detail: ReturnType<ty
   const sections = waiting ? SECTIONS.filter((section) => section.title !== "Thông tin chứng nhận") : SECTIONS;
   return (
     <>
-      {detailQuery.isLoading ? <div className="h-40 rounded-[12px] border border-border bg-white motion-safe:animate-pulse" /> : null}
+      {detailQuery.isLoading ? <div className="h-40 rounded-xl border border-border bg-white motion-safe:animate-pulse" /> : null}
       {detailQuery.isError ? (
-        <div className="rounded-[10px] border border-danger/30 bg-danger/5 p-3 text-sm text-danger">{getApiErrorMessage(detailQuery.error)}</div>
+        <div className="rounded-lg border border-danger/30 bg-danger/5 p-3 text-sm text-danger">{getApiErrorMessage(detailQuery.error)}</div>
       ) : null}
       {row ? (
         <div className={cn("gap-4", split && !waiting ? "grid items-start lg:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)]" : "space-y-4")}>
           {waiting ? null : (
           <div className={cn("space-y-4", split && "lg:order-2 lg:sticky lg:top-4")}>
             {revoked ? (
-              <section className="rounded-[12px] border border-danger/30 bg-danger/5 p-4 text-sm text-foreground shadow-sm">
+              <section className="rounded-xl border border-danger/30 bg-danger/5 p-5 text-sm text-foreground">
                 <h2 className="text-xs font-semibold uppercase tracking-[0.04em] text-danger">Xem trước chứng nhận</h2>
                 <p className="mt-2">Chứng nhận đã bị thu hồi nên không hiển thị bản xem trước và không xuất PDF được.</p>
               </section>
@@ -213,16 +213,16 @@ export function CertificateDetailDrawer({ id, onClose, endpoint }: { id?: string
   return (
     <Dialog.Root open={Boolean(id)} onOpenChange={(open) => (!open ? onClose() : undefined)}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-40 bg-slate-950/30 backdrop-blur-sm" />
+        <Dialog.Overlay className="fixed inset-0 z-40 bg-slate-900/45 backdrop-blur-[4px]" />
         <Dialog.Content
           className={cn(
             "fixed bottom-0 right-0 top-0 z-50 flex w-full flex-col border-l border-border bg-white shadow-[var(--shadow-elevated)] transition-[max-width] duration-200 focus:outline-none",
             expanded ? "max-w-[1280px]" : "max-w-[760px]",
           )}
         >
-          <div className="flex items-start justify-between gap-4 border-b border-border p-5">
+          <div className="flex items-start justify-between gap-4 border-b border-border px-6 py-5">
             <div className="min-w-0">
-              <Dialog.Title className="text-xl font-semibold text-foreground">Chi tiết chứng nhận</Dialog.Title>
+              <Dialog.Title className="text-lg font-semibold leading-[26px] text-foreground">Chi tiết chứng nhận</Dialog.Title>
               <Dialog.Description className="mt-1 truncate text-sm text-muted">
                 {row ? `${String(row.certificateCode ?? "")} · ${String(row.leaderFullName ?? "")}` : "Đang tải thông tin chứng nhận"}
               </Dialog.Description>
@@ -248,7 +248,7 @@ export function CertificateDetailDrawer({ id, onClose, endpoint }: { id?: string
             </div>
           </div>
 
-          <div className="min-h-0 flex-1 overflow-y-auto bg-app-canvas/50 p-5">
+          <div className="min-h-0 flex-1 overflow-y-auto bg-slate-50 p-6">
             <CertificateDetailBody detail={detail} split={expanded} />
           </div>
         </Dialog.Content>
@@ -261,8 +261,8 @@ function Section({ section, row }: { section: SectionSpec; row: Detail }) {
   const fields = section.fields.filter((field) => (field.always || hasValue(row[field.key])) && (field.show?.(row) ?? true));
   if (fields.length === 0) return null;
   return (
-    <section className={cn("rounded-[12px] border bg-white p-4 shadow-sm", section.tone === "danger" ? "border-danger/30" : "border-border")}>
-      <h2 className={cn("text-xs font-semibold uppercase tracking-[0.04em]", section.tone === "danger" ? "text-danger" : "text-muted")}>{section.title}</h2>
+    <section className={cn("rounded-xl border bg-white p-5 shadow-sm", section.tone === "danger" ? "border-danger/30" : "border-border")}>
+      <h2 className={cn("text-sm font-semibold", section.tone === "danger" ? "text-danger" : "text-foreground")}>{section.title}</h2>
       <dl className="mt-3 grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2">
         {fields.map((field) => (
           <div className={field.fullWidth ? "sm:col-span-2" : undefined} key={field.key}>
@@ -285,13 +285,13 @@ function Section({ section, row }: { section: SectionSpec; row: Detail }) {
 
 function PreviewPanel({ preview, loading, error, approved }: { preview?: Preview; loading: boolean; error?: string; approved: boolean }) {
   return (
-    <section className="rounded-[12px] border border-border bg-white p-4 shadow-sm">
-      <h2 className="text-xs font-semibold uppercase tracking-[0.04em] text-muted">Xem trước chứng nhận</h2>
+    <section className="rounded-xl border border-border bg-white p-5 shadow-sm">
+      <h2 className="text-sm font-semibold text-foreground">Xem trước chứng nhận</h2>
       <div className="mt-3">
-        {loading ? <div className="aspect-[1.414/1] w-full rounded-[10px] bg-surface-2 motion-safe:animate-pulse" /> : null}
+        {loading ? <div className="aspect-[1.414/1] w-full rounded-lg bg-surface-2 motion-safe:animate-pulse" /> : null}
         {error ? <p className="text-sm text-danger">{error}</p> : null}
         {preview && !preview.configured ? (
-          <p className="rounded-[10px] border border-dashed border-border p-4 text-sm text-muted">
+          <p className="rounded-lg border border-dashed border-border p-4 text-sm text-muted">
             Chưa có cấu hình chứng nhận (riêng hoặc chung) cho khóa này nên chưa thể xem trước. Hãy tạo cấu hình trong Cấu hình chứng nhận.
           </p>
         ) : null}

@@ -298,7 +298,7 @@ export function CertificateCanvas({
   return (
     <div
       ref={containerRef}
-      className="relative w-full select-none overflow-hidden rounded-[10px] border border-border bg-surface-2"
+      className="relative w-full select-none overflow-hidden rounded-lg border border-border bg-surface-2"
       style={{ aspectRatio: `${aspect}`, containerType: "size" }}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}

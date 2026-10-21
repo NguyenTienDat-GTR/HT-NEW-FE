@@ -37,7 +37,7 @@ export function AssignmentFormDialog({ target, onClose }: { target: AssignmentFo
   return (
     <Dialog.Root open={target !== null} onOpenChange={(open) => (!open ? onClose() : undefined)}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-40 bg-slate-950/30 backdrop-blur-sm" />
+        <Dialog.Overlay className="fixed inset-0 z-40 bg-slate-900/45 backdrop-blur-[4px]" />
         {target ? <AssignmentForm onClose={onClose} /> : null}
       </Dialog.Portal>
     </Dialog.Root>
@@ -87,7 +87,6 @@ function AssignmentForm({ onClose }: { onClose: () => void }) {
       toast.success("Phân công thành công");
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["resource", "/executive-board/assignments"] }),
-        queryClient.invalidateQueries({ queryKey: ["resource-kpi", "/executive-board/assignments"] }),
         queryClient.invalidateQueries({ queryKey: ["resource-detail", "/executive-board/assignments"] }),
         queryClient.invalidateQueries({ queryKey: ["executive-board-seats"] }),
       ]);
@@ -99,7 +98,7 @@ function AssignmentForm({ onClose }: { onClose: () => void }) {
   const canSubmit = Boolean(currentLeaderId && currentPosition) && !dateInvalid && !missingUnit;
 
   return (
-    <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[calc(100vw-32px)] max-w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-[14px] border border-border bg-white p-5 shadow-2xl focus:outline-none">
+    <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[calc(100vw-32px)] max-w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border bg-white p-5 shadow-2xl focus:outline-none">
       <div className="flex items-start justify-between gap-4">
         <div>
           <Dialog.Title className="text-lg font-semibold text-foreground">Phân công ban điều hành</Dialog.Title>

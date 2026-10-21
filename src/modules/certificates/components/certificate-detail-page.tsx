@@ -17,7 +17,7 @@ export function CertificateDetailPage({ code, listPath = "/certificates" }: { co
   const row = detail.detailQuery.data;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <Button asChild className="-ml-2 mb-1" size="sm" variant="ghost">
@@ -25,7 +25,7 @@ export function CertificateDetailPage({ code, listPath = "/certificates" }: { co
               <ArrowLeft size={16} /> Danh sách chứng nhận
             </Link>
           </Button>
-          <h1 className="flex items-center gap-2 text-2xl font-semibold text-foreground">
+          <h1 className="flex items-center gap-2 text-2xl font-bold leading-8 text-foreground">
             <CertificateIcon size={26} /> Chi tiết chứng nhận
           </h1>
           <p className="mt-1 truncate text-sm text-muted">

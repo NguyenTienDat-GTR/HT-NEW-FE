@@ -19,15 +19,15 @@ export function UnitStatusHistory({ endpoint, unitId }: { endpoint: string; unit
   });
 
   return (
-    <section className="rounded-[12px] border border-border bg-white p-4 shadow-sm">
-      <h2 className="text-xs font-semibold uppercase text-muted">Lịch sử bật / tắt</h2>
+    <section className="rounded-xl border border-border bg-white p-5 shadow-sm">
+      <h2 className="text-sm font-semibold text-foreground">Lịch sử bật / tắt</h2>
       {query.isLoading ? <p className="mt-3 text-sm text-muted">Đang tải…</p> : null}
       {query.isError ? <p className="mt-3 text-sm text-danger">{getApiErrorMessage(query.error)}</p> : null}
       {query.data && query.data.length === 0 ? <p className="mt-3 text-sm text-muted">Chưa có lịch sử.</p> : null}
       {query.data && query.data.length > 0 ? (
         <ol className="mt-3 space-y-3">
           {query.data.map((item) => (
-            <li className="rounded-[10px] border border-border px-3 py-2.5" key={item.id}>
+            <li className="rounded-lg border border-border px-3 py-2.5" key={item.id}>
               <div className="flex flex-wrap items-center gap-2">
                 <Badge tone={item.status ? "success" : "neutral"}>{item.status ? "Hoạt động" : "Ngưng hoạt động"}</Badge>
                 <span className="text-xs text-muted">{formatDateTime(item.changedAt)}</span>

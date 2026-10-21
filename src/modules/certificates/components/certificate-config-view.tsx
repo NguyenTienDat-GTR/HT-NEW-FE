@@ -9,13 +9,19 @@ import {
   ArrowCounterClockwise,
   ClockCounterClockwise,
   Copy,
+  CursorClick,
   Eye,
+  Info,
   MagnifyingGlass,
+  PencilSimple,
   Plus,
   QrCode,
   SlidersHorizontal,
   Star,
+  TextB,
+  TextItalic,
   TextT,
+  TextUnderline,
   Trash,
   UploadSimple,
   X,
@@ -363,36 +369,49 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
   const busy = saveMutation.isPending || saveAsNewMutation.isPending || setDefaultMutation.isPending || deleteMutation.isPending;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-foreground">{route?.title ?? "Cấu hình chứng nhận"}</h1>
-        <p className="mt-1 text-sm text-muted">{route?.subtitle}</p>
+        <h1 className="text-2xl font-bold leading-8 text-foreground">{route?.title ?? "Cấu hình chứng nhận"}</h1>
+        {route?.subtitle ? <p className="mt-1 max-w-[78ch] text-sm text-text-secondary">{route.subtitle}</p> : null}
       </div>
 
-      <Panel className="space-y-4 p-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 className="text-lg font-semibold text-foreground">Thư viện cấu hình</h2>
-            <p className="text-xs text-muted">
+      {/* Thư viện cấu hình */}
+      <Panel className="overflow-hidden">
+        <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border p-5">
+          <div className="min-w-0">
+            <h2 className="text-lg font-semibold leading-[26px] text-foreground">Thư viện cấu hình</h2>
+            <p className="mt-0.5 max-w-[80ch] text-[13px] leading-5 text-text-secondary">
               Cấu hình chung dùng cho mọi loại khóa chưa được gán cấu hình riêng. Một cấu hình có thể gán cho nhiều loại khóa; mỗi loại khóa chỉ dùng một cấu hình.
             </p>
           </div>
           {canCreate ? (
-            <Button onClick={startNew} size="sm" type="button" variant={isNew ? "primary" : "outline"}>
-              <Plus size={16} /> Tạo cấu hình mới
+            <Button onClick={startNew} type="button" variant={isNew ? "primary" : "outline"}>
+              <Plus size={18} /> Tạo cấu hình mới
             </Button>
           ) : null}
         </div>
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="relative min-w-0 flex-1">
-            <MagnifyingGlass className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
+        <div className="flex flex-col gap-3 border-b border-border p-5 sm:flex-row sm:items-center">
+          <div className="relative min-w-0 flex-1 sm:max-w-[480px]" role="search">
+            <MagnifyingGlass aria-hidden className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
             <Input
-              className="pl-9"
+              aria-label="Tìm theo tên cấu hình hoặc loại khóa"
+              className="pl-9 pr-9"
               onChange={(event) => setSearchInput(event.target.value)}
               placeholder="Tìm theo tên cấu hình hoặc loại khóa…"
+              type="search"
               value={searchInput}
             />
+            {searchInput ? (
+              <button
+                aria-label="Xóa nội dung tìm kiếm"
+                className="absolute right-2 top-1/2 grid h-6 w-6 -translate-y-1/2 cursor-pointer place-items-center rounded-md text-muted transition-colors hover:bg-surface-hover hover:text-foreground"
+                onClick={() => setSearchInput("")}
+                type="button"
+              >
+                <X size={14} weight="bold" />
+              </button>
+            ) : null}
           </div>
           <Dialog.Root>
             <Tip label="Lọc danh sách theo điều kiện">
@@ -401,20 +420,18 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
                   <SlidersHorizontal size={18} />
                   Bộ lọc
                   {activeFilterCount ? (
-                    <span className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-xs font-semibold text-white">
-                      {activeFilterCount}
-                    </span>
+                    <span className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-xs font-semibold text-white">{activeFilterCount}</span>
                   ) : null}
                 </Button>
               </Dialog.Trigger>
             </Tip>
             <Dialog.Portal>
-              <Dialog.Overlay className="fixed inset-0 z-40 bg-slate-950/30 backdrop-blur-sm" />
-              <Dialog.Content className="fixed bottom-0 right-0 top-0 z-50 flex w-full max-w-[440px] flex-col border-l border-border bg-white shadow-[var(--shadow-elevated)] focus:outline-none">
-                <div className="flex items-start justify-between gap-4 border-b border-border p-5">
-                  <div>
-                    <Dialog.Title className="text-xl font-semibold text-foreground">Bộ lọc</Dialog.Title>
-                    <Dialog.Description className="mt-1 text-sm text-muted">Chọn điều kiện để thu hẹp thư viện cấu hình.</Dialog.Description>
+              <Dialog.Overlay className="fixed inset-0 z-40 bg-slate-900/45 backdrop-blur-[4px]" />
+              <Dialog.Content className="fixed bottom-0 right-0 top-0 z-50 flex w-full max-w-[420px] flex-col border-l border-border bg-white shadow-[var(--shadow-elevated)] focus:outline-none">
+                <div className="flex items-start justify-between gap-4 border-b border-border px-6 py-5">
+                  <div className="min-w-0">
+                    <Dialog.Title className="text-lg font-semibold leading-[26px] text-foreground">Bộ lọc</Dialog.Title>
+                    <Dialog.Description className="mt-0.5 text-[13px] text-muted">Thu hẹp thư viện cấu hình theo điều kiện.</Dialog.Description>
                   </div>
                   <Dialog.Close asChild>
                     <Button aria-label="Đóng" size="icon" type="button" variant="ghost">
@@ -422,7 +439,7 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
                     </Button>
                   </Dialog.Close>
                 </div>
-                <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-5">
+                <div className="min-h-0 flex-1 space-y-5 overflow-y-auto bg-slate-50 p-6">
                   <FilterSelect
                     label="Phạm vi"
                     onChange={(value) => updateFilters({ scope: value })}
@@ -470,15 +487,16 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
                     value={sort === "default" ? "" : sort}
                   />
                 </div>
-                <div className="flex justify-end gap-3 border-t border-border bg-surface-1/60 p-4">
+                <div className="flex items-center justify-between gap-3 border-t border-border bg-white px-6 py-4">
                   <Button
+                    disabled={activeFilterCount === 0}
                     onClick={() => {
                       setFilters(EMPTY_FILTERS);
                       setSort("default");
                       setPage(0);
                     }}
                     type="button"
-                    variant="outline"
+                    variant="ghost"
                   >
                     Xóa lọc
                   </Button>
@@ -491,53 +509,68 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
           </Dialog.Root>
         </div>
 
-        {libraryQuery.isError ? <p className="text-sm text-danger">{getApiErrorMessage(libraryQuery.error)}</p> : null}
-        {libraryQuery.isLoading ? <p className="text-sm text-muted">Đang tải thư viện…</p> : null}
-        {libraryQuery.data && libraryItems.length === 0 ? (
-          <p className="rounded-[10px] border border-dashed border-border p-4 text-sm text-muted">
-            {filtering ? "Không có cấu hình nào khớp bộ lọc." : "Thư viện còn trống. Cấu hình đầu tiên bạn tạo sẽ tự động là cấu hình chung."}
-          </p>
-        ) : null}
+        <div className="p-5">
+          {libraryQuery.isError ? (
+            <p className="mb-3 text-sm text-danger" role="alert">
+              {getApiErrorMessage(libraryQuery.error)}
+            </p>
+          ) : null}
+          {libraryQuery.isLoading ? <p className="text-sm text-muted">Đang tải thư viện…</p> : null}
+          {libraryQuery.data && libraryItems.length === 0 ? (
+            <p className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted">
+              {filtering ? "Không có cấu hình nào khớp bộ lọc. Thử bỏ bớt điều kiện lọc." : "Thư viện còn trống. Cấu hình đầu tiên bạn tạo sẽ tự động là cấu hình chung."}
+            </p>
+          ) : null}
 
-        <div className={cn("grid gap-3 md:grid-cols-2 xl:grid-cols-3", libraryQuery.isPlaceholderData && "opacity-60")}>
-          {libraryItems.map((config) => {
-            const active = config.id === resolvedId;
-            return (
-              <div
-                key={config.id}
-                className={cn("rounded-[10px] border p-3 transition-colors", active ? "border-primary bg-primary/5" : "border-border bg-white")}
-              >
-                <ConfigPreviewTip config={config} fieldLabel={fieldLabel}>
-                  <button className="block w-full text-left" onClick={() => selectConfig(config.id)} type="button">
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="truncate text-sm font-semibold text-foreground">{config.name}</span>
-                      {config.isDefault ? <Badge tone="primary">Cấu hình chung</Badge> : null}
-                      <Badge>{SCOPE_LABELS[config.scopeLevel]}{!config.editable ? " · chỉ xem" : ""}</Badge>
-                    </div>
-                    <p className="mt-1 text-xs text-muted">
-                      {config.usedByCount > 0 ? `Đang dùng cho ${config.usedByCount} loại khóa` : "Chưa có loại khóa nào dùng"}
-                      {" · "}
-                      {config.paperSize} {config.orientation === "PORTRAIT" ? "dọc" : "ngang"}
-                    </p>
-                  </button>
-                </ConfigPreviewTip>
-                {config.usedByCount > 0 ? (
-                  <details className="mt-1 text-xs text-muted">
-                    <summary className="cursor-pointer select-none">Xem các loại khóa</summary>
-                    <ul className="mt-1 list-disc space-y-0.5 pl-4">
-                      {config.usedByCourseTypes.map((type) => (
-                        <li key={type.typeCode}>{type.typeName || type.typeCode}</li>
-                      ))}
-                    </ul>
-                  </details>
-                ) : null}
-              </div>
-            );
-          })}
+          <div className={cn("grid gap-4 md:grid-cols-2 xl:grid-cols-3", libraryQuery.isPlaceholderData && "opacity-60")}>
+            {libraryItems.map((config) => {
+              const active = config.id === resolvedId;
+              return (
+                <div
+                  key={config.id}
+                  className={cn(
+                    "rounded-xl border p-4 transition-[border-color,box-shadow,background-color]",
+                    active ? "border-primary bg-primary-soft/60 shadow-[0_0_0_1px_var(--primary)]" : "border-border bg-white hover:border-slate-300 hover:shadow-sm",
+                  )}
+                >
+                  <ConfigPreviewTip config={config} fieldLabel={fieldLabel}>
+                    <button aria-pressed={active} className="block w-full cursor-pointer text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary" onClick={() => selectConfig(config.id)} type="button">
+                      <span className="flex items-start justify-between gap-2">
+                        <span className="min-w-0 text-sm font-semibold leading-5 text-foreground">{config.name}</span>
+                        {active ? <span className="shrink-0 rounded-full bg-primary px-2 py-0.5 text-[11px] font-semibold text-white">Đang mở</span> : null}
+                      </span>
+                      <span className="mt-2 flex flex-wrap items-center gap-1.5">
+                        {config.isDefault ? <Badge tone="primary">Cấu hình chung</Badge> : null}
+                        <Badge>
+                          {SCOPE_LABELS[config.scopeLevel]}
+                          {!config.editable ? " · chỉ xem" : ""}
+                        </Badge>
+                      </span>
+                      <span className="mt-2 block text-xs text-text-secondary">
+                        {config.usedByCount > 0 ? `Đang dùng cho ${config.usedByCount} loại khóa` : "Chưa có loại khóa nào dùng"}
+                        {" · "}
+                        {config.paperSize} {config.orientation === "PORTRAIT" ? "dọc" : "ngang"}
+                      </span>
+                    </button>
+                  </ConfigPreviewTip>
+                  {config.usedByCount > 0 ? (
+                    <details className="mt-2 text-xs text-text-secondary">
+                      <summary className="cursor-pointer select-none font-medium text-primary">Xem các loại khóa</summary>
+                      <ul className="mt-1.5 list-disc space-y-0.5 pl-4">
+                        {config.usedByCourseTypes.map((type) => (
+                          <li key={type.typeCode}>{type.typeName || type.typeCode}</li>
+                        ))}
+                      </ul>
+                    </details>
+                  ) : null}
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         {libraryQuery.data && libraryQuery.data.totalElements > 0 ? (
-          <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-muted">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border px-5 py-3 text-[13px] text-muted">
             <span>
               {libraryQuery.data.totalElements} cấu hình · Trang {page + 1}/{Math.max(totalPages, 1)}
             </span>
@@ -554,48 +587,108 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
       </Panel>
 
       {!isNew && selectedConfig && !selectedConfig.editable ? (
-        <p className="rounded-[10px] border border-dashed border-border bg-surface-2/50 px-4 py-3 text-sm text-muted">
+        <Callout>
           Cấu hình này thuộc cấp {SCOPE_LABELS[selectedConfig.scopeLevel].toLowerCase()}, bạn chỉ được xem và dùng. Muốn chỉnh sửa, hãy lưu thành một cấu hình mới của bạn.
-        </p>
+        </Callout>
       ) : null}
 
-      <p className="rounded-[10px] border border-dashed border-border bg-surface-2/50 px-4 py-3 text-sm text-muted">
+      <Callout>
         Người ký được chọn khi <span className="font-semibold text-foreground">duyệt từng chứng nhận</span> và ghi trực tiếp vào chứng nhận đó; khi xuất PDF sẽ dùng người ký của chính chứng nhận.
-      </p>
+      </Callout>
 
+      {/* Trình thiết kế */}
       {ready ? (
-        <Panel className="space-y-4 p-5">
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <div className="min-w-[240px] flex-1 max-w-md">
-              <label className="mb-1 block text-xs font-medium text-muted">
-                Tên cấu hình {dirty ? <span className="font-semibold text-warning">· chưa lưu</span> : null}
-              </label>
+        <Panel className="overflow-hidden">
+          <div className="flex flex-wrap items-end justify-between gap-4 border-b border-border p-4 lg:px-5">
+            <div className="min-w-[240px] max-w-md flex-1">
+              <div className="mb-1.5 flex items-center gap-2">
+                <label className="text-[13px] font-medium text-text-secondary" htmlFor="certificate-config-name">
+                  Tên cấu hình
+                </label>
+                {dirty ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-[var(--badge-warning-bg)] px-2 py-0.5 text-[11px] font-semibold text-[var(--badge-warning-fg)]">
+                    <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-warning" />
+                    Chưa lưu
+                  </span>
+                ) : null}
+              </div>
               <Input
                 disabled={!canEditCurrent}
+                id="certificate-config-name"
                 maxLength={MAX_NAME_LENGTH + 20}
                 onChange={(event) => updateForm({ name: event.target.value }, "name")}
                 placeholder="Ví dụ: Mẫu huynh trưởng cấp I"
                 value={form.name}
               />
-              {nameTooLong ? <p className="mt-1 text-xs text-danger">Tên tối đa {MAX_NAME_LENGTH} ký tự.</p> : null}
-              <p className="mt-1 text-xs text-muted">Trùng tên sẽ tự thêm hậu tố (1), (2)…</p>
+              {nameTooLong ? (
+                <p className="mt-1 text-xs text-danger" role="alert">
+                  Tên tối đa {MAX_NAME_LENGTH} ký tự.
+                </p>
+              ) : (
+                <p className="mt-1 text-xs text-muted">Trùng tên sẽ tự thêm hậu tố (1), (2)…</p>
+              )}
             </div>
+
             <div className="flex flex-wrap items-center gap-2">
-              <Button disabled={!canEditCurrent || !history.canUndo} onClick={undo} size="sm" title="Hoàn tác (Ctrl+Z)" type="button" variant="outline">
-                <ArrowCounterClockwise size={16} /> Hoàn tác
+              <div aria-label="Chế độ hiển thị" className="inline-flex rounded-lg bg-surface-2 p-1" role="group">
+                <button
+                  aria-pressed={!preview}
+                  className={cn("inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md px-3 text-[13px] font-semibold transition-colors", !preview ? "bg-white text-primary shadow-sm" : "text-text-secondary hover:text-foreground")}
+                  onClick={() => setPreview(false)}
+                  type="button"
+                >
+                  <PencilSimple size={15} /> Thiết kế
+                </button>
+                <button
+                  aria-pressed={preview}
+                  className={cn("inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md px-3 text-[13px] font-semibold transition-colors", preview ? "bg-white text-primary shadow-sm" : "text-text-secondary hover:text-foreground")}
+                  onClick={() => setPreview(true)}
+                  type="button"
+                >
+                  <Eye size={15} /> Xem trước
+                </button>
+              </div>
+              <span aria-hidden className="mx-1 hidden h-6 w-px bg-border sm:block" />
+              <Button aria-label="Hoàn tác" disabled={!canEditCurrent || !history.canUndo} onClick={undo} size="icon" title="Hoàn tác (Ctrl+Z)" type="button" variant="icon">
+                <ArrowCounterClockwise size={18} />
               </Button>
-              <Button disabled={!canEditCurrent || !history.canRedo} onClick={redo} size="sm" title="Làm lại (Ctrl+Y)" type="button" variant="outline">
-                <ArrowClockwise size={16} /> Làm lại
+              <Button aria-label="Làm lại" disabled={!canEditCurrent || !history.canRedo} onClick={redo} size="icon" title="Làm lại (Ctrl+Y)" type="button" variant="icon">
+                <ArrowClockwise size={18} />
               </Button>
-              <Button disabled={!canEditCurrent || !dirty} onClick={restoreSaved} size="sm" type="button" variant="outline">
-                <ClockCounterClockwise size={16} /> {isNew ? "Làm mới" : "Khôi phục bản đã lưu"}
+              <Button disabled={!canEditCurrent || !dirty} onClick={restoreSaved} type="button" variant="outline">
+                <ClockCounterClockwise size={18} /> {isNew ? "Làm mới" : "Khôi phục bản đã lưu"}
               </Button>
-              <Button onClick={() => setPreview((value) => !value)} size="sm" type="button" variant={preview ? "primary" : "outline"}>
-                <Eye size={16} /> {preview ? "Đang xem trước" : "Xem trước"}
-              </Button>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-end gap-x-5 gap-y-3 border-b border-border bg-slate-50 px-4 py-3 lg:px-5">
+            <div className="flex flex-wrap items-end gap-3">
+              <Field label="Khổ giấy">
+                <select
+                  className={SELECT_CLASS}
+                  disabled={!canEditCurrent}
+                  value={form.paperSize}
+                  onChange={(event) => updateForm({ paperSize: event.target.value })}
+                >
+                  {PAPER_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Hướng in">
+                <select
+                  className={SELECT_CLASS}
+                  disabled={!canEditCurrent}
+                  value={form.orientation}
+                  onChange={(event) => updateForm({ orientation: event.target.value })}
+                >
+                  <option value="LANDSCAPE">Ngang</option>
+                  <option value="PORTRAIT">Dọc</option>
+                </select>
+              </Field>
               <label
                 className={cn(
-                  "inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-[8px] border border-border bg-white px-3 text-sm font-semibold text-foreground shadow-sm transition-colors hover:border-primary hover:text-primary",
+                  "inline-flex h-10 cursor-pointer items-center gap-2 rounded-lg border border-input bg-white px-3 text-sm font-semibold text-foreground transition-colors hover:bg-slate-50 hover:text-primary focus-within:outline focus-within:outline-2 focus-within:outline-primary",
                   !canEditCurrent && "pointer-events-none opacity-60",
                 )}
               >
@@ -604,204 +697,200 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
                 <input accept="image/*" className="sr-only" disabled={!canEditCurrent} onChange={handleUpload} type="file" />
               </label>
             </div>
-          </div>
 
-          <div className="flex flex-wrap items-end gap-3">
-            <div>
-              <label className="mb-1 block text-xs font-medium text-muted">Khổ giấy</label>
-              <select
-                className="h-10 rounded-[8px] border border-border bg-white px-3 text-sm"
-                disabled={!canEditCurrent}
-                value={form.paperSize}
-                onChange={(event) => updateForm({ paperSize: event.target.value })}
-              >
-                {PAPER_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>{option.label}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-muted">Hướng in</label>
-              <select
-                className="h-10 rounded-[8px] border border-border bg-white px-3 text-sm"
-                disabled={!canEditCurrent}
-                value={form.orientation}
-                onChange={(event) => updateForm({ orientation: event.target.value })}
-              >
-                <option value="LANDSCAPE">Ngang</option>
-                <option value="PORTRAIT">Dọc</option>
-              </select>
-            </div>
-          </div>
-
-          {canEditCurrent ? (
-            <div className="flex flex-wrap items-center gap-2">
-              <select
-                className="h-10 rounded-[8px] border border-border bg-white px-3 text-sm"
-                value={addFieldKey}
-                onChange={(event) => setAddFieldKey(event.target.value)}
-              >
-                <option value="">— Chọn trường để thêm —</option>
-                {(fieldsQuery.data ?? []).map((item) => (
-                  <option key={item.key} value={item.key}>
-                    {item.group} · {item.label}
-                  </option>
-                ))}
-              </select>
-              <Button disabled={!addFieldKey} onClick={addField} size="sm" type="button" variant="outline">
-                <Plus size={16} /> Thêm trường
-              </Button>
-              <Button onClick={addText} size="sm" type="button" variant="outline">
-                <TextT size={16} /> Thêm văn bản
-              </Button>
-              <Tip label="Thêm mã QR chứa mã chứng nhận. Chỉ khi bố cục có mã QR thì khi xuất PDF hệ thống mới tạo mã QR (không lưu lại).">
-                <Button onClick={addQr} size="sm" type="button" variant="outline">
-                  <QrCode size={16} /> Thêm mã QR
-                </Button>
-              </Tip>
-              <span className="text-xs text-muted">Ctrl+Z hoàn tác · Ctrl+Y làm lại</span>
-            </div>
-          ) : null}
-
-          <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
-            <CertificateCanvas
-              backgroundImage={form.backgroundImage}
-              layout={form.layout}
-              fieldLabel={fieldLabel}
-              sampleValue={(key) => sampleValue(key, fieldLabel)}
-              preview={preview}
-              aspect={paperAspect(form.paperSize, form.orientation)}
-              selectedIndex={selectedIndex}
-              onSelect={setSelectedIndex}
-              onMove={(index, x, y) => updateItem(index, { x, y }, "move")}
-              editable={canEditCurrent && !preview}
-            />
-
-            <div className="space-y-3">
-              {selected && selectedIndex != null ? (
-                <div className="space-y-3 rounded-[10px] border border-border p-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-semibold text-foreground">
-                      {selected.type === "TEXT" ? "Văn bản tĩnh" : selected.type === "QR" ? "Mã QR chứng nhận" : fieldLabel(selected.fieldKey)}
-                    </span>
-                    <Button disabled={!canEditCurrent} onClick={() => removeItem(selectedIndex)} size="sm" type="button" variant="ghost">
-                      <Trash size={16} />
-                    </Button>
-                  </div>
-                  {selected.type === "QR" ? (
-                    <div className="space-y-2">
-                      <label className="mb-1 block text-xs font-medium text-muted">Kích thước mã QR (% chiều cao giấy)</label>
-                      <Input
-                        disabled={!canEditCurrent}
-                        max={Math.round(MAX_QR_SIZE * 100)}
-                        min={Math.round(MIN_QR_SIZE * 100)}
-                        onChange={(event) => updateItem(selectedIndex, { size: clamp(Number(event.target.value) / 100, MIN_QR_SIZE, MAX_QR_SIZE) }, "qrSize")}
-                        type="number"
-                        value={Math.round((selected.size ?? DEFAULT_QR_SIZE) * 100)}
-                      />
-                      <p className="text-xs text-muted">Mã QR chứa mã chứng nhận. Kéo để đặt vị trí (điểm kéo là tâm mã). Nên để đủ lớn và tương phản với nền để dễ quét.</p>
-                    </div>
-                  ) : null}
-                  {selected.type === "QR" ? null : selected.type === "TEXT" ? (
-                    <div>
-                      <label className="mb-1 block text-xs font-medium text-muted">Nội dung</label>
-                      <Input disabled={!canEditCurrent} onChange={(event) => updateItem(selectedIndex, { text: event.target.value }, "text")} value={selected.text ?? ""} />
-                    </div>
-                  ) : null}
-                  {selected.type === "QR" ? null : (
-                  <>
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-muted">Phông chữ</label>
-                    <select
-                      className="h-10 w-full rounded-[8px] border border-border bg-white px-2 text-sm"
-                      disabled={!canEditCurrent}
-                      onChange={(event) => updateItem(selectedIndex, { fontFamily: event.target.value as FontFamily })}
-                      value={selected.fontFamily}
-                    >
-                      {FONT_OPTIONS.map((option) => (
-                        <option key={option.value} value={option.value}>{option.label}</option>
+            {canEditCurrent ? (
+              <>
+                <span aria-hidden className="hidden h-8 w-px bg-border lg:block" />
+                <div className="flex flex-wrap items-end gap-2">
+                  <Field label="Thêm phần tử">
+                    <select className={cn(SELECT_CLASS, "min-w-[200px]")} value={addFieldKey} onChange={(event) => setAddFieldKey(event.target.value)}>
+                      <option value="">— Chọn trường dữ liệu —</option>
+                      {(fieldsQuery.data ?? []).map((item) => (
+                        <option key={item.key} value={item.key}>
+                          {item.group} · {item.label}
+                        </option>
                       ))}
                     </select>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="mb-1 block text-xs font-medium text-muted">Cỡ chữ (%)</label>
-                      <Input
-                        disabled={!canEditCurrent}
-                        max={30}
-                        min={1}
-                        onChange={(event) => updateItem(selectedIndex, { fontSize: clamp(Number(event.target.value) / 100, 0.005, 0.3) }, "fontSize")}
-                        type="number"
-                        value={Math.round(selected.fontSize * 100)}
-                      />
+                  </Field>
+                  <Button disabled={!addFieldKey} onClick={addField} type="button" variant="outline">
+                    <Plus size={16} /> Thêm trường
+                  </Button>
+                  <Button onClick={addText} type="button" variant="outline">
+                    <TextT size={16} /> Văn bản
+                  </Button>
+                  <Tip label="Thêm mã QR chứa mã chứng nhận. Chỉ khi bố cục có mã QR thì khi xuất PDF hệ thống mới tạo mã QR (không lưu lại).">
+                    <Button onClick={addQr} type="button" variant="outline">
+                      <QrCode size={16} /> Mã QR
+                    </Button>
+                  </Tip>
+                </div>
+                <span className="ml-auto hidden text-xs text-muted xl:block">Ctrl+Z hoàn tác · Ctrl+Y làm lại</span>
+              </>
+            ) : null}
+          </div>
+
+          <div className="grid lg:grid-cols-[minmax(0,1fr)_340px]">
+            <div className="bg-slate-100 p-4 sm:p-6">
+              <CertificateCanvas
+                backgroundImage={form.backgroundImage}
+                layout={form.layout}
+                fieldLabel={fieldLabel}
+                sampleValue={(key) => sampleValue(key, fieldLabel)}
+                preview={preview}
+                aspect={paperAspect(form.paperSize, form.orientation)}
+                selectedIndex={selectedIndex}
+                onSelect={setSelectedIndex}
+                onMove={(index, x, y) => updateItem(index, { x, y }, "move")}
+                editable={canEditCurrent && !preview}
+              />
+            </div>
+
+            <aside aria-label="Thuộc tính phần tử" className="space-y-5 border-t border-border bg-white p-5 lg:border-l lg:border-t-0">
+              {selected && selectedIndex != null ? (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">Phần tử đang chọn</p>
+                      <p className="truncate text-sm font-semibold text-foreground">
+                        {selected.type === "TEXT" ? "Văn bản tĩnh" : selected.type === "QR" ? "Mã QR chứng nhận" : fieldLabel(selected.fieldKey)}
+                      </p>
                     </div>
-                    <div>
-                      <label className="mb-1 block text-xs font-medium text-muted">Màu chữ</label>
-                      <input
-                        className="h-10 w-full rounded-[8px] border border-border"
-                        disabled={!canEditCurrent}
-                        onChange={(event) => updateItem(selectedIndex, { color: event.target.value }, "color")}
-                        type="color"
-                        value={selected.color}
-                      />
-                    </div>
-                    <div className="col-span-2">
-                      <label className="mb-1 block text-xs font-medium text-muted">Canh lề</label>
-                      <select
-                        className="h-10 w-full rounded-[8px] border border-border bg-white px-2 text-sm"
-                        disabled={!canEditCurrent}
-                        onChange={(event) => updateItem(selectedIndex, { align: event.target.value as LayoutItem["align"] })}
-                        value={selected.align}
-                      >
-                        <option value="left">Trái</option>
-                        <option value="center">Giữa</option>
-                        <option value="right">Phải</option>
-                      </select>
-                    </div>
+                    <Button aria-label="Xóa phần tử" className="text-danger" disabled={!canEditCurrent} onClick={() => removeItem(selectedIndex)} size="icon" title="Xóa phần tử" type="button" variant="ghost">
+                      <Trash size={18} />
+                    </Button>
                   </div>
-                  <div className="flex flex-wrap gap-4">
-                    <label className="inline-flex items-center gap-2 text-sm">
-                      <input checked={selected.bold} disabled={!canEditCurrent} onChange={(event) => updateItem(selectedIndex, { bold: event.target.checked })} type="checkbox" />
-                      In đậm
-                    </label>
-                    <label className="inline-flex items-center gap-2 text-sm">
-                      <input checked={selected.italic} disabled={!canEditCurrent} onChange={(event) => updateItem(selectedIndex, { italic: event.target.checked })} type="checkbox" />
-                      In nghiêng
-                    </label>
-                    <label className="inline-flex items-center gap-2 text-sm">
-                      <input checked={selected.underline} disabled={!canEditCurrent} onChange={(event) => updateItem(selectedIndex, { underline: event.target.checked })} type="checkbox" />
-                      Gạch chân
-                    </label>
-                  </div>
-                  </>
+
+                  {selected.type === "QR" ? (
+                    <div className="space-y-2">
+                      <Field label="Kích thước mã QR (% chiều cao giấy)">
+                        <Input
+                          disabled={!canEditCurrent}
+                          max={Math.round(MAX_QR_SIZE * 100)}
+                          min={Math.round(MIN_QR_SIZE * 100)}
+                          onChange={(event) => updateItem(selectedIndex, { size: clamp(Number(event.target.value) / 100, MIN_QR_SIZE, MAX_QR_SIZE) }, "qrSize")}
+                          type="number"
+                          value={Math.round((selected.size ?? DEFAULT_QR_SIZE) * 100)}
+                        />
+                      </Field>
+                      <p className="text-xs leading-5 text-muted">Mã QR chứa mã chứng nhận. Kéo để đặt vị trí (điểm kéo là tâm mã). Nên để đủ lớn và tương phản với nền để dễ quét.</p>
+                    </div>
+                  ) : null}
+
+                  {selected.type === "TEXT" ? (
+                    <Field label="Nội dung">
+                      <Input disabled={!canEditCurrent} onChange={(event) => updateItem(selectedIndex, { text: event.target.value }, "text")} value={selected.text ?? ""} />
+                    </Field>
+                  ) : null}
+
+                  {selected.type === "QR" ? null : (
+                    <>
+                      <div className="space-y-4 border-t border-border pt-4">
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">Kiểu chữ</p>
+                        <Field label="Phông chữ">
+                          <select
+                            className={cn(SELECT_CLASS, "w-full")}
+                            disabled={!canEditCurrent}
+                            onChange={(event) => updateItem(selectedIndex, { fontFamily: event.target.value as FontFamily })}
+                            value={selected.fontFamily}
+                          >
+                            {FONT_OPTIONS.map((option) => (
+                              <option key={option.value} value={option.value}>{option.label}</option>
+                            ))}
+                          </select>
+                        </Field>
+                        <div className="grid grid-cols-2 gap-3">
+                          <Field label="Cỡ chữ (%)">
+                            <Input
+                              disabled={!canEditCurrent}
+                              max={30}
+                              min={1}
+                              onChange={(event) => updateItem(selectedIndex, { fontSize: clamp(Number(event.target.value) / 100, 0.005, 0.3) }, "fontSize")}
+                              type="number"
+                              value={Math.round(selected.fontSize * 100)}
+                            />
+                          </Field>
+                          <Field label="Màu chữ">
+                            <input
+                              aria-label="Màu chữ"
+                              className="h-10 w-full cursor-pointer rounded-lg border border-input bg-white p-1 disabled:cursor-not-allowed"
+                              disabled={!canEditCurrent}
+                              onChange={(event) => updateItem(selectedIndex, { color: event.target.value }, "color")}
+                              type="color"
+                              value={selected.color}
+                            />
+                          </Field>
+                        </div>
+                        <Field label="Canh lề">
+                          <div aria-label="Canh lề" className="inline-flex w-full rounded-lg bg-surface-2 p-1" role="group">
+                            {(
+                              [
+                                ["left", "Trái"],
+                                ["center", "Giữa"],
+                                ["right", "Phải"],
+                              ] as const
+                            ).map(([value, label]) => (
+                              <button
+                                aria-pressed={selected.align === value}
+                                className={cn(
+                                  "h-8 flex-1 cursor-pointer rounded-md text-[13px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60",
+                                  selected.align === value ? "bg-white text-primary shadow-sm" : "text-text-secondary hover:text-foreground",
+                                )}
+                                disabled={!canEditCurrent}
+                                key={value}
+                                onClick={() => updateItem(selectedIndex, { align: value as LayoutItem["align"] })}
+                                type="button"
+                              >
+                                {label}
+                              </button>
+                            ))}
+                          </div>
+                        </Field>
+                        <div className="flex gap-2">
+                          <StyleToggle active={selected.bold} disabled={!canEditCurrent} label="In đậm" onClick={() => updateItem(selectedIndex, { bold: !selected.bold })}>
+                            <TextB size={16} weight="bold" />
+                          </StyleToggle>
+                          <StyleToggle active={selected.italic} disabled={!canEditCurrent} label="In nghiêng" onClick={() => updateItem(selectedIndex, { italic: !selected.italic })}>
+                            <TextItalic size={16} />
+                          </StyleToggle>
+                          <StyleToggle active={selected.underline} disabled={!canEditCurrent} label="Gạch chân" onClick={() => updateItem(selectedIndex, { underline: !selected.underline })}>
+                            <TextUnderline size={16} />
+                          </StyleToggle>
+                        </div>
+                      </div>
+                    </>
                   )}
                 </div>
               ) : (
-                <p className="rounded-[10px] border border-dashed border-border p-4 text-sm text-muted">
-                  Chọn một phần tử trên ảnh để chỉnh nội dung, cỡ chữ, màu và vị trí. Kéo phần tử để đổi vị trí.
-                </p>
+                <div className="rounded-xl border border-dashed border-border bg-slate-50 p-5 text-center">
+                  <span className="mx-auto mb-2 grid h-10 w-10 place-items-center rounded-full bg-white text-primary shadow-sm">
+                    <CursorClick size={20} />
+                  </span>
+                  <p className="text-sm font-semibold text-foreground">Chưa chọn phần tử</p>
+                  <p className="mt-1 text-xs leading-5 text-text-secondary">Chọn một phần tử trên ảnh để chỉnh nội dung, cỡ chữ, màu và vị trí. Kéo phần tử để đổi vị trí.</p>
+                </div>
               )}
 
               {selectedConfig ? (
-                <div className="rounded-[10px] border border-border p-3 text-sm">
+                <div className="rounded-xl border border-border bg-slate-50 p-4 text-sm">
                   <p className="font-semibold text-foreground">Loại khóa đang dùng ({selectedConfig.usedByCount})</p>
                   {selectedConfig.usedByCount > 0 ? (
-                    <ul className="mt-1 list-disc space-y-0.5 pl-4 text-muted">
+                    <ul className="mt-1.5 list-disc space-y-0.5 pl-4 text-[13px] text-text-secondary">
                       {selectedConfig.usedByCourseTypes.map((type) => (
                         <li key={type.typeCode}>{type.typeName || type.typeCode}</li>
                       ))}
                     </ul>
                   ) : (
-                    <p className="mt-1 text-muted">Chưa có loại khóa nào dùng cấu hình này. Gán trong form của từng loại khóa.</p>
+                    <p className="mt-1 text-[13px] text-text-secondary">Chưa có loại khóa nào dùng cấu hình này. Gán trong form của từng loại khóa.</p>
                   )}
                 </div>
               ) : null}
-            </div>
+            </aside>
           </div>
         </Panel>
       ) : null}
 
-      <div className="flex flex-wrap items-center gap-3">
+      {/* Thanh thao tác cố định */}
+      <div className="sticky bottom-4 z-10 flex flex-wrap items-center gap-3 rounded-xl border border-border bg-white/95 p-3 shadow-[var(--shadow-elevated)] backdrop-blur-md">
         <Button
           disabled={!canEditCurrent || busy || nameTooLong || (!isNew && !dirty)}
           loading={saveMutation.isPending}
@@ -822,6 +911,7 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
         ) : null}
         {!isNew && selectedConfig && canDelete && selectedConfig.editable ? (
           <Button
+            className="ml-auto text-danger"
             disabled={busy || selectedConfig.isDefault}
             loading={deleteMutation.isPending}
             onClick={deleteConfig}
@@ -837,6 +927,46 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
         ) : null}
         {!canUpdate && !canCreate ? <span className="text-sm text-muted">Bạn chỉ có quyền xem thư viện cấu hình.</span> : null}
       </div>
+    </div>
+  );
+}
+
+const SELECT_CLASS =
+  "h-10 cursor-pointer rounded-lg border border-input bg-white px-3 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-[3px] focus:ring-[var(--primary-ring)] disabled:cursor-not-allowed disabled:opacity-60";
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="block">
+      <span className="mb-1.5 block text-[13px] font-medium text-text-secondary">{label}</span>
+      {children}
+    </label>
+  );
+}
+
+function StyleToggle({ active, disabled, label, onClick, children }: { active: boolean; disabled: boolean; label: string; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      aria-label={label}
+      aria-pressed={active}
+      className={cn(
+        "grid h-10 w-10 cursor-pointer place-items-center rounded-lg border transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-60",
+        active ? "border-primary bg-primary-soft text-primary" : "border-input bg-white text-text-secondary hover:bg-slate-50",
+      )}
+      disabled={disabled}
+      onClick={onClick}
+      title={label}
+      type="button"
+    >
+      {children}
+    </button>
+  );
+}
+
+function Callout({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex items-start gap-3 rounded-xl border border-border bg-white px-4 py-3 text-[13px] leading-5 text-text-secondary" role="note">
+      <Info className="mt-0.5 shrink-0 text-primary" size={18} weight="fill" />
+      <p>{children}</p>
     </div>
   );
 }
@@ -898,9 +1028,9 @@ function FilterSelect({
 }) {
   return (
     <label className="block">
-      <span className="mb-2 block text-xs font-semibold text-foreground">{label}</span>
+      <span className="mb-1.5 block text-[13px] font-medium text-text-secondary">{label}</span>
       <select
-        className="h-11 w-full rounded-[10px] border border-border bg-white px-3 text-sm text-foreground shadow-sm transition-[border-color,box-shadow] focus:border-primary focus:outline-none focus:ring-4 focus:ring-[var(--primary-ring)]"
+        className="h-10 w-full cursor-pointer rounded-lg border border-input bg-white px-3 text-sm text-foreground transition-[border-color,box-shadow] focus:border-primary focus:outline-none focus:ring-[3px] focus:ring-[var(--primary-ring)]"
         onChange={(event) => onChange(event.target.value)}
         value={value}
       >
@@ -918,7 +1048,7 @@ function Badge({ children, tone }: { children: React.ReactNode; tone?: "primary"
     <span
       className={cn(
         "rounded-full px-2 py-0.5 text-[11px] font-semibold",
-        tone === "primary" ? "bg-primary/10 text-primary" : "bg-surface-2 text-muted",
+        tone === "primary" ? "bg-primary-soft text-primary" : "bg-surface-2 text-text-secondary",
       )}
     >
       {children}

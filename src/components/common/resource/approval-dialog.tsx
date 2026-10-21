@@ -94,10 +94,10 @@ export function ApprovalDialog({
   return (
     <Dialog.Root open={open} onOpenChange={(nextOpen) => (!nextOpen ? onClose() : undefined)}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-40 bg-slate-950/30 backdrop-blur-sm" />
+        <Dialog.Overlay className="fixed inset-0 z-40 bg-slate-900/45 backdrop-blur-[4px]" />
         <Dialog.Content
           className={cn(
-            "fixed left-1/2 top-1/2 z-50 flex max-h-[90vh] w-[calc(100vw-32px)] -translate-x-1/2 -translate-y-1/2 flex-col rounded-[14px] border border-border bg-white p-5 shadow-2xl focus:outline-none",
+            "fixed left-1/2 top-1/2 z-50 flex max-h-[90vh] w-[calc(100vw-32px)] -translate-x-1/2 -translate-y-1/2 flex-col rounded-xl border border-border bg-white p-5 shadow-2xl focus:outline-none",
             individual ? "max-w-[640px]" : "max-w-[500px]",
           )}
         >
@@ -123,7 +123,7 @@ export function ApprovalDialog({
           </div>
 
           {exceptionReasons?.length ? (
-            <div className="mt-4 max-h-48 space-y-2 overflow-y-auto rounded-[10px] border border-warning/40 bg-warning/5 p-3">
+            <div className="mt-4 max-h-48 space-y-2 overflow-y-auto rounded-lg border border-warning/40 bg-warning/5 p-3">
               <p className="text-xs font-semibold uppercase text-warning">Lý do đặc cách</p>
               {exceptionReasons.map((item) => (
                 <div className="text-sm leading-6" key={item.id}>
@@ -135,7 +135,7 @@ export function ApprovalDialog({
           ) : null}
 
           {multi ? (
-            <div aria-label="Cách nhập lý do" className="mt-4 grid grid-cols-2 gap-1 rounded-[10px] bg-surface-1 p-1" role="radiogroup">
+            <div aria-label="Cách nhập lý do" className="mt-4 grid grid-cols-2 gap-1 rounded-lg bg-surface-1 p-1" role="radiogroup">
               {(
                 [
                   { value: "shared", label: "Lý do chung" },
@@ -186,7 +186,7 @@ export function ApprovalDialog({
           )}
 
           {levelItems.length ? (
-            <div className="mt-4 min-h-0 space-y-3 overflow-y-auto rounded-[10px] border border-border p-3">
+            <div className="mt-4 min-h-0 space-y-3 overflow-y-auto rounded-lg border border-border p-3">
               <div>
                 <span className="block text-sm font-semibold text-foreground">
                   Cấp độ đạt được sau khi hoàn thành khóa <span className="text-danger">*</span>
@@ -225,7 +225,7 @@ export function ApprovalDialog({
           ) : null}
 
           {needSigner ? (
-            <div className="mt-4 space-y-3 rounded-[10px] border border-border p-3">
+            <div className="mt-4 space-y-3 rounded-lg border border-border p-3">
               <span className="block text-sm font-semibold text-foreground">Người ký chứng nhận <span className="text-danger">*</span></span>
               <div className="flex flex-wrap gap-4">
                 <label className="inline-flex items-center gap-2 text-sm">

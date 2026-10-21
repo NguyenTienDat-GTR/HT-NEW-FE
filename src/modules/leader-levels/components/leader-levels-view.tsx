@@ -122,7 +122,7 @@ export function LeaderLevelsView({ route }: { route?: RouteConfig }) {
       <div
         key={level.levelCode}
         className={cn(
-          "flex items-center gap-3 rounded-[12px] border bg-white p-3 transition-colors",
+          "flex items-center gap-3 rounded-xl border bg-white p-3 transition-colors",
           overCode === level.levelCode && dragCode && dragCode !== level.levelCode ? "border-primary bg-primary/5" : "border-border",
           dragCode === level.levelCode && "opacity-50",
         )}
@@ -226,9 +226,9 @@ export function LeaderLevelsView({ route }: { route?: RouteConfig }) {
   });
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-foreground">{route?.title ?? "Cấp độ huynh trưởng"}</h1>
+        <h1 className="text-2xl font-bold leading-8 text-foreground">{route?.title ?? "Cấp độ huynh trưởng"}</h1>
         <p className="mt-1 text-sm text-muted">{route?.subtitle}</p>
       </div>
 
@@ -259,7 +259,7 @@ export function LeaderLevelsView({ route }: { route?: RouteConfig }) {
         </div>
 
         {query.isError ? <p className="text-sm text-danger">{getApiErrorMessage(query.error)}</p> : null}
-        {query.isLoading ? <div className="h-40 rounded-[12px] border border-border bg-white motion-safe:animate-pulse" /> : null}
+        {query.isLoading ? <div className="h-40 rounded-xl border border-border bg-white motion-safe:animate-pulse" /> : null}
 
         <div className="space-y-0">
           {groups.map((group, groupIndex) => {
@@ -286,7 +286,7 @@ export function LeaderLevelsView({ route }: { route?: RouteConfig }) {
                     </span>
                     <span className="mt-1 text-center text-[10px] font-semibold uppercase tracking-wide text-muted">{group.system ? "Khởi đầu" : "Bậc"}</span>
                   </div>
-                  <div className={cn("min-w-0 flex-1 rounded-[14px]", multi ? "border-2 border-primary/40 bg-primary/[0.04] p-2" : "")}>
+                  <div className={cn("min-w-0 flex-1 rounded-xl", multi ? "border-2 border-primary/40 bg-primary/[0.04] p-2" : "")}>
                     {multi ? (
                       <div className="flex items-center gap-1.5 px-1 pb-2 pt-1 text-xs font-semibold text-primary">
                         <Equals size={14} weight="bold" />
@@ -311,7 +311,7 @@ export function LeaderLevelsView({ route }: { route?: RouteConfig }) {
         </div>
 
         {dirty ? (
-          <div className="sticky bottom-3 z-10 flex flex-wrap items-center justify-between gap-3 rounded-[12px] border border-warning/40 bg-warning/10 px-4 py-3 shadow-sm">
+          <div className="sticky bottom-3 z-10 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 shadow-sm">
             <span className="text-sm font-medium text-foreground">Thứ tự / bậc đã thay đổi, chưa lưu. Điều kiện của từng cấp ở trên đã cập nhật theo bố cục mới.</span>
             <div className="flex gap-2">
               <Button onClick={() => setDraft(null)} size="sm" type="button" variant="outline">
@@ -353,7 +353,7 @@ function LevelFormDialog({ target, onClose, onSaved }: { target: FormTarget | nu
   return (
     <Dialog.Root open={target !== null} onOpenChange={(open) => (!open ? onClose() : undefined)}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-40 bg-slate-950/30 backdrop-blur-sm" />
+        <Dialog.Overlay className="fixed inset-0 z-40 bg-slate-900/45 backdrop-blur-[4px]" />
         {/* key để xóa dữ liệu đã nhập khi mở lại cho cấp khác. */}
         {target ? <LevelForm key={target.mode === "edit" ? target.level.levelCode : "create"} onClose={onClose} onSaved={onSaved} target={target} /> : null}
       </Dialog.Portal>
@@ -379,7 +379,7 @@ function LevelForm({ target, onClose, onSaved }: { target: FormTarget; onClose: 
   });
 
   return (
-    <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[calc(100vw-32px)] max-w-[480px] -translate-x-1/2 -translate-y-1/2 rounded-[14px] border border-border bg-white p-5 shadow-2xl focus:outline-none">
+    <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[calc(100vw-32px)] max-w-[480px] -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border bg-white p-5 shadow-2xl focus:outline-none">
       <div className="flex items-start justify-between gap-4">
         <div>
           <Dialog.Title className="text-lg font-semibold text-foreground">{editing ? "Sửa cấp độ" : "Thêm cấp độ"}</Dialog.Title>

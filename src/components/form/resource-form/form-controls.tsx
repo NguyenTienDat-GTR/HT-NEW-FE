@@ -33,8 +33,8 @@ export function FormField({ field, value, values, user, mode, onChange, onFieldC
   const clearing = value === "__CLEAR__";
 
   return (
-    <div className="space-y-1">
-      <label className="text-xs font-semibold uppercase tracking-[0.02em] text-muted" htmlFor={id}>
+    <div className="space-y-1.5">
+      <label className="text-[13px] font-medium text-text-secondary" htmlFor={id}>
         {field.label} {field.required ? <span className="text-danger">*</span> : null}
       </label>
       {renderControl({ field, id, type, value: clearing ? "" : value, values, user, readonly: readonly || clearing, onChange, onFieldChange })}
@@ -81,7 +81,7 @@ function renderControl({
   if (type === "textarea") {
     return (
       <textarea
-        className="min-h-20 w-full rounded-[8px] border border-border bg-white px-3 py-2 text-sm text-foreground shadow-sm transition-[border-color,box-shadow] placeholder:text-muted focus:border-primary focus:outline-none focus:ring-4 focus:ring-[var(--primary-ring)] disabled:cursor-not-allowed disabled:bg-surface-1 disabled:opacity-70"
+        className="min-h-20 w-full rounded-[8px] border border-input bg-white px-3 py-2 text-sm text-foreground transition-[border-color,box-shadow] placeholder:text-muted focus:border-primary focus:outline-none focus:ring-[3px] focus:ring-[var(--primary-ring)] disabled:cursor-not-allowed disabled:bg-surface-1 disabled:opacity-70"
         disabled={readonly}
         id={id}
         onChange={(event) => onChange(event.target.value)}
@@ -129,7 +129,7 @@ function renderControl({
       <button
         aria-checked={checked}
         className={cn(
-          "flex h-10 w-full max-w-full cursor-pointer items-center justify-between gap-3 overflow-hidden rounded-[8px] border px-3 text-sm font-semibold transition-colors focus:outline-none focus:ring-4 focus:ring-[var(--primary-ring)] disabled:cursor-not-allowed disabled:opacity-60",
+          "flex h-10 w-full max-w-full cursor-pointer items-center justify-between gap-3 overflow-hidden rounded-[8px] border px-3 text-sm font-semibold transition-colors focus:outline-none focus:ring-[3px] focus:ring-[var(--primary-ring)] disabled:cursor-not-allowed disabled:opacity-60",
           checked ? "border-primary bg-primary/8 text-primary" : "border-border bg-white text-foreground",
         )}
         disabled={readonly}
@@ -352,7 +352,7 @@ function OptionControl({
 
   return (
     <select
-      className="h-10 w-full rounded-[8px] border border-border bg-white px-3 text-sm text-foreground shadow-sm focus:border-primary focus:outline-none focus:ring-4 focus:ring-[var(--primary-ring)] disabled:cursor-not-allowed disabled:bg-surface-1 disabled:opacity-70"
+      className="h-10 w-full rounded-lg border border-input bg-white px-3 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-[3px] focus:ring-[var(--primary-ring)] disabled:cursor-not-allowed disabled:bg-surface-1 disabled:opacity-70"
       disabled={readonly || query.isLoading}
       id={id}
       multiple={multiple}
@@ -684,7 +684,7 @@ function SearchableMultiSelect({
     <div className="relative" ref={containerRef}>
       <button
         aria-expanded={open}
-        className="flex min-h-10 w-full flex-wrap items-center gap-1.5 rounded-[8px] border border-border bg-white px-2.5 py-1.5 text-left text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-4 focus:ring-[var(--primary-ring)] disabled:cursor-not-allowed disabled:bg-surface-1 disabled:opacity-70"
+        className="flex min-h-10 w-full flex-wrap items-center gap-1.5 rounded-[8px] border border-border bg-white px-2.5 py-1.5 text-left text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-[3px] focus:ring-[var(--primary-ring)] disabled:cursor-not-allowed disabled:bg-surface-1 disabled:opacity-70"
         disabled={readonly}
         id={id}
         onClick={() => setOpen((current) => !current)}

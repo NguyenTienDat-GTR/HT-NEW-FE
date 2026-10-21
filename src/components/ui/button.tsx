@@ -12,18 +12,18 @@ const buttonVariants = cva(
     variants: {
       variant: {
         primary:
-          "border border-primary bg-primary text-white shadow-[var(--shadow-accent)] hover:border-primary-hover hover:bg-primary-hover hover:shadow-[var(--shadow-accent)]",
-        secondary: "border border-surface-2 bg-surface-2 text-foreground hover:border-border hover:bg-border",
-        outline: "border border-border bg-white text-foreground shadow-sm hover:border-primary hover:bg-primary-soft hover:text-primary",
+          "border border-primary bg-primary text-white shadow-sm hover:border-primary-hover hover:bg-primary-hover",
+        secondary: "border border-transparent bg-surface-2 text-text-secondary hover:bg-slate-200 hover:text-foreground",
+        outline: "border border-input bg-white text-foreground shadow-sm hover:bg-slate-50 hover:text-primary",
         ghost: "border border-transparent bg-transparent text-foreground hover:bg-primary-soft hover:text-primary",
-        destructive: "border border-danger bg-danger text-white shadow-[var(--shadow-accent)] hover:bg-danger/90",
-        icon: "border border-border bg-white p-0 text-foreground shadow-sm hover:border-primary hover:bg-primary-soft hover:text-primary",
+        destructive: "border border-danger bg-danger text-white shadow-sm hover:bg-danger/90",
+        icon: "border border-input bg-white p-0 text-text-secondary shadow-sm hover:bg-slate-50 hover:text-primary",
       },
       size: {
-        default: "h-11 px-4",
-        sm: "h-10 px-3",
+        default: "h-10 px-4",
+        sm: "h-9 px-3",
         lg: "h-12 px-5",
-        icon: "h-11 w-11 px-0",
+        icon: "h-10 w-10 px-0",
       },
     },
     defaultVariants: {
