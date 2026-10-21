@@ -484,7 +484,12 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
           onClose={closeQueryDialog}
           onConfirm={() => toggleId && actionMutation.mutate({ action: "toggle", id: toggleId })}
           open={Boolean(toggleId)}
-          title="Đổi trạng thái bản ghi"
+          title={effectiveRoute.kind === "executive-board" ? "Vô hiệu hóa phân công" : "Đổi trạng thái bản ghi"}
+          description={
+            effectiveRoute.kind === "executive-board"
+              ? "Phân công sẽ kết thúc từ hôm nay và không bật lại được (nhiệm kì được giữ lại trong lịch sử). Muốn huynh trưởng giữ chức vụ trở lại, hãy tạo phân công mới. Nhập chính xác Xác nhận để tiếp tục."
+              : undefined
+          }
         />
       )}
       <ApprovalDialog

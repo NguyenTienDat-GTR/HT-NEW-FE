@@ -15,7 +15,7 @@ import { LeaderPickerModal, leaderDisplayName, type PickedLeader } from "./leade
 // Phân công không sửa được (giữ lịch sử nhiệm kì): chỉ có modal tạo mới.
 type AssignmentFormTarget = { mode: "create" };
 type UnitLevel = "DIOCESE" | "DEANERY" | "PARISH";
-type BoardSeat = { positionCode: string; positionName: string; chaplain: boolean; assigned: boolean };
+type BoardSeat = { positionCode: string; positionName: string; chaplain: boolean; occupied: boolean };
 
 // Ngày hiện tại theo giờ máy (YYYY-MM-DD) làm ngày bắt đầu mặc định.
 function todayIso() {
@@ -56,7 +56,7 @@ function AssignmentForm({ onClose }: { onClose: () => void }) {
     enabled: Boolean(unitType && scope?.unitId),
     queryFn: () => apiFetch<BoardSeat[]>(`/executive-board/boards/${unitType}/${encodeURIComponent(String(scope?.unitId))}`),
   });
-  const positions = (boardQuery.data ?? []).filter((seat) => !seat.chaplain && !seat.assigned);
+  const positions = (boardQuery.data ?? []).filter((seat) => !seat.chaplain && !seat.occupied);
 
   const [leader, setLeader] = useState<PickedLeader | null>(null);
   const [positionCode, setPositionCode] = useState<string | undefined>();

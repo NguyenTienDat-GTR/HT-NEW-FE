@@ -362,7 +362,9 @@ function hasScopedRowPermission(route: RouteConfig, user: AuthUser | null, actio
 }
 
 function canToggleRow(route: RouteConfig, row: Record<string, unknown>, user: AuthUser | null) {
-  if (route.kind === "positions" || route.kind === "executive-board") return hasScopedRowPermission(route, user, "toggle", row);
+  if (route.kind === "positions") return hasScopedRowPermission(route, user, "toggle", row);
+  // Phân công là lịch sử nhiệm kì: chỉ vô hiệu hóa (kết thúc) được, phân công đã kết thúc không bật lại.
+  if (route.kind === "executive-board") return row.status === true && hasScopedRowPermission(route, user, "toggle", row);
   if (!isSuperAdmin(user) && isSystemRoleRow(route, row)) return false;
   if (route.kind === "accounts") return !isOwnAccount(row, user) && !rowHasPrimaryRole(row, "SUPER_ADMIN");
   if (route.kind === "dioceses") return isSuperAdmin(user);
