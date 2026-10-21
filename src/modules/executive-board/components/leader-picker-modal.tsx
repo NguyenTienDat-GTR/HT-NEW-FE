@@ -129,7 +129,7 @@ function PickerContent({ selectedId, onClose, onSelect }: { selectedId?: string;
         </div>
         {showDeanery ? (
           <select
-            className="h-10 rounded-[8px] border border-border bg-white px-3 text-sm"
+            className="h-10 cursor-pointer rounded-lg border border-input bg-white px-3 text-sm focus:border-primary focus:outline-none focus:ring-[3px] focus:ring-[var(--primary-ring)]"
             onChange={(event) => {
               setDeaneryId(event.target.value);
               setParishId("");
@@ -145,7 +145,7 @@ function PickerContent({ selectedId, onClose, onSelect }: { selectedId?: string;
           </select>
         ) : null}
         {showParish ? (
-          <select className="h-10 rounded-[8px] border border-border bg-white px-3 text-sm" onChange={(event) => setParishId(event.target.value)} value={parishId}>
+          <select className="h-10 cursor-pointer rounded-lg border border-input bg-white px-3 text-sm focus:border-primary focus:outline-none focus:ring-[3px] focus:ring-[var(--primary-ring)]" onChange={(event) => setParishId(event.target.value)} value={parishId}>
             <option value="">Tất cả giáo xứ</option>
             {parishOptions.map((option) => (
               <option key={option.value} value={option.value}>
