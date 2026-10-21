@@ -24,6 +24,8 @@ export type FormFieldSpec = {
   options?: Option[];
   optionsEndpoint?: string;
   buildOptionsEndpoint?: (values: Record<string, unknown>) => string | undefined;
+  // Endpoint lấy lựa chọn phụ thuộc tài khoản (ví dụ chỉ loại khóa thuộc cấp quản lý của mình).
+  optionsEndpointForUser?: (user: AuthUser | null) => string | undefined;
   optionValue?: string;
   optionLabel?: string;
   optionLabelFields?: string[];

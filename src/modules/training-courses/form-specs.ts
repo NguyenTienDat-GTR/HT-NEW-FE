@@ -1,7 +1,30 @@
 import { compactPayload, unitTypeSelectOptions, type ResourceFormSpec } from "@/components/form/resource-form/types";
+import type { AuthUser } from "@/lib/auth/auth-store";
+import { hasPermission } from "@/lib/auth/permissions";
 import { leaderLevelSelect } from "@/modules/organizations/form-specs";
 
 const unitTypes = unitTypeSelectOptions(["DIOCESE", "DEANERY"]);
+
+type ManagedResource = "course" | "course_type" | "score_component";
+
+// Cấp quản lý (loại khóa) mà tài khoản được tạo/sửa: giáo phận hoặc giáo hạt theo quyền của mình; null nếu không có quyền ở cấp nào.
+function managedUnitTypes(user: AuthUser | null, resource: ManagedResource): ("DIOCESE" | "DEANERY")[] {
+  const result: ("DIOCESE" | "DEANERY")[] = [];
+  (["DIOCESE", "DEANERY"] as const).forEach((type) => {
+    const suffix = type.toLowerCase();
+    if (hasPermission(user, `training.${resource}.create.${suffix}`) || hasPermission(user, `training.${resource}.update.${suffix}`)) result.push(type);
+  });
+  return result;
+}
+
+// Endpoint danh sách loại khóa chỉ gồm các loại thuộc cấp quản lý của tài khoản (không lẫn loại khóa của cấp khác).
+function courseTypesInScope(resource: ManagedResource) {
+  return (user: AuthUser | null) => {
+    const types = managedUnitTypes(user, resource);
+    if (types.length !== 1) return undefined;
+    return `/training/course-types?filters=${encodeURIComponent(JSON.stringify({ managementUnitType: types[0] }))}`;
+  };
+}
 
 // Khóa đã có hồ sơ tham gia (BE trả hasParticipations ở chi tiết khóa) thì khóa các trường này khi sửa.
 const lockedByParticipations = (values: Record<string, unknown>, mode: string) => mode === "edit" && values.hasParticipations === true;
@@ -12,9 +35,26 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
     createTitle: "Thêm loại khóa",
     editTitle: "Chỉnh sửa loại khóa",
     description: "Loại khóa huấn luyện: cấp quản lý, điều kiện tham dự, khóa tiên quyết và cấp thăng.",
+    // Mặc định chọn cấp quản lý theo phạm vi tài khoản đang quản lý.
+    getInitialValues: (user) => {
+      const types = managedUnitTypes(user, "course_type");
+      return types.length === 1 ? { managementUnitType: types[0] } : {};
+    },
     fields: [
       { name: "typeName", label: "Tên loại khóa", required: true, section: "Thông tin loại khóa" },
-      { name: "managementUnitType", label: "Cấp quản lý", type: "select", required: true, options: unitTypes, section: "Thông tin loại khóa" },
+      {
+        name: "managementUnitType",
+        label: "Cấp quản lý",
+        type: "select",
+        required: true,
+        options: unitTypes,
+        // Chỉ hiện cấp thuộc phạm vi quản lý của mình.
+        excludeOptionValuesWhen: (user) => {
+          const allowed = managedUnitTypes(user, "course_type");
+          return allowed.length === 0 ? [] : unitTypes.map((option) => option.value).filter((value) => !allowed.includes(value as "DIOCESE" | "DEANERY"));
+        },
+        section: "Thông tin loại khóa",
+      },
       {
         name: "certificateShortCode",
         label: "Mã viết tắt chứng chỉ",
@@ -75,6 +115,7 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
         type: "select",
         required: true,
         optionsEndpoint: "/training/course-types",
+        optionsEndpointForUser: courseTypesInScope("course"),
         optionValue: "typeCode",
         optionLabel: "typeName",
         readOnlyWhen: lockedByParticipations,
@@ -161,6 +202,7 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
         type: "select",
         required: true,
         optionsEndpoint: "/training/course-types",
+        optionsEndpointForUser: courseTypesInScope("score_component"),
         optionValue: "typeCode",
         optionLabel: "typeName",
         readOnlyOnEdit: true,
