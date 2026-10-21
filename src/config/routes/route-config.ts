@@ -16,6 +16,7 @@ export type ResourceKind =
   | "participations"
   | "certificates"
   | "certificate-config"
+  | "leader-levels"
   | "accounts"
   | "roles"
   | "permissions"
@@ -24,7 +25,7 @@ export type ResourceKind =
   | "account-permissions"
   | "audit-logs";
 
-export type ResourceAction = "view" | "create" | "edit" | "toggle" | "submit" | "approve" | "reject" | "withdraw" | "remove" | "score" | "matrix" | "read";
+export type ResourceAction = "view" | "create" | "edit" | "toggle" | "submit" | "approve" | "reject" | "revoke" | "withdraw" | "remove" | "score" | "matrix" | "read";
 
 export type ResourceActionConfig = {
   label: string;
@@ -109,24 +110,13 @@ const approvalStatusLabels: Record<string, string> = {
   SUBMITTED: "Đã gửi",
   APPROVED: "Đã duyệt",
   REJECTED: "Từ chối",
+  REVOKED: "Đã thu hồi",
   NOT_REQUIRED: "Không yêu cầu",
 };
 
 function labeledOptions(values: string[], labels: Record<string, string>): RouteFilterOption[] {
   return values.map((value) => ({ value, label: labels[value] ?? value }));
 }
-
-export const leaderLevelOptions: RouteFilterOption[] = [
-  { value: "NONE", label: "Chưa có cấp" },
-  { value: "HT_XU", label: "Huynh trưởng xứ" },
-  { value: "DU_TRUONG", label: "Dự trưởng" },
-  { value: "HT_I", label: "Huynh trưởng cấp I" },
-  { value: "HT_II", label: "Huynh trưởng cấp II" },
-  { value: "HT_III", label: "Huynh trưởng cấp III" },
-  { value: "HLV_I", label: "Huấn luyện viên sơ cấp" },
-  { value: "HLV_II", label: "Huấn luyện viên trung cấp" },
-  { value: "HLV_III", label: "Huấn luyện viên cao cấp" },
-];
 
 export type RouteConfig = {
   path: string;
@@ -179,8 +169,11 @@ export function route(config: RouteConfig): RouteConfig {
       prefix.includes(".update.") ||
       prefix.includes(".manage.") ||
       prefix.includes(".assign.") ||
-      prefix.includes(".revoke."),
+      // Thu hồi chứng nhận là hành động riêng, không phải bật/tắt trạng thái.
+      (prefix.includes(".revoke.") && config.kind !== "certificates"),
   );
+  const revokePermissionPrefixes =
+    config.kind === "certificates" ? config.actionPermissionPrefixes?.filter((prefix) => prefix.includes(".revoke.")) : undefined;
   const approvePermissionPrefixes = config.actionPermissionPrefixes?.filter((prefix) => prefix.includes(".approve."));
   const submitPermissionPrefixes = config.actionPermissionPrefixes?.filter((prefix) => prefix.includes(".submit."));
   const scorePermissionPrefixes = config.actionPermissionPrefixes?.filter((prefix) => prefix.includes(".score."));
@@ -202,6 +195,7 @@ export function route(config: RouteConfig): RouteConfig {
       ...(approvePermissionPrefixes?.length && config.kind === "participations"
         ? { reject: { label: "Từ chối", permissionPrefixes: approvePermissionPrefixes } }
         : {}),
+      ...(revokePermissionPrefixes?.length ? { revoke: { label: "Thu hồi", permissionPrefixes: revokePermissionPrefixes } } : {}),
       ...(submitPermissionPrefixes?.length ? { submit: { label: "Gửi", permissionPrefixes: submitPermissionPrefixes } } : {}),
       ...(scorePermissionPrefixes?.length ? { score: { label: "Chấm điểm", permissionPrefixes: scorePermissionPrefixes } } : {}),
       ...config.actions,
@@ -241,7 +235,9 @@ function inferRouteFilters(config: RouteConfig): RouteFilterConfig[] {
         key: "leaderLevel",
         label: "Cấp HT",
         type: "select",
-        options: leaderLevelOptions,
+        optionsEndpoint: "/leader-levels/options",
+        optionValue: "levelCode",
+        optionLabel: "levelName",
       });
       break;
     case "positions":
@@ -340,7 +336,7 @@ function inferRouteFilters(config: RouteConfig): RouteFilterConfig[] {
           key: "certificateApprovalStatus",
           label: "Chứng nhận",
           type: "select",
-          options: labeledOptions(["PENDING", "SUBMITTED", "APPROVED", "REJECTED", "NOT_REQUIRED"], approvalStatusLabels),
+          options: labeledOptions(["PENDING", "SUBMITTED", "APPROVED", "REJECTED", "REVOKED", "NOT_REQUIRED"], approvalStatusLabels),
         });
       }
       break;
@@ -351,7 +347,7 @@ function inferRouteFilters(config: RouteConfig): RouteFilterConfig[] {
           key: "approvalStatus",
           label: "Trạng thái duyệt",
           type: "select",
-          options: labeledOptions(["PENDING", "SUBMITTED", "APPROVED", "REJECTED"], approvalStatusLabels),
+          options: labeledOptions(["PENDING", "SUBMITTED", "APPROVED", "REJECTED", "REVOKED"], approvalStatusLabels),
         });
       }
       break;

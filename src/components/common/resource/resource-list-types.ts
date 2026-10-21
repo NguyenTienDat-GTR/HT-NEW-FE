@@ -9,11 +9,13 @@ export type ResourceListModuleConfig = {
   buildApprovePath?: (route: RouteConfig, rows: Record<string, unknown>[], id: string, approved?: boolean) => string;
   // Duyệt chứng nhận: bắt buộc chọn người ký trong hộp thoại duyệt.
   captureSigner?: boolean;
-  buildApproveBody?: (route: RouteConfig, note?: string, approved?: boolean, signer?: CertificateSigner) => unknown;
+  buildApproveBody?: (route: RouteConfig, note?: string, approved?: boolean, signer?: CertificateSigner, achievedLevel?: string) => unknown;
+  // Duyệt hồ sơ tham dự: hồ sơ ngoại lệ bắt buộc chọn cấp độ đạt được trong hộp thoại duyệt.
+  exceptionLevel?: boolean;
   // Duyệt/từ chối nhiều hồ sơ một lần.
   bulkApprovePath?: string;
   // Body gửi lên bulkApprovePath; reasons là lý do riêng theo id hồ sơ (khi từ chối).
-  buildBulkBody?: (ids: string[], approved: boolean, note: string, reasons?: Record<string, string>, signer?: CertificateSigner) => unknown;
+  buildBulkBody?: (ids: string[], approved: boolean, note: string, reasons?: Record<string, string>, signer?: CertificateSigner, achievedLevels?: Record<string, string>) => unknown;
   // Thu hồi một hồ sơ.
   // Bảng chấm điểm: thêm cột điểm thành phần nhập trực tiếp trên từng hồ sơ (khi nhúng trong chi tiết khóa).
   scoreEntry?: boolean;

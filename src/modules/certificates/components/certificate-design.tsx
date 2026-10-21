@@ -1,7 +1,21 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
+
+// Nạp phông chữ (có dấu tiếng Việt) để xem trước khớp PDF; PDF dùng font nhúng ở BE.
+export function useCertificateFonts() {
+  useEffect(() => {
+    const href =
+      "https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,700;1,400;1,700&family=Lobster&family=Pacifico&family=Patrick+Hand&display=swap";
+    if (document.querySelector(`link[data-cert-fonts]`)) return;
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = href;
+    link.setAttribute("data-cert-fonts", "");
+    document.head.appendChild(link);
+  }, []);
+}
 
 export type FontFamily = "sans" | "serif" | "bevietnam" | "lobster" | "pacifico" | "patrickhand";
 

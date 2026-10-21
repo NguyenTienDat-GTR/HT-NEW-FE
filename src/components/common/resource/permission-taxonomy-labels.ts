@@ -15,6 +15,7 @@ const taxonomyLabels: Record<PermissionTaxonomyKind, Record<string, string>> = {
     audit_log: "Nhật ký hệ thống",
     certificate: "Chứng nhận",
     certificate_config: "Cấu hình chứng nhận",
+    leader_level: "Cấp độ huynh trưởng",
     course: "Khóa huấn luyện",
     dashboard: "Dashboard phân tích",
     deanery: "Giáo hạt",

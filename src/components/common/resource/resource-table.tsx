@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowUUpLeftIcon, CaretDownIcon, CheckCircleIcon, EyeIcon, FilePdfIcon, PencilSimpleIcon, TrashIcon, XCircleIcon } from "@phosphor-icons/react";
+import { ArrowUUpLeftIcon, CaretDownIcon, CheckCircleIcon, EyeIcon, FilePdfIcon, PencilSimpleIcon, ProhibitInsetIcon, TrashIcon, XCircleIcon } from "@phosphor-icons/react";
 import type { Route } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -232,6 +232,8 @@ function RowActions({ route, row, onExportRow, exportingRow }: { route: RouteCon
   // Hồ sơ đã có chứng nhận được duyệt thì không xóa được.
   const canRemove = canUseAction(user, route.actions?.remove) && row.certificateApprovalStatus !== "APPROVED";
   const canReject = canUseAction(user, route.actions?.reject) && awaitingApproval && !courseFinished;
+  // Chỉ thu hồi được chứng nhận đã duyệt (kể cả khi khóa đã kết thúc).
+  const canRevoke = canUseAction(user, route.actions?.revoke) && route.kind === "certificates" && row.approvalStatus === "APPROVED";
 
   return (
     <div className="inline-flex items-center gap-1">
@@ -295,6 +297,15 @@ function RowActions({ route, row, onExportRow, exportingRow }: { route: RouteCon
           <Button asChild aria-label="Từ chối" className="h-8 min-w-8 rounded-lg text-danger" size="icon" variant="icon">
             <Link href={resourceActionHref(route.path, embedded, { reject: id }) as Route}>
               <XCircleIcon size={16} />
+            </Link>
+          </Button>
+        </Tip>
+      ) : null}
+      {canRevoke ? (
+        <Tip label="Thu hồi chứng nhận, hồ sơ khóa liên kết sẽ thành không đạt">
+          <Button asChild aria-label="Thu hồi chứng nhận" className="h-8 min-w-8 rounded-lg text-danger" size="icon" variant="icon">
+            <Link href={resourceActionHref(route.path, embedded, { revoke: id }) as Route}>
+              <ProhibitInsetIcon size={16} />
             </Link>
           </Button>
         </Tip>

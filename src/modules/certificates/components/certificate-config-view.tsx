@@ -40,6 +40,7 @@ import {
   isSameForm,
   paperAspect,
   sampleValue,
+  useCertificateFonts,
   type ConfigResponse,
   type CourseTypeRef,
   type DesignForm,
@@ -69,17 +70,7 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
   const history = useUndoHistory<DesignForm>(blankForm());
   const form = history.value;
 
-  // Nạp phông chữ (có dấu tiếng Việt) để xem trước khớp PDF; PDF dùng font nhúng ở BE.
-  useEffect(() => {
-    const href =
-      "https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,700;1,400;1,700&family=Lobster&family=Pacifico&family=Patrick+Hand&display=swap";
-    if (document.querySelector(`link[data-cert-fonts]`)) return;
-    const link = document.createElement("link");
-    link.rel = "stylesheet";
-    link.href = href;
-    link.setAttribute("data-cert-fonts", "");
-    document.head.appendChild(link);
-  }, []);
+  useCertificateFonts();
 
   // Toàn bộ cấu hình ở dạng gọn (không phân trang): xác định cấu hình chung và cấu hình đang mở.
   const optionsQuery = useQuery({

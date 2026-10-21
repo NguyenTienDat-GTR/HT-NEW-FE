@@ -1,5 +1,5 @@
 import { compactPayload, unitTypeSelectOptions, type ResourceFormSpec } from "@/components/form/resource-form/types";
-import { leaderLevels } from "@/modules/organizations/form-specs";
+import { leaderLevelSelect } from "@/modules/organizations/form-specs";
 
 const unitTypeOptions = unitTypeSelectOptions(["DIOCESE", "DEANERY", "PARISH"]);
 const genderOptions = [
@@ -31,7 +31,7 @@ export const personnelFormSpecs: ResourceFormSpec[] = [
         optionLabel: "name",
         section: "Phạm vi",
       },
-      { name: "leaderLevel", label: "Cấp huynh trưởng", type: "select", required: true, options: leaderLevels, readOnlyOnEdit: true, section: "Phạm vi" },
+      { name: "leaderLevel", label: "Cấp huynh trưởng", type: "select", required: true, ...leaderLevelSelect, readOnlyOnEdit: true, section: "Phạm vi" },
     ],
     mapSubmit: (values, mode) => {
       const payload = compactPayload(values);

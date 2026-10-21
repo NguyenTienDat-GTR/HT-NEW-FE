@@ -6,6 +6,7 @@ import { LeaderDetailPage } from "@/modules/leaders/components/leader-detail-pag
 import { CourseDetailPage } from "@/modules/training-courses/components/course-detail-page";
 import { ResourceFormPage } from "@/components/form/resource-form/resource-form-page";
 import { CertificateConfigView } from "@/modules/certificates/components/certificate-config-view";
+import { LeaderLevelsView } from "@/modules/leader-levels/components/leader-levels-view";
 import type React from "react";
 import { Panel } from "@/components/ui/panel";
 import type { AuthUser } from "@/lib/auth/auth-store";
@@ -49,6 +50,7 @@ export function WorkspacePage({ segments }: { segments: string[] }) {
   else if (route.kind === "dashboard") content = <DashboardView />;
   else if (route.kind === "analytics") content = <AnalyticsView />;
   else if (route.kind === "certificate-config") content = <CertificateConfigView route={route} />;
+  else if (route.kind === "leader-levels") content = <LeaderLevelsView route={route} />;
   else content = <ModuleResourceRenderer route={route} />;
 
   return content;

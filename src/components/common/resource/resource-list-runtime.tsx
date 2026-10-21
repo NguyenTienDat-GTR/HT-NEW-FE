@@ -13,9 +13,10 @@ import { apiDownload, apiFetch, apiMutation, getApiErrorMessage, parseContentDis
 import { useAuthStore } from "@/lib/auth/auth-store";
 import { canUseAction } from "@/lib/auth/permissions";
 import { resolveRouteForUser } from "@/modules/workspace/super-admin-route-overrides";
-import { ApprovalDialog, type CertificateSigner } from "./approval-dialog";
+import { ApprovalDialog, type CertificateSigner, type ExceptionLevelItem } from "./approval-dialog";
 import { embeddedTabHref, useEmbeddedResource, withReturnTo } from "./embedded-resource-context";
 import { ConfirmActionDialog } from "./confirm-action-dialog";
+import { RevokeCertificateDialog } from "./revoke-certificate-dialog";
 import { DetailDrawer } from "./detail-drawer";
 import { getResourceId, isAwaitingApproval } from "./resource-actions";
 import { isInvalidScore, originalScore, runWithConcurrency, sameScore, type ScoreComponent, type ScoreDrafts, type ScoreEntry } from "./score-entry";
@@ -86,6 +87,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
   const approveId = searchParams.get("approve");
   const rejectId = searchParams.get("reject");
   const withdrawId = searchParams.get("withdraw");
+  const revokeId = searchParams.get("revoke");
   const removeId = searchParams.get("remove");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkMode, setBulkMode] = useState<"approve" | "reject" | null>(null);
@@ -122,33 +124,52 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
       })
     : [];
 
+  const revokeTarget = (id: string) => {
+    const row = rowById(id);
+    return {
+      code: id,
+      leaderName: row?.leaderFullName ? String(row.leaderFullName) : undefined,
+      courseName: row?.courseName ? String(row.courseName) : undefined,
+    };
+  };
+  // Hồ sơ ngoại lệ (chưa đủ điều kiện) phải được người duyệt chọn cấp độ đạt được sau khi hoàn thành khóa.
+  const exceptionItemFor = (id: string): ExceptionLevelItem | null => {
+    const row = rowById(id);
+    if (!config.exceptionLevel || !row || row.eligible !== false) return null;
+    const courseLevel = typeof row.courseResultingLevel === "string" ? row.courseResultingLevel : "";
+    if (!courseLevel || courseLevel === "NONE") return null;
+    return { id, label: String(row.leaderFullName ?? id), leaderLevel: String(row.leaderLevel ?? "NONE"), courseLevel };
+  };
+  const approveExceptionItems = approveId ? [exceptionItemFor(approveId)].filter((item): item is ExceptionLevelItem => item !== null) : [];
+  const bulkExceptionItems = bulkApprovableIds.map(exceptionItemFor).filter((item): item is ExceptionLevelItem => item !== null);
   const closeQueryDialog = () => router.push((embedded ? embeddedTabHref(embedded) : effectiveRoute.path) as Route);
   const actionMutation = useMutation({
-    mutationFn: ({ action, id, note, signer }: { action: "toggle" | "approve" | "reject" | "withdraw" | "remove"; id: string; note?: string; signer?: CertificateSigner }) => {
+    mutationFn: ({ action, id, note, signer, achievedLevel }: { action: "toggle" | "approve" | "reject" | "revoke" | "withdraw" | "remove"; id: string; note?: string; signer?: CertificateSigner; achievedLevel?: string }) => {
+      if (action === "revoke") return apiMutation(`${effectiveRoute.endpoint}/${encodeURIComponent(id)}/revoke`, "POST", { reason: note });
       if (action === "remove") return apiMutation(config.buildRemovePath?.(id) ?? `${effectiveRoute.endpoint}/${encodeURIComponent(id)}`, "DELETE");
       if (action === "withdraw") return apiMutation(config.buildWithdrawPath?.(id) ?? `${effectiveRoute.endpoint}/${encodeURIComponent(id)}`, "DELETE");
       if (action === "toggle") return apiMutation(`${effectiveRoute.endpoint}/${encodeURIComponent(id)}/toggle-status`, "PATCH", { confirmationText: "Xác nhận" });
       if (action === "approve" || action === "reject") {
         const approved = action === "approve";
         const approvePath = config.buildApprovePath?.(effectiveRoute, rows, id, approved) ?? `${effectiveRoute.endpoint}/${encodeURIComponent(id)}/approve`;
-        const approveBody = config.buildApproveBody?.(effectiveRoute, note, approved, signer) ?? { approved, review: note || undefined };
+        const approveBody = config.buildApproveBody?.(effectiveRoute, note, approved, signer, achievedLevel) ?? { approved, review: note || undefined };
         return apiMutation(approvePath, "POST", approveBody);
       }
       throw new Error("Unsupported resource action");
     },
     onSuccess: async (_data, variables) => {
-      toast.success(variables.action === "toggle" ? "Đổi trạng thái thành công" : variables.action === "reject" ? "Đã từ chối duyệt" : variables.action === "withdraw" ? "Đã thu hồi đăng ký" : variables.action === "remove" ? "Đã xóa hồ sơ khỏi danh sách tham dự" : "Duyệt thành công");
+      toast.success(variables.action === "toggle" ? "Đổi trạng thái thành công" : variables.action === "reject" ? "Đã từ chối duyệt" : variables.action === "revoke" ? "Đã thu hồi chứng nhận" : variables.action === "withdraw" ? "Đã thu hồi đăng ký" : variables.action === "remove" ? "Đã xóa hồ sơ khỏi danh sách tham dự" : "Duyệt thành công");
       closeQueryDialog();
       await queryClient.invalidateQueries({ queryKey: ["resource", effectiveRoute.endpoint] });
     },
   });
 
   const bulkMutation = useMutation({
-    mutationFn: ({ approved, note, reasons, signer }: { approved: boolean; note: string; reasons?: Record<string, string>; signer?: CertificateSigner }) =>
+    mutationFn: ({ approved, note, reasons, signer, achievedLevels }: { approved: boolean; note: string; reasons?: Record<string, string>; signer?: CertificateSigner; achievedLevels?: Record<string, string> }) =>
       apiMutation<{ successCount: number; failedCount: number; failures: { leaderFullName?: string; reason: string }[] }>(
         config.bulkApprovePath ?? "",
         "POST",
-        config.buildBulkBody?.(bulkApprovableIds, approved, note, reasons, signer) ?? { ids: bulkApprovableIds, approved, review: note || undefined, reviews: reasons },
+        config.buildBulkBody?.(bulkApprovableIds, approved, note, reasons, signer, achievedLevels) ?? { ids: bulkApprovableIds, approved, review: note || undefined, reviews: reasons, achievedLevels },
       ),
     onSuccess: async (result, variables) => {
       const action = variables.approved ? "Duyệt" : "Từ chối";
@@ -275,7 +296,8 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
       .filter((row) => (row.approvalStatus ?? row.certificateApprovalStatus) !== "APPROVED")
       .map((row) => {
         const name = String(row.leaderFullName ?? row.certificateCode ?? getResourceId(effectiveRoute, row) ?? "");
-        const status = (row.approvalStatus ?? row.certificateApprovalStatus) === "REJECTED" ? "bị từ chối" : "chưa duyệt";
+        const current = row.approvalStatus ?? row.certificateApprovalStatus;
+        const status = current === "REJECTED" ? "bị từ chối" : current === "REVOKED" ? "đã bị thu hồi" : "chưa duyệt";
         return `${name} (${status})`;
       });
     if (notApproved.length) {
@@ -432,19 +454,22 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
         title="Đổi trạng thái bản ghi"
       />
       <ApprovalDialog
+        key={approveId ?? "approve-closed"}
         captureSigner={config.captureSigner}
+        exceptionItems={approveExceptionItems}
         loading={actionMutation.isPending}
         onClose={closeQueryDialog}
-        onConfirm={(note, _reasons, signer) => approveId && actionMutation.mutate({ action: "approve", id: approveId, note, signer })}
+        onConfirm={(note, _reasons, signer, achievedLevels) => approveId && actionMutation.mutate({ action: "approve", id: approveId, note, signer, achievedLevel: achievedLevels?.[approveId] })}
         open={Boolean(approveId)}
       />
       <ApprovalDialog
         key={bulkMode ?? "bulk-closed"}
         captureSigner={config.captureSigner}
+        exceptionItems={bulkExceptionItems}
         loading={bulkMutation.isPending}
         mode={bulkMode === "reject" ? "reject" : "approve"}
         onClose={() => setBulkMode(null)}
-        onConfirm={(note, reasons, signer) => bulkMode && bulkMutation.mutate({ approved: bulkMode === "approve", note, reasons, signer })}
+        onConfirm={(note, reasons, signer, achievedLevels) => bulkMode && bulkMutation.mutate({ approved: bulkMode === "approve", note, reasons, signer, achievedLevels })}
         items={bulkApprovableIds.map((id) => {
           const row = rowById(id);
           return { id, label: String(row?.leaderFullName ?? id) };
@@ -472,6 +497,12 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
         open={Boolean(withdrawId)}
         requireConfirmText={false}
         title="Thu hồi đăng ký"
+      />
+      <RevokeCertificateDialog
+        loading={actionMutation.isPending}
+        onClose={closeQueryDialog}
+        onConfirm={(reason) => revokeId && actionMutation.mutate({ action: "revoke", id: revokeId, note: reason })}
+        target={revokeId ? revokeTarget(revokeId) : null}
       />
       <ApprovalDialog
         loading={actionMutation.isPending}

@@ -1,4 +1,5 @@
 import type { RouteConfig } from "@/config/routes/routes";
+import { getLeaderLevels } from "@/modules/leader-levels/leader-level-store";
 import type { PageResponse } from "@/lib/api/client";
 
 export type ResourceKpiTone = "primary" | "success" | "warning" | "accent" | "danger";
@@ -17,17 +18,14 @@ export type ResourceKpiQuerySpec = {
 const SYSTEM_KPI_KINDS = new Set(["accounts", "roles", "permissions"]);
 const SYSTEM_HIDDEN_KINDS = new Set(["account-roles", "role-permissions", "account-permissions", "audit-logs", "notifications"]);
 
-const leaderLevelKpis = [
-  { value: "NONE", label: "Chưa có cấp", tone: "accent" },
-  { value: "HT_XU", label: "HT xứ", tone: "success" },
-  { value: "DU_TRUONG", label: "Dự trưởng", tone: "warning" },
-  { value: "HT_I", label: "HT cấp I", tone: "primary" },
-  { value: "HT_II", label: "HT cấp II", tone: "primary" },
-  { value: "HT_III", label: "HT cấp III", tone: "primary" },
-  { value: "HLV_I", label: "HLV I", tone: "danger" },
-  { value: "HLV_II", label: "HLV II", tone: "danger" },
-  { value: "HLV_III", label: "HLV III", tone: "danger" },
-] satisfies Array<{ value: string; label: string; tone: ResourceKpiTone }>;
+// Thẻ KPI theo từng cấp độ trong danh mục (đúng thứ tự cấp), màu theo nhóm cấp.
+function leaderLevelKpis(): Array<{ value: string; label: string; tone: ResourceKpiTone }> {
+  return getLeaderLevels().map((level) => ({
+    value: level.levelCode,
+    label: level.levelName,
+    tone: level.levelCode === "NONE" ? "accent" : level.levelCode === "HT_XU" ? "success" : level.levelCode === "DU_TRUONG" ? "warning" : level.levelCode.startsWith("HLV_") ? "danger" : "primary",
+  }));
+}
 
 const unitTypeKpis = [
   { value: "DIOCESE", label: "Cấp giáo phận", tone: "primary" },
@@ -48,7 +46,7 @@ export function buildResourceKpiQuerySpecs(route: RouteConfig, queryString: stri
   addSpec(specs, "status:inactive", constrainStatusQueryString(queryString, false));
 
   if (route.kind === "leaders") {
-    leaderLevelKpis.forEach((level) => addSpec(specs, kpiId("leaderLevel", level.value), constrainFilterQueryString(queryString, "leaderLevel", level.value)));
+    leaderLevelKpis().forEach((level) => addSpec(specs, kpiId("leaderLevel", level.value), constrainFilterQueryString(queryString, "leaderLevel", level.value)));
   }
 
   if (route.kind === "positions") {
@@ -77,7 +75,7 @@ export function buildResourceKpis({
   ];
 
   if (route.kind === "leaders") {
-    kpis.push(...leaderLevelKpis.map((level) => ({ label: level.label, value: queryTotals[kpiId("leaderLevel", level.value)] ?? 0, tone: level.tone })));
+    kpis.push(...leaderLevelKpis().map((level) => ({ label: level.label, value: queryTotals[kpiId("leaderLevel", level.value)] ?? 0, tone: level.tone })));
   }
 
   if (route.kind === "positions") {

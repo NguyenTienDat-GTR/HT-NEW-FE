@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { apiFetch, getApiErrorMessage } from "@/lib/api/client";
 import type { RouteConfig } from "@/config/routes/routes";
 import { useEmbeddedResource } from "./embedded-resource-context";
+import { CertificateDetailDrawer } from "@/modules/certificates/components/certificate-detail-drawer";
 import { ResourceCell, columnLabels, formatLeaderLevel } from "./resource-format";
 
 const AUDIT_KEYS = ["createdAt", "createdBy", "updatedAt", "updatedBy"] as const;
@@ -66,6 +67,12 @@ type RankHistoryRow = {
 };
 
 export function DetailDrawer({ id, onClose, route }: { id?: string | null; onClose: () => void; route: RouteConfig }) {
+  // Chứng nhận có drawer riêng: nhóm thông tin tiếng Việt, ảnh xem trước và chế độ mở rộng.
+  if (route.kind === "certificates") return <CertificateDetailDrawer endpoint={route.endpoint ?? "/certificates"} id={id} onClose={onClose} />;
+  return <GenericDetailDrawer id={id} onClose={onClose} route={route} />;
+}
+
+function GenericDetailDrawer({ id, onClose, route }: { id?: string | null; onClose: () => void; route: RouteConfig }) {
   const query = useQuery({
     queryKey: ["resource-detail", route.endpoint, id],
     enabled: Boolean(id && route.endpoint),

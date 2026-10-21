@@ -5,8 +5,19 @@ import { CheckCircle, XCircle, X } from "@phosphor-icons/react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { getLeaderLevels, leaderLevelName, leaderLevelRank } from "@/modules/leader-levels/leader-level-store";
 
 export type ApprovalDialogItem = { id: string; label: string };
+
+// Hồ sơ ngoại lệ cần người duyệt chọn cấp độ đạt được sau khi hoàn thành khóa.
+export type ExceptionLevelItem = { id: string; label: string; leaderLevel: string; courseLevel: string };
+
+// Cấp có thể chọn: cao hơn cấp hiện tại của huynh trưởng và không cao hơn cấp độ đạt được của khóa.
+export function achievableLevels(item: Pick<ExceptionLevelItem, "leaderLevel" | "courseLevel">) {
+  const current = leaderLevelRank(item.leaderLevel);
+  const max = leaderLevelRank(item.courseLevel);
+  return getLeaderLevels().filter((level) => level.displayOrder > current && level.displayOrder <= max);
+}
 
 export type CertificateSigner = { signerType: "CHAPLAIN" | "OTHER"; signerName: string; signerTitle: string };
 
@@ -24,17 +35,20 @@ export function ApprovalDialog({
   mode = "approve",
   items,
   captureSigner,
+  exceptionItems,
 }: {
   loading?: boolean;
   onClose: () => void;
   // reasons chỉ có khi từ chối nhiều hồ sơ: lý do của từng hồ sơ (lý do chung được sao chép cho mọi hồ sơ).
-  onConfirm: (note: string, reasons?: Record<string, string>, signer?: CertificateSigner) => void;
+  onConfirm: (note: string, reasons?: Record<string, string>, signer?: CertificateSigner, achievedLevels?: Record<string, string>) => void;
   open: boolean;
   mode?: "approve" | "reject";
   // Danh sách hồ sơ đang xử lý hàng loạt; từ 2 hồ sơ trở lên mới cho chọn lý do chung/riêng.
   items?: ApprovalDialogItem[];
   // Khi duyệt chứng nhận: bắt buộc chọn người ký, ghi trực tiếp vào chứng nhận.
   captureSigner?: boolean;
+  // Khi duyệt: các hồ sơ ngoại lệ phải chọn cấp độ đạt được (bắt buộc cho từng hồ sơ).
+  exceptionItems?: ExceptionLevelItem[];
 }) {
   const [note, setNote] = useState("");
   const [scope, setScope] = useState<ReasonScope>("shared");
@@ -42,7 +56,11 @@ export function ApprovalDialog({
   const [signerType, setSignerType] = useState<"CHAPLAIN" | "OTHER">("CHAPLAIN");
   const [signerName, setSignerName] = useState("");
   const [signerTitle, setSignerTitle] = useState("");
+  const [levels, setLevels] = useState<Record<string, string>>({});
   const reject = mode === "reject";
+  const levelItems = reject ? [] : (exceptionItems ?? []);
+  const missingLevel = levelItems.some((item) => !levels[item.id] || !achievableLevels(item).some((level) => level.levelCode === levels[item.id]));
+  const levelsOut = levelItems.length ? Object.fromEntries(levelItems.map((item) => [item.id, levels[item.id]])) : undefined;
   const multi = reject && (items?.length ?? 0) >= 2;
   const individual = multi && scope === "individual";
   const needSigner = Boolean(captureSigner) && !reject;
@@ -57,14 +75,14 @@ export function ApprovalDialog({
 
   function confirm() {
     if (individual && items) {
-      onConfirm("", Object.fromEntries(items.map((item) => [item.id, reasons[item.id].trim()])), signer);
+      onConfirm("", Object.fromEntries(items.map((item) => [item.id, reasons[item.id].trim()])), signer, levelsOut);
       return;
     }
     if (reject && items?.length) {
-      onConfirm(note, Object.fromEntries(items.map((item) => [item.id, note.trim()])), signer);
+      onConfirm(note, Object.fromEntries(items.map((item) => [item.id, note.trim()])), signer, levelsOut);
       return;
     }
-    onConfirm(note, undefined, signer);
+    onConfirm(note, undefined, signer, levelsOut);
   }
 
   return (
@@ -149,6 +167,45 @@ export function ApprovalDialog({
             />
           )}
 
+          {levelItems.length ? (
+            <div className="mt-4 min-h-0 space-y-3 overflow-y-auto rounded-[10px] border border-border p-3">
+              <div>
+                <span className="block text-sm font-semibold text-foreground">
+                  Cấp độ đạt được sau khi hoàn thành khóa <span className="text-danger">*</span>
+                </span>
+                <span className="mt-0.5 block text-xs text-muted">
+                  Hồ sơ ngoại lệ: chọn cấp cao hơn cấp hiện tại và không cao hơn cấp độ đạt được của khóa.
+                </span>
+              </div>
+              {levelItems.map((item) => {
+                const choices = achievableLevels(item);
+                return (
+                  <label className="block" key={item.id}>
+                    <span className="mb-1 flex flex-wrap items-baseline gap-x-2 text-sm font-medium text-foreground">
+                      {item.label}
+                      <span className="text-xs font-normal text-muted">
+                        hiện là {leaderLevelName(item.leaderLevel)} · khóa cấp tối đa {leaderLevelName(item.courseLevel)}
+                      </span>
+                    </span>
+                    <select
+                      className="h-10 w-full rounded-[8px] border border-border bg-white px-3 text-sm focus:border-primary focus:outline-none"
+                      disabled={choices.length === 0}
+                      onChange={(event) => setLevels((current) => ({ ...current, [item.id]: event.target.value }))}
+                      value={levels[item.id] ?? ""}
+                    >
+                      <option value="">{choices.length ? "— Chọn cấp độ đạt được —" : "Không có cấp hợp lệ để chọn"}</option>
+                      {choices.map((level) => (
+                        <option key={level.levelCode} value={level.levelCode}>
+                          {level.levelName}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                );
+              })}
+            </div>
+          ) : null}
+
           {needSigner ? (
             <div className="mt-4 space-y-3 rounded-[10px] border border-border p-3">
               <span className="block text-sm font-semibold text-foreground">Người ký chứng nhận <span className="text-danger">*</span></span>
@@ -178,7 +235,7 @@ export function ApprovalDialog({
             <Button onClick={onClose} type="button" variant="outline">
               Hủy
             </Button>
-            <Button disabled={missingReason || missingSigner} loading={loading} onClick={confirm} type="button" variant={reject ? "destructive" : "primary"}>
+            <Button disabled={missingReason || missingSigner || missingLevel} loading={loading} onClick={confirm} type="button" variant={reject ? "destructive" : "primary"}>
               {reject ? "Từ chối" : "Duyệt"}
             </Button>
           </div>
