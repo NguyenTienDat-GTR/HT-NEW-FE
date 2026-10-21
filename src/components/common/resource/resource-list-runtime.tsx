@@ -113,7 +113,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkMode, setBulkMode] = useState<"approve" | "reject" | null>(null);
   const [scoreDrafts, setScoreDrafts] = useState<ScoreDrafts>({});
-  // Ghi chú hồ sơ nhập ở tab chấm điểm: tạm lưu khi đóng hộp ghi chú, gửi server khi bấm nút lưu.
+  // Nhận xét kết quả khóa của hồ sơ nhập ở tab chấm điểm: tạm lưu khi đóng hộp nhận xét, gửi server khi bấm nút lưu.
   const [noteDrafts, setNoteDrafts] = useState<ScoreNoteDrafts>({});
   const scoreCourseCode = embedded?.fixedFilters["course.courseCode"];
   const scoreEntryEnabled = Boolean(config.scoreEntry && scoreCourseCode && canUseAction(user, effectiveRoute.actions?.score) && !courseDisabled);
@@ -219,7 +219,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
       ? {
           notes: {
             drafts: noteDrafts,
-            // Sửa được ghi chú cả khi điểm đã khóa; chỉ chặn khi khóa kết thúc hoặc bị vô hiệu hóa.
+            // Sửa được nhận xét cả khi điểm đã khóa; chỉ chặn khi khóa kết thúc hoặc bị vô hiệu hóa.
             editable: embedded?.courseFinished !== true && !courseDisabled,
             valueOf: (rowId, row) => noteDrafts[rowId]?.note ?? originalNote(row),
             isDirty: (rowId) => noteDrafts[rowId] !== undefined,
@@ -289,7 +289,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
         },
       });
     }
-    // Hồ sơ chỉ sửa ghi chú (kể cả khi điểm đã khóa): gửi riêng, không động tới điểm.
+    // Hồ sơ chỉ sửa nhận xét (kể cả khi điểm đã khóa): gửi riêng, không động tới điểm.
     for (const id of noteOnlyIds) {
       const draft = noteDrafts[id];
       if (!draft) continue;
@@ -344,14 +344,14 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
   }
 
   const saveScoresButton = scoreEntryEnabled ? (
-    <Tip disabled label={embedded?.scoreLocked === true ? "Điểm đã khóa: chỉ lưu ghi chú các hồ sơ đã sửa" : "Lưu điểm và ghi chú các hồ sơ đã nhập hoặc sửa trên bảng"}>
+    <Tip disabled label={embedded?.scoreLocked === true ? "Điểm đã khóa: chỉ lưu nhận xét các hồ sơ đã sửa" : "Lưu điểm và nhận xét các hồ sơ đã nhập hoặc sửa trên bảng"}>
       <Button disabled={pendingScoreRowIds.length === 0 || embedded?.courseFinished === true} onClick={saveScoresInBackground} type="button">
         {pendingScoreRowIds.length
-          ? `${embedded?.scoreLocked === true ? "Lưu ghi chú" : "Lưu"} (${pendingScoreRowIds.length})`
+          ? `${embedded?.scoreLocked === true ? "Lưu nhận xét" : "Lưu"} (${pendingScoreRowIds.length})`
           : savingScoreIds.length
             ? `Đang lưu ${savingScoreIds.length}...`
             : embedded?.scoreLocked === true
-              ? "Lưu ghi chú"
+              ? "Lưu nhận xét"
               : "Lưu"}
       </Button>
     </Tip>

@@ -9,8 +9,8 @@ import type { ScoreNotes } from "./score-entry";
 
 const MAX_LENGTH = 1000;
 
-// Hành động ghi chú ở tab chấm điểm: bấm mở hộp nhập ghi chú, tắt hộp là tự lưu tạm (chỉ gửi lên server khi bấm nút lưu).
-// Hồ sơ đã có ghi chú thì nút đổi màu.
+// Hành động nhận xét kết quả khóa ở tab chấm điểm: bấm mở hộp nhập nhận xét, tắt hộp là tự lưu tạm (chỉ gửi lên server khi bấm nút lưu).
+// Hồ sơ đã có nhận xét thì nút đổi màu.
 export function ScoreNoteAction({ rowId, row, notes }: { rowId: string; row: Record<string, unknown>; notes: ScoreNotes }) {
   const value = notes.valueOf(rowId, row);
   const hasNote = value.trim() !== "";
@@ -19,10 +19,10 @@ export function ScoreNoteAction({ rowId, row, notes }: { rowId: string; row: Rec
 
   return (
     <Popover.Root>
-      <Tip label={hasNote ? "Xem / sửa ghi chú" : editable ? "Thêm ghi chú" : "Chưa có ghi chú"}>
+      <Tip label={hasNote ? "Xem / sửa nhận xét" : editable ? "Thêm nhận xét" : "Chưa có nhận xét"}>
         <Popover.Trigger asChild>
           <Button
-            aria-label="Ghi chú hồ sơ"
+            aria-label="Nhận xét kết quả hồ sơ"
             className={cn("h-8 min-w-8 rounded-lg", hasNote && "bg-warning/15 text-warning hover:bg-warning/25")}
             size="icon"
             type="button"
@@ -39,7 +39,7 @@ export function ScoreNoteAction({ rowId, row, notes }: { rowId: string; row: Rec
           sideOffset={8}
         >
           <div className="mb-2 flex items-center justify-between gap-2">
-            <p className="truncate text-sm font-semibold text-foreground">Ghi chú · {String(row.leaderFullName ?? "Hồ sơ")}</p>
+            <p className="truncate text-sm font-semibold text-foreground">Nhận xét · {String(row.leaderFullName ?? "Hồ sơ")}</p>
             {unsaved ? <span className="shrink-0 text-xs font-medium text-warning">Chưa lưu</span> : null}
           </div>
           <textarea
@@ -47,12 +47,12 @@ export function ScoreNoteAction({ rowId, row, notes }: { rowId: string; row: Rec
             className="min-h-28 w-full rounded-[8px] border border-border bg-white px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-4 focus:ring-[var(--primary-ring)] disabled:bg-surface-2"
             maxLength={MAX_LENGTH}
             onChange={(event) => notes.onChange(rowId, row, event.target.value)}
-            placeholder={editable ? "Nhập ghi chú cho hồ sơ này" : "Chưa có ghi chú"}
+            placeholder={editable ? "Nhập nhận xét kết quả khóa của hồ sơ này" : "Chưa có nhận xét"}
             readOnly={!editable}
             value={value}
           />
           <p className="mt-1.5 text-xs text-muted">
-            {editable ? `Ghi chú được lưu tạm khi đóng hộp; bấm nút lưu trên trang để gửi lên hệ thống. (${value.length}/${MAX_LENGTH})` : "Khóa đã kết thúc hoặc bị vô hiệu hóa nên không thể sửa ghi chú."}
+            {editable ? `Nhận xét được lưu tạm khi đóng hộp; bấm nút lưu trên trang để gửi lên hệ thống. (${value.length}/${MAX_LENGTH})` : "Khóa đã kết thúc hoặc bị vô hiệu hóa nên không thể sửa nhận xét."}
           </p>
         </Popover.Content>
       </Popover.Portal>

@@ -11,7 +11,7 @@ export type ScoreComponent = {
 // Bản nháp điểm chưa lưu: giữ cả hàng để lưu được kể cả khi người dùng đã sang trang khác.
 export type ScoreDrafts = Record<string, { row: Record<string, unknown>; values: Record<string, string> }>;
 
-// Ghi chú nháp của hồ sơ (tạm lưu ở giao diện, chỉ gửi server khi bấm nút lưu).
+// Nhận xét nháp của hồ sơ (tạm lưu ở giao diện, chỉ gửi server khi bấm nút lưu).
 export type ScoreNoteDrafts = Record<string, { row: Record<string, unknown>; note: string }>;
 
 export type ScoreNotes = {
