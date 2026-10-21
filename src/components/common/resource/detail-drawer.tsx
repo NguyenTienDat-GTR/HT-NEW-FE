@@ -185,6 +185,8 @@ const ASSIGNMENT_SECTIONS: DetailSection[] = [
         wide: true,
         value: (row) => [row.leaderHolyName, row.leaderFullName].filter((part) => typeof part === "string" && part.trim()).join(" "),
       },
+      { key: "leaderParishName", label: "Giáo xứ" },
+      { key: "leaderDeaneryName", label: "Giáo hạt" },
       { key: "positionName", label: "Chức vụ" },
       { key: "unitType", label: "Cấp áp dụng" },
       { key: "unitName", label: "Đơn vị" },
