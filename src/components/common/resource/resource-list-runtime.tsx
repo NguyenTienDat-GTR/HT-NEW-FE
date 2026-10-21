@@ -19,6 +19,7 @@ import { embeddedTabHref, useEmbeddedResource, withReturnTo } from "./embedded-r
 import { ConfirmActionDialog } from "./confirm-action-dialog";
 import { RevokeCertificateDialog } from "./revoke-certificate-dialog";
 import { CourseStatusDialog } from "@/modules/training-courses/components/course-status-dialog";
+import { UnitToggleDialog } from "@/modules/organizations/components/unit-toggle-dialog";
 import { DetailDrawer } from "./detail-drawer";
 import { PositionFormDialog } from "@/modules/executive-board/components/position-form-dialog";
 import { AssignmentFormDialog } from "@/modules/executive-board/components/assignment-form-dialog";
@@ -541,6 +542,15 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
           courseName={toggleId ? String(rowById(toggleId)?.courseName ?? "") : undefined}
           endpoint={effectiveRoute.endpoint ?? "/training/courses"}
           onClose={closeQueryDialog}
+        />
+      ) : effectiveRoute.kind === "dioceses" || effectiveRoute.kind === "deaneries" || effectiveRoute.kind === "parishes" ? (
+        // Giáo phận / giáo hạt / giáo xứ: bảng tác động, lý do bắt buộc khi tắt và lịch sử trạng thái.
+        <UnitToggleDialog
+          endpoint={effectiveRoute.endpoint ?? `/${effectiveRoute.kind}`}
+          onClose={closeQueryDialog}
+          unitId={toggleId}
+          unitLabel={effectiveRoute.kind === "dioceses" ? "giáo phận" : effectiveRoute.kind === "deaneries" ? "giáo hạt" : "giáo xứ"}
+          unitName={toggleId ? String(rowById(toggleId)?.name ?? "") : undefined}
         />
       ) : (
         <ConfirmActionDialog

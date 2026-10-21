@@ -428,3 +428,13 @@ BE tương ứng: `BE/project.md` mục "Training Course Registration Control an
 - Form sửa khóa: khi khóa đã có hồ sơ (`hasParticipations` từ chi tiết khóa) các ô loại khóa, năm tổ chức, số năm hoạt động và điểm đạt chuyển sang chỉ đọc (`readOnlyWhen`).
 - Thanh công cụ danh sách: phần chọn nhiều hồ sơ (duyệt/từ chối hàng loạt) đứng trước ô tìm kiếm đã thu gọn (`ResourceFilters.leadingActions`).
 - Kiểm thử: `tsc`, eslint và `vitest` (trừ `button.test.tsx` fail sẵn từ trước) pass; thêm `tests/unit/components/common/score-entry.test.ts`, `tests/unit/modules/course-dates.test.ts`. Chưa kiểm tra bằng trình duyệt thật.
+
+## Tắt đơn vị tổ chức (nhánh feature/unit-disable-cascade, 2026-10-21)
+
+- Tắt giáo phận / giáo hạt / giáo xứ không đổi trạng thái dữ liệu con; tài khoản thuộc đơn vị chỉ đọc thông báo, dữ liệu đóng băng, bật lại là khôi phục. Chứng nhận đã cấp vẫn hợp lệ.
+- `modules/organizations/components/unit-toggle-dialog.tsx`: gọi `GET /{units}/{id}/toggle-impact`, hiện bảng tác động, bắt buộc lý do (tối đa 500 ký tự) khi tắt cộng chữ `Xác nhận`, gửi `{ confirmationText, reason }`. Được `resource-list-runtime.tsx` dùng cho kind `dioceses|deaneries|parishes`.
+- `modules/organizations/components/unit-status-history.tsx`: lịch sử bật/tắt trong `unit-detail.tsx` (`GET /{units}/{id}/status-history`).
+- `effectiveStatus` từ BE: nhãn "Ngưng theo đơn vị cha" ở cột trạng thái (bảng và chi tiết); `shouldHideStatusColumn` giữ cột này khi có dòng bị khóa theo đơn vị cha.
+- Analytics: công tắc "Bao gồm đơn vị ngưng hoạt động" gửi `includeInactiveUnits=true` (`buildAnalyticsQuery` trong `modules/analytics/types.ts`); mặc định số liệu hiện tại loại đơn vị bị khóa, số liệu lịch sử luôn đầy đủ.
+- Chưa chạy `npm run api:capture` / `api:generate` (cần BE chạy): các hàm gọi API dùng kiểu cục bộ trong `modules/organizations/types.ts`.
+- Test: `tests/unit/modules/organizations/unit-toggle-dialog.test.tsx`, `tests/unit/modules/analytics/build-query.test.ts`, thêm ca trong `resource-table.test.ts`.

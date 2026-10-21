@@ -107,6 +107,8 @@ export function ResourceTable({
 
 export function shouldHideStatusColumn(route: RouteConfig, rows: Record<string, unknown>[], user: AuthUser | null) {
   if (!route.columns.includes("status")) return false;
+  // Giữ cột trạng thái khi có đơn vị đang bật nhưng bị khóa theo đơn vị cha, để người dùng thấy nhãn "Ngưng theo đơn vị cha".
+  if (rows.some((row) => row.status === true && row.effectiveStatus === false)) return false;
   return rows.some((row) => canShowToggleSwitch(route, row, user));
 }
 

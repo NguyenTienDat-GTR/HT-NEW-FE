@@ -7,7 +7,7 @@ import { Panel } from "@/components/ui/panel";
 import { apiFetch } from "@/lib/api/client";
 import { ChartFrame, ChartSkeleton } from "@/modules/analytics/components/chart-frame";
 import { AnimatedMetric } from "@/modules/analytics/components/animated-metric";
-import { metricLabel, toChartRows, toKpiList, type AnalyticsResponse } from "@/modules/analytics/types";
+import { buildAnalyticsQuery, metricLabel, toChartRows, toKpiList, type AnalyticsFilterState, type AnalyticsResponse } from "@/modules/analytics/types";
 import { Header } from "@/modules/dashboard/components/dashboard-view";
 
 const tabs = [
@@ -19,14 +19,8 @@ const tabs = [
 
 export function AnalyticsView() {
   const [tab, setTab] = useState<(typeof tabs)[number][0]>("organization");
-  const [filters, setFilters] = useState({ fromDate: "", toDate: "", timeBucket: "MONTH", groupBy: "" });
-  const queryString = useMemo(() => {
-    const params = new URLSearchParams();
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value) params.set(key, value);
-    });
-    return params.toString();
-  }, [filters]);
+  const [filters, setFilters] = useState<AnalyticsFilterState>({ fromDate: "", toDate: "", timeBucket: "MONTH", groupBy: "", includeInactiveUnits: false });
+  const queryString = useMemo(() => buildAnalyticsQuery(filters), [filters]);
   const query = useQuery({
     queryKey: ["analytics", tab, queryString],
     queryFn: () => apiFetch<AnalyticsResponse>(`/analytics/${tab}${queryString ? `?${queryString}` : ""}`),
@@ -83,6 +77,20 @@ export function AnalyticsView() {
             <Input placeholder="VD: courseType" value={filters.groupBy} onChange={(event) => setFilters((current) => ({ ...current, groupBy: event.target.value }))} />
           </label>
         </div>
+        <label className="mt-3 flex cursor-pointer items-start gap-2 text-sm text-foreground">
+          <input
+            checked={filters.includeInactiveUnits}
+            className="mt-0.5 h-4 w-4"
+            onChange={(event) => setFilters((current) => ({ ...current, includeInactiveUnits: event.target.checked }))}
+            type="checkbox"
+          />
+          <span>
+            Bao gồm đơn vị ngưng hoạt động
+            <span className="mt-0.5 block text-xs text-muted">
+              Mặc định số liệu hiện tại (đơn vị, huynh trưởng) bỏ qua đơn vị bị khóa; số liệu lịch sử (đăng ký, chứng nhận, huynh trưởng mới theo thời gian) luôn tính đủ.
+            </span>
+          </span>
+        </label>
       </Panel>
 
       <div>

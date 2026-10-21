@@ -27,6 +27,10 @@ export type AnalyticsResponse = {
 export function metricLabel(key: string) {
   const labels: Record<string, string> = {
     activeLeaders: "Đang hoạt động",
+    activeParishes: "Giáo xứ hiệu lực",
+    inactiveDeaneries: "Giáo hạt ngưng hoạt động",
+    inactiveParishes: "Giáo xứ ngưng hoạt động",
+    leadersInInactiveUnits: "Huynh trưởng ở đơn vị ngưng",
     approved: "Đã duyệt",
     averageApprovalHours: "Giờ duyệt TB",
     averageScore: "Điểm TB",
@@ -58,4 +62,22 @@ export function toKpiList(data?: AnalyticsResponse): AnalyticsMetric[] {
 export function toChartRows(data?: AnalyticsResponse) {
   const trends = data?.trends?.length ? data.trends : data?.comparisons;
   return (trends ?? []).map((item) => ({ period: item.period, ...item.metrics }));
+}
+
+export type AnalyticsFilterState = {
+  fromDate: string;
+  toDate: string;
+  timeBucket: string;
+  groupBy: string;
+  includeInactiveUnits: boolean;
+};
+
+// Chuỗi query gửi BE; includeInactiveUnits chỉ gửi khi bật (mặc định BE loại đơn vị ngưng hoạt động khỏi số liệu hiện tại).
+export function buildAnalyticsQuery(filters: AnalyticsFilterState) {
+  const params = new URLSearchParams();
+  (["fromDate", "toDate", "timeBucket", "groupBy"] as const).forEach((key) => {
+    if (filters[key]) params.set(key, filters[key]);
+  });
+  if (filters.includeInactiveUnits) params.set("includeInactiveUnits", "true");
+  return params.toString();
 }
