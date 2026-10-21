@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { recentYearOptions } from "@/config/routes/route-config";
 import { findRoute } from "@/config/routes/routes";
 
 describe("certificate list route", () => {
@@ -43,8 +44,9 @@ describe("certificate list filters and search", () => {
     const status = route?.filters?.find((filter) => filter.key === "approvalStatus");
     expect(status?.options?.map((option) => option.value)).toContain("REVOKED");
     const year = route?.filters?.find((filter) => filter.key === "issueDate:year");
-    expect(year?.options).toHaveLength(10);
-    expect(year?.options?.[0].value).toBe(String(new Date().getFullYear()));
+    // Không lưu sẵn danh sách năm: sinh lúc hiển thị để tự tăng theo năm.
+    expect(year?.recentYears).toBe(10);
+    expect(year?.options).toBeUndefined();
   });
 
   it("giáo xứ chỉ hiện các giáo xứ thuộc giáo hạt đang chọn", () => {
@@ -62,5 +64,12 @@ describe("certificate list filters and search", () => {
         "course.courseName",
       ]),
     );
+  });
+});
+
+describe("recentYearOptions", () => {
+  it("tự tăng khi sang năm mới", () => {
+    expect(recentYearOptions(3, new Date(2026, 11, 31)).map((option) => option.value)).toEqual(["2026", "2025", "2024"]);
+    expect(recentYearOptions(3, new Date(2027, 0, 1)).map((option) => option.value)).toEqual(["2027", "2026", "2025"]);
   });
 });

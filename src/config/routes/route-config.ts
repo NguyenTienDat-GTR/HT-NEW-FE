@@ -36,6 +36,14 @@ export type ResourceActionConfig = {
   invalidates?: string[];
 };
 
+// N năm gần nhất (mới nhất trước) tính từ thời điểm `now`.
+export function recentYearOptions(count: number, now: Date = new Date()): RouteFilterOption[] {
+  return Array.from({ length: count }, (_, index) => {
+    const year = String(now.getFullYear() - index);
+    return { value: year, label: year };
+  });
+}
+
 export type RouteFilterOption = {
   value: string;
   label: string;
@@ -46,6 +54,8 @@ export type RouteFilterConfig = {
   label: string;
   type?: "text" | "select" | "boolean";
   options?: RouteFilterOption[];
+  // Bộ lọc năm: N năm gần nhất tính từ năm hiện tại, tạo lại mỗi lần hiển thị nên tự tăng khi sang năm mới.
+  recentYears?: number;
   optionsEndpoint?: string;
   optionCollection?: string;
   optionValue?: string;

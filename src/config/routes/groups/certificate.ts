@@ -1,12 +1,6 @@
 import { Certificate, Gear } from "@phosphor-icons/react";
 import { deaneryUnitFilter, parishUnitFilter, route, type RouteFilterConfig, type RouteGroup } from "../route-config";
 
-// Năm cấp: 10 năm gần nhất tính từ năm hiện tại (chứng nhận cấp theo ngày duyệt nên không có năm tương lai).
-const issueYearOptions = Array.from({ length: 10 }, (_, index) => {
-  const year = String(new Date().getFullYear() - index);
-  return { value: year, label: year };
-});
-
 // Bộ lọc màn hình chứng nhận: khóa, loại khóa có cấp chứng nhận, trạng thái, giáo hạt, giáo xứ và năm cấp.
 // "issueDate:year" lọc theo năm của ngày cấp ở BE (khoảng 01/01 - 31/12).
 const certificateFilters: RouteFilterConfig[] = [
@@ -32,7 +26,8 @@ const certificateFilters: RouteFilterConfig[] = [
   },
   deaneryUnitFilter("leader.parish.deanery.id"),
   parishUnitFilter("leader.parish.id", "leader.parish.deanery.id"),
-  { key: "issueDate:year", label: "Năm cấp", type: "select", options: issueYearOptions },
+  // Năm cấp: 10 năm gần nhất, tính lại mỗi lần hiển thị nên tự tăng khi sang năm mới.
+  { key: "issueDate:year", label: "Năm cấp", type: "select", recentYears: 10 },
 ];
 
 export const certificateRouteGroup: RouteGroup = {
