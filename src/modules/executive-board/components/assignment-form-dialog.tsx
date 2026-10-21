@@ -13,18 +13,9 @@ import { useAuthStore, type AuthUser } from "@/lib/auth/auth-store";
 import { hasPermission } from "@/lib/auth/permissions";
 import { LeaderPickerModal, leaderDisplayName, type PickedLeader } from "./leader-picker-modal";
 
-type AssignmentFormTarget = { mode: "create" } | { mode: "edit"; id: string };
+// Phân công không sửa được (giữ lịch sử nhiệm kì): chỉ có modal tạo mới.
+type AssignmentFormTarget = { mode: "create" };
 type UnitLevel = "DIOCESE" | "DEANERY" | "PARISH";
-
-type AssignmentDetail = {
-  unitType?: UnitLevel;
-  leaderId?: string;
-  leaderHolyName?: string;
-  leaderFullName?: string;
-  positionCode?: string;
-  startDate?: string | null;
-  endDate?: string | null;
-};
 
 const LEVEL_LABELS: Record<UnitLevel, string> = { DIOCESE: "Giáo phận", DEANERY: "Giáo hạt", PARISH: "Giáo xứ" };
 
@@ -41,26 +32,17 @@ export function AssignmentFormDialog({ target, onClose }: { target: AssignmentFo
     <Dialog.Root open={target !== null} onOpenChange={(open) => (!open ? onClose() : undefined)}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-40 bg-slate-950/30 backdrop-blur-sm" />
-        {/* key để xóa dữ liệu đã nhập khi mở lại cho phân công khác. */}
-        {target ? <AssignmentForm key={target.mode === "edit" ? target.id : "create"} onClose={onClose} target={target} /> : null}
+        {target ? <AssignmentForm onClose={onClose} /> : null}
       </Dialog.Portal>
     </Dialog.Root>
   );
 }
 
-function AssignmentForm({ target, onClose }: { target: AssignmentFormTarget; onClose: () => void }) {
+function AssignmentForm({ onClose }: { onClose: () => void }) {
   const queryClient = useQueryClient();
   const user = useAuthStore((state) => state.user);
-  const editing = target.mode === "edit";
   const scope = ownCreateScope(user);
-
-  const detailQuery = useQuery({
-    queryKey: ["resource-detail", "/executive-board/assignments", editing ? target.id : null],
-    enabled: editing,
-    queryFn: () => apiFetch<AssignmentDetail>(`/executive-board/assignments/${encodeURIComponent(editing ? target.id : "")}`),
-  });
-  const detail = detailQuery.data;
-  const unitType = editing ? detail?.unitType : scope?.unitType;
+  const unitType = scope?.unitType;
 
   const positionsQuery = useQuery({
     queryKey: ["field-options", "assignment-positions", unitType],
@@ -75,33 +57,32 @@ function AssignmentForm({ target, onClose }: { target: AssignmentFormTarget; onC
   const [endDate, setEndDate] = useState<string | undefined>();
   const [pickerOpen, setPickerOpen] = useState(false);
 
-  const currentLeaderId = leader?.id ?? detail?.leaderId ?? "";
-  const currentLeaderName = leader ? leaderDisplayName(leader) : leaderDisplayName({ holyName: detail?.leaderHolyName, fullName: detail?.leaderFullName });
-  const currentPosition = positionCode ?? detail?.positionCode ?? "";
-  const currentStart = startDate ?? detail?.startDate ?? "";
-  const currentEnd = endDate ?? detail?.endDate ?? "";
+  const currentLeaderId = leader?.id ?? "";
+  const currentLeaderName = leader ? leaderDisplayName(leader) : "";
+  const currentPosition = positionCode ?? "";
+  const currentStart = startDate ?? "";
+  const currentEnd = endDate ?? "";
   const dateInvalid = Boolean(currentStart && currentEnd && currentEnd < currentStart);
-  const missingUnit = !editing && (!scope || !scope.unitId);
+  const missingUnit = !scope || !scope.unitId;
 
   const mutation = useMutation({
     mutationFn: () => {
-      const payload = {
-        ...(editing ? {} : { unitType: scope?.unitType, unitId: scope?.unitId }),
+      return apiMutation("/executive-board/assignments", "POST", {
+        unitType: scope?.unitType,
+        unitId: scope?.unitId,
         leaderId: currentLeaderId,
         positionCode: currentPosition,
         startDate: currentStart || undefined,
         endDate: currentEnd || undefined,
-      };
-      return editing
-        ? apiMutation(`/executive-board/assignments/${encodeURIComponent(target.id)}`, "PUT", payload)
-        : apiMutation("/executive-board/assignments", "POST", payload);
+      });
     },
     onSuccess: async () => {
-      toast.success(editing ? "Lưu cập nhật thành công" : "Phân công thành công");
+      toast.success("Phân công thành công");
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["resource", "/executive-board/assignments"] }),
         queryClient.invalidateQueries({ queryKey: ["resource-kpi", "/executive-board/assignments"] }),
         queryClient.invalidateQueries({ queryKey: ["resource-detail", "/executive-board/assignments"] }),
+        queryClient.invalidateQueries({ queryKey: ["executive-board-seats"] }),
       ]);
       onClose();
     },
@@ -114,9 +95,9 @@ function AssignmentForm({ target, onClose }: { target: AssignmentFormTarget; onC
     <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[calc(100vw-32px)] max-w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-[14px] border border-border bg-white p-5 shadow-2xl focus:outline-none">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <Dialog.Title className="text-lg font-semibold text-foreground">{editing ? "Chỉnh sửa phân công" : "Phân công ban điều hành"}</Dialog.Title>
+          <Dialog.Title className="text-lg font-semibold text-foreground">Phân công ban điều hành</Dialog.Title>
           <Dialog.Description className="mt-1 text-sm text-muted">
-            {unitType ? `Phân công huynh trưởng vào chức vụ cấp ${LEVEL_LABELS[unitType].toLowerCase()}.` : "Phân công huynh trưởng vào chức vụ."}
+            {unitType ? `Phân công huynh trưởng vào chức vụ cấp ${LEVEL_LABELS[unitType].toLowerCase()}. Muốn đổi người giữ chức vụ, hãy vô hiệu hóa phân công hiện tại trước.` : "Phân công huynh trưởng vào chức vụ."}
           </Dialog.Description>
         </div>
         <Dialog.Close asChild>
@@ -125,8 +106,7 @@ function AssignmentForm({ target, onClose }: { target: AssignmentFormTarget; onC
           </Button>
         </Dialog.Close>
       </div>
-      {detailQuery.isError ? <p className="mt-4 text-sm text-danger">{getApiErrorMessage(detailQuery.error)}</p> : null}
-      {!editing && !scope ? <p className="mt-4 text-sm text-danger">Bạn không có quyền phân công ở cấp nào.</p> : null}
+      {!scope ? <p className="mt-4 text-sm text-danger">Bạn không có quyền phân công ở cấp nào.</p> : null}
       {missingUnit && scope ? <p className="mt-4 text-sm text-danger">Tài khoản chưa gắn với đơn vị nào để phân công.</p> : null}
 
       <div className="mt-4 space-y-4">
@@ -181,7 +161,7 @@ function AssignmentForm({ target, onClose }: { target: AssignmentFormTarget; onC
           Hủy
         </Button>
         <Button disabled={!canSubmit} loading={mutation.isPending} onClick={() => mutation.mutate()} type="button">
-          {editing ? "Lưu cập nhật" : "Phân công"}
+          Phân công
         </Button>
       </div>
 

@@ -92,7 +92,8 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
   const positionEditId = searchParams.get("edit");
   const modalFormTarget = positionEditId ? ({ mode: "edit", id: positionEditId } as const) : searchParams.get("create") ? ({ mode: "create" } as const) : null;
   const positionFormTarget = effectiveRoute.kind === "positions" ? modalFormTarget : null;
-  const assignmentFormTarget = effectiveRoute.kind === "executive-board" && !embedded ? modalFormTarget : null;
+  // Phân công không sửa được (giữ lịch sử nhiệm kì): chỉ mở modal tạo mới.
+  const assignmentFormTarget = effectiveRoute.kind === "executive-board" && !embedded && searchParams.get("create") ? ({ mode: "create" } as const) : null;
   const toggleId = searchParams.get("toggle");
   const approveId = searchParams.get("approve");
   const rejectId = searchParams.get("reject");
@@ -176,6 +177,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
       await queryClient.invalidateQueries({ queryKey: ["resource"] });
       await queryClient.invalidateQueries({ queryKey: ["resource-detail"] });
       await queryClient.invalidateQueries({ queryKey: ["certificate-preview"] });
+      await queryClient.invalidateQueries({ queryKey: ["executive-board-seats"] });
     },
   });
 

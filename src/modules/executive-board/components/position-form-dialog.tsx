@@ -68,6 +68,7 @@ function PositionForm({ target, onClose }: { target: PositionFormTarget; onClose
         queryClient.invalidateQueries({ queryKey: ["resource-kpi", "/positions"] }),
         queryClient.invalidateQueries({ queryKey: ["resource-detail", "/positions"] }),
         queryClient.invalidateQueries({ queryKey: ["field-options"] }),
+        queryClient.invalidateQueries({ queryKey: ["executive-board-seats"] }),
       ]);
       onClose();
     },

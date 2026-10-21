@@ -251,7 +251,7 @@ function resolveRelatedDisplayValue(column: string, row: Record<string, unknown>
   return undefined;
 }
 
-function Avatar({ name, src }: { name: string; src: unknown }) {
+export function Avatar({ name, src }: { name: string; src: unknown }) {
   const initial = name.trim().charAt(0).toUpperCase() || "H";
   if (typeof src === "string" && src) {
     return (
@@ -311,7 +311,7 @@ function LeaderLevelBadge({ value }: { value: string }) {
   return className ? <Badge className={className}>{label}</Badge> : <Badge>{label}</Badge>;
 }
 
-function Badge({
+export function Badge({
   children,
   tone = "neutral",
   className,

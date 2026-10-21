@@ -1,6 +1,11 @@
 import { Crown, IdentificationCard } from "@phosphor-icons/react";
 import { route, type RouteGroup } from "../route-config";
 
+function assignmentYearOptions() {
+  const current = new Date().getFullYear();
+  return Array.from({ length: 12 }, (_, index) => String(current + 1 - index)).map((year) => ({ value: year, label: `Năm ${year}` }));
+}
+
 export const executiveBoardRouteGroup: RouteGroup = {
     moduleName: "executive-board",
     label: "Ban điều hành",
@@ -35,10 +40,12 @@ export const executiveBoardRouteGroup: RouteGroup = {
         kind: "executive-board",
         icon: IdentificationCard,
         columns: ["leaderFullName", "positionName", "startDate", "endDate", "status"],
-        filters: [],
-        // Phân công/sửa mở bằng modal trên trang danh sách (?create=1, ?edit=<id>), không có trang riêng.
+        // Lọc theo năm: phân công có khoảng ngày bắt đầu - kết thúc giao với năm được chọn.
+        filters: [{ key: "startDate+endDate:overlapYear", label: "Năm", type: "select", options: assignmentYearOptions() }],
+        // Phân công mở bằng modal trên trang danh sách (?create=1). Không sửa phân công để giữ lịch sử nhiệm kì:
+        // muốn đổi người thì vô hiệu hóa phân công cũ rồi tạo phân công mới.
         createPath: "/executive-board/assignments?create=1",
-        editPath: "/executive-board/assignments?edit=:id",
+        actions: { edit: undefined },
         sortFields: { leaderFullName: "leader.firstName+leader.lastName", positionName: "position.positionName" },
         // Tìm theo thuộc tính entity (leaderFullName/positionName chỉ có ở response): họ tên, tên thánh, chức vụ.
         searchFields: ["leader.lastName+leader.firstName", "leader.holyName", "position.positionName"],

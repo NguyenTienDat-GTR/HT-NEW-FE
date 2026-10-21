@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { apiFetch, getApiErrorMessage } from "@/lib/api/client";
 import type { RouteConfig } from "@/config/routes/routes";
 import { useEmbeddedResource } from "./embedded-resource-context";
+import { ExecutiveBoardSection } from "@/modules/executive-board/components/executive-board-section";
 import { CertificateDetailDrawer } from "@/modules/certificates/components/certificate-detail-drawer";
 import { ResourceCell, columnLabels, formatLeaderLevel } from "./resource-format";
 
@@ -80,6 +81,8 @@ function GenericDetailDrawer({ id, onClose, route }: { id?: string | null; onClo
   });
   const embedded = useEmbeddedResource();
   const row = query.data;
+  // Giáo phận / giáo hạt / giáo xứ: drawer rộng hơn để chứa ban điều hành của đơn vị.
+  const isUnitKind = route.kind === "dioceses" || route.kind === "deaneries" || route.kind === "parishes";
   const keys = row ? detailKeys(route, row, Boolean(embedded)) : route.columns;
   const rankHistoryQuery = useQuery({
     queryKey: ["leader-rank-history", id],
@@ -91,7 +94,7 @@ function GenericDetailDrawer({ id, onClose, route }: { id?: string | null; onClo
     <Dialog.Root open={Boolean(id)} onOpenChange={(open) => (!open ? onClose() : undefined)}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-40 bg-slate-950/30 backdrop-blur-sm" />
-        <Dialog.Content className="fixed bottom-0 right-0 top-0 z-50 flex w-full max-w-[760px] flex-col border-l border-border bg-white shadow-[var(--shadow-elevated)] focus:outline-none">
+        <Dialog.Content className={`fixed bottom-0 right-0 top-0 z-50 flex w-full ${isUnitKind ? "max-w-[1040px]" : "max-w-[760px]"} flex-col border-l border-border bg-white shadow-[var(--shadow-elevated)] focus:outline-none`}>
           <div className="flex items-start justify-between gap-4 border-b border-border p-5">
             <div>
               <Dialog.Title className="text-xl font-semibold text-foreground">{route.title}</Dialog.Title>
@@ -134,6 +137,9 @@ function GenericDetailDrawer({ id, onClose, route }: { id?: string | null; onClo
                     </div>
                   ))}
                 </dl>
+                {route.kind === "dioceses" || route.kind === "deaneries" || route.kind === "parishes" ? (
+                  <ExecutiveBoardSection kind={route.kind} unitId={String(id)} />
+                ) : null}
                 {route.kind === "leaders" ? (
                   <LeaderRankHistory
                     error={rankHistoryQuery.isError ? getApiErrorMessage(rankHistoryQuery.error) : undefined}
