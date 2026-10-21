@@ -52,10 +52,10 @@ const taxonomyLabels: Record<PermissionTaxonomyKind, Record<string, string>> = {
   },
   scope: {
     all: "Toàn hệ thống",
-    deanery: "Giáo hạt hiện tại",
-    diocese: "Giáo phận hiện tại",
+    deanery: "Giáo hạt",
+    diocese: "Giáo phận",
     own: "Dữ liệu sở hữu",
-    parish: "Giáo xứ hiện tại",
+    parish: "Giáo xứ",
   },
 };
 
