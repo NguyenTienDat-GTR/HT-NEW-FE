@@ -1,6 +1,6 @@
 "use client";
 
-import { keepPreviousData, useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Route } from "next";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -28,7 +28,6 @@ import { isInvalidScore, originalNote, originalScore, runWithConcurrency, sameSc
 import { ScoreStats } from "./score-stats";
 import { ResourceListEmptyState } from "./resource-list-empty-state";
 import { ResourceListHeader } from "./resource-list-header";
-import { buildResourceKpiQuerySpecs, buildResourceKpis, shouldShowResourceKpis } from "./resource-kpis";
 import type { ResourceListRuntimeProps } from "./resource-list-types";
 import { asPageResponse } from "./resource-list-utils";
 import { ResourcePagination } from "./resource-pagination";
@@ -67,28 +66,6 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
   const courseDisabled = embedded?.courseDisabled === true;
   const canCreate = canUseAction(user, effectiveRoute.actions?.create) && (config.canCreate?.(effectiveRoute, user) ?? true) && !courseDisabled;
   const pageData = asPageResponse(query.data, queryState.size);
-  // Trong chi tiết khóa không hiển thị KPI (và không gọi các truy vấn KPI).
-  const showKpis = !embedded && shouldShowResourceKpis(effectiveRoute);
-  const kpiQuerySpecs = buildResourceKpiQuerySpecs(effectiveRoute, queryState.queryString);
-  const kpiQueries = useQueries({
-    queries: kpiQuerySpecs.map((spec) => ({
-      queryKey: ["resource-kpi", effectiveRoute.endpoint, spec.id, spec.queryString],
-      enabled: Boolean(showKpis && effectiveRoute.endpoint && user),
-      queryFn: () => apiFetch<PageResponse<Record<string, unknown>>>(`${effectiveRoute.endpoint}?${spec.queryString}`),
-      // Cache KPI để đổi bộ lọc qua lại không bắn lại hàng loạt request (tránh chạm giới hạn 429).
-      staleTime: 60_000,
-      placeholderData: keepPreviousData,
-    })),
-  });
-  const kpiQueryTotals = Object.fromEntries(kpiQuerySpecs.map((spec, index) => [spec.id, kpiQueries[index]?.data?.totalElements ?? 0]));
-  // Trong chi tiết khóa không hiển thị thẻ KPI.
-  const kpis = embedded
-    ? []
-    : buildResourceKpis({
-        route: effectiveRoute,
-        pageData,
-        queryTotals: kpiQueryTotals,
-      });
   const rows = rowsFromResponse(query.data);
   const detailId = searchParams.get("detail");
   // Thu hồi quyền hàng loạt của vai trò / tài khoản: trang riêng giống trang phân quyền.
@@ -465,10 +442,8 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
     : undefined;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <ResourceListHeader
-        kpis={kpis}
-        kpisLoading={query.isLoading || kpiQueries.some((kpiQuery) => kpiQuery.isLoading)}
         moduleLabel={config.moduleLabel}
         route={effectiveRoute}
         embedded={Boolean(embedded)}

@@ -66,10 +66,9 @@ function PositionForm({ target, onClose }: { target: PositionFormTarget; onClose
     },
     onSuccess: async () => {
       toast.success(editing ? "Lưu cập nhật thành công" : "Tạo mới thành công");
-      // Danh sách, KPI, chi tiết và các ô chọn chức vụ ở form khác đều phải lấy lại dữ liệu mới.
+      // Danh sách, chi tiết và các ô chọn chức vụ ở form khác đều phải lấy lại dữ liệu mới.
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["resource", "/positions"] }),
-        queryClient.invalidateQueries({ queryKey: ["resource-kpi", "/positions"] }),
         queryClient.invalidateQueries({ queryKey: ["resource-detail", "/positions"] }),
         queryClient.invalidateQueries({ queryKey: ["field-options"] }),
         queryClient.invalidateQueries({ queryKey: ["executive-board-seats"] }),

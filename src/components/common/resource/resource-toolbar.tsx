@@ -52,12 +52,12 @@ export function ResourceFilters({
   }, [filterValues, status]);
 
   return (
-    <div className="border-b border-border bg-white p-4">
+    <div className="border-b border-border bg-white p-5">
       <div className={`flex flex-col gap-3 lg:flex-row lg:items-end ${hideSearch && !leadingActions ? "lg:justify-end" : "lg:justify-between"}`}>
         {leadingActions ? <div className="flex flex-wrap items-center gap-2 lg:items-end">{leadingActions}</div> : null}
         <label className={hideSearch ? "hidden" : leadingActions ? "relative w-full min-w-0 lg:w-72" : "relative min-w-0 flex-1"}>
-          <span className="mb-2 block text-xs font-semibold text-foreground">Tìm kiếm</span>
-          <MagnifyingGlass className="pointer-events-none absolute left-3 top-[38px] h-4 w-4 text-muted" />
+          <span className="mb-1.5 block text-[13px] font-medium text-text-secondary">Tìm kiếm</span>
+          <MagnifyingGlass className="pointer-events-none absolute left-3 top-[34px] h-4 w-4 text-muted" />
           <Input className="pl-9" onChange={(event) => setSearch(event.target.value)} placeholder={`Tìm kiếm ${route.title.toLowerCase()}`} value={search} />
         </label>
 
@@ -78,7 +78,7 @@ export function ResourceFilters({
               </Dialog.Trigger>
               </Tip>
               <Dialog.Portal>
-                <Dialog.Overlay className="fixed inset-0 z-40 bg-slate-950/30 backdrop-blur-sm" />
+                <Dialog.Overlay className="fixed inset-0 z-40 bg-slate-900/45 backdrop-blur-[4px]" />
                 <Dialog.Content className="fixed bottom-0 right-0 top-0 z-50 flex w-full max-w-[440px] flex-col border-l border-border bg-white shadow-[var(--shadow-elevated)] focus:outline-none">
                   <div className="flex items-start justify-between gap-4 border-b border-border p-5">
                     <div>
@@ -153,7 +153,7 @@ function FilterControl({
   if (filter.type === "text") {
     return (
       <label>
-        <span className="mb-2 block text-xs font-semibold text-foreground">{filter.label}</span>
+        <span className="mb-1.5 block text-[13px] font-medium text-text-secondary">{filter.label}</span>
         <Input onChange={(event) => onChange(event.target.value)} placeholder={filter.placeholder ?? `Lọc theo ${filter.label.toLowerCase()}`} value={value} />
       </label>
     );
@@ -161,9 +161,9 @@ function FilterControl({
 
   return (
     <label>
-      <span className="mb-2 block text-xs font-semibold text-foreground">{filter.label}</span>
+      <span className="mb-1.5 block text-[13px] font-medium text-text-secondary">{filter.label}</span>
       <select
-        className="h-11 w-full rounded-[10px] border border-border bg-white px-3 text-sm text-foreground shadow-sm transition-[border-color,box-shadow] focus:border-primary focus:outline-none focus:ring-4 focus:ring-[var(--primary-ring)]"
+        className="h-10 w-full rounded-lg border border-input bg-white px-3 text-sm text-foreground transition-[border-color,box-shadow] focus:border-primary focus:outline-none focus:ring-[3px] focus:ring-[var(--primary-ring)]"
         disabled={query.isLoading}
         onChange={(event) => onChange(event.target.value)}
         value={value}

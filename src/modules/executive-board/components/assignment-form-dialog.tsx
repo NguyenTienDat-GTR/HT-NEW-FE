@@ -87,7 +87,6 @@ function AssignmentForm({ onClose }: { onClose: () => void }) {
       toast.success("Phân công thành công");
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["resource", "/executive-board/assignments"] }),
-        queryClient.invalidateQueries({ queryKey: ["resource-kpi", "/executive-board/assignments"] }),
         queryClient.invalidateQueries({ queryKey: ["resource-detail", "/executive-board/assignments"] }),
         queryClient.invalidateQueries({ queryKey: ["executive-board-seats"] }),
       ]);
