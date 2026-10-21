@@ -22,8 +22,8 @@ export function CertificateScanDialog({ trigger, tip }: { trigger: ReactNode; ti
         <Dialog.Trigger asChild>{trigger}</Dialog.Trigger>
       )}
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-40 bg-slate-950/40 backdrop-blur-sm" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[min(92vw,520px)] -translate-x-1/2 -translate-y-1/2 rounded-[14px] border border-border bg-white p-5 shadow-[var(--shadow-elevated)] focus:outline-none">
+        <Dialog.Overlay className="fixed inset-0 z-40 bg-slate-900/45 backdrop-blur-[4px]" />
+        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[min(92vw,520px)] -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border bg-white p-5 shadow-[var(--shadow-elevated)] focus:outline-none">
           <div className="flex items-start justify-between gap-4">
             <div>
               <Dialog.Title className="text-lg font-semibold text-foreground">Quét mã QR chứng nhận</Dialog.Title>

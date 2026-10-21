@@ -27,7 +27,7 @@ export function CourseStatusDialog({
   return (
     <Dialog.Root open={courseCode !== null} onOpenChange={(open) => (!open ? onClose() : undefined)}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-40 bg-slate-950/30 backdrop-blur-sm" />
+        <Dialog.Overlay className="fixed inset-0 z-40 bg-slate-900/45 backdrop-blur-[4px]" />
         {/* key theo mã khóa để xóa chữ đã nhập khi mở cho khóa khác. */}
         {courseCode ? <StatusForm courseCode={courseCode} courseName={courseName} endpoint={endpoint} key={courseCode} onClose={onClose} /> : null}
       </Dialog.Portal>
@@ -62,7 +62,7 @@ function StatusForm({ courseCode, courseName, endpoint, onClose }: { courseCode:
   const canConfirm = impact !== undefined && text.trim() === "Xác nhận";
 
   return (
-    <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[calc(100vw-32px)] max-w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-[14px] border border-border bg-white p-5 shadow-2xl focus:outline-none">
+    <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[calc(100vw-32px)] max-w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border bg-white p-5 shadow-2xl focus:outline-none">
       <div className="flex items-start justify-between gap-4">
         <div className="flex gap-3">
           <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-full ${disabling ? "bg-danger/10 text-danger" : "bg-success/10 text-success"}`}>

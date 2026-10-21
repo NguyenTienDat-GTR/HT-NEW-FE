@@ -409,7 +409,7 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
               </Dialog.Trigger>
             </Tip>
             <Dialog.Portal>
-              <Dialog.Overlay className="fixed inset-0 z-40 bg-slate-950/30 backdrop-blur-sm" />
+              <Dialog.Overlay className="fixed inset-0 z-40 bg-slate-900/45 backdrop-blur-[4px]" />
               <Dialog.Content className="fixed bottom-0 right-0 top-0 z-50 flex w-full max-w-[440px] flex-col border-l border-border bg-white shadow-[var(--shadow-elevated)] focus:outline-none">
                 <div className="flex items-start justify-between gap-4 border-b border-border p-5">
                   <div>

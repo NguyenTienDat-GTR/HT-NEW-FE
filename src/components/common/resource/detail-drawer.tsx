@@ -94,11 +94,11 @@ function GenericDetailDrawer({ id, onClose, route }: { id?: string | null; onClo
   return (
     <Dialog.Root open={Boolean(id)} onOpenChange={(open) => (!open ? onClose() : undefined)}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-40 bg-slate-950/30 backdrop-blur-sm" />
+        <Dialog.Overlay className="fixed inset-0 z-40 bg-slate-900/45 backdrop-blur-[4px]" />
         <Dialog.Content className={`fixed bottom-0 right-0 top-0 z-50 flex w-full ${isUnitKind ? "max-w-[1040px]" : "max-w-[760px]"} flex-col border-l border-border bg-white shadow-[var(--shadow-elevated)] focus:outline-none`}>
-          <div className="flex items-start justify-between gap-4 border-b border-border p-5">
+          <div className="flex items-start justify-between gap-4 border-b border-border px-6 py-5">
             <div>
-              <Dialog.Title className="text-xl font-semibold text-foreground">{route.title}</Dialog.Title>
+              <Dialog.Title className="text-lg font-semibold leading-[26px] text-foreground">{route.title}</Dialog.Title>
               <Dialog.Description className="mt-1 text-sm text-muted">
                 {route.kind === "participations"
                   ? "Chi tiết hồ sơ tham dự"
@@ -117,8 +117,8 @@ function GenericDetailDrawer({ id, onClose, route }: { id?: string | null; onClo
               </Button>
             </Dialog.Close>
           </div>
-          <div className="min-h-0 flex-1 overflow-y-auto bg-app-canvas/50 p-5">
-            {query.isLoading ? <div className="h-40 rounded-[12px] border border-border bg-white motion-safe:animate-pulse" /> : null}
+          <div className="min-h-0 flex-1 overflow-y-auto bg-slate-50 p-6">
+            {query.isLoading ? <div className="h-40 rounded-xl border border-border bg-white motion-safe:animate-pulse" /> : null}
             {query.isError ? <div className="rounded-[10px] border border-danger/30 bg-danger/5 p-3 text-sm text-danger">{getApiErrorMessage(query.error)}</div> : null}
             {row && route.kind === "positions" ? <SectionedDetail row={row} sections={POSITION_SECTIONS} /> : null}
             {row && route.kind === "participations" ? <SectionedDetail row={row} sections={PARTICIPATION_SECTIONS} /> : null}
@@ -130,7 +130,7 @@ function GenericDetailDrawer({ id, onClose, route }: { id?: string | null; onClo
                 <dl className="grid auto-rows-min grid-cols-1 gap-3 md:grid-cols-2">
                   {keys.map((key) => (
                     <div className={detailItemClass(key)} key={key}>
-                      <dt className="text-xs font-semibold uppercase text-muted">{detailLabel(route, key)}</dt>
+                      <dt className="text-xs font-semibold uppercase tracking-wide text-muted">{detailLabel(route, key)}</dt>
                       <dd className="mt-1 break-words text-sm leading-6 text-foreground">
                         {route.kind === "participations" && key === "componentScores" ? (
                           <ComponentScoreList scores={row[key]} />
@@ -335,8 +335,8 @@ function SectionedDetail({ row, sections }: { row: Record<string, unknown>; sect
   return (
     <div className="space-y-4">
       {sections.filter((section) => section.visible?.(row) ?? true).map((section) => (
-        <section className="rounded-[12px] border border-border bg-white p-4 shadow-sm" key={section.title}>
-          <h2 className="text-xs font-semibold uppercase text-muted">{section.title}</h2>
+        <section className="rounded-xl border border-border bg-white p-5 shadow-sm" key={section.title}>
+          <h2 className="text-sm font-semibold text-foreground">{section.title}</h2>
           <dl className="mt-3 grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
             {section.fields.filter((field) => field.visible?.(row, embedded) ?? true).map(({ key, label, wide, value: getValue, render }) => {
               const value = getValue ? getValue(row) : row[key];
@@ -401,7 +401,7 @@ function LeaderRankHistory({
   const items = [...(histories ?? [])].sort((left, right) => yearFromDate(right.promotionDate) - yearFromDate(left.promotionDate));
 
   return (
-    <section className="rounded-[10px] border border-border bg-white p-3 shadow-sm">
+    <section className="rounded-lg border border-border bg-white px-4 py-3">
       <h2 className="text-xs font-semibold uppercase text-muted">Lịch sử cấp bậc</h2>
       {loading ? <div className="mt-3 h-16 rounded-[8px] bg-surface-2 motion-safe:animate-pulse" /> : null}
       {error ? <p className="mt-2 text-sm text-danger">{error}</p> : null}
@@ -475,7 +475,7 @@ function detailLabel(route: RouteConfig, key: string) {
 
 function detailItemClass(key: string) {
   return [
-    "rounded-[10px] border border-border bg-white p-3 shadow-sm",
+    "rounded-lg border border-border bg-white px-4 py-3",
     FULL_WIDTH_KEYS.has(key) ? "md:col-span-2" : "",
   ].filter(Boolean).join(" ");
 }
