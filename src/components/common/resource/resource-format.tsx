@@ -1,3 +1,4 @@
+import { auditOperationLabel, auditOperationTone, auditStatusText, auditStatusTone, auditTargetText } from "./audit-log-labels";
 import {
   organizingStateLabels,
   organizingStateTones,
@@ -136,6 +137,13 @@ export const columnLabels: Record<string, string> = {
   requirementName: "Điều kiện",
   resourceCode: "Đối tượng",
   resourceType: "Đối tượng",
+  resource: "Đối tượng",
+  resourceName: "Tên / mã đối tượng",
+  resourceId: "Mã đối tượng",
+  operation: "Thao tác",
+  statusCode: "Kết quả",
+  durationMs: "Thời gian xử lý",
+  queryString: "Bộ lọc yêu cầu",
   result: "Kết quả",
   roleCode: "Mã vai trò",
   roleCodes: "Mã vai trò",
@@ -186,6 +194,14 @@ export function ResourceCell({ column, row, value, displayMode = "table" }: Reso
   if (column === "leaderFullName" && typeof value === "string" && typeof row.leaderHolyName === "string" && row.leaderHolyName.trim()) {
     return <TextValue full={full}>{`${row.leaderHolyName.trim()} ${value}`}</TextValue>;
   }
+  if (column === "resource" && typeof value === "string") return <TextValue full={full}>{formatPermissionTaxonomyValue("resource", value) ?? value}</TextValue>;
+  if (column === "resourceName") {
+    const target = auditTargetText(row);
+    return target ? <TextValue full={full}>{target}</TextValue> : <span className="text-muted">Không áp dụng</span>;
+  }
+  if (column === "operation" && typeof value === "string") return <Badge tone={auditOperationTone(value)}>{auditOperationLabel(value)}</Badge>;
+  if (column === "statusCode" && typeof value === "number") return <Badge tone={auditStatusTone(value)}>{`${value} · ${auditStatusText(value)}`}</Badge>;
+  if (column === "durationMs" && typeof value === "number") return <TextValue full={full}>{`${viNumber.format(value)} ms`}</TextValue>;
   if (column === "imageUrl") return <Avatar name={String(row.fullName ?? row.leaderFullName ?? row.username ?? "")} src={value} />;
   if (column === "status" && value === true && row.effectiveStatus === false) return <Badge tone="warning">Ngưng theo đơn vị cha</Badge>;
   if (column === "status" && typeof value === "boolean") return <StatusBadge active={value} />;

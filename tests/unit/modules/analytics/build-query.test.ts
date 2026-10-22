@@ -1,16 +1,20 @@
 import { describe, expect, it } from "vitest";
-import { buildAnalyticsQuery } from "@/modules/analytics/types";
-
-const base = { fromDate: "", toDate: "", timeBucket: "MONTH", groupBy: "", includeInactiveUnits: false };
+import { buildAnalyticsQuery, defaultFilters } from "@/modules/analytics/types";
 
 describe("buildAnalyticsQuery", () => {
-  it("omits includeInactiveUnits by default so the backend excludes locked units", () => {
-    expect(buildAnalyticsQuery(base)).toBe("timeBucket=MONTH");
+  it("sends nothing for default filters so server prefetch and client share one cache key", () => {
+    expect(buildAnalyticsQuery(defaultFilters)).toBe("");
   });
 
-  it("sends includeInactiveUnits only when enabled", () => {
-    const params = new URLSearchParams(buildAnalyticsQuery({ ...base, includeInactiveUnits: true, fromDate: "2026-01-01" }));
-    expect(params.get("includeInactiveUnits")).toBe("true");
-    expect(params.get("fromDate")).toBe("2026-01-01");
+  it("sends only the filters that were actually set", () => {
+    const query = new URLSearchParams(
+      buildAnalyticsQuery({ ...defaultFilters, fromDate: "2026-01-01", toDate: "2026-03-31", timeBucket: "quarter", deaneryId: "d1", courseType: "T1", compare: false, includeInactiveUnits: true }),
+    );
+    expect(Object.fromEntries(query)).toEqual({ fromDate: "2026-01-01", toDate: "2026-03-31", timeBucket: "quarter", deaneryId: "d1", courseType: "T1", compare: "false", includeInactiveUnits: "true" });
+  });
+
+  it("appends drill-down parameters and skips empty ones", () => {
+    const query = new URLSearchParams(buildAnalyticsQuery(defaultFilters, { dataset: "leaders", dimension: "gender", value: "NU", page: 0, size: 15, empty: "" }));
+    expect(Object.fromEntries(query)).toEqual({ dataset: "leaders", dimension: "gender", value: "NU", page: "0", size: "15" });
   });
 });

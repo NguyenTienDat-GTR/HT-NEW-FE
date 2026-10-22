@@ -131,3 +131,178 @@ table,
 [data-tnum] {
   font-feature-settings: "tnum" 1, "cv02" 1, "cv04" 1;
 }
+
+/* Analytics: chỉ animate transform/opacity/stroke-dashoffset để chạy trên compositor, không gây layout. */
+@keyframes analytics-draw {
+  from {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes analytics-pop {
+  0%,
+  60% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes analytics-grow-x {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes analytics-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes analytics-shimmer {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes analytics-grow-y {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes analytics-grow-x-end {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes analytics-sweep {
+  from {
+    stroke-dasharray: 0 100;
+  }
+}
+
+@keyframes analytics-cell {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes analytics-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+.analytics-grow-y {
+  animation: analytics-grow-y 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  transform-origin: center bottom;
+}
+
+.analytics-grow-end {
+  animation: analytics-grow-x-end 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  transform-origin: right center;
+}
+
+.analytics-sweep {
+  animation: analytics-sweep 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.analytics-cell {
+  animation: analytics-cell 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Section trượt vào khi cuộn tới; mọi animation bên trong đứng yên ở khung đầu cho tới khi section vào viewport. */
+.analytics-reveal {
+  opacity: 0;
+  transform: translateY(28px) scale(0.985);
+  transition:
+    opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
+}
+
+.analytics-reveal.is-in {
+  opacity: 1;
+  transform: none;
+  will-change: auto;
+}
+
+.analytics-reveal:not(.is-in) :is(.analytics-grow, .analytics-grow-y, .analytics-grow-end, .analytics-draw, .analytics-pop, .analytics-sweep, .analytics-cell, .analytics-rise) {
+  animation-play-state: paused;
+}
+
+.analytics-draw {
+  animation: analytics-draw 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.analytics-pop {
+  animation: analytics-pop 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.analytics-grow {
+  animation: analytics-grow-x 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  transform-origin: left center;
+}
+
+.analytics-rise {
+  animation: analytics-rise 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.analytics-shimmer {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-2);
+}
+
+.analytics-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.65), transparent);
+  animation: analytics-shimmer 1.4s ease-in-out infinite;
+}
+
+/* Vùng dưới màn hình chưa cần vẽ ngay: giảm chi phí render lần đầu. */
+.analytics-defer {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 420px;
+}
