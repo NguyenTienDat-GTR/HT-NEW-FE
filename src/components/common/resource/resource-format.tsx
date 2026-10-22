@@ -67,6 +67,7 @@ export const columnLabels: Record<string, string> = {
   dioceseName: "Giáo phận",
   displayOrder: "Thứ tự",
   effect: "Hiệu lực",
+  validity: "Tình trạng quyền",
   eligible:"Đủ điều kiện",
   email: "Email",
   endDate: "Ngày kết thúc",
@@ -188,6 +189,7 @@ export function ResourceCell({ column, row, value, displayMode = "table" }: Reso
   if (column === "status" && value === true && row.effectiveStatus === false) return <Badge tone="warning">Ngưng theo đơn vị cha</Badge>;
   if (column === "status" && typeof value === "boolean") return <StatusBadge active={value} />;
   if (column === "effect" && typeof value === "string") return <EffectBadge effect={value} />;
+  if (column === "validity" && typeof value === "string") return <PermissionValidityBadge validity={value} />;
   if (column === "gender" && typeof value === "string") return <TextValue full={full}>{genderLabels[value] ?? value}</TextValue>;
   if (["moduleCode", "resourceCode", "actionCode", "scopeCode"].includes(column) && typeof value === "string") {
     return <TextValue full={full}>{formatPermissionTaxonomyValue(permissionTaxonomyKindFromColumn(column), value) ?? value}</TextValue>;
@@ -279,6 +281,18 @@ function StatusBadge({ active }: { active: boolean }) {
 
 function EffectBadge({ effect }: { effect: string }) {
   return <Badge tone={effect === "DENY" ? "danger" : "success"}>{effect === "DENY" ? "Từ chối" : "Cho phép"}</Badge>;
+}
+
+const permissionValidityLabels: Record<string, { label: string; tone: "success" | "warning" | "danger" | "neutral" }> = {
+  ACTIVE: { label: "Còn hiệu lực", tone: "success" },
+  EXPIRED: { label: "Đã hết hạn (thu hồi)", tone: "danger" },
+  REVOKED: { label: "Đã thu hồi", tone: "danger" },
+  PERMISSION_DISABLED: { label: "Quyền đang bị vô hiệu hóa", tone: "warning" },
+};
+
+function PermissionValidityBadge({ validity }: { validity: string }) {
+  const meta = permissionValidityLabels[validity];
+  return <Badge tone={meta?.tone ?? "neutral"}>{meta?.label ?? validity}</Badge>;
 }
 
 function WorkflowBadge({ value }: { value: string }) {

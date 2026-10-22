@@ -60,7 +60,7 @@ export function resolveRouteForUser(route: RouteConfig, user: AuthUser | null): 
       return {
         ...route,
         subtitle: "Phân quyền hoặc thu hồi quyền cho vai trò do super-admin quản lý.",
-        columns: ["roleName", "permissionName", "effect", "assignedAt", "expiresAt"],
+        columns: ["roleName", "permissionName", "effect", "validity", "assignedAt", "expiresAt"],
         primaryActionLabel: "Phân quyền",
         filters: rolePermissionFiltersForUser(user),
       };
@@ -68,7 +68,7 @@ export function resolveRouteForUser(route: RouteConfig, user: AuthUser | null): 
       return {
         ...route,
         subtitle: "Phân quyền hoặc thu hồi quyền trực tiếp cho tài khoản do super-admin tạo.",
-        columns: ["username", "permissionName", "effect", "reason", "expiresAt"],
+        columns: ["username", "permissionName", "effect", "validity", "reason", "expiresAt"],
         primaryActionLabel: "Phân quyền",
         filters: accountPermissionFilters(),
       };

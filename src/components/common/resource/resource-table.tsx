@@ -347,7 +347,13 @@ export function RowActions({ route, row, onExportRow, exportingRow, scoreNotes }
   );
 }
 
+// Phân quyền đã thu hồi / hết hạn là vĩnh viễn: không sửa, không bật/tắt, chỉ có thể phân quyền mới.
+function isPermanentlyRevokedAssignment(route: RouteConfig, row: Record<string, unknown>) {
+  return (route.kind === "role-permissions" || route.kind === "account-permissions") && (row.validity === "REVOKED" || row.validity === "EXPIRED");
+}
+
 function canEditRow(route: RouteConfig, row: Record<string, unknown>, user: AuthUser | null) {
+  if (isPermanentlyRevokedAssignment(route, row)) return false;
   if (route.kind === "accounts") return false;
   if (route.kind === "leaders") return false;
   if (route.kind === "positions") return hasScopedRowPermission(route, user, "update", row);
@@ -401,7 +407,7 @@ function hasRole(user: AuthUser | null, roleCode: string) {
 }
 
 function canShowToggleSwitch(route: RouteConfig, row: Record<string, unknown>, user: AuthUser | null) {
-  return Boolean(getResourceId(route, row)) && canUseAction(user, route.actions?.toggle) && canToggleRow(route, row, user);
+  return Boolean(getResourceId(route, row)) && !isPermanentlyRevokedAssignment(route, row) && canUseAction(user, route.actions?.toggle) && canToggleRow(route, row, user);
 }
 
 function isToggleActive(route: RouteConfig, row: Record<string, unknown>) {
