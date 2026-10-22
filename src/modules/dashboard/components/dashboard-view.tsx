@@ -2,13 +2,15 @@
 
 import { ArrowRight, Bell, Certificate, ClipboardText, GraduationCap, TrendUp } from "@phosphor-icons/react";
 import { useQuery } from "@tanstack/react-query";
+import dynamic from "next/dynamic";
 import type { Route } from "next";
 import Link from "next/link";
 import { Panel } from "@/components/ui/panel";
 import { apiFetch, type PageResponse } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
-import { ChartFrame, ChartSkeleton } from "@/modules/analytics/components/chart-frame";
+import { ChartSkeleton } from "@/modules/analytics/components/chart-skeleton";
 import { AnimatedMetric } from "@/modules/analytics/components/animated-metric";
+import { dashboardQueries } from "@/modules/dashboard/queries";
 import { metricLabel, toChartRows, toKpiList, type AnalyticsResponse } from "@/modules/analytics/types";
 
 type NotificationItem = {
@@ -29,18 +31,24 @@ type WorkQueueItem = {
   tone: "rose" | "blue" | "violet" | "emerald";
 };
 
+// recharts nặng và chỉ vẽ được ở trình duyệt: tải riêng, trong lúc chờ hiện khung xám.
+const ChartFrame = dynamic(() => import("@/modules/analytics/components/chart-frame").then((module) => module.ChartFrame), {
+  ssr: false,
+  loading: () => <ChartSkeleton />,
+});
+
 export function DashboardView() {
   const query = useQuery({
-    queryKey: ["analytics", "overview"],
-    queryFn: () => apiFetch<AnalyticsResponse>("/analytics/overview"),
+    queryKey: dashboardQueries.overview.key,
+    queryFn: () => apiFetch<AnalyticsResponse>(dashboardQueries.overview.path),
   });
   const notificationsQuery = useQuery({
-    queryKey: ["system", "notifications", "dashboard"],
-    queryFn: () => apiFetch<PageResponse<NotificationItem>>("/system/notifications?page=0&size=4"),
+    queryKey: dashboardQueries.notifications.key,
+    queryFn: () => apiFetch<PageResponse<NotificationItem>>(dashboardQueries.notifications.path),
   });
   const workQueueQuery = useQuery({
-    queryKey: ["analytics", "work-queue"],
-    queryFn: () => apiFetch<WorkQueueItem[]>("/analytics/work-queue"),
+    queryKey: dashboardQueries.workQueue.key,
+    queryFn: () => apiFetch<WorkQueueItem[]>(dashboardQueries.workQueue.path),
   });
 
   const rows = toChartRows(query.data);

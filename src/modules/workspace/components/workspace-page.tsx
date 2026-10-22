@@ -1,23 +1,30 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { DashboardView } from "@/modules/dashboard/components/dashboard-view";
-import { AnalyticsView } from "@/modules/analytics/components/analytics-view";
-import { LeaderDetailPage } from "@/modules/leaders/components/leader-detail-page";
-import { CourseDetailPage } from "@/modules/training-courses/components/course-detail-page";
-import { ResourceFormPage } from "@/components/form/resource-form/resource-form-page";
-import { CertificateDetailPage } from "@/modules/certificates/components/certificate-detail-page";
-import { CertificateConfigView } from "@/modules/certificates/components/certificate-config-view";
-import { MyPermissionsView } from "@/modules/permissions/components/my-permissions-view";
-import { LeaderLevelsView } from "@/modules/leader-levels/components/leader-levels-view";
 import type React from "react";
 import { Panel } from "@/components/ui/panel";
 import type { AuthUser } from "@/lib/auth/auth-store";
 import { useAuthStore } from "@/lib/auth/auth-store";
 import { hasPermissionPrefix, isSuperAdmin } from "@/lib/auth/permissions";
 import { findRoute, matchRoute } from "@/config/routes/routes";
-import { MyProfilePage } from "@/modules/account/components/my-profile-page";
 import { PROFILE_PATH } from "@/modules/account/account-display";
-import { ModuleResourceRenderer } from "./module-resource-renderer";
+
+// Mỗi màn (trừ tổng quan) tải bằng chunk riêng và chỉ chạy ở trình duyệt: JS ban đầu nhẹ, không phải
+// tải trình thiết kế chứng nhận, biểu đồ... khi chưa mở tới. Dùng chung khung chờ.
+function ViewSkeleton() {
+  return <div className="h-[420px] rounded-xl border border-border bg-white motion-safe:animate-pulse" />;
+}
+const AnalyticsView = dynamic(() => import("@/modules/analytics/components/analytics-view").then((m) => m.AnalyticsView), { ssr: false, loading: () => <ViewSkeleton /> });
+const LeaderDetailPage = dynamic(() => import("@/modules/leaders/components/leader-detail-page").then((m) => m.LeaderDetailPage), { ssr: false, loading: () => <ViewSkeleton /> });
+const CourseDetailPage = dynamic(() => import("@/modules/training-courses/components/course-detail-page").then((m) => m.CourseDetailPage), { ssr: false, loading: () => <ViewSkeleton /> });
+const ResourceFormPage = dynamic(() => import("@/components/form/resource-form/resource-form-page").then((m) => m.ResourceFormPage), { ssr: false, loading: () => <ViewSkeleton /> });
+const CertificateDetailPage = dynamic(() => import("@/modules/certificates/components/certificate-detail-page").then((m) => m.CertificateDetailPage), { ssr: false, loading: () => <ViewSkeleton /> });
+const CertificateConfigView = dynamic(() => import("@/modules/certificates/components/certificate-config-view").then((m) => m.CertificateConfigView), { ssr: false, loading: () => <ViewSkeleton /> });
+const MyPermissionsView = dynamic(() => import("@/modules/permissions/components/my-permissions-view").then((m) => m.MyPermissionsView), { ssr: false, loading: () => <ViewSkeleton /> });
+const LeaderLevelsView = dynamic(() => import("@/modules/leader-levels/components/leader-levels-view").then((m) => m.LeaderLevelsView), { ssr: false, loading: () => <ViewSkeleton /> });
+const MyProfilePage = dynamic(() => import("@/modules/account/components/my-profile-page").then((m) => m.MyProfilePage), { ssr: false, loading: () => <ViewSkeleton /> });
+const ModuleResourceRenderer = dynamic(() => import("./module-resource-renderer").then((m) => m.ModuleResourceRenderer), { ssr: false, loading: () => <ViewSkeleton /> });
 
 export function WorkspacePage({ segments }: { segments: string[] }) {
   const user = useAuthStore((state) => state.user);

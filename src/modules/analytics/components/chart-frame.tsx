@@ -163,9 +163,7 @@ export function ChartDataTable({ rows, metricKeys }: { rows: Record<string, unkn
   );
 }
 
-export function ChartSkeleton() {
-  return <Panel className="h-[420px] p-6 motion-safe:animate-pulse" />;
-}
+export { ChartSkeleton } from "./chart-skeleton";
 
 export function ChartEmpty({ title, description, className }: { title: string; description: string; className?: string }) {
   return (
