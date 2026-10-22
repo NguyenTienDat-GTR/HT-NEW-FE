@@ -1,6 +1,7 @@
 // Khóa và đường dẫn API của tổng quan: dùng chung cho client (useQuery) và server (prefetch khi render HTML).
+// Khóa overview khớp với useAnalytics("overview", bộ lọc mặc định): query rỗng nên dữ liệu prefetch được dùng lại ngay.
 export const dashboardQueries = {
-  overview: { key: ["analytics", "overview"], path: "/analytics/overview" },
+  overview: { key: ["analytics", "overview", ""], path: "/analytics/overview" },
   workQueue: { key: ["analytics", "work-queue"], path: "/analytics/work-queue" },
   notifications: { key: ["system", "notifications", "dashboard"], path: "/system/notifications?page=0&size=4" },
 } as const;

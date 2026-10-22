@@ -1,4 +1,6 @@
 import type { Icon } from "@phosphor-icons/react";
+import { AUDIT_OPERATION_LABELS, AUDIT_RESOURCE_KEYS } from "@/components/common/resource/audit-log-labels";
+import { formatPermissionTaxonomyValue } from "@/components/common/resource/permission-taxonomy-labels";
 
 export type ResourceKind =
   | "dashboard"
@@ -380,8 +382,14 @@ function inferRouteFilters(config: RouteConfig): RouteFilterConfig[] {
       break;
     case "audit-logs":
       filters.push({ key: "username", label: "Người thực hiện", type: "text", placeholder: "Lọc theo tài khoản" });
-      filters.push({ key: "action", label: "Hành động", type: "text", placeholder: "Lọc theo action" });
-      filters.push({ key: "resourceType", label: "Đối tượng", type: "text", placeholder: "Lọc theo resource" });
+      filters.push({ key: "operation", label: "Thao tác", type: "select", options: Object.entries(AUDIT_OPERATION_LABELS).map(([value, label]) => ({ value, label })) });
+      filters.push({
+        key: "resource",
+        label: "Đối tượng",
+        type: "select",
+        options: AUDIT_RESOURCE_KEYS.map((value) => ({ value, label: formatPermissionTaxonomyValue("resource", value) ?? value })),
+      });
+      filters.push({ key: "statusCode", label: "Mã kết quả HTTP", type: "text", placeholder: "VD: 403" });
       filters.push({
         key: "unitType",
         label: "Cấp đơn vị",

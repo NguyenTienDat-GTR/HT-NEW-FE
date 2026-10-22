@@ -1,3 +1,5 @@
+import { auditOperationLabel, auditStatusText } from "./audit-log-labels";
+import { formatPermissionTaxonomyValue } from "./permission-taxonomy-labels";
 import { ResourceCell } from "./resource-format";
 import { AUDIT_SECTION, hasText, type DetailField, type DetailSection } from "./detail-section-types";
 
@@ -5,7 +7,7 @@ import { AUDIT_SECTION, hasText, type DetailField, type DetailSection } from "./
 const AUTH_PROVIDER_LABELS: Record<string, string> = { LOCAL: "Tài khoản hệ thống", GOOGLE: "Google" };
 const REVOCATION_REASON_LABELS: Record<string, string> = { EXPIRED: "Hết hạn hiệu lực", MANUAL: "Thu hồi thủ công" };
 const UNIT_TYPE_LABELS: Record<string, string> = { DIOCESE: "Giáo phận", DEANERY: "Giáo hạt", PARISH: "Giáo xứ" };
-const SYSTEM_ACTORS: Record<string, string> = { SYSTEM: "Hệ thống", "super-admin": "Quản trị tối cao", SYSTEM_AUTO_APPROVAL: "Hệ thống tự duyệt" };
+const SYSTEM_ACTORS: Record<string, string> = { SYSTEM: "Hệ thống", "super-admin": "Quản trị viên", SYSTEM_AUTO_APPROVAL: "Hệ thống tự duyệt" };
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 type Row = Record<string, unknown>;
@@ -186,9 +188,11 @@ const auditLogSections: DetailSection[] = [
     fields: [
       { key: "loggedAt", label: "Thời gian" },
       { key: "username", label: "Tài khoản thực hiện" },
-      { key: "action", label: "Thao tác" },
+      { key: "operation", label: "Thao tác", value: (row) => (hasText(row.operation) ? auditOperationLabel(String(row.operation)) : String(row.action ?? "")) },
       { key: "module", label: "Phân hệ", visible: (row) => hasText(row.module) },
-      { key: "resource", label: "Đối tượng", visible: (row) => hasText(row.resource) },
+      { key: "resource", label: "Loại đối tượng", value: (row) => formatPermissionTaxonomyValue("resource", String(row.resource ?? "")) ?? String(row.resource ?? ""), visible: (row) => hasText(row.resource) },
+      { key: "resourceName", label: "Tên đối tượng", visible: (row) => hasText(row.resourceName) },
+      { key: "resourceId", label: "Mã đối tượng", visible: (row) => hasText(row.resourceId) },
       { key: "unitType", label: "Cấp đơn vị", value: (row) => mapped(UNIT_TYPE_LABELS, row.unitType), visible: (row) => hasText(row.unitType) },
       { key: "message", label: "Nội dung", wide: true, visible: (row) => hasText(row.message) },
       { key: "errorMessage", label: "Thông báo lỗi", wide: true, visible: (row) => hasText(row.errorMessage) },
@@ -199,7 +203,9 @@ const auditLogSections: DetailSection[] = [
     fields: [
       { key: "httpMethod", label: "Phương thức" },
       { key: "requestPath", label: "Đường dẫn", wide: true },
-      { key: "statusCode", label: "Mã phản hồi HTTP" },
+      { key: "statusCode", label: "Mã phản hồi HTTP", value: (row) => (typeof row.statusCode === "number" ? `${row.statusCode} · ${auditStatusText(row.statusCode)}` : "") },
+      { key: "durationMs", label: "Thời gian xử lý", value: (row) => (typeof row.durationMs === "number" ? `${row.durationMs} ms` : ""), visible: (row) => typeof row.durationMs === "number" },
+      { key: "queryString", label: "Bộ lọc yêu cầu", wide: true, visible: (row) => hasText(row.queryString) },
       { key: "ipAddress", label: "Địa chỉ IP" },
       { key: "userAgent", label: "Thiết bị / trình duyệt", wide: true, visible: (row) => hasText(row.userAgent) },
     ],

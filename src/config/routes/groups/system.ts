@@ -382,7 +382,9 @@ export const systemRouteGroup: RouteGroup = {
       idField: "id",
       kind: "audit-logs",
       icon: FileText,
-      columns: ["loggedAt", "username", "action", "resourceType", "unitType", "ipAddress"],
+      columns: ["loggedAt", "username", "operation", "resource", "resourceName", "unitType", "statusCode", "ipAddress"],
+      // Ô tìm kiếm chung tìm theo tên đối tượng (huynh trưởng, khóa, giáo xứ, chứng nhận…), tài khoản và mã; không cần nhập UUID.
+      searchFields: ["resourceName", "username", "resourceId"],
       permissionPrefixes: ["system.audit_log.read."],
       filterLabels: ["Người thực hiện", "Module", "Hành động", "Thời gian"],
     }),
