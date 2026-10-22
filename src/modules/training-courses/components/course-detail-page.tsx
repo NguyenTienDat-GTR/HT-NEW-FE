@@ -35,6 +35,7 @@ import {
 } from "@/modules/training-courses/registration-state";
 import { CertificateResourceView } from "@/modules/certificates/components/certificate-resource-view";
 import { TrainingWorkflowResourceView } from "@/modules/training-workflow/components/training-workflow-resource-view";
+import { useSessionState } from "@/lib/use-session-state";
 
 // Quy trình huấn luyện của một khóa: mỗi tab dùng lại đúng màn hình/logic của menu cũ, lọc theo khóa đang chọn.
 const workflowTabs = [
@@ -53,7 +54,7 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
   const queryClient = useQueryClient();
   const router = useRouter();
   // Ô tìm kiếm chung cho cả 5 tab: nằm dưới thông tin khóa, giữ nguyên nội dung khi đổi tab.
-  const [searchText, setSearchText] = useState("");
+  const [searchText, setSearchText] = useSessionState(`course-search:${id}`, "");
   const firstSearch = useRef(true);
 
   const courseQuery = useQuery({

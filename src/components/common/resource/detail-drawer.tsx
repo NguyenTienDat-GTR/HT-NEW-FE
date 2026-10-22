@@ -2,7 +2,6 @@
 
 import * as Dialog from "@radix-ui/react-dialog";
 import { X } from "@phosphor-icons/react";
-import type { ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { apiFetch, getApiErrorMessage } from "@/lib/api/client";
@@ -11,6 +10,8 @@ import { useEmbeddedResource } from "./embedded-resource-context";
 import { UnitDetail } from "@/modules/organizations/components/unit-detail";
 import { CertificateDetailDrawer } from "@/modules/certificates/components/certificate-detail-drawer";
 import { ResourceCell, columnLabels, formatLeaderLevel } from "./resource-format";
+import { AUDIT_SECTION, hasNumber, hasText, type DetailSection } from "./detail-section-types";
+import { SYSTEM_DETAIL_SECTIONS } from "./system-detail-sections";
 
 const AUDIT_KEYS = ["createdAt", "createdBy", "updatedAt", "updatedBy"] as const;
 const FULL_WIDTH_KEYS = new Set(["description", "reason", "conditions", "approvalReason", "exceptionApprovalReason"]);
@@ -108,7 +109,7 @@ function GenericDetailDrawer({ id, onClose, route }: { id?: string | null; onClo
                     ? typeof row?.positionName === "string" ? row.positionName : "Chi tiết chức vụ"
                     : route.kind === "executive-board"
                     ? "Chi tiết phân công ban điều hành"
-                    : `Chi tiết bản ghi ${id}`}
+                    : `Chi tiết ${route.title.toLowerCase()}`}
               </Dialog.Description>
             </div>
             <Dialog.Close asChild>
@@ -124,8 +125,9 @@ function GenericDetailDrawer({ id, onClose, route }: { id?: string | null; onClo
             {row && route.kind === "participations" ? <SectionedDetail row={row} sections={PARTICIPATION_SECTIONS} /> : null}
             {row && route.kind === "course-types" ? <SectionedDetail row={row} sections={COURSE_TYPE_SECTIONS} /> : null}
             {row && route.kind === "executive-board" ? <SectionedDetail row={row} sections={ASSIGNMENT_SECTIONS} /> : null}
+            {row && SYSTEM_DETAIL_SECTIONS[route.kind] ? <SectionedDetail row={row} sections={SYSTEM_DETAIL_SECTIONS[route.kind]} /> : null}
             {row && (route.kind === "dioceses" || route.kind === "deaneries" || route.kind === "parishes") ? <UnitDetail id={String(id)} kind={route.kind} row={row} /> : null}
-            {row && route.kind !== "positions" && route.kind !== "executive-board" && route.kind !== "participations" && route.kind !== "course-types" && !isUnitKind ? (
+            {row && route.kind !== "positions" && route.kind !== "executive-board" && route.kind !== "participations" && route.kind !== "course-types" && !isUnitKind && !SYSTEM_DETAIL_SECTIONS[route.kind] ? (
               <div className="space-y-3">
                 <dl className="grid auto-rows-min grid-cols-1 gap-3 md:grid-cols-2">
                   {keys.map((key) => (
@@ -158,27 +160,6 @@ function GenericDetailDrawer({ id, onClose, route }: { id?: string | null; onClo
     </Dialog.Root>
   );
 }
-
-type DetailField = {
-  key: string;
-  label: string;
-  wide?: boolean;
-  value?: (row: Record<string, unknown>) => unknown;
-  // Hiển thị tùy biến (bỏ qua ResourceCell) và điều kiện hiển thị của riêng trường.
-  render?: (row: Record<string, unknown>) => ReactNode;
-  visible?: (row: Record<string, unknown>, embedded: boolean) => boolean;
-};
-type DetailSection = { title: string; fields: DetailField[]; visible?: (row: Record<string, unknown>) => boolean };
-
-const AUDIT_SECTION: DetailSection = {
-  title: "Lịch sử ghi nhận",
-  fields: [
-    { key: "createdByName", label: "Người tạo" },
-    { key: "createdAt", label: "Ngày tạo" },
-    { key: "updatedByName", label: "Người cập nhật" },
-    { key: "updatedAt", label: "Ngày cập nhật" },
-  ],
-};
 
 const POSITION_SECTIONS: DetailSection[] = [
   {
@@ -220,8 +201,6 @@ const ASSIGNMENT_SECTIONS: DetailSection[] = [
   },
   AUDIT_SECTION,
 ];
-
-const hasNumber = (value: unknown) => typeof value === "number";
 
 // Loại khóa huấn luyện: gom theo ý nghĩa, ẩn mã định danh (UUID), khóa tiên quyết hiển thị bằng tên.
 const COURSE_TYPE_SECTIONS: DetailSection[] = [
@@ -267,8 +246,6 @@ const COURSE_TYPE_SECTIONS: DetailSection[] = [
   AUDIT_SECTION,
 ];
 
-const hasText = (value: unknown) => typeof value === "string" && value.trim() !== "";
-
 // Hồ sơ tham dự (4 tab của khóa: đăng ký, duyệt đăng ký, danh sách tham dự, chấm điểm): gom theo ý nghĩa, ẩn mã định danh.
 const PARTICIPATION_SECTIONS: DetailSection[] = [
   {
@@ -302,6 +279,7 @@ const PARTICIPATION_SECTIONS: DetailSection[] = [
         render: (row) => (row.approvedBy === "SYSTEM_AUTO_APPROVAL" ? "Hệ thống tự duyệt" : <span className="text-muted">—</span>),
         visible: (row) => row.approvedBy === "SYSTEM_AUTO_APPROVAL",
       },
+      { key: "approvedByName", label: "Người duyệt", visible: (row) => hasText(row.approvedByName) && row.approvedBy !== "SYSTEM_AUTO_APPROVAL" },
       { key: "review", label: "Ghi chú", wide: true, visible: (row) => hasText(row.review) },
     ],
   },
@@ -328,6 +306,7 @@ const PARTICIPATION_SECTIONS: DetailSection[] = [
       { key: "certificateApprovedAt", label: "Ngày duyệt", visible: (row) => hasText(row.certificateApprovedAt) },
     ],
   },
+  AUDIT_SECTION,
 ];
 
 function SectionedDetail({ row, sections }: { row: Record<string, unknown>; sections: DetailSection[] }) {

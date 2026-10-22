@@ -3,7 +3,7 @@
 import { Bell, Certificate, Check, Checks, GraduationCap, MagnifyingGlass, ShieldCheck, TreeStructure, Tray } from "@phosphor-icons/react";
 import type { Route } from "next";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { toast } from "sonner";
 import { ResourcePagination } from "@/components/common/resource/resource-pagination";
 import type { ResourcePageSize } from "@/components/common/resource/use-resource-query-state";
@@ -20,6 +20,7 @@ import {
   type NotificationItem,
 } from "@/modules/notifications/hooks";
 import { notificationGroupOf, notificationGroups, notificationHref, relativeTime, type NotificationGroupKey } from "@/modules/notifications/notification-meta";
+import { useSessionState } from "@/lib/use-session-state";
 
 type Filter = "all" | "unread" | NotificationGroupKey;
 
@@ -48,8 +49,8 @@ export function NotificationInbox() {
   const unreadCountQuery = useUnreadNotificationCount();
   const markRead = useMarkNotificationRead();
   const markAll = useMarkAllNotificationsRead();
-  const [filter, setFilter] = useState<Filter>("all");
-  const [keyword, setKeyword] = useState("");
+  const [filter, setFilter] = useSessionState<Filter>("notifications:filter", "all");
+  const [keyword, setKeyword] = useSessionState("notifications:keyword", "");
   const notifications = useMemo(() => notificationsQuery.data?.content ?? [], [notificationsQuery.data]);
   const pageData = notificationsQuery.data;
   const unreadTotal = unreadCountQuery.data?.unreadCount ?? 0;
