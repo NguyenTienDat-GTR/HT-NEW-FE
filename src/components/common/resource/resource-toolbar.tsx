@@ -102,7 +102,7 @@ export function ResourceFilters({
               <Dialog.Portal>
                 <Dialog.Overlay className="fixed inset-0 z-40 bg-slate-900/45 backdrop-blur-[4px]" />
                 <Dialog.Content className="fixed bottom-0 right-0 top-0 z-50 flex w-full max-w-[420px] flex-col border-l border-border bg-white shadow-[var(--shadow-elevated)] focus:outline-none">
-                  <div className="flex items-start justify-between gap-4 border-b border-border px-6 py-5">
+                  <div className="flex items-start justify-between gap-4 border-b border-border px-5 py-3.5">
                     <div className="min-w-0">
                       <Dialog.Title className="text-lg font-semibold leading-[26px] text-foreground">Bộ lọc</Dialog.Title>
                       <Dialog.Description className="mt-0.5 text-[13px] text-muted">Thu hẹp danh sách {route.title.toLowerCase()} theo điều kiện.</Dialog.Description>
@@ -113,7 +113,7 @@ export function ResourceFilters({
                       </Button>
                     </Dialog.Close>
                   </div>
-                  <div className="min-h-0 flex-1 space-y-5 overflow-y-auto bg-slate-50 p-6">
+                  <div className="min-h-0 flex-1 space-y-4 overflow-y-auto bg-slate-50 p-5">
                     {filters.map((filter) => (
                       <FilterControl
                         filter={filter}
@@ -124,7 +124,7 @@ export function ResourceFilters({
                       />
                     ))}
                   </div>
-                  <div className="flex items-center justify-between gap-3 border-t border-border bg-white px-6 py-4">
+                  <div className="flex items-center justify-between gap-3 border-t border-border bg-white px-5 py-3">
                     <Button disabled={activeFilterCount === 0 && !search} onClick={resetFilters} type="button" variant="ghost">
                       Xóa lọc
                     </Button>

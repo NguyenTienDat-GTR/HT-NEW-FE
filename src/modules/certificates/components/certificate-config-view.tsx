@@ -27,6 +27,7 @@ import {
   X,
 } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
+import { HelpTip } from "@/components/ui/help-tip";
 import { Input } from "@/components/ui/input";
 import { Panel } from "@/components/ui/panel";
 import { Tip } from "@/components/ui/tip";
@@ -370,20 +371,20 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
   const busy = saveMutation.isPending || saveAsNewMutation.isPending || setDefaultMutation.isPending || deleteMutation.isPending;
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold leading-8 text-foreground">{route?.title ?? "Cấu hình chứng nhận"}</h1>
-        {route?.subtitle ? <p className="mt-1 max-w-[78ch] text-sm text-text-secondary">{route.subtitle}</p> : null}
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <h1 className="text-xl font-bold leading-7 text-foreground">{route?.title ?? "Cấu hình chứng nhận"}</h1>
+        {route?.subtitle ? <HelpTip label="Mô tả màn hình">{route.subtitle}</HelpTip> : null}
       </div>
 
       {/* Thư viện cấu hình */}
       <Panel className="overflow-hidden">
-        <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border p-5">
-          <div className="min-w-0">
-            <h2 className="text-lg font-semibold leading-[26px] text-foreground">Thư viện cấu hình</h2>
-            <p className="mt-0.5 max-w-[80ch] text-[13px] leading-5 text-text-secondary">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
+          <div className="flex min-w-0 items-center gap-1.5">
+            <h2 className="text-base font-semibold leading-6 text-foreground">Thư viện cấu hình</h2>
+            <HelpTip label="Hướng dẫn thư viện cấu hình">
               Cấu hình chung dùng cho mọi loại khóa chưa được gán cấu hình riêng. Một cấu hình có thể gán cho nhiều loại khóa; mỗi loại khóa chỉ dùng một cấu hình.
-            </p>
+            </HelpTip>
           </div>
           {canCreate ? (
             <Button onClick={startNew} type="button" variant={isNew ? "primary" : "outline"}>
@@ -392,7 +393,7 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
           ) : null}
         </div>
 
-        <div className="flex flex-col gap-3 border-b border-border p-5 sm:flex-row sm:items-center">
+        <div className="flex flex-col gap-3 border-b border-border px-4 py-3 sm:flex-row sm:items-center">
           <div className="relative min-w-0 flex-1 sm:max-w-[480px]" role="search">
             <MagnifyingGlass aria-hidden className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
             <Input
@@ -429,7 +430,7 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
             <Dialog.Portal>
               <Dialog.Overlay className="fixed inset-0 z-40 bg-slate-900/45 backdrop-blur-[4px]" />
               <Dialog.Content className="fixed bottom-0 right-0 top-0 z-50 flex w-full max-w-[420px] flex-col border-l border-border bg-white shadow-[var(--shadow-elevated)] focus:outline-none">
-                <div className="flex items-start justify-between gap-4 border-b border-border px-6 py-5">
+                <div className="flex items-start justify-between gap-4 border-b border-border px-5 py-3.5">
                   <div className="min-w-0">
                     <Dialog.Title className="text-lg font-semibold leading-[26px] text-foreground">Bộ lọc</Dialog.Title>
                     <Dialog.Description className="mt-0.5 text-[13px] text-muted">Thu hẹp thư viện cấu hình theo điều kiện.</Dialog.Description>
@@ -440,7 +441,7 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
                     </Button>
                   </Dialog.Close>
                 </div>
-                <div className="min-h-0 flex-1 space-y-5 overflow-y-auto bg-slate-50 p-6">
+                <div className="min-h-0 flex-1 space-y-4 overflow-y-auto bg-slate-50 p-5">
                   <FilterSelect
                     label="Phạm vi"
                     onChange={(value) => updateFilters({ scope: value })}
@@ -488,7 +489,7 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
                     value={sort === "default" ? "" : sort}
                   />
                 </div>
-                <div className="flex items-center justify-between gap-3 border-t border-border bg-white px-6 py-4">
+                <div className="flex items-center justify-between gap-3 border-t border-border bg-white px-5 py-3">
                   <Button
                     disabled={activeFilterCount === 0}
                     onClick={() => {
@@ -510,7 +511,7 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
           </Dialog.Root>
         </div>
 
-        <div className="p-5">
+        <div className="p-4">
           {libraryQuery.isError ? (
             <p className="mb-3 text-sm text-danger" role="alert">
               {getApiErrorMessage(libraryQuery.error)}
@@ -523,14 +524,14 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
             </p>
           ) : null}
 
-          <div className={cn("grid gap-4 md:grid-cols-2 xl:grid-cols-3", libraryQuery.isPlaceholderData && "opacity-60")}>
+          <div className={cn("grid gap-3 md:grid-cols-2 xl:grid-cols-3", libraryQuery.isPlaceholderData && "opacity-60")}>
             {libraryItems.map((config) => {
               const active = config.id === resolvedId;
               return (
                 <div
                   key={config.id}
                   className={cn(
-                    "rounded-xl border p-4 transition-[border-color,box-shadow,background-color]",
+                    "rounded-xl border p-3 transition-[border-color,box-shadow,background-color]",
                     active ? "border-primary bg-primary-soft/60 shadow-[0_0_0_1px_var(--primary)]" : "border-border bg-white hover:border-slate-300 hover:shadow-sm",
                   )}
                 >
@@ -571,7 +572,7 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
         </div>
 
         {libraryQuery.data && libraryQuery.data.totalElements > 0 ? (
-          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border px-5 py-3 text-[13px] text-muted">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border px-4 py-2 text-[13px] text-muted">
             <span>
               {libraryQuery.data.totalElements} cấu hình · Trang {page + 1}/{Math.max(totalPages, 1)}
             </span>
@@ -593,19 +594,18 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
         </Callout>
       ) : null}
 
-      <Callout>
-        Người ký được chọn khi <span className="font-semibold text-foreground">duyệt từng chứng nhận</span> và ghi trực tiếp vào chứng nhận đó; khi xuất PDF sẽ dùng người ký của chính chứng nhận.
-      </Callout>
-
       {/* Trình thiết kế */}
       {ready ? (
         <Panel className="overflow-hidden">
-          <div className="flex flex-wrap items-end justify-between gap-4 border-b border-border p-4 lg:px-5">
+          <div className="flex flex-wrap items-end justify-between gap-3 border-b border-border px-4 py-3">
             <div className="min-w-[240px] max-w-md flex-1">
-              <div className="mb-1.5 flex items-center gap-2">
+              <div className="mb-1 flex items-center gap-1.5">
                 <label className="text-[13px] font-medium text-text-secondary" htmlFor="certificate-config-name">
                   Tên cấu hình
                 </label>
+                <HelpTip label="Hướng dẫn tên cấu hình">
+                  Trùng tên sẽ tự thêm hậu tố (1), (2)… Người ký được chọn khi <span className="font-semibold">duyệt từng chứng nhận</span> và ghi trực tiếp vào chứng nhận đó; khi xuất PDF sẽ dùng người ký của chính chứng nhận.
+                </HelpTip>
                 {dirty ? (
                   <span className="inline-flex items-center gap-1 rounded-full bg-[var(--badge-warning-bg)] px-2 py-0.5 text-[11px] font-semibold text-[var(--badge-warning-fg)]">
                     <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-warning" />
@@ -625,9 +625,7 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
                 <p className="mt-1 text-xs text-danger" role="alert">
                   Tên tối đa {MAX_NAME_LENGTH} ký tự.
                 </p>
-              ) : (
-                <p className="mt-1 text-xs text-muted">Trùng tên sẽ tự thêm hậu tố (1), (2)…</p>
-              )}
+              ) : null}
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
@@ -662,7 +660,7 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-end gap-x-5 gap-y-3 border-b border-border bg-slate-50 px-4 py-3 lg:px-5">
+          <div className="flex flex-wrap items-end gap-x-5 gap-y-3 border-b border-border bg-slate-50 px-4 py-2.5">
             <div className="flex flex-wrap items-end gap-3">
               <Field label="Khổ giấy">
                 <select
@@ -731,7 +729,7 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
           </div>
 
           <div className="grid lg:grid-cols-[minmax(0,1fr)_340px]">
-            <div className="bg-slate-100 p-4 sm:p-6">
+            <div className="bg-slate-100 p-3 sm:p-4">
               <CertificateCanvas
                 backgroundImage={form.backgroundImage}
                 layout={form.layout}
@@ -746,9 +744,9 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
               />
             </div>
 
-            <aside aria-label="Thuộc tính phần tử" className="space-y-5 border-t border-border bg-white p-5 lg:border-l lg:border-t-0">
+            <aside aria-label="Thuộc tính phần tử" className="space-y-4 border-t border-border bg-white p-4 lg:border-l lg:border-t-0">
               {selected && selectedIndex != null ? (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   <div className="flex items-center justify-between gap-2">
                     <div className="min-w-0">
                       <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">Phần tử đang chọn</p>
@@ -763,7 +761,7 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
 
                   {selected.type === "QR" ? (
                     <div className="space-y-2">
-                      <Field label="Kích thước mã QR (% chiều cao giấy)">
+                      <Field label="Kích thước mã QR (% chiều cao giấy)" hint="Mã QR chứa mã chứng nhận. Kéo để đặt vị trí (điểm kéo là tâm mã). Nên để đủ lớn và tương phản với nền để dễ quét.">
                         <Input
                           disabled={!canEditCurrent}
                           max={Math.round(MAX_QR_SIZE * 100)}
@@ -773,7 +771,6 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
                           value={Math.round((selected.size ?? DEFAULT_QR_SIZE) * 100)}
                         />
                       </Field>
-                      <p className="text-xs leading-5 text-muted">Mã QR chứa mã chứng nhận. Kéo để đặt vị trí (điểm kéo là tâm mã). Nên để đủ lớn và tương phản với nền để dễ quét.</p>
                     </div>
                   ) : null}
 
@@ -785,7 +782,7 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
 
                   {selected.type === "QR" ? null : (
                     <>
-                      <div className="space-y-4 border-t border-border pt-4">
+                      <div className="space-y-3 border-t border-border pt-3">
                         <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">Kiểu chữ</p>
                         <Field label="Phông chữ">
                           <select
@@ -862,7 +859,7 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
                   )}
                 </div>
               ) : (
-                <div className="rounded-xl border border-dashed border-border bg-slate-50 p-5 text-center">
+                <div className="rounded-xl border border-dashed border-border bg-slate-50 p-4 text-center">
                   <span className="mx-auto mb-2 grid h-10 w-10 place-items-center rounded-full bg-white text-primary shadow-sm">
                     <CursorClick size={20} />
                   </span>
@@ -872,7 +869,7 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
               )}
 
               {selectedConfig ? (
-                <div className="rounded-xl border border-border bg-slate-50 p-4 text-sm">
+                <div className="rounded-xl border border-border bg-slate-50 p-3 text-sm">
                   <p className="font-semibold text-foreground">Loại khóa đang dùng ({selectedConfig.usedByCount})</p>
                   {selectedConfig.usedByCount > 0 ? (
                     <ul className="mt-1.5 list-disc space-y-0.5 pl-4 text-[13px] text-text-secondary">
@@ -924,7 +921,7 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
           </Button>
         ) : null}
         {!isNew && selectedConfig?.isDefault && canDelete && selectedConfig.editable ? (
-          <span className="text-xs text-muted">Cấu hình chung không xóa được. Chọn cấu hình khác làm cấu hình chung rồi mới xóa.</span>
+          <HelpTip label="Vì sao không xóa được cấu hình chung">Cấu hình chung không xóa được. Chọn cấu hình khác làm cấu hình chung rồi mới xóa.</HelpTip>
         ) : null}
         {!canUpdate && !canCreate ? <span className="text-sm text-muted">Bạn chỉ có quyền xem thư viện cấu hình.</span> : null}
       </div>
@@ -935,10 +932,13 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
 const SELECT_CLASS =
   "h-10 cursor-pointer rounded-lg border border-input bg-white px-3 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-[3px] focus:ring-[var(--primary-ring)] disabled:cursor-not-allowed disabled:opacity-60";
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-[13px] font-medium text-text-secondary">{label}</span>
+      <span className="mb-1 flex items-center gap-1 text-[13px] font-medium text-text-secondary">
+        {label}
+        {hint ? <HelpTip label={`Hướng dẫn: ${label}`}>{hint}</HelpTip> : null}
+      </span>
       {children}
     </label>
   );

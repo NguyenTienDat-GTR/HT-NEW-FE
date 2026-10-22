@@ -36,7 +36,7 @@ export function SectionTitle({ icon: Icon, title, action }: { icon: IconType; ti
 export function RankHistorySection({ histories }: { histories: RankHistoryRow[] }) {
   const items = [...histories].sort((left, right) => yearFromDate(right.promotionDate) - yearFromDate(left.promotionDate));
   return (
-    <Panel className="p-5 sm:p-6">
+    <Panel className="p-4 sm:p-5">
       <SectionTitle icon={ClockCounterClockwise} title="Lịch sử cấp độ" />
       {items.length === 0 ? (
         <p className="mt-4 text-sm text-muted">Chưa có lịch sử cấp độ.</p>
@@ -81,7 +81,7 @@ export function CertificatesSection({ certificates }: { certificates: Certificat
   const [viewingCode, setViewingCode] = useState<string | null>(null);
 
   return (
-    <Panel className="p-5 sm:p-6">
+    <Panel className="p-4 sm:p-5">
       <SectionTitle
         action={certificates.length ? <ViewModeToggle mode={viewMode} onChange={setViewMode} /> : undefined}
         icon={CertificateIcon}

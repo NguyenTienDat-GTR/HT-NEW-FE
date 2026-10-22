@@ -34,7 +34,7 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
     kind: "course-types",
     createTitle: "Thêm loại khóa",
     editTitle: "Chỉnh sửa loại khóa",
-    description: "Loại khóa huấn luyện: cấp quản lý, điều kiện tham dự, khóa tiên quyết và cấp thăng.",
+    description: "Loại khóa huấn luyện: cấp quản lý, điều kiện tham dự, khóa tiên quyết và cấp độ khi hoàn thành.",
     // Mặc định chọn cấp quản lý theo phạm vi tài khoản đang quản lý.
     getInitialValues: (user) => {
       const types = managedUnitTypes(user, "course_type");
@@ -63,7 +63,7 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
         helper: "Dùng để sinh mã chứng chỉ, ví dụ HTI. Bắt buộc với loại khóa có cấp độ đạt được.",
         section: "Thông tin loại khóa",
       },
-      { name: "requiredCurrentLevel", label: "Cấp hiện tại yêu cầu", type: "select", ...leaderLevelSelect, section: "Điều kiện tham dự" },
+      { name: "requiredCurrentLevel", label: "Cấp đội yêu cầu", type: "select", ...leaderLevelSelect, section: "Điều kiện tham dự" },
       { name: "requiredMinAge", label: "Tuổi tối thiểu", type: "number", section: "Điều kiện tham dự" },
       { name: "requiredYearsActive", label: "Số năm sinh hoạt", type: "number", section: "Điều kiện tham dự" },
       {
@@ -128,7 +128,7 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
         type: "number",
         min: 0,
         readOnlyWhen: lockedByParticipations,
-        helper: "Số năm tối thiểu giữa năm đạt khóa tiên quyết và năm tổ chức khóa này. Mặc định 0, không được âm.",
+        helper: "Số năm tối thiểu giữa năm đạt cấp độ tiên quyết và năm tổ chức khóa này. Mặc định 0, không được âm.",
         section: "Thông tin khóa",
       },
       { name: "location", label: "Địa điểm", section: "Thông tin khóa" },

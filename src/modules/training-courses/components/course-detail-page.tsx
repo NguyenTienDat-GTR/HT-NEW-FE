@@ -148,14 +148,14 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <section className="space-y-3">
         <Link className="inline-flex items-center gap-2 text-xs font-semibold text-primary" href={route.path as Route}>
           <ArrowLeft size={16} />
           Quay lại danh sách khóa
         </Link>
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <h1 className="text-2xl font-bold leading-8 tracking-[0] text-foreground">{courseQuery.isLoading ? "Đang tải..." : String(course?.courseName ?? id)}</h1>
+          <h1 className="text-xl font-bold leading-7 tracking-[0] text-foreground">{courseQuery.isLoading ? "Đang tải..." : String(course?.courseName ?? id)}</h1>
           <div className="flex flex-wrap items-center gap-2">
             {canFinish && course && !course.finishedAt && !courseDisabled ? (
               <Tip label="Kết thúc khóa, chốt kết quả và thăng cấp các hồ sơ đạt">
@@ -188,7 +188,7 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
           </div>
         </div>
         {course ? (
-          <Panel className="flex flex-wrap gap-x-8 gap-y-2 px-5 py-4">
+          <Panel className="flex flex-wrap gap-x-7 gap-y-1.5 px-4 py-3">
             {summaryColumns.map((column) => (
               <div className="flex min-w-0 items-baseline gap-1.5 text-[13px]" key={column}>
                 <span className="shrink-0 text-muted">{summaryLabels[column] ?? column}:</span>

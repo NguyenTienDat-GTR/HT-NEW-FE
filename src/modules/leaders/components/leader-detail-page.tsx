@@ -126,11 +126,11 @@ export function LeaderDetailPage({id, route}: LeaderDetailPageProps) {
     } : leader;
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-4 pb-16">
             <div>
-                <h1 className="text-2xl font-bold leading-8 tracking-[0] text-foreground">Chi tiết huynh
+                <h1 className="text-xl font-bold leading-7 tracking-[0] text-foreground">Chi tiết huynh
                     trưởng</h1>
-                <nav aria-label="Breadcrumb" className="mt-2 flex flex-wrap items-center gap-2 text-[13px] text-muted">
+                <nav aria-label="Breadcrumb" className="mt-1 flex flex-wrap items-center gap-2 text-[13px] text-muted">
                     <Link className="font-medium text-primary hover:text-primary-hover" href="/dashboard">
                         Trang chủ
                     </Link>
@@ -144,7 +144,7 @@ export function LeaderDetailPage({id, route}: LeaderDetailPageProps) {
             </div>
 
             <Panel className="overflow-hidden">
-                <div className="flex flex-col gap-6 p-6 lg:flex-row lg:items-center lg:justify-between">
+                <div className="flex flex-col gap-4 p-4 lg:flex-row lg:items-center lg:justify-between">
                     <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center">
                         <EditableLeaderAvatar
                             editing={editingProfile && activeTab === "profile"}
@@ -153,13 +153,13 @@ export function LeaderDetailPage({id, route}: LeaderDetailPageProps) {
                         />
                         <div className="min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
-                                <h2 className="break-words text-[22px] font-bold leading-8 tracking-[0] text-foreground">
+                                <h2 className="break-words text-xl font-bold leading-7 tracking-[0] text-foreground">
                                     {leader.holyName ? `${leader.holyName} ` : ""}{leader.fullName}
                                 </h2>
                                 {leader.leaderLevel ? <LevelBadge level={leader.leaderLevel}/> : null}
                                 <StatusBadge active={leader.status === true}/>
                             </div>
-                            <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm text-text-secondary">
+                            <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1.5 text-sm text-text-secondary">
                                 <HeaderFact icon={HouseLine} value={leader.parishName ?? leader.deaneryName}/>
                                 <HeaderFact icon={Phone} value={leader.phoneNumber}/>
                                 <HeaderFact icon={EnvelopeSimple} value={leader.email}/>
@@ -184,14 +184,14 @@ export function LeaderDetailPage({id, route}: LeaderDetailPageProps) {
                     ) : null}
                 </div>
 
-                <div className="flex max-w-full gap-1 overflow-x-auto border-t border-border px-4 lg:px-6">
+                <div className="flex max-w-full gap-1 overflow-x-auto border-t border-border px-3 lg:px-4">
                     {tabs.map((tab) => {
                         const Icon = tab.icon;
                         const active = activeTab === tab.id;
                         return (
                             <button
                                 className={cn(
-                                    "inline-flex h-12 shrink-0 cursor-pointer items-center gap-2 border-b-2 px-4 text-sm font-semibold transition-colors",
+                                    "inline-flex h-11 shrink-0 cursor-pointer items-center gap-2 border-b-2 px-3.5 text-sm font-semibold transition-colors",
                                     active ? "border-primary text-primary" : "border-transparent text-text-secondary hover:text-foreground",
                                 )}
                                 key={tab.id}
@@ -278,9 +278,9 @@ function ProfileTab({
     });
 
     return (
-        <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(360px,0.72fr)]">
+        <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(320px,0.7fr)]">
             <SectionCard icon={IdentificationCard} title="Thông tin cơ bản">
-                <div className="grid gap-x-6 gap-y-5 md:grid-cols-2 xl:grid-cols-3">
+                <div className="grid gap-x-4 gap-y-3 md:grid-cols-2 xl:grid-cols-3">
                     <ProfileField
                         editing={editing}
                         error={errors.holyName}
@@ -332,7 +332,7 @@ function ProfileTab({
                     <ProfileField label="Cấp huynh trưởng"
                                   value={leader.leaderLevel ? formatLeaderLevel(leader.leaderLevel) : undefined}/>
                 </div>
-                <div className="mt-6 flex flex-wrap items-center justify-start gap-x-4 gap-y-2 text-xs text-muted">
+                <div className="mt-4 flex flex-wrap items-center justify-start gap-x-4 gap-y-1.5 border-t border-border pt-3 text-xs text-muted">
                     <StatusBadge active={leader.status === true}/>
                     <MetaText label="Tạo" value={`${displayValue(leader.createdBy)} · ${formatDate(leader.createdAt)}`}/>
                     <MetaText label="Cập nhật" value={`${displayValue(leader.updatedBy)} · ${formatDate(leader.updatedAt)}`}/>
@@ -423,13 +423,13 @@ function toLeaderUpdatePayload(values: LeaderEditValues) {
 
 function SectionCard({title, icon: Icon, children}: { title: string; icon: typeof User; children: ReactNode }) {
     return (
-        <Panel className="h-full p-6">
-            <div className="mb-6 flex items-center gap-3">
+        <Panel className="h-full p-4">
+            <div className="mb-3 flex items-center gap-2.5">
                 <span
-                    className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary shadow-[inset_0_0_0_1px_rgba(108,71,255,0.08)]">
-                    <Icon size={21} weight="duotone"/>
+                    className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                    <Icon size={17} weight="duotone"/>
                 </span>
-                <h3 className="text-lg font-semibold leading-[26px] tracking-[0] text-foreground">{title}</h3>
+                <h3 className="text-base font-semibold leading-6 tracking-[0] text-foreground">{title}</h3>
             </div>
             {children}
         </Panel>
@@ -455,7 +455,7 @@ function ProfileField({
 }) {
     if (editing && field && onChange) {
         return (
-            <div className="w-full max-w-64 space-y-1">
+            <div className="w-full space-y-1">
                 <FormField
                     error={error}
                     field={field}
@@ -468,9 +468,9 @@ function ProfileField({
     }
 
     return (
-        <div className="w-full max-w-64 space-y-1">
-            <p className="text-[13px] font-medium tracking-[0] text-muted">{label}</p>
-            <p className="flex min-h-11 items-center rounded-lg border border-border bg-slate-50 px-4 py-2 text-sm font-medium leading-5 text-foreground">
+        <div className="w-full space-y-1">
+            <p className="text-[13px] font-medium leading-5 tracking-[0] text-muted">{label}</p>
+            <p className="flex min-h-9 items-center rounded-lg border border-border bg-slate-50 px-3 py-1.5 text-sm font-medium leading-5 text-foreground">
                 {displayValue(value)}
             </p>
         </div>
@@ -530,7 +530,7 @@ function CertificateTab({leaderId}: { leaderId: string }) {
             <RelatedPanel
                 headerAction={<ViewModeToggle mode={viewMode} onChange={setViewMode}/>}
                 view={viewMode === "card" ? (
-                    <ul className="grid gap-4 p-5 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    <ul className="grid gap-3 p-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                         {(query.data ?? []).map((row, index) => (
                             <li key={row.certificateCode ?? index}>
                                 <CertificateCard
@@ -659,20 +659,20 @@ function RelatedPanel({
 }) {
     return (
         <Panel className="overflow-hidden">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-5">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
                 <h3 className="text-base font-semibold text-foreground">{title}</h3>
                 {headerAction}
             </div>
             {loading ? (
-                <div className="space-y-3 p-5">
+                <div className="space-y-3 p-4">
                     {Array.from({length: 4}).map((_, index) => (
                         <div className="h-11 rounded-[8px] bg-surface-2 motion-safe:animate-pulse" key={index}/>
                     ))}
                 </div>
             ) : null}
-            {error ? <p className="p-5 text-sm text-danger">{error}</p> : null}
+            {error ? <p className="p-4 text-sm text-danger">{error}</p> : null}
             {!loading && !error && rows.length === 0 ?
-                <p className="p-5 text-sm text-muted">Chưa có dữ liệu liên quan.</p> : null}
+                <p className="p-4 text-sm text-muted">Chưa có dữ liệu liên quan.</p> : null}
             {!loading && !error && rows.length && view ? view : null}
             {!loading && !error && rows.length && !view ? (
                 <div className="max-w-full overflow-x-auto">
