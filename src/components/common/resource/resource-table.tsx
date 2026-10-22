@@ -227,6 +227,11 @@ export function RowActions({ route, row, onExportRow, exportingRow, scoreNotes }
   const courseDisabled = embedded?.courseDisabled === true || (route.kind === "courses" && row.status === false);
   const canEdit = canShowEditAction(route, row, user) && !courseDisabled;
   const canToggle = canUseAction(user, route.actions?.toggle) && canToggleRow(route, row, user);
+  // Phân quyền vai trò / tài khoản: thu hồi từng quyền (vĩnh viễn) thay cho bật/tắt; quyền đã thu hồi hoặc hết hạn thì không còn nút.
+  const canRevokePermission =
+    (route.kind === "role-permissions" || route.kind === "account-permissions") &&
+    canUseAction(user, route.actions?.revoke) &&
+    !isPermanentlyRevokedAssignment(route, row);
   // Tab chấm điểm nhập điểm trực tiếp trên bảng nên không cần nút chấm điểm ở từng hàng.
   const canScore = canUseAction(user, route.actions?.score) && route.moduleName !== "training.score" && !courseDisabled;
   // Hồ sơ tham dự chỉ duyệt/từ chối khi đang chờ duyệt.
@@ -335,6 +340,15 @@ export function RowActions({ route, row, onExportRow, exportingRow, scoreNotes }
         <Tip label="Xuất PDF chứng nhận này">
           <Button aria-label="Xuất PDF" className="h-8 min-w-8 rounded-lg" disabled={exportingRow} onClick={() => onExportRow?.(id)} size="icon" type="button" variant="icon">
             <FilePdfIcon size={16} />
+          </Button>
+        </Tip>
+      ) : null}
+      {canRevokePermission ? (
+        <Tip label="Thu hồi quyền này">
+          <Button asChild aria-label="Thu hồi quyền" className="h-8 min-w-8 rounded-lg text-danger" size="icon" variant="icon">
+            <Link href={resourceActionHref(route.path, embedded, { revokePermission: id }) as Route}>
+              <ProhibitInsetIcon size={16} />
+            </Link>
           </Button>
         </Tip>
       ) : null}

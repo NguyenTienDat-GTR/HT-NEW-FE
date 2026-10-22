@@ -165,7 +165,9 @@ export function route(config: RouteConfig): RouteConfig {
     config.actionPermissionPrefixes?.filter((prefix) => prefix.includes(".update.") || prefix.includes(".manage.") || prefix.includes(".assign."));
   // Giáo phận / giáo hạt / giáo xứ: nút bật/tắt chỉ phụ thuộc quyền toggle, không còn lệ thuộc quyền chỉnh sửa.
   const organizationUnitKind = config.kind === "dioceses" || config.kind === "deaneries" || config.kind === "parishes";
-  const togglePermissionPrefixes = config.actionPermissionPrefixes?.filter(
+  // Phân quyền vai trò / tài khoản không có bật/tắt: chỉ phân quyền và thu hồi.
+  const permissionAssignmentKind = config.kind === "role-permissions" || config.kind === "account-permissions";
+  const togglePermissionPrefixes = permissionAssignmentKind ? undefined : config.actionPermissionPrefixes?.filter(
     (prefix) =>
       prefix.includes(".toggle.") ||
       (!organizationUnitKind && (

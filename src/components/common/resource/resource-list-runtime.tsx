@@ -88,6 +88,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
   const rejectId = searchParams.get("reject");
   const withdrawId = searchParams.get("withdraw");
   const revokeId = searchParams.get("revoke");
+  const revokePermissionId = searchParams.get("revokePermission");
   const reissueId = searchParams.get("reissue");
   const removeId = searchParams.get("remove");
   const [viewMode, setViewMode] = useState<"table" | "card">(config.cardView?.defaultMode ?? "table");
@@ -156,7 +157,12 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
   const bulkExceptionItems = bulkApprovableIds.map(exceptionItemFor).filter((item): item is ExceptionLevelItem => item !== null);
   const closeQueryDialog = () => router.push((embedded ? embeddedTabHref(embedded) : effectiveRoute.path) as Route);
   const actionMutation = useMutation({
-    mutationFn: ({ action, id, note, signer, achievedLevel }: { action: "toggle" | "approve" | "reject" | "revoke" | "reissue" | "withdraw" | "remove"; id: string; note?: string; signer?: CertificateSigner; achievedLevel?: string }) => {
+    mutationFn: ({ action, id, note, signer, achievedLevel }: { action: "toggle" | "approve" | "reject" | "revoke" | "reissue" | "withdraw" | "remove" | "revokePermission"; id: string; note?: string; signer?: CertificateSigner; achievedLevel?: string }) => {
+      if (action === "revokePermission") {
+        const row = rowById(id);
+        const target = effectiveRoute.kind === "role-permissions" ? { roleCode: row?.roleCode } : { username: row?.username };
+        return apiMutation(`${effectiveRoute.endpoint}/revoke`, "POST", { ...target, permissionCodes: [row?.permissionCode] });
+      }
       if (action === "revoke") return apiMutation(`${effectiveRoute.endpoint}/${encodeURIComponent(id)}/revoke`, "POST", { reason: note });
       if (action === "reissue") return apiMutation(`${effectiveRoute.endpoint}/${encodeURIComponent(id)}/reissue`, "POST", { reason: note });
       if (action === "remove") return apiMutation(config.buildRemovePath?.(id) ?? `${effectiveRoute.endpoint}/${encodeURIComponent(id)}`, "DELETE");
@@ -171,7 +177,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
       throw new Error("Unsupported resource action");
     },
     onSuccess: async (_data, variables) => {
-      toast.success(variables.action === "toggle" ? "Đổi trạng thái thành công" : variables.action === "reject" ? "Đã từ chối duyệt" : variables.action === "revoke" ? "Đã thu hồi chứng nhận" : variables.action === "reissue" ? "Đã cấp lại chứng nhận" : variables.action === "withdraw" ? "Đã thu hồi đăng ký" : variables.action === "remove" ? "Đã xóa hồ sơ khỏi danh sách tham dự" : "Duyệt thành công");
+      toast.success(variables.action === "toggle" ? "Đổi trạng thái thành công" : variables.action === "revokePermission" ? "Đã thu hồi quyền" : variables.action === "reject" ? "Đã từ chối duyệt" : variables.action === "revoke" ? "Đã thu hồi chứng nhận" : variables.action === "reissue" ? "Đã cấp lại chứng nhận" : variables.action === "withdraw" ? "Đã thu hồi đăng ký" : variables.action === "remove" ? "Đã xóa hồ sơ khỏi danh sách tham dự" : "Duyệt thành công");
       closeQueryDialog();
       // Thao tác có thể đổi dữ liệu ở các danh sách khác (hồ sơ tham dự, chứng nhận, khóa) và ở drawer chi tiết đang mở.
       await queryClient.invalidateQueries({ queryKey: ["resource"] });
@@ -586,6 +592,17 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
           return { id, label: String(row?.leaderFullName ?? id) };
         })}
         open={bulkMode !== null}
+      />
+      <ConfirmActionDialog
+        action="withdraw"
+        confirmLabel="Thu hồi"
+        description="Quyền bị thu hồi vĩnh viễn và không bật lại được; muốn cấp lại phải phân quyền mới."
+        loading={actionMutation.isPending}
+        onClose={closeQueryDialog}
+        onConfirm={() => revokePermissionId && actionMutation.mutate({ action: "revokePermission", id: revokePermissionId })}
+        open={Boolean(revokePermissionId)}
+        requireConfirmText={false}
+        title="Thu hồi quyền"
       />
       <ConfirmActionDialog
         action="withdraw"
