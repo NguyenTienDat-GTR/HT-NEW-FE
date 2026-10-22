@@ -227,6 +227,13 @@ export function RowActions({ route, row, onExportRow, exportingRow, scoreNotes }
   const courseDisabled = embedded?.courseDisabled === true || (route.kind === "courses" && row.status === false);
   const canEdit = canShowEditAction(route, row, user) && !courseDisabled;
   const canToggle = canUseAction(user, route.actions?.toggle) && canToggleRow(route, row, user);
+  // Phân quyền vai trò / tài khoản: thu hồi từng quyền (vĩnh viễn) thay cho bật/tắt; quyền đã thu hồi hoặc hết hạn thì không còn nút.
+  const canRevokePermission =
+    (route.kind === "role-permissions" || route.kind === "account-permissions") &&
+    canUseAction(user, route.actions?.revoke) &&
+    !isPermanentlyRevokedAssignment(route, row) &&
+    // BE tính theo phân cấp: quyền do super-admin/hệ thống cấp, vai trò/tài khoản của chính mình hoặc cấp cao hơn thì không thu hồi được.
+    row.revocable === true;
   // Tab chấm điểm nhập điểm trực tiếp trên bảng nên không cần nút chấm điểm ở từng hàng.
   const canScore = canUseAction(user, route.actions?.score) && route.moduleName !== "training.score" && !courseDisabled;
   // Hồ sơ tham dự chỉ duyệt/từ chối khi đang chờ duyệt.
@@ -338,6 +345,15 @@ export function RowActions({ route, row, onExportRow, exportingRow, scoreNotes }
           </Button>
         </Tip>
       ) : null}
+      {canRevokePermission ? (
+        <Tip label="Thu hồi quyền này">
+          <Button asChild aria-label="Thu hồi quyền" className="h-8 min-w-8 rounded-lg text-danger" size="icon" variant="icon">
+            <Link href={resourceActionHref(route.path, embedded, { revokePermission: id }) as Route}>
+              <ProhibitInsetIcon size={16} />
+            </Link>
+          </Button>
+        </Tip>
+      ) : null}
       {canToggle ? (
         <Tip label="Bật hoặc tắt trạng thái hoạt động">
           <StatusSwitch active={isToggleActive(route, row)} href={resourceActionHref(route.path, embedded, { toggle: id }) as Route} />
@@ -347,7 +363,13 @@ export function RowActions({ route, row, onExportRow, exportingRow, scoreNotes }
   );
 }
 
+// Phân quyền đã thu hồi / hết hạn là vĩnh viễn: không sửa, không bật/tắt, chỉ có thể phân quyền mới.
+function isPermanentlyRevokedAssignment(route: RouteConfig, row: Record<string, unknown>) {
+  return (route.kind === "role-permissions" || route.kind === "account-permissions") && (row.validity === "REVOKED" || row.validity === "EXPIRED");
+}
+
 function canEditRow(route: RouteConfig, row: Record<string, unknown>, user: AuthUser | null) {
+  if (isPermanentlyRevokedAssignment(route, row)) return false;
   if (route.kind === "accounts") return false;
   if (route.kind === "leaders") return false;
   if (route.kind === "positions") return hasScopedRowPermission(route, user, "update", row);
@@ -372,6 +394,8 @@ function canToggleRow(route: RouteConfig, row: Record<string, unknown>, user: Au
   if (route.kind === "positions") return hasScopedRowPermission(route, user, "toggle", row);
   // Phân công là lịch sử nhiệm kì: chỉ vô hiệu hóa (kết thúc) được, phân công đã kết thúc không bật lại.
   if (route.kind === "executive-board") return row.status === true && hasScopedRowPermission(route, user, "toggle", row);
+  // Thành phần điểm đã có điểm nhập vào thì không được tắt; chưa có điểm (hoặc đang tắt) thì bật/tắt bình thường.
+  if (route.kind === "score-components" && row.status === true && row.hasScores === true) return false;
   if (!isSuperAdmin(user) && isSystemRoleRow(route, row)) return false;
   if (route.kind === "accounts") return !isOwnAccount(row, user) && !rowHasPrimaryRole(row, "SUPER_ADMIN");
   if (route.kind === "dioceses") return isSuperAdmin(user);
@@ -401,13 +425,10 @@ function hasRole(user: AuthUser | null, roleCode: string) {
 }
 
 function canShowToggleSwitch(route: RouteConfig, row: Record<string, unknown>, user: AuthUser | null) {
-  return Boolean(getResourceId(route, row)) && canUseAction(user, route.actions?.toggle) && canToggleRow(route, row, user);
+  return Boolean(getResourceId(route, row)) && !isPermanentlyRevokedAssignment(route, row) && canUseAction(user, route.actions?.toggle) && canToggleRow(route, row, user);
 }
 
 function isToggleActive(route: RouteConfig, row: Record<string, unknown>) {
-  if (route.kind === "role-permissions" || route.kind === "account-permissions") {
-    return row.effect !== "DENY";
-  }
   return row.status === true;
 }
 

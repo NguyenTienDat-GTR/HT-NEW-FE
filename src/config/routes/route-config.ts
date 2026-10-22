@@ -165,7 +165,9 @@ export function route(config: RouteConfig): RouteConfig {
     config.actionPermissionPrefixes?.filter((prefix) => prefix.includes(".update.") || prefix.includes(".manage.") || prefix.includes(".assign."));
   // Giáo phận / giáo hạt / giáo xứ: nút bật/tắt chỉ phụ thuộc quyền toggle, không còn lệ thuộc quyền chỉnh sửa.
   const organizationUnitKind = config.kind === "dioceses" || config.kind === "deaneries" || config.kind === "parishes";
-  const togglePermissionPrefixes = config.actionPermissionPrefixes?.filter(
+  // Phân quyền vai trò / tài khoản không có bật/tắt: chỉ phân quyền và thu hồi.
+  const permissionAssignmentKind = config.kind === "role-permissions" || config.kind === "account-permissions";
+  const togglePermissionPrefixes = permissionAssignmentKind ? undefined : config.actionPermissionPrefixes?.filter(
     (prefix) =>
       prefix.includes(".toggle.") ||
       (!organizationUnitKind && (
@@ -368,21 +370,9 @@ function inferRouteFilters(config: RouteConfig): RouteFilterConfig[] {
       break;
     case "role-permissions":
       filters.push({ key: "role.roleCode", label: "Vai trò", type: "text", placeholder: "Lọc theo vai trò" });
-      filters.push({
-        key: "effect",
-        label: "Hiệu lực",
-        type: "select",
-        options: ["ALLOW", "DENY"].map((value) => ({ value, label: value })),
-      });
       break;
     case "account-permissions":
       filters.push({ key: "account.username", label: "Tài khoản", type: "text", placeholder: "Lọc theo tài khoản" });
-      filters.push({
-        key: "effect",
-        label: "Hiệu lực",
-        type: "select",
-        options: ["ALLOW", "DENY"].map((value) => ({ value, label: value })),
-      });
       break;
     case "notifications":
       filters.push({ key: "eventType", label: "Loại thông báo", type: "text", placeholder: "Lọc theo event type" });
