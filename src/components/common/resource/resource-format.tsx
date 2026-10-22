@@ -66,7 +66,6 @@ export const columnLabels: Record<string, string> = {
   dioceseId: "Giáo phận",
   dioceseName: "Giáo phận",
   displayOrder: "Thứ tự",
-  effect: "Hiệu lực",
   validity: "Tình trạng quyền",
   eligible:"Đủ điều kiện",
   email: "Email",
@@ -188,7 +187,6 @@ export function ResourceCell({ column, row, value, displayMode = "table" }: Reso
   if (column === "imageUrl") return <Avatar name={String(row.fullName ?? row.leaderFullName ?? row.username ?? "")} src={value} />;
   if (column === "status" && value === true && row.effectiveStatus === false) return <Badge tone="warning">Ngưng theo đơn vị cha</Badge>;
   if (column === "status" && typeof value === "boolean") return <StatusBadge active={value} />;
-  if (column === "effect" && typeof value === "string") return <EffectBadge effect={value} />;
   if (column === "validity" && typeof value === "string") return <PermissionValidityBadge validity={value} />;
   if (column === "gender" && typeof value === "string") return <TextValue full={full}>{genderLabels[value] ?? value}</TextValue>;
   if (["moduleCode", "resourceCode", "actionCode", "scopeCode"].includes(column) && typeof value === "string") {
@@ -277,10 +275,6 @@ export function Avatar({ name, src }: { name: string; src: unknown }) {
 
 function StatusBadge({ active }: { active: boolean }) {
   return <Badge tone={active ? "success" : "neutral"}>{active ? "Đang hoạt động" : "Tạm ngưng"}</Badge>;
-}
-
-function EffectBadge({ effect }: { effect: string }) {
-  return <Badge tone={effect === "DENY" ? "danger" : "success"}>{effect === "DENY" ? "Từ chối" : "Cho phép"}</Badge>;
 }
 
 const permissionValidityLabels: Record<string, { label: string; tone: "success" | "warning" | "danger" | "neutral" }> = {

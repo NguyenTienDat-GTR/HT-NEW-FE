@@ -378,6 +378,8 @@ function canToggleRow(route: RouteConfig, row: Record<string, unknown>, user: Au
   if (route.kind === "positions") return hasScopedRowPermission(route, user, "toggle", row);
   // Phân công là lịch sử nhiệm kì: chỉ vô hiệu hóa (kết thúc) được, phân công đã kết thúc không bật lại.
   if (route.kind === "executive-board") return row.status === true && hasScopedRowPermission(route, user, "toggle", row);
+  // Thành phần điểm đã có điểm nhập vào thì không được tắt; chưa có điểm (hoặc đang tắt) thì bật/tắt bình thường.
+  if (route.kind === "score-components" && row.status === true && row.hasScores === true) return false;
   if (!isSuperAdmin(user) && isSystemRoleRow(route, row)) return false;
   if (route.kind === "accounts") return !isOwnAccount(row, user) && !rowHasPrimaryRole(row, "SUPER_ADMIN");
   if (route.kind === "dioceses") return isSuperAdmin(user);
@@ -411,9 +413,6 @@ function canShowToggleSwitch(route: RouteConfig, row: Record<string, unknown>, u
 }
 
 function isToggleActive(route: RouteConfig, row: Record<string, unknown>) {
-  if (route.kind === "role-permissions" || route.kind === "account-permissions") {
-    return row.effect !== "DENY";
-  }
   return row.status === true;
 }
 

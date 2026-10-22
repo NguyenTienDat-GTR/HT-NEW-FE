@@ -60,7 +60,7 @@ export function resolveRouteForUser(route: RouteConfig, user: AuthUser | null): 
       return {
         ...route,
         subtitle: "Phân quyền hoặc thu hồi quyền cho vai trò do super-admin quản lý.",
-        columns: ["roleName", "permissionName", "effect", "validity", "assignedAt", "expiresAt"],
+        columns: ["roleName", "permissionName", "validity", "assignedAt", "expiresAt"],
         primaryActionLabel: "Phân quyền",
         filters: rolePermissionFiltersForUser(user),
       };
@@ -68,7 +68,7 @@ export function resolveRouteForUser(route: RouteConfig, user: AuthUser | null): 
       return {
         ...route,
         subtitle: "Phân quyền hoặc thu hồi quyền trực tiếp cho tài khoản do super-admin tạo.",
-        columns: ["username", "permissionName", "effect", "validity", "reason", "expiresAt"],
+        columns: ["username", "permissionName", "validity", "reason", "expiresAt"],
         primaryActionLabel: "Phân quyền",
         filters: accountPermissionFilters(),
       };
@@ -114,7 +114,6 @@ function rolePermissionFiltersForUser(user: AuthUser | null): RouteFilterConfig[
           placeholder: "Lọc theo mã vai trò",
         },
     ...permissionTaxonomyFilters(),
-    effectFilter(),
   ];
 }
 
@@ -129,7 +128,6 @@ function accountPermissionFilters(): RouteFilterConfig[] {
       optionLabel: "username",
     },
     ...permissionTaxonomyFilters(),
-    effectFilter(),
   ];
 }
 
@@ -172,18 +170,6 @@ function permissionTaxonomyFilters(): RouteFilterConfig[] {
       optionLabel: "name",
     },
   ];
-}
-
-function effectFilter(): RouteFilterConfig {
-  return {
-    key: "effect",
-    label: "Hiệu lực",
-    type: "select",
-    options: [
-      { value: "ALLOW", label: "Cho phép" },
-      { value: "DENY", label: "Từ chối" },
-    ],
-  };
 }
 
 function roleFilter(): RouteFilterConfig {

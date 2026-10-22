@@ -2,10 +2,6 @@ import { compactPayload, type ResourceFormSpec } from "@/components/form/resourc
 import { isSuperAdmin } from "@/lib/auth/permissions";
 import type { AuthUser } from "@/lib/auth/auth-store";
 
-const effectOptions = [
-  { value: "ALLOW", label: "Cho phép" },
-  { value: "DENY", label: "Từ chối" },
-];
 const systemAdminRoleCodes = ["SUPER_ADMIN", "ADMIN_DIOCESE", "ADMIN_DEANERY", "ADMIN_PARISH"];
 const superAdminAccountRoleOptions = [
   { value: "SUPER_ADMIN", label: "Super admin" },
@@ -252,7 +248,7 @@ export const systemFormSpecs: ResourceFormSpec[] = [
       { name: "assignedAt", label: "Ngày gán", type: "datetime", section: "Thời hạn" },
       { name: "expiresAt", label: "Ngày hết hạn", type: "datetime", clearable: true, section: "Thời hạn" },
     ],
-    mapSubmit: (values) => ({ ...compactPayload(values), effect: "ALLOW" }),
+    mapSubmit: (values) => compactPayload(values),
   },
   {
     kind: "role-permissions",
@@ -291,11 +287,10 @@ export const systemFormSpecs: ResourceFormSpec[] = [
     actionType: "edit",
     createTitle: "Phân quyền cho vai trò",
     editTitle: "Chỉnh sửa quyền của vai trò",
-    description: "Điều chỉnh hiệu lực và thời hạn của quyền đã phân cho vai trò.",
+    description: "Điều chỉnh thời hạn của quyền đã phân cho vai trò.",
     fields: [
       { name: "roleCode", label: "Vai trò", type: "select", required: true, optionsEndpoint: "/system/roles", optionValue: "roleCode", optionLabel: "roleName", readOnlyOnEdit: true, section: "Liên kết" },
       { name: "permissionCode", label: "Quyền", type: "select", required: true, optionsEndpoint: "/system/permissions", optionValue: "permissionCode", optionLabel: "permissionName", readOnlyOnEdit: true, section: "Liên kết" },
-      { name: "effect", label: "Hiệu lực", type: "radio", required: true, options: effectOptions, section: "Hiệu lực" },
       { name: "assignedAt", label: "Ngày gán", type: "datetime", section: "Hiệu lực" },
       { name: "expiresAt", label: "Ngày hết hạn", type: "datetime", clearable: true, section: "Hiệu lực" },
     ],
@@ -344,7 +339,7 @@ export const systemFormSpecs: ResourceFormSpec[] = [
       { name: "reason", label: "Lý do", required: true, type: "textarea", section: "Lý do" },
       { name: "expiresAt", label: "Ngày hết hạn", type: "datetime", clearable: true, section: "Thời hạn" },
     ],
-    mapSubmit: (values) => ({ ...compactPayload(values), effect: "ALLOW" }),
+    mapSubmit: (values) => compactPayload(values),
   },
   {
     kind: "account-permissions",
@@ -385,11 +380,10 @@ export const systemFormSpecs: ResourceFormSpec[] = [
     kind: "account-permissions",
     actionType: "edit",
     editTitle: "Chỉnh sửa quyền của tài khoản",
-    description: "Điều chỉnh hiệu lực, lý do và thời hạn của quyền đã phân cho tài khoản (từ chối được ưu tiên hơn cho phép).",
+    description: "Điều chỉnh lý do và thời hạn của quyền đã phân cho tài khoản.",
     fields: [
       { name: "username", label: "Tài khoản", type: "select", required: true, optionsEndpoint: "/system/accounts", optionValue: "username", optionLabel: "username", readOnlyOnEdit: true, section: "Liên kết" },
       { name: "permissionCode", label: "Quyền", type: "select", required: true, optionsEndpoint: "/system/permissions", optionValue: "permissionCode", optionLabel: "permissionName", readOnlyOnEdit: true, section: "Liên kết" },
-      { name: "effect", label: "Hiệu lực", type: "radio", required: true, options: effectOptions, section: "Hiệu lực" },
       { name: "reason", label: "Lý do", required: true, type: "textarea", section: "Hiệu lực" },
       { name: "expiresAt", label: "Ngày hết hạn", type: "datetime", clearable: true, section: "Hiệu lực" },
     ],

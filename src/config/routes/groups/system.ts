@@ -95,7 +95,7 @@ export const systemRouteGroup: RouteGroup = {
         edit: { label: "Sửa", permissionPrefixes: ["system.permission.update."], requiredRoles: ["SUPER_ADMIN", "ROLE_SUPER_ADMIN"] },
         toggle: { label: "Đổi trạng thái", permissionPrefixes: ["system.permission.toggle."], requiredRoles: ["SUPER_ADMIN", "ROLE_SUPER_ADMIN"] },
       },
-      filterLabels: ["Phân hệ", "Đối tượng", "Thao tác", "Phạm vi", "Hiệu lực"],
+      filterLabels: ["Phân hệ", "Đối tượng", "Thao tác", "Phạm vi"],
       filters: [
         {
           key: "module.moduleCode",
@@ -132,15 +132,6 @@ export const systemRouteGroup: RouteGroup = {
           optionCollection: "scopes",
           optionValue: "code",
           optionLabel: "name",
-        },
-        {
-          key: "effect",
-          label: "Hiệu lực",
-          type: "select",
-          options: [
-            { value: "ALLOW", label: "Cho phép" },
-            { value: "DENY", label: "Từ chối" },
-          ],
         },
       ],
     }),
@@ -200,7 +191,7 @@ export const systemRouteGroup: RouteGroup = {
       idField: "id",
       kind: "role-permissions",
       icon: LockKey,
-      columns: ["roleName", "permissionName", "effect", "validity", "assignedAt", "expiresAt"],
+      columns: ["roleName", "permissionName", "validity", "assignedAt", "expiresAt"],
       sortFields: { roleName: "role.roleName", permissionName: "permission.permissionName" },
       searchFields: [
         "role.roleCode",
@@ -223,7 +214,7 @@ export const systemRouteGroup: RouteGroup = {
         revoke: { label: "Thu hồi quyền", permissionPrefixes: ["system.role_permission.revoke."], route: "/system/role-permissions/revoke" },
       },
       primaryActionLabel: "Phân quyền",
-      filterLabels: ["Vai trò", "Phân hệ", "Đối tượng", "Thao tác", "Phạm vi", "Hiệu lực"],
+      filterLabels: ["Vai trò", "Phân hệ", "Đối tượng", "Thao tác", "Phạm vi"],
       filters: [
         {
           key: "role.roleCode",
@@ -269,15 +260,6 @@ export const systemRouteGroup: RouteGroup = {
           optionValue: "code",
           optionLabel: "name",
         },
-        {
-          key: "effect",
-          label: "Hiệu lực",
-          type: "select",
-          options: [
-            { value: "ALLOW", label: "Cho phép" },
-            { value: "DENY", label: "Từ chối" },
-          ],
-        },
       ],
     }),
     route({
@@ -289,7 +271,7 @@ export const systemRouteGroup: RouteGroup = {
       idField: "id",
       kind: "account-permissions",
       icon: Medal,
-      columns: ["username", "permissionName", "effect", "validity", "reason", "expiresAt"],
+      columns: ["username", "permissionName", "validity", "reason", "expiresAt"],
       sortFields: { username: "account.username", permissionName: "permission.permissionName" },
       searchFields: [
         "account.username",
@@ -307,7 +289,7 @@ export const systemRouteGroup: RouteGroup = {
         revoke: { label: "Thu hồi quyền", permissionPrefixes: ["system.account_permission.manage."], route: "/system/account-permissions/revoke" },
       },
       primaryActionLabel: "Phân quyền",
-      filterLabels: ["Tài khoản", "Phân hệ", "Đối tượng", "Thao tác", "Phạm vi", "Hiệu lực"],
+      filterLabels: ["Tài khoản", "Phân hệ", "Đối tượng", "Thao tác", "Phạm vi"],
       filters: [
         {
           key: "account.username",
@@ -352,12 +334,6 @@ export const systemRouteGroup: RouteGroup = {
           optionCollection: "scopes",
           optionValue: "code",
           optionLabel: "name",
-        },
-        {
-          key: "effect",
-          label: "Hiệu lực",
-          type: "select",
-          options: ["ALLOW", "DENY"].map((value) => ({ value, label: value })),
         },
       ],
     }),
