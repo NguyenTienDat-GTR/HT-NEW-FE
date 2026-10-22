@@ -307,7 +307,7 @@ export function CertificateCanvas({
       {backgroundImage ? (
         // Stretch đầy khung để khớp PDF (ảnh nền được vẽ full trang). Nên dùng ảnh đúng tỉ lệ khổ giấy.
         // eslint-disable-next-line @next/next/no-img-element
-        <img alt="Ảnh nền chứng nhận" className="absolute inset-0 h-full w-full object-fill" src={backgroundImage} />
+        <img alt="Ảnh nền chứng nhận" decoding="async" loading="lazy" className="absolute inset-0 h-full w-full object-fill" src={backgroundImage} />
       ) : (
         <div className="flex h-full items-center justify-center text-sm text-muted">Chưa có ảnh nền</div>
       )}
@@ -330,7 +330,7 @@ export function CertificateCanvas({
             >
               {item.image ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img alt="Mã QR chứng nhận" className="h-full w-full" draggable={false} src={item.image} />
+                <img alt="Mã QR chứng nhận" decoding="async" loading="lazy" className="h-full w-full" draggable={false} src={item.image} />
               ) : (
                 <QrPlaceholder />
               )}

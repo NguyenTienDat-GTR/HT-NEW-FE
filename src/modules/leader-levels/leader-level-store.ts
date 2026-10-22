@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useSyncExternalStore } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { apiFetch } from "@/lib/api/client";
 import { useAuthStore } from "@/lib/auth/auth-store";
 
@@ -20,7 +20,9 @@ export type LeaderLevelItem = {
   deletable?: boolean | null;
 };
 
-export const LEADER_LEVELS_QUERY_KEY = ["leader-levels", "options"] as const;
+import { LEADER_LEVELS_PATH, LEADER_LEVELS_QUERY_KEY } from "./query-keys";
+
+export { LEADER_LEVELS_QUERY_KEY };
 
 // Danh mục mặc định dùng khi chưa tải được từ BE (khớp dữ liệu seed), để nhãn không bị trống.
 const DEFAULT_LEVELS: LeaderLevelItem[] = [
@@ -72,14 +74,14 @@ export function useLeaderLevelList() {
 // Tải danh mục cấp độ một lần cho cả ứng dụng và đồng bộ vào store (gắn ở AppProviders).
 export function useSyncLeaderLevels() {
   const user = useAuthStore((state) => state.user);
-  useQuery({
+  const query = useQuery({
     queryKey: LEADER_LEVELS_QUERY_KEY,
     enabled: Boolean(user),
     staleTime: 60_000,
-    queryFn: async () => {
-      const levels = await apiFetch<LeaderLevelItem[]>("/leader-levels/options");
-      setLeaderLevels(levels);
-      return levels;
-    },
+    queryFn: () => apiFetch<LeaderLevelItem[]>(LEADER_LEVELS_PATH),
   });
+  // Dữ liệu có thể đến từ server (hydrate) mà không qua queryFn, nên đồng bộ vào store theo dữ liệu.
+  useEffect(() => {
+    if (query.data) setLeaderLevels(query.data);
+  }, [query.data]);
 }
