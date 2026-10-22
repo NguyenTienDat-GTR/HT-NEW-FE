@@ -2,17 +2,37 @@
 
 import type { Route } from "next";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { serializeBaseSearch } from "@/lib/api/search";
 import type { RouteConfig } from "@/config/routes/routes";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
+import { readStoredQuery, writeStoredQuery } from "@/lib/use-session-state";
+
+const PERSISTENT_BASE_KEYS = ["page", "size", "search", "status", "sortBy", "sortDirection"];
 
 export type ResourcePageSize = 10 | 20 | 50 | 100;
 
 export function useResourceQueryState(route: RouteConfig, fixedFilters: Record<string, string> = {}, externalSearch?: string) {
   const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const urlParams = useSearchParams();
+  // Bộ lọc được nhớ theo từng danh sách (và từng tab nhúng): quay lại từ trang khác / modal vẫn giữ nguyên lựa chọn.
+  const storageKey = `${pathname}|${urlParams.get("tab") ?? ""}`;
+  const persistentKeys = useMemo(
+    () => [...PERSISTENT_BASE_KEYS, ...(route.filters ?? []).map((filter) => filter.key)],
+    [route.filters],
+  );
+  const urlString = urlParams.toString();
+  const searchParams = useMemo(() => {
+    const params = new URLSearchParams(urlString);
+    // URL đã mang bộ lọc thì URL là nguồn đúng; URL trần (menu, đóng modal...) thì khôi phục bộ lọc đã lưu.
+    if (persistentKeys.some((key) => params.has(key))) return params;
+    new URLSearchParams(readStoredQuery(storageKey)).forEach((value, key) => {
+      if (persistentKeys.includes(key)) params.set(key, value);
+    });
+    return params;
+  }, [persistentKeys, storageKey, urlString]);
+  const restoredFromStorage = searchParams.toString() !== urlString;
   const [localSearch, setSearch] = useState(searchParams.get("search") ?? "");
   // Có ô tìm kiếm chung bên ngoài (chi tiết khóa) thì dùng từ khóa đó thay cho ô tìm kiếm riêng.
   const search = externalSearch ?? localSearch;
@@ -36,6 +56,24 @@ export function useResourceQueryState(route: RouteConfig, fixedFilters: Record<s
     [route.filters, searchParams],
   );
 
+  const commit = useCallback(
+    (next: URLSearchParams) => {
+      const stored = new URLSearchParams();
+      persistentKeys.forEach((key) => {
+        const value = next.get(key);
+        if (value !== null) stored.set(key, value);
+      });
+      writeStoredQuery(storageKey, stored.toString());
+      router.replace(`${pathname}?${next.toString()}` as Route);
+    },
+    [pathname, persistentKeys, router, storageKey],
+  );
+
+  // Đưa bộ lọc khôi phục lên URL để liên kết và nút tải lại khớp với những gì đang hiển thị.
+  useEffect(() => {
+    if (restoredFromStorage) router.replace(`${pathname}?${searchParams.toString()}` as Route);
+  }, [pathname, restoredFromStorage, router, searchParams]);
+
   useEffect(() => {
     if (externalSearch !== undefined || debouncedLocalSearch === urlSearch) return;
 
@@ -43,8 +81,8 @@ export function useResourceQueryState(route: RouteConfig, fixedFilters: Record<s
     if (debouncedLocalSearch) next.set("search", debouncedLocalSearch);
     else next.delete("search");
     next.set("page", "1");
-    router.replace(`${pathname}?${next.toString()}` as Route);
-  }, [debouncedLocalSearch, externalSearch, pathname, router, searchParams, urlSearch]);
+    commit(next);
+  }, [commit, debouncedLocalSearch, externalSearch, searchParams, urlSearch]);
 
   const queryString = useMemo(() => {
     return serializeBaseSearch({
@@ -75,20 +113,20 @@ export function useResourceQueryState(route: RouteConfig, fixedFilters: Record<s
     if (value && value !== "all") next.set(key, value);
     else next.delete(key);
     next.set("page", "1");
-    router.replace(`${pathname}?${next.toString()}` as Route);
+    commit(next);
   }
 
   function updatePage(nextPage: number) {
     const next = new URLSearchParams(searchParams);
     next.set("page", String(Math.max(nextPage, 0) + 1));
-    router.replace(`${pathname}?${next.toString()}` as Route);
+    commit(next);
   }
 
   function updatePageSize(nextSize: ResourcePageSize) {
     const next = new URLSearchParams(searchParams);
     next.set("size", String(nextSize));
     next.set("page", "1");
-    router.replace(`${pathname}?${next.toString()}` as Route);
+    commit(next);
   }
 
   function updateFilter(key: string, value: string) {
@@ -98,7 +136,7 @@ export function useResourceQueryState(route: RouteConfig, fixedFilters: Record<s
     // Đổi bộ lọc cha thì bỏ giá trị các bộ lọc con (giáo hạt -> giáo xứ) vì không còn thuộc lựa chọn mới.
     dependentFilterKeys(route.filters ?? [], key).forEach((child) => next.delete(child));
     next.set("page", "1");
-    router.replace(`${pathname}?${next.toString()}` as Route);
+    commit(next);
   }
 
   function resetFilters() {
@@ -108,14 +146,14 @@ export function useResourceQueryState(route: RouteConfig, fixedFilters: Record<s
       if (filter.key !== "status") next.delete(filter.key);
     });
     next.set("page", "1");
-    router.replace(`${pathname}?${next.toString()}` as Route);
+    commit(next);
   }
 
   function sort(column: string) {
     const next = new URLSearchParams(searchParams);
     next.set("sortBy", column);
     next.set("sortDirection", sortBy === column && sortDirection === "ASC" ? "DESC" : "ASC");
-    router.replace(`${pathname}?${next.toString()}` as Route);
+    commit(next);
   }
 
   return {

@@ -2,7 +2,7 @@
 
 import { SlidersHorizontal } from "@phosphor-icons/react";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Panel } from "@/components/ui/panel";
 import { apiFetch } from "@/lib/api/client";
@@ -10,6 +10,7 @@ import { ChartFrame, ChartSkeleton } from "@/modules/analytics/components/chart-
 import { AnimatedMetric } from "@/modules/analytics/components/animated-metric";
 import { buildAnalyticsQuery, metricLabel, toChartRows, toKpiList, type AnalyticsFilterState, type AnalyticsResponse } from "@/modules/analytics/types";
 import { Header } from "@/modules/dashboard/components/dashboard-view";
+import { useSessionState } from "@/lib/use-session-state";
 
 const tabs = [
   ["organization", "Tổ chức", "Giáo phận, giáo hạt, giáo xứ theo scope"],
@@ -19,8 +20,8 @@ const tabs = [
 ] as const;
 
 export function AnalyticsView() {
-  const [tab, setTab] = useState<(typeof tabs)[number][0]>("organization");
-  const [filters, setFilters] = useState<AnalyticsFilterState>({ fromDate: "", toDate: "", timeBucket: "MONTH", groupBy: "", includeInactiveUnits: false });
+  const [tab, setTab] = useSessionState<(typeof tabs)[number][0]>("analytics:tab", "organization");
+  const [filters, setFilters] = useSessionState<AnalyticsFilterState>("analytics:filters", { fromDate: "", toDate: "", timeBucket: "MONTH", groupBy: "", includeInactiveUnits: false });
   const queryString = useMemo(() => buildAnalyticsQuery(filters), [filters]);
   const query = useQuery({
     queryKey: ["analytics", tab, queryString],

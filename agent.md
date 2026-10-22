@@ -445,3 +445,10 @@ BE tương ứng: `BE/project.md` mục "Training Course Registration Control an
 - `/profile` (`my-profile-page.tsx`, `my-profile-sections.tsx`): xử lý trước `matchRoute` trong `workspace-page.tsx`, dữ liệu từ `GET /auth/me/profile`. Có thông tin Huynh Trưởng, tài khoản, lịch sử cấp độ, chứng nhận (thẻ/bảng, mở chi tiết qua `/auth/me/certificates`). Tài khoản không gắn Huynh Trưởng hiện trạng thái "Không có thông tin hồ sơ".
 - `change-password-dialog.tsx` + `change-password-steps.tsx`: 3 bước mật khẩu hiện tại → OTP 6 ô (`otp-input.tsx`, dán cả mã, tự gửi khi đủ 6 số, đếm ngược hết hạn/gửi lại) → mật khẩu mới + xác nhận. Có thanh độ mạnh và gợi ý mật khẩu mạnh (`password-strength.ts`: chữ hoa, chữ thường, số, ký tự đặc biệt, từ 12 ký tự). Mọi kiểm tra chính nằm ở BE.
 - Test: `tests/unit/modules/account/*`.
+
+## Giữ bộ lọc, drawer chi tiết gom nhóm tiếng Việt (nhánh `feature/audit-fields-filters-drawer-vi`)
+
+- `lib/use-session-state.ts`: `useSessionState` (nhớ giá trị theo phiên trình duyệt) và `readStoredQuery/writeStoredQuery`.
+- `use-resource-query-state.ts`: bộ lọc/tìm kiếm/sắp xếp/phân trang của mọi danh sách được lưu theo `pathname|tab`. URL trần (menu, đóng modal, liên kết mở drawer không kèm bộ lọc) sẽ khôi phục bộ lọc đã lưu; bấm "Xóa bộ lọc" thì lưu trạng thái rỗng nên không khôi phục lại. Test: `tests/unit/components/common/use-resource-query-state.test.tsx`.
+- Các bộ lọc ngoài danh sách tài nguyên cũng được nhớ: ô tìm kiếm chung của chi tiết khóa, lọc/tìm thông báo, tab + bộ lọc thống kê, tìm/lọc/sắp xếp thư viện cấu hình chứng nhận.
+- `detail-section-types.ts` (kiểu section, `AUDIT_SECTION`) và `system-detail-sections.tsx`: drawer chi tiết tài khoản, vai trò, quyền, vai trò tài khoản, quyền của vai trò/tài khoản, thành phần điểm, nhật ký hệ thống gom nhóm bằng tiếng Việt, không hiển thị mã/UUID; người tạo/cập nhật/gán/thu hồi hiển thị bằng tên (`createdByName`, `updatedByName`, `assignedByName`, `revokedByName`, `approvedByName` do BE giải mã). Chỉ giữ mã chứng nhận (và mã viết tắt chứng chỉ của loại khóa).

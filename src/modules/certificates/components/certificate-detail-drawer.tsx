@@ -107,6 +107,7 @@ const SECTIONS: SectionSpec[] = [
     fields: [
       { key: "signerName", label: "Người ký" },
       { key: "signerTitle", label: "Chức danh người ký" },
+      { key: "approvedByName", label: "Người duyệt" },
       { key: "approvedAt", label: "Ngày duyệt" },
       { key: "approvedByException", label: "Duyệt ngoại lệ", show: (row) => row.approvedByException === true, render: (value) => (value === true ? "Có (chưa đạt điểm qua)" : "Không") },
       { key: "exceptionApprovalReason", label: "Lý do duyệt ngoại lệ", fullWidth: true },
@@ -133,6 +134,15 @@ const SECTIONS: SectionSpec[] = [
     fields: [
       { key: "reissuedAt", label: "Ngày cấp lại", always: true },
       { key: "reissueReason", label: "Lý do cấp lại", always: true, fullWidth: true },
+    ],
+  },
+  {
+    title: "Lịch sử ghi nhận",
+    fields: [
+      { key: "createdByName", label: "Người tạo" },
+      { key: "createdAt", label: "Ngày tạo" },
+      { key: "updatedByName", label: "Người cập nhật" },
+      { key: "updatedAt", label: "Ngày cập nhật" },
     ],
   },
 ];

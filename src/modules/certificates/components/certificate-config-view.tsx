@@ -59,6 +59,7 @@ import {
   type LayoutItem,
 } from "./certificate-design";
 import { ConfigPreviewTip } from "./certificate-config-preview";
+import { useSessionState } from "@/lib/use-session-state";
 
 // Giá trị selectedId khi đang soạn một cấu hình chưa lưu.
 const NEW_CONFIG = "__new__";
@@ -100,10 +101,10 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
   });
 
   // Danh sách thư viện: tìm kiếm, lọc, sắp xếp, phân trang đều do BE xử lý.
-  const [searchInput, setSearchInput] = useState("");
-  const [search, setSearch] = useState("");
-  const [filters, setFilters] = useState<LibraryFilters>(EMPTY_FILTERS);
-  const [sort, setSort] = useState<string>("default");
+  const [searchInput, setSearchInput] = useSessionState("cert-library:searchInput", "");
+  const [search, setSearch] = useSessionState("cert-library:search", "");
+  const [filters, setFilters] = useSessionState<LibraryFilters>("cert-library:filters", EMPTY_FILTERS);
+  const [sort, setSort] = useSessionState<string>("cert-library:sort", "default");
   const [page, setPage] = useState(0);
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -111,7 +112,7 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
       setPage(0);
     }, 400);
     return () => window.clearTimeout(timer);
-  }, [searchInput]);
+  }, [searchInput, setSearch]);
 
   const libraryParams = useMemo(() => buildLibraryParams({ search, filters, sort, page }), [search, filters, sort, page]);
   const libraryQuery = useQuery({
