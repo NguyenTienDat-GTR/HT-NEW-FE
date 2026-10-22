@@ -1,6 +1,6 @@
 "use client";
 
-import { CaretDown, CaretLeft, List, MagnifyingGlass, SignOut } from "@phosphor-icons/react";
+import { CaretDown, CaretLeft, List, MagnifyingGlass } from "@phosphor-icons/react";
 import * as Popover from "@radix-ui/react-popover";
 import { useQueryClient } from "@tanstack/react-query";
 import type { Route } from "next";
@@ -16,6 +16,8 @@ import { hasPermissionPrefix, isSuperAdmin } from "@/lib/auth/permissions";
 import { cn } from "@/lib/utils";
 import { routeGroups, type RouteConfig, type RouteGroup } from "@/config/routes/routes";
 import { NotificationPopover } from "@/modules/notifications/components/notification-popover";
+import { AccountMenu } from "@/modules/account/components/account-menu";
+import { PROFILE_PATH } from "@/modules/account/account-display";
 import { useNotificationsSocket } from "@/modules/workspace/hooks/notifications-socket";
 
 const defaultOpenGroups: Record<string, boolean> = {
@@ -135,8 +137,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <List className="h-5 w-5" />
               </TooltipIconButton>
               <div className="hidden min-w-0 sm:block">
-                <p className="truncate text-sm font-semibold text-foreground">{activeRoute?.title ?? "HT Management"}</p>
-                <p className="truncate text-xs text-muted">{activeGroup?.label ?? "workspace"}</p>
+                <p className="truncate text-sm font-semibold text-foreground">{activeRoute?.title ?? (pathname === PROFILE_PATH ? "Hồ sơ cá nhân" : "HT Management")}</p>
+                <p className="truncate text-xs text-muted">{activeGroup?.label ?? (pathname === PROFILE_PATH ? "Tài khoản" : "workspace")}</p>
               </div>
             </div>
 
@@ -145,21 +147,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <span className="truncate">Tìm kiếm nhanh...</span>
             </label>
 
-            <div className="flex min-w-0 items-center gap-2">
+            <div className="flex shrink-0 items-center gap-2">
               <NotificationPopover />
-              <div className="hidden min-w-0 items-center gap-3 rounded-lg border border-border bg-white px-3 py-1.5 sm:flex">
-                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/12 text-sm font-semibold text-primary">
-                  {(user?.username ?? "HT").slice(0, 2).toUpperCase()}
-                </span>
-                <span className="min-w-0">
-                  <span className="block truncate text-sm font-semibold text-foreground">{user?.username ?? "Đang tải"}</span>
-                  <span className="block truncate text-xs text-muted">{user?.roles.join(", ") || "Chưa có vai trò"}</span>
-                </span>
-                <CaretDown className="h-4 w-4 text-muted" />
-              </div>
-              <TooltipIconButton label="Đăng xuất" loading={isLoggingOut} onClick={logout}>
-                <SignOut className="h-5 w-5" />
-              </TooltipIconButton>
+              <span aria-hidden className="mx-1 hidden h-6 w-px bg-border sm:block" />
+              <AccountMenu loggingOut={isLoggingOut} onLogout={logout} />
             </div>
           </div>
         </header>

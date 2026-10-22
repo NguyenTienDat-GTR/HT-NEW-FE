@@ -14,11 +14,15 @@ import type { AuthUser } from "@/lib/auth/auth-store";
 import { useAuthStore } from "@/lib/auth/auth-store";
 import { hasPermissionPrefix, isSuperAdmin } from "@/lib/auth/permissions";
 import { findRoute, matchRoute } from "@/config/routes/routes";
+import { MyProfilePage } from "@/modules/account/components/my-profile-page";
+import { PROFILE_PATH } from "@/modules/account/account-display";
 import { ModuleResourceRenderer } from "./module-resource-renderer";
 
 export function WorkspacePage({ segments }: { segments: string[] }) {
   const user = useAuthStore((state) => state.user);
   const path = `/${segments.join("/")}`;
+  // Hồ sơ cá nhân: ai đăng nhập cũng xem được hồ sơ của chính mình, không cần quyền đọc Huynh Trưởng.
+  if (path === PROFILE_PATH) return <MyProfilePage />;
   const match = matchRoute(path);
   // Đích khi quét mã QR: /certificates/{mã chứng nhận}. Cần đăng nhập (AuthGate) và quyền xem chứng nhận.
   if (!match && segments.length === 2 && segments[0] === "certificates") {

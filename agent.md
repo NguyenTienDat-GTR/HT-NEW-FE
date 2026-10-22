@@ -438,3 +438,10 @@ BE tương ứng: `BE/project.md` mục "Training Course Registration Control an
 - Analytics: công tắc "Bao gồm đơn vị ngưng hoạt động" gửi `includeInactiveUnits=true` (`buildAnalyticsQuery` trong `modules/analytics/types.ts`); mặc định số liệu hiện tại loại đơn vị bị khóa, số liệu lịch sử luôn đầy đủ.
 - Chưa chạy `npm run api:capture` / `api:generate` (cần BE chạy): các hàm gọi API dùng kiểu cục bộ trong `modules/organizations/types.ts`.
 - Test: `tests/unit/modules/organizations/unit-toggle-dialog.test.tsx`, `tests/unit/modules/analytics/build-query.test.ts`, thêm ca trong `resource-table.test.ts`.
+
+## Menu tài khoản, hồ sơ cá nhân, đổi mật khẩu OTP (nhánh `feature/account-menu-change-password`)
+
+- `modules/account/components/account-menu.tsx`: khối tên + avatar trên header thành nút mở menu (Radix DropdownMenu): xem hồ sơ cá nhân, đổi mật khẩu, đăng xuất. Đã bỏ nút đăng xuất riêng ngoài header. Dưới tên chỉ hiện vai trò chính (tên từ BE); trong menu vai trò chính đứng đầu và được tô đậm. Avatar hiện cả trên mobile.
+- `/profile` (`my-profile-page.tsx`, `my-profile-sections.tsx`): xử lý trước `matchRoute` trong `workspace-page.tsx`, dữ liệu từ `GET /auth/me/profile`. Có thông tin Huynh Trưởng, tài khoản, lịch sử cấp độ, chứng nhận (thẻ/bảng, mở chi tiết qua `/auth/me/certificates`). Tài khoản không gắn Huynh Trưởng hiện trạng thái "Không có thông tin hồ sơ".
+- `change-password-dialog.tsx` + `change-password-steps.tsx`: 3 bước mật khẩu hiện tại → OTP 6 ô (`otp-input.tsx`, dán cả mã, tự gửi khi đủ 6 số, đếm ngược hết hạn/gửi lại) → mật khẩu mới + xác nhận. Có thanh độ mạnh và gợi ý mật khẩu mạnh (`password-strength.ts`: chữ hoa, chữ thường, số, ký tự đặc biệt, từ 12 ký tự). Mọi kiểm tra chính nằm ở BE.
+- Test: `tests/unit/modules/account/*`.

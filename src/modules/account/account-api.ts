@@ -1,0 +1,78 @@
+"use client";
+
+import { useQuery } from "@tanstack/react-query";
+import { apiFetch } from "@/lib/api/client";
+import { useAuthStore } from "@/lib/auth/auth-store";
+import type { CertificateRow, RankHistoryRow } from "@/modules/leaders/components/leader-detail-utils";
+
+export type MyLeaderProfile = {
+  id: string;
+  status?: boolean | null;
+  holyName?: string | null;
+  fullName?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  birthDate?: string | null;
+  email?: string | null;
+  phoneNumber?: string | null;
+  imageUrl?: string | null;
+  gender?: string | null;
+  leaderLevel?: string | null;
+  deaneryName?: string | null;
+  parishName?: string | null;
+};
+
+export type MyRole = {
+  code: string;
+  name: string;
+  primary: boolean;
+};
+
+export type MyProfile = {
+  username: string;
+  /** Vai trò chính luôn đứng đầu. */
+  roles: MyRole[];
+  email: string | null;
+  hasLeader: boolean;
+  leader: MyLeaderProfile | null;
+  rankHistory: RankHistoryRow[];
+  certificates: CertificateRow[];
+};
+
+export type PasswordOtpSendResult = {
+  email: string;
+  expiresInSeconds: number;
+  resendAfterSeconds: number;
+};
+
+export type PasswordOtpVerifyResult = {
+  changeToken: string;
+  expiresInSeconds: number;
+};
+
+/** Endpoint chi tiết chứng nhận của chính mình (dùng cho CertificateDetailDrawer). */
+export const MY_CERTIFICATE_ENDPOINT = "/auth/me/certificates";
+
+export const myProfileQueryKey = ["auth", "me", "profile"] as const;
+
+/** Hồ sơ của tài khoản đang đăng nhập, dùng cho menu tài khoản và trang /profile. */
+export function useMyProfile() {
+  const username = useAuthStore((state) => state.user?.username);
+  return useQuery({
+    queryKey: [...myProfileQueryKey, username],
+    queryFn: () => apiFetch<MyProfile>("/auth/me/profile"),
+    enabled: Boolean(username),
+    staleTime: 5 * 60_000,
+  });
+}
+
+function postJson<T>(path: string, body: unknown) {
+  return apiFetch<T>(path, { method: "POST", body: JSON.stringify(body) });
+}
+
+export const passwordChangeApi = {
+  sendOtp: (oldPassword: string) => postJson<PasswordOtpSendResult>("/auth/password/otp", { oldPassword }),
+  verifyOtp: (otp: string) => postJson<PasswordOtpVerifyResult>("/auth/password/otp/verify", { otp }),
+  change: (changeToken: string, newPassword: string, confirmPassword: string) =>
+    postJson<null>("/auth/password/change", { changeToken, newPassword, confirmPassword }),
+};
