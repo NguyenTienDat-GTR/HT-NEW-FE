@@ -503,7 +503,7 @@ function CourseTab({leaderId}: { leaderId: string }) {
                 row.courseName ?? row.courseCode,
                 formatDate(row.registrationDate),
                 workflowLabel(row.participationStatus),
-                scoreText(row.totalScore, row.passingScore),
+                row.scoreHidden === true ? "Không hiển thị" : scoreText(row.totalScore, row.passingScore),
                 row.passed === undefined || row.passed === null ? workflowLabel(row.result) : row.passed ? "Đạt" : "Không đạt",
             ])}
             title="Khóa đã tham dự"

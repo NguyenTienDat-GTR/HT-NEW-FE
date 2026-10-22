@@ -4,6 +4,7 @@ export type ResourceKind =
   | "dashboard"
   | "analytics"
   | "notifications"
+  | "my-permissions"
   | "dioceses"
   | "deaneries"
   | "parishes"

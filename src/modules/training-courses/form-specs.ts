@@ -106,7 +106,7 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
     createTitle: "Tạo khóa huấn luyện",
     editTitle: "Chỉnh sửa khóa huấn luyện",
     description: "Khóa học, thời gian, cửa sổ đăng ký và điểm đạt. Sau khi khóa có hồ sơ tham gia, không đổi được loại khóa, năm tổ chức, số năm hoạt động và điểm đạt.",
-    getInitialValues: () => ({ yearsActive: 0 }),
+    getInitialValues: () => ({ yearsActive: 0, autoApproveEligible: false, scoreVisible: false }),
     fields: [
       { name: "courseName", label: "Tên khóa", required: true, section: "Thông tin khóa" },
       {
@@ -162,6 +162,22 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
           },
         },
         section: "Cấu hình chấm điểm",
+      },
+      {
+        name: "autoApproveEligible",
+        label: "Tự động duyệt hồ sơ hợp lệ",
+        type: "switch",
+        switchLabels: ["Bật: hệ thống tự duyệt hồ sơ hợp lệ", "Tắt: hồ sơ chờ duyệt thủ công"],
+        helper: "Chỉ khi bật, hệ thống mới tự duyệt các hồ sơ đủ điều kiện sau khi gửi danh sách. Hồ sơ ngoại lệ luôn phải duyệt thủ công.",
+        section: "Duyệt và hiển thị",
+      },
+      {
+        name: "scoreVisible",
+        label: "Hiển thị điểm của khóa",
+        type: "switch",
+        switchLabels: ["Bật: hiển thị điểm trong chứng nhận và kết quả", "Tắt: chỉ cấp sở hữu khóa hoặc cấp cao hơn xem điểm"],
+        helper: "Cấp sở hữu khóa và cấp cao hơn luôn xem được điểm. Bật để các cấp còn lại (giáo xứ, huynh trưởng) cũng thấy điểm trong chứng nhận và tab kết quả của hồ sơ huynh trưởng.",
+        section: "Duyệt và hiển thị",
       },
       {
         name: "recipientUsernames",

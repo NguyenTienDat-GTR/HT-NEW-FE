@@ -13,6 +13,8 @@ export type NotificationItem = {
   senderUnitType?: "DIOCESE" | "DEANERY" | "PARISH" | null;
   senderUnitId?: string | null;
   courseCode?: string | null;
+  /** JSON chi tiết (danh sách hồ sơ được gom nhóm, danh sách quyền vừa phân). */
+  payload?: string | null;
   readAt?: string | null;
   createdAt?: string | null;
   status?: boolean | null;

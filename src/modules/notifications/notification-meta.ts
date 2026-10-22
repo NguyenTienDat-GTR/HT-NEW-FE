@@ -9,7 +9,41 @@ export const notificationGroups: { key: NotificationGroupKey; label: string }[] 
   { key: "unit", label: "Đơn vị" },
 ];
 
-const accessEvents = new Set(["ROLE_TOGGLED", "PERMISSION_TOGGLED", "ACCOUNT_ROLE_TOGGLED", "ROLE_PERMISSION_TOGGLED", "ACCOUNT_PERMISSION_TOGGLED"]);
+const accessEvents = new Set([
+  "ROLE_TOGGLED",
+  "PERMISSION_TOGGLED",
+  "ACCOUNT_ROLE_TOGGLED",
+  "ROLE_PERMISSION_TOGGLED",
+  "ACCOUNT_PERMISSION_TOGGLED",
+  "ROLE_PERMISSION_GRANTED",
+  "ACCOUNT_PERMISSION_GRANTED",
+]);
+
+/** Trang xem quyền hiện có của chính tài khoản. */
+export const MY_PERMISSIONS_PATH = "/my-permissions";
+
+export type NotificationDetailItem = { label: string; detail?: string; note?: string; code?: string };
+
+export type NotificationDetail = {
+  kind: "DECISION_LIST" | "PERMISSION_GRANT";
+  heading?: string;
+  targetType?: string;
+  targetName?: string;
+  decision?: string;
+  items: NotificationDetailItem[];
+};
+
+/** Thông báo gom nhóm / danh sách quyền có payload: bấm vào mở modal danh sách thay vì chuyển trang. */
+export function notificationDetail(item: NotificationItem): NotificationDetail | null {
+  if (!item.payload) return null;
+  try {
+    const parsed = JSON.parse(item.payload) as Partial<NotificationDetail>;
+    if (!parsed || !Array.isArray(parsed.items) || (parsed.kind !== "DECISION_LIST" && parsed.kind !== "PERMISSION_GRANT")) return null;
+    return { ...parsed, kind: parsed.kind, items: parsed.items } as NotificationDetail;
+  } catch {
+    return null;
+  }
+}
 
 export function notificationGroupOf(item: NotificationItem): NotificationGroupKey {
   const type = item.eventType ?? "";
@@ -26,6 +60,9 @@ const accessRoutes: Record<string, string> = {
   ACCOUNT_ROLE_TOGGLED: "/system/account-roles",
   ROLE_PERMISSION_TOGGLED: "/system/role-permissions",
   ACCOUNT_PERMISSION_TOGGLED: "/system/account-permissions",
+  // Được phân quyền: xem danh sách quyền hiện có của chính mình.
+  ROLE_PERMISSION_GRANTED: MY_PERMISSIONS_PATH,
+  ACCOUNT_PERMISSION_GRANTED: MY_PERMISSIONS_PATH,
 };
 
 const unitRoutes = {

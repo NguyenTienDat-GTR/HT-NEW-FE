@@ -19,6 +19,7 @@ export type CertificateCardData = {
   signedBy?: string | null;
   approvalStatus?: string | null;
   totalScore?: number | string | null;
+  scoreHidden?: boolean | null;
   passingScore?: number | string | null;
   passed?: boolean | null;
 };
@@ -129,7 +130,6 @@ export function CertificateCard({ data, href, onOpen, showHolder = true, selecti
             <p className="text-xs text-text-secondary">
               Điểm tổng kết{" "}
               <span className={cn("text-sm font-semibold tabular-nums", data.passed === false ? "text-danger" : "text-foreground")}>{scoreText(data.totalScore)}</span>
-              {data.passingScore !== null && data.passingScore !== undefined && data.passingScore !== "" ? <span className="text-muted"> / đạt từ {scoreText(data.passingScore)}</span> : null}
             </p>
           ) : (
             <p className="text-xs text-muted">Chưa có điểm</p>

@@ -40,6 +40,7 @@ export type CourseParticipationRow = {
   registrationDate?: string | null;
   participationStatus?: string | null;
   totalScore?: number | string | null;
+  scoreHidden?: boolean | null;
   passingScore?: number | string | null;
   passed?: boolean | null;
   result?: string | null;
@@ -55,6 +56,7 @@ export type CertificateRow = {
   courseCode?: string | null;
   courseName?: string | null;
   totalScore?: number | string | null;
+  scoreHidden?: boolean | null;
   passingScore?: number | string | null;
   passed?: boolean | null;
   result?: string | null;

@@ -7,6 +7,7 @@ import { CourseDetailPage } from "@/modules/training-courses/components/course-d
 import { ResourceFormPage } from "@/components/form/resource-form/resource-form-page";
 import { CertificateDetailPage } from "@/modules/certificates/components/certificate-detail-page";
 import { CertificateConfigView } from "@/modules/certificates/components/certificate-config-view";
+import { MyPermissionsView } from "@/modules/permissions/components/my-permissions-view";
 import { LeaderLevelsView } from "@/modules/leader-levels/components/leader-levels-view";
 import type React from "react";
 import { Panel } from "@/components/ui/panel";
@@ -75,6 +76,7 @@ export function WorkspacePage({ segments }: { segments: string[] }) {
   else if (route.kind === "analytics") content = <AnalyticsView />;
   else if (route.kind === "certificate-config") content = <CertificateConfigView route={route} />;
   else if (route.kind === "leader-levels") content = <LeaderLevelsView route={route} />;
+  else if (route.kind === "my-permissions") content = <MyPermissionsView />;
   else content = <ModuleResourceRenderer route={route} />;
 
   return content;

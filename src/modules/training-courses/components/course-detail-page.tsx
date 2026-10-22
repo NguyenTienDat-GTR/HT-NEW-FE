@@ -46,7 +46,7 @@ const workflowTabs = [
   { key: "certificate-approvals", label: "Duyệt chứng nhận", path: "/certificates/approvals" },
 ] as const;
 
-const summaryColumns = ["courseTypeName", "hostYear", "yearsActive", "passingScore", "location", "startDate", "endDate", "registrationPeriod", "registrationStatus", "organizingStatus"];
+const summaryColumns = ["courseTypeName", "hostYear", "yearsActive", "passingScore", "location", "startDate", "endDate", "registrationPeriod", "registrationStatus", "organizingStatus", "autoApproveEligible", "scoreVisible"];
 
 export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig }) {
   const user = useAuthStore((state) => state.user);
@@ -319,6 +319,8 @@ const summaryLabels: Record<string, string> = {
   hostYear: "Năm tổ chức",
   yearsActive: "Số năm hoạt động",
   passingScore: "Điểm đạt",
+  autoApproveEligible: "Tự động duyệt hồ sơ hợp lệ",
+  scoreVisible: "Hiển thị điểm của khóa",
   location: "Địa điểm",
   startDate: "Ngày bắt đầu",
   endDate: "Ngày kết thúc",
