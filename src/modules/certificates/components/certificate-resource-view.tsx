@@ -14,6 +14,7 @@ export function CertificateResourceView({ route }: { route: RouteConfig }) {
       route={route}
       config={{
         moduleLabel: "Chứng nhận",
+        moduleHref: route.path === "/certificates" ? undefined : "/certificates",
         moduleDescription: "Quản lý chứng nhận, duyệt ngoại lệ và promotion sau khi hồ sơ đã chấm điểm.",
         // Chế độ xem thẻ / bảng (chỉ khi không nhúng trong chi tiết khóa).
         cardView: { render: (props) => <CertificateCardGrid {...props} />, defaultMode: "card" },

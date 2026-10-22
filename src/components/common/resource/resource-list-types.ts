@@ -25,6 +25,8 @@ export type ResourceListModuleConfig = {
   buildWithdrawPath?: (id: string) => string;
   // Cho phép chọn nhiều hồ sơ và xuất PDF chứng nhận (một hoặc nhiều) qua pdfExportPath.
   enablePdfExport?: boolean;
+  // Trang đích của mục module trên breadcrumb (chỉ khai báo khi module có trang tương ứng).
+  moduleHref?: string;
   // Nút bổ sung trên thanh công cụ danh sách (vd quét mã QR chứng nhận).
   toolbarActions?: ReactNode;
   pdfExportPath?: string;

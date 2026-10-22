@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Tip } from "@/components/ui/tip";
 import { Input } from "@/components/ui/input";
 import { apiFetch, type PageResponse } from "@/lib/api/client";
-import { cn } from "@/lib/utils";
+
 import type { RouteConfig } from "@/config/routes/routes";
 import type { RouteFilterConfig } from "@/config/routes/route-config";
 import { optionFromRow, rowsFromResponse } from "@/components/form/resource-form/api-utils";
@@ -36,7 +36,7 @@ export function ResourceFilters({
   // false khi nút tạo mới đã được đặt ở đầu trang.
   showCreate?: boolean;
   extraActions?: ReactNode;
-  // Khu vực thao tác đứng trước ô tìm kiếm (ví dụ chọn nhiều hồ sơ); khi có thì ô tìm kiếm được thu gọn.
+  // Thao tác theo dòng đã chọn / thống kê: nằm ở hàng riêng dưới ô tìm kiếm (khi ẩn ô tìm kiếm thì đứng bên trái hàng đầu).
   leadingActions?: ReactNode;
   route: RouteConfig;
   search: string;
@@ -60,9 +60,9 @@ export function ResourceFilters({
   return (
     <div className="space-y-3 border-b border-border bg-white p-5">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        {leadingActions ? <div className="flex flex-wrap items-center gap-2">{leadingActions}</div> : null}
+        {leadingActions && hideSearch ? <div className="flex flex-wrap items-center gap-2">{leadingActions}</div> : null}
         {!hideSearch ? (
-          <div className={cn("relative min-w-0", leadingActions ? "w-full lg:w-72" : "flex-1 lg:max-w-[480px]")} role="search">
+          <div className="relative min-w-0 flex-1 lg:max-w-[480px]" role="search">
             <MagnifyingGlass aria-hidden className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
             <Input
               aria-label={`Tìm kiếm ${route.title.toLowerCase()}`}
@@ -147,6 +147,8 @@ export function ResourceFilters({
           ) : null}
         </div>
       </div>
+
+      {leadingActions && !hideSearch ? <div className="flex flex-wrap items-center gap-2 rounded-lg bg-surface-1 px-3 py-2">{leadingActions}</div> : null}
 
       {activeFilterCount > 0 ? (
         <div aria-label="Bộ lọc đang áp dụng" className="flex flex-wrap items-center gap-2" role="group">
