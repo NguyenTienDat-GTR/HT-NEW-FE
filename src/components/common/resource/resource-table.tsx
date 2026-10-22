@@ -231,7 +231,9 @@ export function RowActions({ route, row, onExportRow, exportingRow, scoreNotes }
   const canRevokePermission =
     (route.kind === "role-permissions" || route.kind === "account-permissions") &&
     canUseAction(user, route.actions?.revoke) &&
-    !isPermanentlyRevokedAssignment(route, row);
+    !isPermanentlyRevokedAssignment(route, row) &&
+    // BE tính theo phân cấp: quyền do super-admin/hệ thống cấp, vai trò/tài khoản của chính mình hoặc cấp cao hơn thì không thu hồi được.
+    row.revocable === true;
   // Tab chấm điểm nhập điểm trực tiếp trên bảng nên không cần nút chấm điểm ở từng hàng.
   const canScore = canUseAction(user, route.actions?.score) && route.moduleName !== "training.score" && !courseDisabled;
   // Hồ sơ tham dự chỉ duyệt/từ chối khi đang chờ duyệt.
