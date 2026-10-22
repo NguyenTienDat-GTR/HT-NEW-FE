@@ -457,6 +457,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
     <div className="space-y-6">
       <ResourceListHeader
         moduleLabel={config.moduleLabel}
+        moduleHref={config.moduleHref}
         route={effectiveRoute}
         embedded={Boolean(embedded)}
         actions={
@@ -486,12 +487,13 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
           showCreate={Boolean(embedded)}
           extraActions={
             <>
+              {config.toolbarActions}
               {config.cardView && !embedded ? <ViewModeToggle mode={viewMode} onChange={setViewMode} /> : null}
               {saveScoresButton}
               {permissionRevokeButton}
             </>
           }
-          leadingActions={bulkActions || exportActions || config.toolbarActions ? <>{config.toolbarActions}{bulkActions}{exportActions}</> : scoreStats}
+          leadingActions={selectedIds.length > 0 && (bulkActions || exportActions) ? <>{bulkActions}{exportActions}</> : scoreStats}
         />
         {scoreEntryEnabled && embedded?.scoreLocked === true ? (
           <div className="border-b border-warning/30 bg-warning/10 px-4 py-2 text-xs font-medium text-foreground">Điểm của khóa đang bị khóa chỉnh sửa. Cần mở khóa mới nhập được điểm.</div>

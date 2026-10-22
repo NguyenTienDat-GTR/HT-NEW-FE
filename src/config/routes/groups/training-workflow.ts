@@ -11,8 +11,18 @@ const unitFilters: RouteFilterConfig[] = [
   parishUnitFilter("leader.parish.id", "leader.parish.deanery.id"),
 ];
 
+// Chọn khóa theo tên (giá trị là mã khóa) trong phạm vi tài khoản; ở tab trong chi tiết khóa bộ lọc này được ẩn vì đã cố định theo khóa.
+const courseFilter: RouteFilterConfig = {
+  key: "course.courseCode",
+  label: "Khóa huấn luyện",
+  type: "select",
+  optionsEndpoint: "/training/courses",
+  optionValue: "courseCode",
+  optionLabel: "courseName",
+};
+
 const registrationFilters: RouteFilterConfig[] = [
-  { key: "course.courseCode", label: "Khóa", type: "text", placeholder: "Lọc theo mã khóa" },
+  courseFilter,
   {
     key: "participationStatus",
     label: "Trạng thái đăng ký",
@@ -27,7 +37,7 @@ const registrationFilters: RouteFilterConfig[] = [
 ];
 
 const approvalFilters: RouteFilterConfig[] = [
-  { key: "course.courseCode", label: "Khóa", type: "text", placeholder: "Lọc theo mã khóa" },
+  courseFilter,
   {
     key: "approvalStatus",
     label: "Trạng thái duyệt",
@@ -42,7 +52,7 @@ const approvalFilters: RouteFilterConfig[] = [
 
 // Danh sách tham dự chỉ có hồ sơ đã duyệt: trạng thái tham dự là Đã tham dự/Hoàn thành.
 const participantFilters: RouteFilterConfig[] = [
-  { key: "course.courseCode", label: "Khóa", type: "text", placeholder: "Lọc theo mã khóa" },
+  courseFilter,
   {
     key: "participationStatus",
     label: "Trạng thái tham dự",
@@ -56,12 +66,12 @@ const participantFilters: RouteFilterConfig[] = [
 ];
 
 const scoreFilters: RouteFilterConfig[] = [
-  { key: "course.courseCode", label: "Khóa", type: "text", placeholder: "Lọc theo mã khóa" },
+  courseFilter,
   ...unitFilters,
 ];
 
 const certificateApprovalFilters: RouteFilterConfig[] = [
-  { key: "course.courseCode", label: "Khóa", type: "text", placeholder: "Lọc theo mã khóa" },
+  courseFilter,
   {
     key: "approvalStatus",
     label: "Trạng thái",
@@ -99,7 +109,7 @@ export const trainingWorkflowRouteGroup: RouteGroup = {
         actions: { withdraw: { label: "Thu hồi", permissionPrefixes: ["training.participation.submit."] } },
         primaryActionLabel: "Gửi đăng ký",
         filters: registrationFilters,
-        filterLabels: ["Khóa", "Trạng thái đăng ký"],
+        filterLabels: ["Khóa huấn luyện", "Trạng thái đăng ký"],
         workflowHint: "Giáo xứ gửi cho khóa giáo phận/giáo hạt trong phạm vi; giáo phận chỉ gửi khóa giáo phận, giáo hạt chỉ gửi khóa giáo hạt. Hồ sơ không đủ điều kiện phải nhập lí do ngoại lệ.",
       }),
       route({
@@ -120,7 +130,7 @@ export const trainingWorkflowRouteGroup: RouteGroup = {
         filters: approvalFilters,
         // Hồ sơ đã duyệt đăng ký chuyển sang danh sách tham dự: danh sách này chỉ giữ hồ sơ chờ duyệt và bị từ chối.
         baseFilters: { approvalStatus: ["PENDING", "SUBMITTED", "REJECTED"] },
-        filterLabels: ["Khóa", "Trạng thái duyệt"],
+        filterLabels: ["Khóa huấn luyện", "Trạng thái duyệt"],
       }),
       route({
         path: "/training/participations",
@@ -145,7 +155,7 @@ export const trainingWorkflowRouteGroup: RouteGroup = {
         filters: participantFilters,
         // Người có quyền duyệt được xóa hồ sơ khỏi danh sách tham dự (trừ hồ sơ đã có chứng nhận).
         actions: { remove: { label: "Xóa khỏi danh sách", permissionPrefixes: ["training.participation.approve."] } },
-        filterLabels: ["Khóa", "Trạng thái tham dự"],
+        filterLabels: ["Khóa huấn luyện", "Trạng thái tham dự"],
         workflowHint: "Score form khóa khi certificateApprovalStatus là APPROVED.",
       }),
       route({
@@ -171,7 +181,7 @@ export const trainingWorkflowRouteGroup: RouteGroup = {
           },
         },
         primaryActionLabel: "Chấm điểm",
-        filterLabels: ["Khóa", "Kết quả", "Chứng nhận"],
+        filterLabels: ["Khóa huấn luyện", "Kết quả", "Chứng nhận"],
         workflowHint: "Request score phải gửi đúng và đủ component của formula, không vượt maxScore.",
       }),
       route({
@@ -194,7 +204,7 @@ export const trainingWorkflowRouteGroup: RouteGroup = {
           reject: { label: "Từ chối", permissionPrefixes: ["training.certificate.approve."] },
         },
         primaryActionLabel: "Duyệt chứng nhận",
-        filterLabels: ["Khóa", "Trạng thái"],
+        filterLabels: ["Khóa huấn luyện", "Trạng thái"],
         workflowHint: "Duyệt certificate có thể promote leader nhưng không được hạ cấp hiện tại.",
       }),
     ],
