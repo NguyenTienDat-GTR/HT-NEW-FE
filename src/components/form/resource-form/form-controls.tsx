@@ -4,6 +4,7 @@ import { ImageSquare, UploadSimple } from "@phosphor-icons/react";
 import { useQuery } from "@tanstack/react-query";
 import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { HelpTip } from "@/components/ui/help-tip";
 import { Input } from "@/components/ui/input";
 import { apiFetch, type PageResponse } from "@/lib/api/client";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
@@ -31,12 +32,25 @@ export function FormField({ field, value, values, user, mode, onChange, onFieldC
   const type = field.type ?? "text";
   const id = `field-${field.name}`;
   const clearing = value === "__CLEAR__";
+  const dynamicHelper = useDynamicHelper(field, values);
+  const tips = [field.helper, dynamicHelper && !dynamicHelper.invalid ? dynamicHelper.text : undefined].filter(Boolean) as string[];
 
   return (
-    <div className="space-y-1.5">
-      <label className="text-[13px] font-medium text-text-secondary" htmlFor={id}>
-        {field.label} {field.required ? <span className="text-danger">*</span> : null}
-      </label>
+    <div className="space-y-1">
+      <div className="flex items-center gap-1">
+        <label className="text-[13px] font-medium leading-5 text-text-secondary" htmlFor={id}>
+          {field.label} {field.required ? <span className="text-danger">*</span> : null}
+        </label>
+        {tips.length ? (
+          <HelpTip label={`Hướng dẫn: ${field.label}`}>
+            {tips.map((tip) => (
+              <p className="[&:not(:first-child)]:mt-1.5" key={tip}>
+                {tip}
+              </p>
+            ))}
+          </HelpTip>
+        ) : null}
+      </div>
       {renderControl({ field, id, type, value: clearing ? "" : value, values, user, readonly: readonly || clearing, onChange, onFieldChange })}
       {mode === "edit" && field.clearable ? (
         <label className="inline-flex items-center gap-2 text-xs font-semibold text-muted">
@@ -50,8 +64,7 @@ export function FormField({ field, value, values, user, mode, onChange, onFieldC
           {field.clearLabel ?? "Xóa giá trị khi lưu"}
         </label>
       ) : null}
-      {field.helper ? <p className="text-xs leading-5 text-muted">{field.helper}</p> : null}
-      <DynamicHelper field={field} values={values} />
+      {dynamicHelper?.invalid ? <p className="text-xs font-semibold leading-5 text-danger">{dynamicHelper.text}</p> : null}
       {error ? <p className="text-xs font-semibold text-danger">{error}</p> : null}
     </div>
   );
@@ -81,7 +94,7 @@ function renderControl({
   if (type === "textarea") {
     return (
       <textarea
-        className="min-h-20 w-full rounded-[8px] border border-input bg-white px-3 py-2 text-sm text-foreground transition-[border-color,box-shadow] placeholder:text-muted focus:border-primary focus:outline-none focus:ring-[3px] focus:ring-[var(--primary-ring)] disabled:cursor-not-allowed disabled:bg-surface-1 disabled:opacity-70"
+        className="min-h-[72px] w-full rounded-[8px] border border-input bg-white px-3 py-2 text-sm text-foreground transition-[border-color,box-shadow] placeholder:text-muted focus:border-primary focus:outline-none focus:ring-[3px] focus:ring-[var(--primary-ring)] disabled:cursor-not-allowed disabled:bg-surface-1 disabled:opacity-70"
         disabled={readonly}
         id={id}
         onChange={(event) => onChange(event.target.value)}
@@ -129,7 +142,7 @@ function renderControl({
       <button
         aria-checked={checked}
         className={cn(
-          "flex h-10 w-full max-w-full cursor-pointer items-center justify-between gap-3 overflow-hidden rounded-[8px] border px-3 text-sm font-semibold transition-colors focus:outline-none focus:ring-[3px] focus:ring-[var(--primary-ring)] disabled:cursor-not-allowed disabled:opacity-60",
+          "flex min-h-10 w-full max-w-full cursor-pointer items-center justify-between gap-3 overflow-hidden rounded-[8px] border px-3 text-sm font-semibold transition-colors focus:outline-none focus:ring-[3px] focus:ring-[var(--primary-ring)] disabled:cursor-not-allowed disabled:opacity-60",
           checked ? "border-primary bg-primary/8 text-primary" : "border-border bg-white text-foreground",
         )}
         disabled={readonly}
@@ -138,7 +151,7 @@ function renderControl({
         role="switch"
         type="button"
       >
-        <span className="min-w-0 truncate text-left">{checked ? (field.switchLabels?.[0] ?? "Vai trò chính") : (field.switchLabels?.[1] ?? "Vai trò phụ")}</span>
+        <span className="min-w-0 text-left leading-5">{checked ? (field.switchLabels?.[0] ?? "Vai trò chính") : (field.switchLabels?.[1] ?? "Vai trò phụ")}</span>
         <span className={cn("relative h-6 w-11 shrink-0 rounded-full transition-colors", checked ? "bg-primary" : "bg-border")}>
           <span className={cn("absolute left-1 top-1 h-4 w-4 rounded-full bg-white shadow-sm transition-transform", checked ? "translate-x-5" : "translate-x-0")} />
         </span>
@@ -175,51 +188,46 @@ export function ImagePickerControl({
   readonly?: boolean;
   onChange: (value: FormValue) => void;
 }) {
-  const imageSource = typeof value === "string" && value ? value : "";
+  const imageSource = typeof value === "string" && value && value !== "__CLEAR__" ? value : "";
 
   return (
-    <div className="rounded-[8px] border border-border bg-white p-3 shadow-sm">
+    <div className="flex items-center gap-3 rounded-[8px] border border-border bg-white p-2.5">
       <div
         aria-hidden={!imageSource}
         aria-label={imageSource ? "Ảnh đã chọn" : undefined}
-        className={cn(
-          "flex aspect-[4/3] w-full items-center justify-center overflow-hidden rounded-[8px] border border-border bg-surface-1 bg-cover bg-center text-muted",
-          imageSource && "shadow-inner",
-        )}
+        className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-surface-1 bg-cover bg-center text-muted"
         role={imageSource ? "img" : undefined}
         style={imageSource ? { backgroundImage: `url(${imageSource})` } : undefined}
       >
-        {!imageSource ? <ImageSquare size={34} weight="duotone" /> : null}
+        {!imageSource ? <ImageSquare size={26} weight="duotone" /> : null}
       </div>
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        <input
-          accept="image/*"
-          className="sr-only"
-          disabled={readonly}
-          id={id}
-          onChange={(event) => {
-            const file = event.target.files?.[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = () => {
-              if (typeof reader.result === "string") onChange(reader.result);
-            };
-            reader.readAsDataURL(file);
-            event.target.value = "";
-          }}
-          type="file"
-        />
-        <label
-          className={cn(
-            "inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-[8px] border border-border bg-white px-3 text-sm font-semibold text-foreground shadow-sm transition-colors hover:border-primary hover:text-primary",
-            readonly && "cursor-not-allowed opacity-60 hover:border-border hover:text-foreground",
-          )}
-          htmlFor={id}
-        >
-          <UploadSimple size={16} />
-          {imageSource ? "Đổi ảnh" : "Chọn ảnh"}
-        </label>
-      </div>
+      <input
+        accept="image/*"
+        className="sr-only"
+        disabled={readonly}
+        id={id}
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = () => {
+            if (typeof reader.result === "string") onChange(reader.result);
+          };
+          reader.readAsDataURL(file);
+          event.target.value = "";
+        }}
+        type="file"
+      />
+      <label
+        className={cn(
+          "inline-flex min-h-9 cursor-pointer items-center gap-2 rounded-[8px] border border-border bg-white px-3 text-sm font-semibold text-foreground transition-colors hover:border-primary hover:text-primary",
+          readonly && "cursor-not-allowed opacity-60 hover:border-border hover:text-foreground",
+        )}
+        htmlFor={id}
+      >
+        <UploadSimple size={16} />
+        {imageSource ? "Đổi ảnh" : "Chọn ảnh"}
+      </label>
     </div>
   );
 }
@@ -518,7 +526,7 @@ function CheckboxList({
         <Input className="h-10" disabled={readonly} onChange={(event) => setSearch(event.target.value)} placeholder="Tìm theo mã hoặc tên" value={search} />
         <span className="shrink-0 rounded-[8px] bg-primary/8 px-2.5 py-1.5 text-xs font-semibold text-primary">{selected.size} đã chọn</span>
       </div>
-      <div className="max-h-[320px] overflow-y-auto p-2">
+      <div className="max-h-[280px] overflow-y-auto p-2">
         {groups.length === 0 ? <p className="py-4 text-center text-sm text-muted">Không có dữ liệu phù hợp</p> : null}
         {groups.map(([group, groupOptions]) => {
           const enabledOptions = groupOptions.filter((option) => !option.disabled);
@@ -607,17 +615,15 @@ function toDatetimeLocalValue(value: unknown) {
   return new Date(time + 7 * 60 * 60 * 1000).toISOString().slice(0, 16);
 }
 
-function DynamicHelper({ field, values }: { field: FormFieldSpec; values?: Record<string, unknown> }) {
+function useDynamicHelper(field: FormFieldSpec, values?: Record<string, unknown>) {
   const endpoint = field.dynamicHelper?.buildEndpoint(values ?? {});
   const query = useQuery({
     queryKey: ["field-helper", field.name, endpoint],
     enabled: Boolean(endpoint),
     queryFn: () => apiFetch<unknown>(String(endpoint)),
   });
-  if (!field.dynamicHelper || !endpoint || query.data === undefined) return null;
-  const helper = field.dynamicHelper.format(query.data, values ?? {});
-  if (!helper) return null;
-  return <p className={cn("text-xs leading-5", helper.invalid ? "font-semibold text-danger" : "text-muted")}>{helper.text}</p>;
+  if (!field.dynamicHelper || !endpoint || query.data === undefined) return undefined;
+  return field.dynamicHelper.format(query.data, values ?? {});
 }
 
 // Bỏ dấu + hạ chữ thường để tìm kiếm tiếng Việt không phân biệt dấu.

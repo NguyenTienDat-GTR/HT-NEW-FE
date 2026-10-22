@@ -96,11 +96,11 @@ function GenericDetailDrawer({ id, onClose, route }: { id?: string | null; onClo
     <Dialog.Root open={Boolean(id)} onOpenChange={(open) => (!open ? onClose() : undefined)}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-40 bg-slate-900/45 backdrop-blur-[4px]" />
-        <Dialog.Content className={`fixed bottom-0 right-0 top-0 z-50 flex w-full ${isUnitKind ? "max-w-[1040px]" : "max-w-[760px]"} flex-col border-l border-border bg-white shadow-[var(--shadow-elevated)] focus:outline-none`}>
-          <div className="flex items-start justify-between gap-4 border-b border-border px-6 py-5">
+        <Dialog.Content className={`fixed bottom-0 right-0 top-0 z-50 flex w-full ${isUnitKind ? "max-w-[820px]" : "max-w-[600px]"} flex-col border-l border-border bg-white shadow-[var(--shadow-elevated)] focus:outline-none`}>
+          <div className="flex items-start justify-between gap-4 border-b border-border px-5 py-3.5">
             <div>
-              <Dialog.Title className="text-lg font-semibold leading-[26px] text-foreground">{route.title}</Dialog.Title>
-              <Dialog.Description className="mt-1 text-sm text-muted">
+              <Dialog.Title className="text-base font-semibold leading-6 text-foreground">{route.title}</Dialog.Title>
+              <Dialog.Description className="mt-0.5 text-[13px] leading-5 text-muted">
                 {route.kind === "participations"
                   ? "Chi tiết hồ sơ tham dự"
                   : route.kind === "course-types"
@@ -118,7 +118,7 @@ function GenericDetailDrawer({ id, onClose, route }: { id?: string | null; onClo
               </Button>
             </Dialog.Close>
           </div>
-          <div className="min-h-0 flex-1 overflow-y-auto bg-slate-50 p-6">
+          <div className="min-h-0 flex-1 overflow-y-auto bg-slate-50 p-4">
             {query.isLoading ? <div className="h-40 rounded-xl border border-border bg-white motion-safe:animate-pulse" /> : null}
             {query.isError ? <div className="rounded-lg border border-danger/30 bg-danger/5 p-3 text-sm text-danger">{getApiErrorMessage(query.error)}</div> : null}
             {row && route.kind === "positions" ? <SectionedDetail row={row} sections={POSITION_SECTIONS} /> : null}
@@ -129,11 +129,11 @@ function GenericDetailDrawer({ id, onClose, route }: { id?: string | null; onClo
             {row && (route.kind === "dioceses" || route.kind === "deaneries" || route.kind === "parishes") ? <UnitDetail id={String(id)} kind={route.kind} row={row} /> : null}
             {row && route.kind !== "positions" && route.kind !== "executive-board" && route.kind !== "participations" && route.kind !== "course-types" && !isUnitKind && !SYSTEM_DETAIL_SECTIONS[route.kind] ? (
               <div className="space-y-3">
-                <dl className="grid auto-rows-min grid-cols-1 gap-3 md:grid-cols-2">
+                <dl className="grid auto-rows-min grid-cols-1 gap-x-6 gap-y-3.5 rounded-xl border border-border bg-white p-4 shadow-sm sm:grid-cols-2">
                   {keys.map((key) => (
                     <div className={detailItemClass(key)} key={key}>
-                      <dt className="text-xs font-semibold uppercase tracking-wide text-muted">{detailLabel(route, key)}</dt>
-                      <dd className="mt-1 break-words text-sm leading-6 text-foreground">
+                      <dt className="text-xs font-medium text-muted">{detailLabel(route, key)}</dt>
+                      <dd className="mt-0.5 break-words text-sm leading-5 text-foreground">
                         {route.kind === "participations" && key === "componentScores" ? (
                           <ComponentScoreList scores={row[key]} />
                         ) : route.kind === "participations" && typeof row[key] === "string" && row[key] === "SYSTEM_AUTO_APPROVAL" ? (
@@ -312,18 +312,21 @@ const PARTICIPATION_SECTIONS: DetailSection[] = [
 function SectionedDetail({ row, sections }: { row: Record<string, unknown>; sections: DetailSection[] }) {
   const embedded = Boolean(useEmbeddedResource());
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {sections.filter((section) => section.visible?.(row) ?? true).map((section) => (
-        <section className="rounded-xl border border-border bg-white p-5 shadow-sm" key={section.title}>
-          <h2 className="text-sm font-semibold text-foreground">{section.title}</h2>
-          <dl className="mt-3 grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
+        <section className="rounded-xl border border-border bg-white p-4 shadow-sm" key={section.title}>
+          <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+            <span aria-hidden className="h-3.5 w-1 rounded-full bg-primary" />
+            {section.title}
+          </h2>
+          <dl className="mt-2.5 grid grid-cols-1 gap-x-5 gap-y-3 sm:grid-cols-2">
             {section.fields.filter((field) => field.visible?.(row, embedded) ?? true).map(({ key, label, wide, value: getValue, render }) => {
               const value = getValue ? getValue(row) : row[key];
               const empty = !render && (value === null || value === undefined || value === "");
               return (
                 <div className={wide ? "sm:col-span-2" : undefined} key={key}>
                   <dt className="text-xs font-medium text-muted">{label}</dt>
-                  <dd className="mt-1 break-words text-sm leading-6 text-foreground">
+                  <dd className="mt-0.5 break-words text-sm leading-5 text-foreground">
                     {render ? render(row) : empty ? <span className="text-muted">—</span> : <ResourceCell column={key} displayMode="detail" row={row} value={value} />}
                   </dd>
                 </div>
@@ -453,10 +456,7 @@ function detailLabel(route: RouteConfig, key: string) {
 }
 
 function detailItemClass(key: string) {
-  return [
-    "rounded-lg border border-border bg-white px-4 py-3",
-    FULL_WIDTH_KEYS.has(key) ? "md:col-span-2" : "",
-  ].filter(Boolean).join(" ");
+  return FULL_WIDTH_KEYS.has(key) ? "sm:col-span-2" : undefined;
 }
 
 function shouldRenderKey(route: RouteConfig, row: Record<string, unknown>, key: string) {

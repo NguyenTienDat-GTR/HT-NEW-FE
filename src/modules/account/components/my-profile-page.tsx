@@ -88,7 +88,7 @@ export function MyProfilePage() {
         </div>
       </Panel>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         {leader ? <LeaderInfo leader={leader} /> : <NoLeaderState />}
         <AccountInfo profile={profile} />
       </div>
@@ -117,7 +117,7 @@ function LeaderInfo({ leader }: { leader: MyLeaderProfile }) {
     { icon: MapPin, label: "Giáo hạt", value: displayValue(leader.deaneryName) },
   ];
   return (
-    <Panel className="p-5 sm:p-6">
+    <Panel className="p-4 sm:p-5">
       <SectionTitle icon={UserList} title="Thông tin Huynh Trưởng" />
       <dl className="mt-4 grid gap-x-6 gap-y-4 sm:grid-cols-2">
         {facts.map((fact) => (
@@ -144,7 +144,7 @@ function NoLeaderState() {
 
 function AccountInfo({ profile }: { profile: MyProfile }) {
   return (
-    <Panel className="h-fit p-5 sm:p-6">
+    <Panel className="h-fit p-4 sm:p-5">
       <SectionTitle icon={ShieldCheck} title="Tài khoản" />
       <dl className="mt-4 space-y-4">
         <Fact icon={UserCircle} label="Tên đăng nhập" value={profile.username} />
@@ -187,7 +187,7 @@ function ProfileSkeleton() {
     <div aria-busy="true" aria-label="Đang tải hồ sơ" className="space-y-6">
       <div className="h-8 w-48 animate-pulse rounded-lg bg-surface-2" />
       <div className="h-48 animate-pulse rounded-xl bg-surface-2" />
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-3">
         <div className="h-64 animate-pulse rounded-xl bg-surface-2 lg:col-span-2" />
         <div className="h-64 animate-pulse rounded-xl bg-surface-2" />
       </div>

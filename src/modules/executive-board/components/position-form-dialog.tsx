@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { HelpTip } from "@/components/ui/help-tip";
 import { Input } from "@/components/ui/input";
 import { apiFetch, apiMutation, getApiErrorMessage } from "@/lib/api/client";
 import { useAuthStore } from "@/lib/auth/auth-store";
@@ -82,8 +83,11 @@ function PositionForm({ target, onClose }: { target: PositionFormTarget; onClose
     <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[calc(100vw-32px)] max-w-[480px] -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border bg-white p-5 shadow-2xl focus:outline-none">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <Dialog.Title className="text-lg font-semibold text-foreground">{editing ? "Chỉnh sửa chức vụ" : "Thêm chức vụ"}</Dialog.Title>
-          <Dialog.Description className="mt-1 text-sm text-muted">Chức vụ theo cấp áp dụng trong ban điều hành.</Dialog.Description>
+          <div className="flex items-center gap-1.5">
+            <Dialog.Title className="text-lg font-semibold text-foreground">{editing ? "Chỉnh sửa chức vụ" : "Thêm chức vụ"}</Dialog.Title>
+            <HelpTip label="Mô tả chức vụ">Chức vụ theo cấp áp dụng trong ban điều hành.</HelpTip>
+          </div>
+          <Dialog.Description className="sr-only">Chức vụ theo cấp áp dụng trong ban điều hành.</Dialog.Description>
         </div>
         <Dialog.Close asChild>
           <Button aria-label="Đóng" size="icon" variant="ghost">
@@ -94,12 +98,30 @@ function PositionForm({ target, onClose }: { target: PositionFormTarget; onClose
       {detailQuery.isError ? <p className="mt-4 text-sm text-danger">{getApiErrorMessage(detailQuery.error)}</p> : null}
       {allowedTypes.length === 0 ? <p className="mt-4 text-sm text-danger">Bạn không có quyền quản lý chức vụ ở cấp nào.</p> : null}
       <div className="mt-4 space-y-4">
-        <label className="block">
-          <span className="mb-1 block text-xs font-semibold text-foreground">
-            Tên chức vụ <span className="text-danger">*</span>
-          </span>
-          <Input autoFocus disabled={editing && detailQuery.isLoading} onChange={(event) => setName(event.target.value)} value={currentName} />
-        </label>
+        <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_150px]">
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold text-foreground">
+              Tên chức vụ <span className="text-danger">*</span>
+            </span>
+            <Input autoFocus disabled={editing && detailQuery.isLoading} onChange={(event) => setName(event.target.value)} value={currentName} />
+          </label>
+          <label className="block">
+            <span className="mb-1 flex items-center gap-1 text-xs font-semibold text-foreground">
+              Thứ tự hiển thị
+              <HelpTip label="Hướng dẫn thứ tự hiển thị">Bắt đầu từ 1; linh mục tuyên úy luôn đứng đầu (thứ tự 0). Để trống để xếp cuối cùng.</HelpTip>
+            </span>
+            <Input
+              disabled={editing && detailQuery.isLoading}
+              inputMode="numeric"
+              min={1}
+              onChange={(event) => setOrder(event.target.value)}
+              placeholder="Xếp cuối"
+              type="number"
+              value={currentOrder}
+            />
+            {orderInvalid ? <span className="mt-1 block text-xs text-danger">Thứ tự phải là số nguyên từ 1 trở lên.</span> : null}
+          </label>
+        </div>
         <fieldset>
           <legend className="mb-1 text-xs font-semibold text-foreground">
             Loại chức vụ <span className="text-danger">*</span>
@@ -119,20 +141,6 @@ function PositionForm({ target, onClose }: { target: PositionFormTarget; onClose
             ))}
           </div>
         </fieldset>
-        <label className="block">
-          <span className="mb-1 block text-xs font-semibold text-foreground">Thứ tự hiển thị</span>
-          <Input
-            disabled={editing && detailQuery.isLoading}
-            inputMode="numeric"
-            min={1}
-            onChange={(event) => setOrder(event.target.value)}
-            placeholder="Để trống để xếp cuối cùng"
-            type="number"
-            value={currentOrder}
-          />
-          <span className="mt-1 block text-xs text-muted">Bắt đầu từ 1; linh mục tuyên úy luôn đứng đầu (thứ tự 0).</span>
-          {orderInvalid ? <span className="mt-1 block text-xs text-danger">Thứ tự phải là số nguyên từ 1 trở lên.</span> : null}
-        </label>
       </div>
       <div className="mt-5 flex justify-end gap-3">
         <Button onClick={onClose} type="button" variant="outline">

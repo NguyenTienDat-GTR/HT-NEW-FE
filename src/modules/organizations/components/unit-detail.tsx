@@ -70,8 +70,8 @@ export function UnitDetail({ kind, id, row }: { kind: UnitKind; id: string; row:
   );
 
   return (
-    <div className="space-y-5">
-      <section className="rounded-xl border border-border bg-white p-5 shadow-sm">
+    <div className="space-y-3">
+      <section className="rounded-xl border border-border bg-white p-4 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="text-xs font-semibold uppercase text-muted">{UNIT_LABEL[kind]}</p>
@@ -83,42 +83,42 @@ export function UnitDetail({ kind, id, row }: { kind: UnitKind; id: string; row:
             {isLockedByParent(row) ? <Badge tone="warning">Ngưng theo đơn vị cha</Badge> : null}
           </div>
         </div>
-        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <div className="mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
           {STATS[kind].map((stat) => (
-            <div className={cn("rounded-lg border px-3 py-2.5", STAT_TONES[stat.tone])} key={stat.key}>
+            <div className={cn("rounded-lg border px-3 py-2", STAT_TONES[stat.tone])} key={stat.key}>
               <p className="text-xs font-medium opacity-80">{stat.label}</p>
-              <p className="mt-0.5 text-2xl font-semibold">{typeof row[stat.key] === "number" ? (row[stat.key] as number).toLocaleString("vi-VN") : "0"}</p>
+              <p className="mt-0.5 text-xl font-semibold leading-7">{typeof row[stat.key] === "number" ? (row[stat.key] as number).toLocaleString("vi-VN") : "0"}</p>
             </div>
           ))}
         </div>
       </section>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <FieldsCard fields={GENERAL_FIELDS[kind]} row={row} title="Thông tin chung" />
-        <FieldsCard fields={CONTACT_FIELDS} row={row} title="Liên hệ" />
+      <div className="grid gap-3 md:grid-cols-[3fr_2fr]">
+        <FieldsCard columns={3} fields={GENERAL_FIELDS[kind]} row={row} title="Thông tin chung" />
+        <FieldsCard columns={1} fields={CONTACT_FIELDS} row={row} title="Liên hệ" />
       </div>
 
       <ExecutiveBoardSection kind={kind} unitId={id} />
 
       <UnitStatusHistory endpoint={`/${kind}`} unitId={id} />
 
-      <FieldsCard fields={AUDIT_FIELDS} row={row} title="Lịch sử ghi nhận" />
+      <FieldsCard columns={4} fields={AUDIT_FIELDS} row={row} title="Lịch sử ghi nhận" />
     </div>
   );
 }
 
-function FieldsCard({ title, fields, row }: { title: string; fields: Field[]; row: Record<string, unknown> }) {
+function FieldsCard({ title, fields, row, columns = 2 }: { title: string; fields: Field[]; row: Record<string, unknown>; columns?: 1 | 2 | 3 | 4 }) {
   return (
-    <section className="rounded-xl border border-border bg-white p-5 shadow-sm">
+    <section className="rounded-xl border border-border bg-white p-4 shadow-sm">
       <h2 className="text-sm font-semibold text-foreground">{title}</h2>
-      <dl className="mt-3 grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
+      <dl className={cn("mt-2.5 grid grid-cols-1 gap-x-4 gap-y-3", columns === 2 && "sm:grid-cols-2", columns === 3 && "sm:grid-cols-3", columns === 4 && "sm:grid-cols-2 xl:grid-cols-4")}>
         {fields.map(({ key, label }) => {
           const value = row[key];
           const empty = value === null || value === undefined || value === "";
           return (
             <div key={key}>
               <dt className="text-xs font-medium text-muted">{label}</dt>
-              <dd className="mt-1 break-words text-sm leading-6 text-foreground">
+              <dd className="mt-0.5 break-words text-sm leading-5 text-foreground">
                 {empty ? <span className="text-muted">—</span> : <ResourceCell column={key} displayMode="detail" row={row} value={value} />}
               </dd>
             </div>

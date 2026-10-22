@@ -226,13 +226,13 @@ export function CertificateDetailDrawer({ id, onClose, endpoint }: { id?: string
         <Dialog.Content
           className={cn(
             "fixed bottom-0 right-0 top-0 z-50 flex w-full flex-col border-l border-border bg-white shadow-[var(--shadow-elevated)] transition-[max-width] duration-200 focus:outline-none",
-            expanded ? "max-w-[1280px]" : "max-w-[760px]",
+            expanded ? "max-w-[1280px]" : "max-w-[860px]",
           )}
         >
-          <div className="flex items-start justify-between gap-4 border-b border-border px-6 py-5">
+          <div className="flex items-start justify-between gap-4 border-b border-border px-5 py-3.5">
             <div className="min-w-0">
-              <Dialog.Title className="text-lg font-semibold leading-[26px] text-foreground">Chi tiết chứng nhận</Dialog.Title>
-              <Dialog.Description className="mt-1 truncate text-sm text-muted">
+              <Dialog.Title className="text-base font-semibold leading-6 text-foreground">Chi tiết chứng nhận</Dialog.Title>
+              <Dialog.Description className="mt-0.5 truncate text-[13px] text-muted">
                 {row ? `${String(row.certificateCode ?? "")} · ${String(row.leaderFullName ?? "")}` : "Đang tải thông tin chứng nhận"}
               </Dialog.Description>
             </div>
@@ -257,7 +257,7 @@ export function CertificateDetailDrawer({ id, onClose, endpoint }: { id?: string
             </div>
           </div>
 
-          <div className="min-h-0 flex-1 overflow-y-auto bg-slate-50 p-6">
+          <div className="min-h-0 flex-1 overflow-y-auto bg-slate-50 p-4">
             <CertificateDetailBody detail={detail} split={expanded} />
           </div>
         </Dialog.Content>
@@ -270,13 +270,13 @@ function Section({ section, row }: { section: SectionSpec; row: Detail }) {
   const fields = section.fields.filter((field) => (field.always || hasValue(row[field.key])) && (field.show?.(row) ?? true));
   if (fields.length === 0) return null;
   return (
-    <section className={cn("rounded-xl border bg-white p-5 shadow-sm", section.tone === "danger" ? "border-danger/30" : "border-border")}>
+    <section className={cn("rounded-xl border bg-white p-4 shadow-sm", section.tone === "danger" ? "border-danger/30" : "border-border")}>
       <h2 className={cn("text-sm font-semibold", section.tone === "danger" ? "text-danger" : "text-foreground")}>{section.title}</h2>
-      <dl className="mt-3 grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2">
+      <dl className="mt-2.5 grid grid-cols-1 gap-x-4 gap-y-2.5 sm:grid-cols-2 min-[900px]:grid-cols-3">
         {fields.map((field) => (
-          <div className={field.fullWidth ? "sm:col-span-2" : undefined} key={field.key}>
+          <div className={field.fullWidth ? "sm:col-span-2 min-[900px]:col-span-3" : undefined} key={field.key}>
             <dt className="text-xs font-medium text-muted">{field.label}</dt>
-            <dd className="mt-0.5 break-words text-sm leading-6 text-foreground">
+            <dd className="mt-0.5 break-words text-sm leading-5 text-foreground">
               {!hasValue(row[field.key]) ? (
                 <span className="text-muted">Chưa có</span>
               ) : field.render ? (
@@ -294,9 +294,9 @@ function Section({ section, row }: { section: SectionSpec; row: Detail }) {
 
 function PreviewPanel({ preview, loading, error, approved }: { preview?: Preview; loading: boolean; error?: string; approved: boolean }) {
   return (
-    <section className="rounded-xl border border-border bg-white p-5 shadow-sm">
+    <section className="rounded-xl border border-border bg-white p-4 shadow-sm">
       <h2 className="text-sm font-semibold text-foreground">Xem trước chứng nhận</h2>
-      <div className="mt-3">
+      <div className="mt-2.5">
         {loading ? <div className="aspect-[1.414/1] w-full rounded-lg bg-surface-2 motion-safe:animate-pulse" /> : null}
         {error ? <p className="text-sm text-danger">{error}</p> : null}
         {preview && !preview.configured ? (

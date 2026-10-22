@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { HelpTip } from "@/components/ui/help-tip";
 import { Input } from "@/components/ui/input";
 import { apiFetch, apiMutation, getApiErrorMessage } from "@/lib/api/client";
 import { useAuthStore, type AuthUser } from "@/lib/auth/auth-store";
@@ -95,16 +96,20 @@ function AssignmentForm({ onClose }: { onClose: () => void }) {
     onError: (error) => toast.error(getApiErrorMessage(error)),
   });
 
+  const guide = unitType
+    ? `Phân công huynh trưởng vào chức vụ cấp ${LEVEL_LABELS[unitType].toLowerCase()}. Muốn đổi người giữ chức vụ, hãy vô hiệu hóa phân công hiện tại trước.`
+    : "Phân công huynh trưởng vào chức vụ.";
   const canSubmit = Boolean(currentLeaderId && currentPosition) && !dateInvalid && !missingUnit;
 
   return (
     <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[calc(100vw-32px)] max-w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border bg-white p-5 shadow-2xl focus:outline-none">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <Dialog.Title className="text-lg font-semibold text-foreground">Phân công ban điều hành</Dialog.Title>
-          <Dialog.Description className="mt-1 text-sm text-muted">
-            {unitType ? `Phân công huynh trưởng vào chức vụ cấp ${LEVEL_LABELS[unitType].toLowerCase()}. Muốn đổi người giữ chức vụ, hãy vô hiệu hóa phân công hiện tại trước.` : "Phân công huynh trưởng vào chức vụ."}
-          </Dialog.Description>
+          <div className="flex items-center gap-1.5">
+            <Dialog.Title className="text-lg font-semibold text-foreground">Phân công ban điều hành</Dialog.Title>
+            <HelpTip label="Hướng dẫn phân công">{guide}</HelpTip>
+          </div>
+          <Dialog.Description className="sr-only">{guide}</Dialog.Description>
         </div>
         <Dialog.Close asChild>
           <Button aria-label="Đóng" size="icon" variant="ghost">

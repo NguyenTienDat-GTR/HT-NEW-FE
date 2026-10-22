@@ -8,6 +8,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { HelpTip } from "@/components/ui/help-tip";
 import { Panel } from "@/components/ui/panel";
 import type { RouteConfig } from "@/config/routes/routes";
 import { apiFetch, apiMutation, getApiErrorMessage } from "@/lib/api/client";
@@ -16,8 +17,8 @@ import { canUseAction, hasPermissionPrefix } from "@/lib/auth/permissions";
 import { CertificateConfigPicker } from "@/modules/certificates/components/certificate-config-picker";
 import { cn } from "@/lib/utils";
 import { resolveRouteForUser } from "@/modules/workspace/super-admin-route-overrides";
-import { FormField } from "./form-controls";
-import { getLeaderCreateStepFields, LeaderCreateFormLayout, leaderCreateStepCount } from "./leader-create-form-layout";
+import { FormSections } from "./form-sections";
+import { LeaderFormLayout } from "./leader-form-layout";
 import { getFormSpec } from "./registry";
 import type { FormFieldSpec, ResourceFormMode } from "./types";
 
@@ -45,7 +46,6 @@ export function ResourceFormPage({
   const canOpen = canUseAction(user, action);
   const [values, setValues] = useState<Record<string, unknown>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [leaderCreateStep, setLeaderCreateStep] = useState(0);
 
   const detailQuery = useQuery({
     queryKey: ["resource-detail", effectiveRoute.endpoint, id],
@@ -113,107 +113,77 @@ export function ResourceFormPage({
   }
 
   const title = mode === "create" ? (spec.createTitle ?? effectiveRoute.primaryActionLabel ?? effectiveRoute.title) : (spec.editTitle ?? `Chỉnh sửa ${effectiveRoute.title.toLowerCase()}`);
-  const sections = groupFields(visibleFields);
-  const compactAccountForm = effectiveRoute.kind === "accounts";
-  const horizontalSections = shouldUseHorizontalSections(effectiveRoute.kind, mode);
-  const leaderCreateLayout = shouldUseLeaderCreateLayout(effectiveRoute.kind, mode);
-  const leaderImageField = leaderCreateLayout ? visibleFields.find((field) => field.name === "imageUrl") : undefined;
-  const leaderFormFields = leaderCreateLayout ? visibleFields.filter((field) => field.name !== "imageUrl") : visibleFields;
-  const currentLeaderCreateFields = leaderCreateLayout ? getLeaderCreateStepFields(leaderFormFields, leaderCreateStep) : [];
-  const leaderCreateCanContinue = leaderCreateLayout && leaderCreateStep < leaderCreateStepCount - 1;
-
-  function handlePrimaryAction() {
-    if (leaderCreateCanContinue) {
-      const nextErrors = validateFields(currentLeaderCreateFields, mergedValues);
-      setErrors(nextErrors);
-      if (Object.keys(nextErrors).length) {
-        toast.error("Vui lòng kiểm tra các trường bắt buộc");
-        return;
-      }
-      setLeaderCreateStep((step) => Math.min(step + 1, leaderCreateStepCount - 1));
-      return;
-    }
-    mutation.mutate();
-  }
+  const leaderLayout = effectiveRoute.kind === "leaders";
+  const leaderImageField = leaderLayout ? visibleFields.find((field) => field.name === "imageUrl") : undefined;
+  const sectionFields = leaderLayout ? visibleFields.filter((field) => field.name !== "imageUrl") : visibleFields;
+  const compactForm = visibleFields.length <= 4 && !leaderLayout;
 
   function handleFieldChange(field: FormFieldSpec, value: FormValue) {
     setValues((current) => nextValuesForField(current, field.name, value, mergedValues));
   }
 
+  function handleOtherFieldChange(fieldName: string, value: FormValue) {
+    setValues((current) => ({ ...current, [fieldName]: value }));
+  }
+
+  const backHref = (returnTo ?? effectiveRoute.path) as Route;
+
   return (
-    <div className={cn("mx-auto space-y-6 pb-24", leaderCreateLayout ? "max-w-[960px]" : horizontalSections ? "max-w-[1180px]" : "max-w-[860px]")}>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <Link className="mb-2 inline-flex items-center gap-2 text-xs font-semibold text-primary" href={(returnTo ?? effectiveRoute.path) as Route}>
-            <ArrowLeft size={16} />
-            Quay lại danh sách
-          </Link>
-          <h1 className="text-2xl font-bold leading-8 tracking-[0] text-foreground">{title}</h1>
-          {leaderCreateLayout ? null : <p className="mt-1 max-w-[72ch] text-sm leading-5 text-muted">{spec.description ?? effectiveRoute.subtitle}</p>}
+    <div className={cn("mx-auto space-y-4 pb-20", compactForm ? "max-w-[720px]" : "max-w-[1120px]")}>
+      <div>
+        <Link className="mb-1 inline-flex items-center gap-1.5 text-xs font-semibold text-primary" href={backHref}>
+          <ArrowLeft size={14} />
+          Quay lại danh sách
+        </Link>
+        <div className="flex flex-wrap items-center gap-x-2">
+          <h1 className="text-xl font-bold leading-7 tracking-[0] text-foreground">{title}</h1>
+          {spec.description ?? effectiveRoute.subtitle ? (
+            <HelpTip label="Mô tả màn hình">{spec.description ?? effectiveRoute.subtitle}</HelpTip>
+          ) : null}
         </div>
       </div>
 
-      {leaderCreateLayout ? (
-        <LeaderCreateFormLayout
-          currentStep={leaderCreateStep}
+      {detailQuery.isLoading ? (
+        <Panel className="h-60 animate-pulse" />
+      ) : leaderLayout ? (
+        <LeaderFormLayout
           errors={errors}
-          fields={leaderFormFields}
+          fields={sectionFields}
           imageField={leaderImageField}
           mode={mode}
           onChange={handleFieldChange}
-          onFieldChange={(fieldName, value) => setValues((current) => ({ ...current, [fieldName]: value }))}
-          onStepSelect={setLeaderCreateStep}
+          onFieldChange={handleOtherFieldChange}
           user={user}
           values={mergedValues}
         />
       ) : (
-        <div className={horizontalSections ? sectionGridClass(sections.length) : "space-y-6"}>
-          {detailQuery.isLoading ? (
-            <Panel className="h-72 animate-pulse" />
-          ) : (
-            sections.map(([section, fields]) => (
-              <Panel className={cn(compactAccountForm || horizontalSections ? "p-6" : "p-6", horizontalSections && "h-full")} key={section}>
-                <h2 className="mb-4 border-l-4 border-primary pl-3 text-lg font-semibold leading-[26px] text-foreground">{section}</h2>
-                <div className={fieldGridClass(compactAccountForm, horizontalSections)}>
-                  {fields.map((field) => (
-                    <div className={fieldLayoutClass(field, horizontalSections)} key={field.name}>
-                      <FormField
-                        error={errors[field.name]}
-                        field={field}
-                        mode={mode}
-                        onChange={(value) => handleFieldChange(field, value)}
-                        onFieldChange={(fieldName, value) => setValues((current) => ({ ...current, [fieldName]: value }))}
-                        user={user}
-                        value={mergedValues[field.name] as FormValue}
-                        values={mergedValues}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </Panel>
-            ))
-          )}
-        </div>
+        <FormSections errors={errors} fields={sectionFields} mode={mode} onChange={handleFieldChange} onFieldChange={handleOtherFieldChange} user={user} values={mergedValues} />
       )}
 
       {mode === "edit" &&
       effectiveRoute.kind === "course-types" &&
       requiresCertification(mergedValues) &&
       hasPermissionPrefix(user, "training.certificate_config.read.") ? (
-        <Panel className="space-y-4 p-6">
-          <h2 className="border-l-4 border-primary pl-3 text-lg font-semibold leading-[26px] text-foreground">Cấu hình chứng nhận</h2>
+        <Panel className="space-y-3 p-4">
+          <h2 className="flex items-center gap-2 text-sm font-semibold leading-5 text-foreground">
+            <span aria-hidden className="h-4 w-1 rounded-full bg-primary" />
+            Cấu hình chứng nhận
+          </h2>
           <CertificateConfigPicker courseTypeCode={String(id)} courseTypeName={String(mergedValues.typeName ?? "")} />
         </Panel>
       ) : null}
 
-      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-white/95 px-4 py-3 shadow-[var(--shadow-bottom-bar)] backdrop-blur-md">
-        <div className={cn("mx-auto flex justify-end gap-3", leaderCreateLayout ? "max-w-[960px]" : "max-w-[1180px]")}>
+      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-white/95 px-4 py-2.5 shadow-[var(--shadow-bottom-bar)] backdrop-blur-md">
+        <div className={cn("mx-auto flex justify-end gap-3", compactForm ? "max-w-[720px]" : "max-w-[1120px]")}>
           <Button asChild variant="outline">
-            <Link href={(returnTo ?? effectiveRoute.path) as Route}>{leaderCreateLayout ? "Hủy" : <><X size={16} />Hủy</>}</Link>
+            <Link href={backHref}>
+              <X size={16} />
+              Hủy
+            </Link>
           </Button>
-          <Button loading={mutation.isPending} onClick={handlePrimaryAction} type="button">
-            {leaderCreateCanContinue ? null : <FloppyDisk size={16} />}
-            {leaderCreateCanContinue ? "Tiếp tục" : spec.submitLabel ?? (mode === "create" ? "Tạo mới" : "Lưu cập nhật")}
+          <Button loading={mutation.isPending} onClick={() => mutation.mutate()} type="button">
+            <FloppyDisk size={16} />
+            {spec.submitLabel ?? (mode === "create" ? "Tạo mới" : "Lưu cập nhật")}
           </Button>
         </div>
       </div>
@@ -245,45 +215,6 @@ function nextValuesForField(current: Record<string, unknown>, fieldName: string,
 function requiresCertification(values: Record<string, unknown>) {
   const level = values.resultingLevel;
   return typeof level === "string" && level !== "" && level !== "NONE";
-}
-
-function groupFields(fields: FormFieldSpec[]) {
-  const groups = new Map<string, FormFieldSpec[]>();
-  fields.forEach((field) => {
-    const section = field.section ?? "Thông tin";
-    groups.set(section, [...(groups.get(section) ?? []), field]);
-  });
-  return Array.from(groups.entries());
-}
-
-function shouldUseLeaderCreateLayout(kind: RouteConfig["kind"], mode: ResourceFormMode) {
-  return mode === "create" && kind === "leaders";
-}
-
-function shouldUseHorizontalSections(kind: RouteConfig["kind"], mode: ResourceFormMode) {
-  return mode === "edit" && ["leaders", "dioceses", "deaneries", "parishes"].includes(kind);
-}
-
-function sectionGridClass(sectionCount: number) {
-  if (sectionCount >= 4) return "grid gap-4 lg:grid-cols-2 xl:grid-cols-4";
-  if (sectionCount === 3) return "grid gap-4 lg:grid-cols-3";
-  if (sectionCount === 2) return "grid gap-4 lg:grid-cols-2";
-  return "space-y-3";
-}
-
-function fieldGridClass(compactAccountForm: boolean, horizontalSections: boolean) {
-  if (horizontalSections) return "grid gap-5";
-  if (compactAccountForm) return "grid gap-5 md:grid-cols-2";
-  return "grid gap-5 md:grid-cols-2 xl:grid-cols-3";
-}
-
-function fieldLayoutClass(field: FormFieldSpec, horizontalSections = false) {
-  if (horizontalSections) return undefined;
-  if (field.type === "image") return "md:col-span-2 xl:col-span-3";
-  if (field.type === "checkbox-list") return "md:col-span-2 xl:col-span-3";
-  if (field.type === "textarea" || field.type === "multiselect") return "md:col-span-2";
-  if (field.type === "registration-list") return "md:col-span-2 xl:col-span-3";
-  return undefined;
 }
 
 function validateFields(fields: FormFieldSpec[], values: Record<string, unknown>) {
