@@ -1,4 +1,4 @@
-import { Bell, FileText, LockKey, Medal, ShieldCheck, Stairs } from "@phosphor-icons/react";
+import { Bell, FileText, Key, LockKey, Medal, ShieldCheck, Stairs } from "@phosphor-icons/react";
 import { route, type RouteGroup } from "../route-config";
 
 export const systemRouteGroup: RouteGroup = {
@@ -349,6 +349,16 @@ export const systemRouteGroup: RouteGroup = {
       columns: ["title", "eventType", "courseCode", "readAt", "createdAt", "status"],
       permissionPrefixes: [],
       filterLabels: ["Tất cả", "Chưa đọc", "Đã đọc"],
+    }),
+    route({
+      path: "/my-permissions",
+      moduleName: "system.my-permission",
+      title: "Quyền của tôi",
+      subtitle: "Danh sách quyền đang có hiệu lực của tài khoản và vai trò hiện tại.",
+      kind: "my-permissions",
+      icon: Key,
+      columns: [],
+      permissionPrefixes: [],
     }),
     route({
       path: "/system/leader-levels",

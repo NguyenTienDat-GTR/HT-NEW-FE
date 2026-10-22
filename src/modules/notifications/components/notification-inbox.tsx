@@ -3,7 +3,7 @@
 import { Bell, Certificate, Check, Checks, GraduationCap, MagnifyingGlass, ShieldCheck, TreeStructure, Tray } from "@phosphor-icons/react";
 import type { Route } from "next";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ResourcePagination } from "@/components/common/resource/resource-pagination";
 import type { ResourcePageSize } from "@/components/common/resource/use-resource-query-state";
@@ -19,7 +19,8 @@ import {
   useUnreadNotificationCount,
   type NotificationItem,
 } from "@/modules/notifications/hooks";
-import { notificationGroupOf, notificationGroups, notificationHref, relativeTime, type NotificationGroupKey } from "@/modules/notifications/notification-meta";
+import { MY_PERMISSIONS_PATH, notificationDetail, notificationGroupOf, notificationGroups, notificationHref, relativeTime, type NotificationGroupKey } from "@/modules/notifications/notification-meta";
+import { NotificationDetailModal } from "./notification-detail-modal";
 import { useSessionState } from "@/lib/use-session-state";
 
 type Filter = "all" | "unread" | NotificationGroupKey;
@@ -77,8 +78,15 @@ export function NotificationInbox() {
   const sections = useMemo(() => groupByDay(visible), [visible]);
   const unreadOnPage = notifications.filter((item) => !item.readAt).map((item) => item.id);
 
+  const [detailItem, setDetailItem] = useState<NotificationItem | null>(null);
+
   function openNotification(item: NotificationItem) {
     if (!item.readAt && !markRead.isPending) markRead.mutate(item.id);
+    // Thông báo gom nhóm / danh sách quyền: mở modal danh sách thay vì chuyển trang.
+    if (notificationDetail(item)) {
+      setDetailItem(item);
+      return;
+    }
     router.push(notificationHref(item) as Route);
   }
 
@@ -234,6 +242,14 @@ export function NotificationInbox() {
           />
         </Panel>
       </div>
+      <NotificationDetailModal
+        item={detailItem}
+        onClose={() => setDetailItem(null)}
+        onViewPermissions={() => {
+          setDetailItem(null);
+          router.push(MY_PERMISSIONS_PATH as Route);
+        }}
+      />
     </div>
   );
 }

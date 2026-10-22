@@ -9,7 +9,8 @@ import { toast } from "sonner";
 import { getApiErrorMessage } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
 import { useMarkAllNotificationsRead, useMarkNotificationRead, useNotifications, useUnreadNotificationCount, type NotificationItem } from "../hooks";
-import { notificationBadgeLabel, notificationGroupOf, notificationGroups, notificationHref, relativeTime, type NotificationGroupKey } from "../notification-meta";
+import { MY_PERMISSIONS_PATH, notificationBadgeLabel, notificationDetail, notificationGroupOf, notificationGroups, notificationHref, relativeTime, type NotificationGroupKey } from "../notification-meta";
+import { NotificationDetailModal } from "./notification-detail-modal";
 
 // Popup chỉ lấy 30 thông báo mới nhất; xem thêm ở trang Trung tâm thông báo.
 const POPUP_LIMIT = 30;
@@ -28,6 +29,7 @@ export function NotificationPopover() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [filter, setFilter] = useState<Filter>("all");
+  const [detailItem, setDetailItem] = useState<NotificationItem | null>(null);
   const unreadCountQuery = useUnreadNotificationCount();
   const listQuery = useNotifications({ page: 0, size: POPUP_LIMIT }, { enabled: open });
   const markRead = useMarkNotificationRead();
@@ -50,6 +52,11 @@ export function NotificationPopover() {
   function openItem(item: NotificationItem) {
     if (!item.readAt && !markRead.isPending) markRead.mutate(item.id);
     setOpen(false);
+    // Thông báo gom nhóm / danh sách quyền: mở modal danh sách thay vì chuyển trang.
+    if (notificationDetail(item)) {
+      setDetailItem(item);
+      return;
+    }
     router.push(notificationHref(item) as Route);
   }
 
@@ -64,6 +71,7 @@ export function NotificationPopover() {
   const filters: { key: Filter; label: string }[] = [{ key: "all", label: "Tất cả" }, { key: "unread", label: "Chưa đọc" }, ...notificationGroups];
 
   return (
+    <>
     <Popover.Root onOpenChange={setOpen} open={open}>
       <Popover.Trigger asChild>
         <button
@@ -187,5 +195,14 @@ export function NotificationPopover() {
         </Popover.Content>
       </Popover.Portal>
     </Popover.Root>
+    <NotificationDetailModal
+      item={detailItem}
+      onClose={() => setDetailItem(null)}
+      onViewPermissions={() => {
+        setDetailItem(null);
+        router.push(MY_PERMISSIONS_PATH as Route);
+      }}
+    />
+    </>
   );
 }

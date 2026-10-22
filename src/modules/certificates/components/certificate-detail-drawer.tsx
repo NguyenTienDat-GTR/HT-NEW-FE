@@ -97,7 +97,6 @@ const SECTIONS: SectionSpec[] = [
     title: "Kết quả học tập",
     fields: [
       { key: "totalScore", label: "Tổng điểm" },
-      { key: "passingScore", label: "Điểm đạt" },
       { key: "passed", label: "Đánh giá điểm" },
       { key: "scoreNote", label: "Nhận xét", fullWidth: true },
     ],
