@@ -103,6 +103,8 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
   const scoreComponentsQuery = useQuery({
     queryKey: ["score-components", scoreCourseCode],
     enabled: scoreEntryEnabled,
+    // Thành phần điểm có thể bị tắt/bật ở màn hình khác: luôn lấy lại danh sách cột khi vào tab chấm điểm.
+    refetchOnMount: "always",
     queryFn: () => apiFetch<ScoreComponent[]>(`/training/courses/${encodeURIComponent(String(scoreCourseCode))}/score-components`),
   });
   const canBulkApprove = Boolean(config.bulkApprovePath) && canUseAction(user, effectiveRoute.actions?.approve) && !courseDisabled;
