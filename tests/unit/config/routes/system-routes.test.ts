@@ -2,21 +2,12 @@ import { describe, expect, it } from "vitest";
 import { systemRouteGroup } from "@/config/routes/groups/system";
 
 describe("system route filters", () => {
-  it("includes effect filter on permission catalog list", () => {
+  it("filters permission catalog list by taxonomy and not by effect", () => {
     const permissionRoute = systemRouteGroup.children.find((route) => route.path === "/system/permissions");
 
+    expect(permissionRoute?.filters?.some((filter) => filter.key === "effect")).toBe(false);
     expect(permissionRoute?.filters).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          key: "effect",
-          label: "Hiệu lực",
-          type: "select",
-          options: [
-            { value: "ALLOW", label: "Cho phép" },
-            { value: "DENY", label: "Từ chối" },
-          ],
-        }),
-      ]),
+      expect.arrayContaining([expect.objectContaining({ key: "module.moduleCode", type: "select" })]),
     );
   });
 

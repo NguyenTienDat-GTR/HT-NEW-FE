@@ -38,7 +38,8 @@ describe("resolveRouteForUser", () => {
       type: "select",
       optionsEndpoint: "/system/roles",
     });
-    expect(route.filters).toEqual(expect.arrayContaining([expect.objectContaining({ key: "effect", type: "select" })]));
+    // Hiệu lực (ALLOW/DENY) không còn là bộ lọc của màn phân quyền vai trò.
+    expect(route.filters?.some((filter) => filter.key === "effect")).toBe(false);
     expect(route.filters).toEqual(expect.arrayContaining([expect.objectContaining({ key: "permission.module.moduleCode", type: "select" })]));
   });
 
@@ -50,7 +51,8 @@ describe("resolveRouteForUser", () => {
       type: "text",
     });
     expect(route.filters?.[0]).not.toHaveProperty("optionsEndpoint");
-    expect(route.filters).toEqual(expect.arrayContaining([expect.objectContaining({ key: "effect", type: "select" })]));
+    // Hiệu lực (ALLOW/DENY) không còn là bộ lọc của màn phân quyền vai trò.
+    expect(route.filters?.some((filter) => filter.key === "effect")).toBe(false);
     expect(route.filters).toEqual(expect.arrayContaining([expect.objectContaining({ key: "permission.scope.scopeCode", type: "select" })]));
   });
 });
