@@ -7,6 +7,10 @@ export type Option = {
   group?: string;
   disabled?: boolean;
   disabledReason?: string;
+  // Các dòng thông tin phụ hiển thị dưới nhãn (ví dụ vai trò, huynh trưởng, giáo xứ, giáo hạt của tài khoản).
+  details?: string[];
+  // Phân loại quyền để lọc trong danh sách tick quyền.
+  taxonomy?: { module?: string; resource?: string; action?: string; scope?: string };
 };
 
 export type FieldType = "text" | "email" | "url" | "image" | "number" | "date" | "datetime" | "textarea" | "select" | "multiselect" | "checkbox-list" | "radio" | "switch" | "registration-list";
@@ -33,6 +37,8 @@ export type FormFieldSpec = {
   excludeOptionValues?: string[];
   excludeOptionValuesWhen?: (user: AuthUser | null) => string[];
   searchable?: boolean;
+  // Trường chiếm trọn chiều ngang của nhóm (và nhóm chứa nó chiếm trọn hàng) để hiển thị đủ nội dung.
+  wide?: boolean;
   primaryFieldName?: string;
   primaryLabel?: string;
   createOnly?: boolean;

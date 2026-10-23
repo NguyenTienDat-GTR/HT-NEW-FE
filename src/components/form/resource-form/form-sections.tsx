@@ -32,7 +32,7 @@ export function planFormSections(fields: FormFieldSpec[]): FormSectionPlan[] {
   return groupFields(fields).map(([title, sectionFields]) => ({
     title,
     fields: sectionFields,
-    size: sectionFields.length <= COMPACT_MAX_FIELDS && !sectionFields.some((field) => BULKY_TYPES.has(field.type ?? "text")) ? "compact" : "full",
+    size: sectionFields.length <= COMPACT_MAX_FIELDS && !sectionFields.some((field) => field.wide || BULKY_TYPES.has(field.type ?? "text")) ? "compact" : "full",
   }));
 }
 
@@ -102,6 +102,7 @@ export function FormSections({
 
 function fieldSpanClass(field: FormFieldSpec, threeColumns: boolean) {
   const type = field.type ?? "text";
+  if (field.wide) return threeColumns ? "sm:col-span-2 xl:col-span-3" : "sm:col-span-2";
   if (BULKY_TYPES.has(type)) return threeColumns ? "sm:col-span-2 xl:col-span-3" : "sm:col-span-2";
   if (type === "textarea" || type === "multiselect" || type === "switch") return threeColumns ? "sm:col-span-2 xl:col-span-3" : "sm:col-span-2";
   return undefined;
