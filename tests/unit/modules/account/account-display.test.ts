@@ -4,7 +4,7 @@ import { displayName, initials, primaryRoleName, roleLabel } from "@/modules/acc
 describe("account display helpers", () => {
   it("maps role codes to Vietnamese labels", () => {
     expect(roleLabel("ADMIN_DIOCESE")).toBe("Admin Liên đoàn");
-    expect(roleLabel("ROLE_SUPER_ADMIN")).toBe("Quản trị tối cao");
+    expect(roleLabel("ROLE_SUPER_ADMIN")).toBe("Quản trị viên");
   });
 
   it("prefers the primary role name from the profile", () => {

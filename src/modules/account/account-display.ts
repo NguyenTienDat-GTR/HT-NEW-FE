@@ -4,7 +4,7 @@ export const PROFILE_PATH = "/profile";
 
 /** Nhãn dự phòng theo mã, chỉ dùng khi hồ sơ (có tên vai trò từ DB) chưa tải xong. */
 const roleLabels: Record<string, string> = {
-  SUPER_ADMIN: "Quản trị tối cao",
+  SUPER_ADMIN: "Quản trị viên",
   ADMIN_DIOCESE: "Admin Liên đoàn",
   ADMIN_DEANERY: "Admin Hiệp đoàn",
   ADMIN_PARISH: "Admin Xứ đoàn",
