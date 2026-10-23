@@ -198,6 +198,11 @@ export function NotificationPopover() {
     <NotificationDetailModal
       item={detailItem}
       onClose={() => setDetailItem(null)}
+      onOpenTarget={() => {
+        const target = detailItem ? notificationHref(detailItem) : null;
+        setDetailItem(null);
+        if (target) router.push(target as Route);
+      }}
       onViewPermissions={() => {
         setDetailItem(null);
         router.push(MY_PERMISSIONS_PATH as Route);

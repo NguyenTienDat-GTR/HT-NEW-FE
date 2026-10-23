@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { apiFetch, type PageResponse } from "@/lib/api/client";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
+import { useLeaderLevelList } from "@/modules/leader-levels/leader-level-store";
 import { cn } from "@/lib/utils";
 import { formatDate } from "@/modules/leaders/components/leader-detail-utils";
 import { optionFromRow, rowsFromResponse } from "./api-utils";
@@ -129,6 +130,8 @@ function RegistrationCandidateModal({
   const [search, setSearch] = useState("");
   const [deaneryId, setDeaneryId] = useState("");
   const [parishId, setParishId] = useState("");
+  const [leaderLevel, setLeaderLevel] = useState("");
+  const levels = useLeaderLevelList();
   // Trang gắn với từ khóa đã gửi: đổi từ khóa thì tự về trang đầu.
   const debouncedSearch = useDebouncedValue(search).trim();
   const [pageState, setPageState] = useState({ page: 0, forSearch: "" });
@@ -171,12 +174,13 @@ function RegistrationCandidateModal({
   }, [added, exception, otherEntries]);
 
   const candidatesQuery = useQuery({
-    queryKey: ["registration-candidates", courseCode, mode, debouncedSearch, deaneryId, parishId, page, excludeIds.join(",")],
+    queryKey: ["registration-candidates", courseCode, mode, debouncedSearch, deaneryId, parishId, leaderLevel, page, excludeIds.join(",")],
     queryFn: () => {
       const params = new URLSearchParams({ mode: exception ? "EXCEPTION" : "ELIGIBLE", page: String(page), size: String(PAGE_SIZE) });
       if (debouncedSearch) params.set("search", debouncedSearch);
       if (deaneryId) params.set("deaneryId", deaneryId);
       if (parishId) params.set("parishId", parishId);
+      if (leaderLevel) params.set("leaderLevel", leaderLevel);
       excludeIds.forEach((id) => params.append("excludeLeaderIds", id));
       return apiFetch<PageResponse<RegistrationCandidate>>(`/training/courses/${encodeURIComponent(courseCode)}/registration-candidates?${params.toString()}`);
     },
@@ -295,6 +299,22 @@ function RegistrationCandidateModal({
               ))}
             </select>
           ) : null}
+          <select
+            aria-label="Lọc theo cấp huynh trưởng"
+            className="h-10 rounded-[8px] border border-border bg-white px-3 text-sm"
+            onChange={(event) => {
+              setLeaderLevel(event.target.value);
+              setPage(0);
+            }}
+            value={leaderLevel}
+          >
+            <option value="">Tất cả cấp độ</option>
+            {levels.map((level) => (
+              <option key={level.levelCode} value={level.levelCode}>
+                {level.levelName}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="min-h-0 flex-1 overflow-auto px-5 py-3">

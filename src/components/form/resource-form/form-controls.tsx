@@ -4,6 +4,7 @@ import { ImageSquare, UploadSimple } from "@phosphor-icons/react";
 import { useQuery } from "@tanstack/react-query";
 import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { formatPermissionTaxonomyValue } from "@/components/common/resource/permission-taxonomy-labels";
 import { HelpTip } from "@/components/ui/help-tip";
 import { Input } from "@/components/ui/input";
 import { apiFetch, type PageResponse } from "@/lib/api/client";
@@ -269,7 +270,7 @@ function OptionControl({
   const excludedValues = new Set([...(field.excludeOptionValues ?? []), ...(field.excludeOptionValuesWhen?.(user ?? null) ?? [])]);
   const filteredOptions = (field.options ?? apiOptions).filter((option) => !excludedValues.has(option.value));
   const currentValue = !multiple && !checkboxList ? String(value ?? "") : "";
-  const options = preserveCurrentOption(filteredOptions, currentValue, Boolean(field.optionsEndpoint && !field.options));
+  const options = preserveCurrentOption(filteredOptions, currentValue, Boolean(field.optionsEndpoint && !field.options), field.currentLabel);
 
   useEffect(() => {
     if (query.isLoading || field.options) return;
@@ -380,11 +381,11 @@ function OptionControl({
   );
 }
 
-function preserveCurrentOption(options: Option[], currentValue: string, remoteOptions: boolean) {
+function preserveCurrentOption(options: Option[], currentValue: string, remoteOptions: boolean, currentLabel?: string) {
   if (!remoteOptions || !currentValue || options.some((option) => option.value === currentValue)) {
     return options;
   }
-  return [{ value: currentValue, label: currentValue }, ...options];
+  return [{ value: currentValue, label: currentLabel || currentValue }, ...options];
 }
 
 function SearchableSelect({
@@ -399,7 +400,7 @@ function SearchableSelect({
   id: string;
   onChange: (value: FormValue) => void;
   onSearchChange?: (value: string) => void;
-  options: Array<{ value: string; label: string; group?: string; disabled?: boolean; disabledReason?: string }>;
+  options: Option[];
   placeholder?: string;
   readonly?: boolean;
   value: string;
@@ -410,13 +411,14 @@ function SearchableSelect({
   const filteredOptions = useMemo(() => {
     const keyword = search.trim().toLowerCase();
     if (!keyword) return options;
-    return options.filter((option) => `${option.label} ${option.value} ${option.group ?? ""}`.toLowerCase().includes(keyword));
+    return options.filter((option) => normalizeSearchText(`${option.label} ${option.value} ${option.group ?? ""} ${(option.details ?? []).join(" ")}`).includes(normalizeSearchText(keyword)));
   }, [options, search]);
 
   return (
     <div className="relative">
       <Input
-        className="h-10"
+        className="h-10 w-full min-w-0"
+        title={selected?.label}
         disabled={readonly}
         id={id}
         onBlur={() => window.setTimeout(() => setOpen(false), 120)}
@@ -435,7 +437,7 @@ function SearchableSelect({
         value={open ? search : selected?.label ?? ""}
       />
       {open && !readonly ? (
-        <div className="absolute z-30 mt-1 max-h-64 w-full overflow-y-auto rounded-[8px] border border-border bg-white p-1 shadow-lg">
+        <div className="absolute z-30 mt-1 max-h-80 w-full overflow-y-auto rounded-[8px] border border-border bg-white p-1 shadow-lg">
           {filteredOptions.length === 0 ? <p className="px-3 py-2 text-sm text-muted">Không có dữ liệu phù hợp</p> : null}
           {filteredOptions.map((option) => (
             <button
@@ -454,8 +456,16 @@ function SearchableSelect({
               }}
               type="button"
             >
-              <span className="block font-semibold">{option.label}</span>
-              <span className="block text-xs text-muted">{option.value}</span>
+              <span className="block break-words font-semibold">{option.label}</span>
+              {option.details && option.details.length > 0 ? (
+                <span className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted">
+                  {option.details.map((detail) => (
+                    <span className="break-words" key={detail}>{detail}</span>
+                  ))}
+                </span>
+              ) : (
+                <span className="block break-words text-xs text-muted">{option.value}</span>
+              )}
               {option.disabledReason ? <span className="block text-xs text-muted">{option.disabledReason}</span> : null}
             </button>
           ))}
@@ -478,19 +488,32 @@ function CheckboxList({
   fieldName: string;
   onChange: (value: FormValue) => void;
   onPrimaryChange?: (value: string) => void;
-  options: Array<{ value: string; label: string; group?: string; disabled?: boolean; disabledReason?: string }>;
+  options: Option[];
   primaryLabel?: string;
   primaryValue?: string;
   readonly?: boolean;
   value: string[];
 }) {
   const [search, setSearch] = useState("");
+  const [taxonomyFilter, setTaxonomyFilter] = useState<Record<TaxonomyKey, string>>({ module: "", resource: "", action: "", scope: "" });
   const selected = useMemo(() => new Set(value), [value]);
+  const taxonomyChoices = useMemo(() => {
+    const choices: Record<TaxonomyKey, string[]> = { module: [], resource: [], action: [], scope: [] };
+    TAXONOMY_FILTERS.forEach(({ key }) => {
+      choices[key] = Array.from(new Set(options.map((option) => option.taxonomy?.[key]).filter((item): item is string => Boolean(item))))
+        .sort((a, b) => (formatPermissionTaxonomyValue(key, a) ?? a).localeCompare(formatPermissionTaxonomyValue(key, b) ?? b, "vi"));
+    });
+    return choices;
+  }, [options]);
+  const hasTaxonomy = TAXONOMY_FILTERS.some(({ key }) => taxonomyChoices[key].length > 0);
   const filteredOptions = useMemo(() => {
-    const keyword = search.trim().toLowerCase();
-    if (!keyword) return options;
-    return options.filter((option) => `${option.label} ${option.value} ${option.group ?? ""}`.toLowerCase().includes(keyword));
-  }, [options, search]);
+    const keyword = normalizeSearchText(search.trim());
+    return options.filter((option) => {
+      if (TAXONOMY_FILTERS.some(({ key }) => taxonomyFilter[key] && option.taxonomy?.[key] !== taxonomyFilter[key])) return false;
+      return !keyword || normalizeSearchText(`${option.label} ${option.value} ${option.group ?? ""}`).includes(keyword);
+    });
+  }, [options, search, taxonomyFilter]);
+  const filterActive = Boolean(search.trim()) || TAXONOMY_FILTERS.some(({ key }) => taxonomyFilter[key]);
   const groups = useMemo(() => {
     const map = new Map<string, typeof options>();
     filteredOptions.forEach((option) => {
@@ -526,6 +549,40 @@ function CheckboxList({
         <Input className="h-10" disabled={readonly} onChange={(event) => setSearch(event.target.value)} placeholder="Tìm theo mã hoặc tên" value={search} />
         <span className="shrink-0 rounded-[8px] bg-primary/8 px-2.5 py-1.5 text-xs font-semibold text-primary">{selected.size} đã chọn</span>
       </div>
+      {hasTaxonomy ? (
+        <div className="flex flex-wrap items-center gap-2 border-b border-border p-2">
+          {TAXONOMY_FILTERS.filter(({ key }) => taxonomyChoices[key].length > 0).map(({ key, label, all }) => (
+            <select
+              aria-label={label}
+              className="h-9 min-w-0 flex-1 basis-40 rounded-lg border border-input bg-white px-2 text-xs text-foreground focus:border-primary focus:outline-none disabled:opacity-70"
+              disabled={readonly}
+              key={key}
+              onChange={(event) => setTaxonomyFilter((current) => ({ ...current, [key]: event.target.value }))}
+              value={taxonomyFilter[key]}
+            >
+              <option value="">{all}</option>
+              {taxonomyChoices[key].map((code) => (
+                <option key={code} value={code}>
+                  {formatPermissionTaxonomyValue(key, code)}
+                </option>
+              ))}
+            </select>
+          ))}
+          <span className="text-xs text-muted">Hiển thị {filteredOptions.length}/{options.length} quyền</span>
+          {filterActive ? (
+            <button
+              className="text-xs font-semibold text-primary"
+              onClick={() => {
+                setSearch("");
+                setTaxonomyFilter({ module: "", resource: "", action: "", scope: "" });
+              }}
+              type="button"
+            >
+              Xóa bộ lọc
+            </button>
+          ) : null}
+        </div>
+      ) : null}
       <div className="max-h-[280px] overflow-y-auto p-2">
         {groups.length === 0 ? <p className="py-4 text-center text-sm text-muted">Không có dữ liệu phù hợp</p> : null}
         {groups.map(([group, groupOptions]) => {
@@ -592,6 +649,15 @@ function CheckboxList({
     </div>
   );
 }
+
+type TaxonomyKey = "module" | "resource" | "action" | "scope";
+
+const TAXONOMY_FILTERS: Array<{ key: TaxonomyKey; label: string; all: string }> = [
+  { key: "module", label: "Lọc theo phân hệ", all: "Tất cả phân hệ" },
+  { key: "resource", label: "Lọc theo đối tượng", all: "Tất cả đối tượng" },
+  { key: "action", label: "Lọc theo thao tác", all: "Tất cả thao tác" },
+  { key: "scope", label: "Lọc theo phạm vi", all: "Tất cả phạm vi" },
+];
 
 function numericValue(value: string) {
   if (value === "") return "";

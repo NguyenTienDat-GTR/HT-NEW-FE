@@ -17,6 +17,10 @@ const accessEvents = new Set([
   "ACCOUNT_PERMISSION_TOGGLED",
   "ROLE_PERMISSION_GRANTED",
   "ACCOUNT_PERMISSION_GRANTED",
+  "ROLE_PERMISSION_REVOKED",
+  "ACCOUNT_PERMISSION_REVOKED",
+  "ROLE_PERMISSION_EXPIRED",
+  "ACCOUNT_PERMISSION_EXPIRED",
 ]);
 
 /** Trang xem quyền hiện có của chính tài khoản. */
@@ -25,11 +29,13 @@ export const MY_PERMISSIONS_PATH = "/my-permissions";
 export type NotificationDetailItem = { label: string; detail?: string; note?: string; code?: string };
 
 export type NotificationDetail = {
-  kind: "DECISION_LIST" | "PERMISSION_GRANT";
+  kind: "DECISION_LIST" | "PERMISSION_GRANT" | "PERMISSION_REVOKE";
   heading?: string;
   targetType?: string;
   targetName?: string;
   decision?: string;
+  // Người thực hiện (duyệt / từ chối / thu hồi...) để hiện trong bảng chi tiết.
+  actorName?: string;
   items: NotificationDetailItem[];
 };
 
@@ -38,7 +44,7 @@ export function notificationDetail(item: NotificationItem): NotificationDetail |
   if (!item.payload) return null;
   try {
     const parsed = JSON.parse(item.payload) as Partial<NotificationDetail>;
-    if (!parsed || !Array.isArray(parsed.items) || (parsed.kind !== "DECISION_LIST" && parsed.kind !== "PERMISSION_GRANT")) return null;
+    if (!parsed || !Array.isArray(parsed.items) || (parsed.kind !== "DECISION_LIST" && parsed.kind !== "PERMISSION_GRANT" && parsed.kind !== "PERMISSION_REVOKE")) return null;
     return { ...parsed, kind: parsed.kind, items: parsed.items } as NotificationDetail;
   } catch {
     return null;
@@ -63,6 +69,12 @@ const accessRoutes: Record<string, string> = {
   // Được phân quyền: xem danh sách quyền hiện có của chính mình.
   ROLE_PERMISSION_GRANTED: MY_PERMISSIONS_PATH,
   ACCOUNT_PERMISSION_GRANTED: MY_PERMISSIONS_PATH,
+  // Bị thu hồi quyền: xem danh sách quyền còn lại của chính mình.
+  ROLE_PERMISSION_REVOKED: MY_PERMISSIONS_PATH,
+  ACCOUNT_PERMISSION_REVOKED: MY_PERMISSIONS_PATH,
+  // Quyền hết hạn (hệ thống tự thu hồi): xem danh sách quyền còn lại của chính mình.
+  ROLE_PERMISSION_EXPIRED: MY_PERMISSIONS_PATH,
+  ACCOUNT_PERMISSION_EXPIRED: MY_PERMISSIONS_PATH,
 };
 
 const unitRoutes = {

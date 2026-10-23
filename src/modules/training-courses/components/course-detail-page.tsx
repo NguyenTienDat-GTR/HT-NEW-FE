@@ -46,6 +46,9 @@ const workflowTabs = [
   { key: "certificate-approvals", label: "Duyệt chứng nhận", path: "/certificates/approvals" },
 ] as const;
 
+// Khóa quá khứ: không có loại khóa, thời gian đăng ký và trạng thái đăng ký.
+const pastSummaryColumns = ["hostYear", "resultingLevelName", "passingScore", "location", "startDate", "endDate"];
+
 const summaryColumns = ["courseTypeName", "hostYear", "yearsActive", "passingScore", "location", "startDate", "endDate", "registrationPeriod", "registrationStatus", "organizingStatus", "autoApproveEligible", "scoreVisible"];
 
 export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig }) {
@@ -93,17 +96,20 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
   const course = courseQuery.data;
   // Khóa bị vô hiệu hóa: chỉ xem, mọi thao tác trong khóa bị chặn.
   const courseDisabled = course?.status === false;
+  const isPastCourse = course?.pastCourse === true;
   const tabs = useMemo(
     () =>
       workflowTabs.flatMap((tab) => {
         // Khóa không có cấp độ đạt được thì không có chứng nhận nên không có tab duyệt chứng nhận.
         if (tab.key === "certificate-approvals" && course?.certificateRequired === false) return [];
+        // Khóa quá khứ không có đăng ký, duyệt đăng ký và chấm điểm: chỉ có danh sách tham dự (import từ Excel) và duyệt chứng nhận.
+        if (course?.pastCourse === true && tab.key !== "participations" && tab.key !== "certificate-approvals") return [];
         const tabRoute = findRoute(tab.path);
         if (!tabRoute) return [];
         if (tabRoute.permissionPrefixes.length && !tabRoute.permissionPrefixes.some((prefix) => hasPermissionPrefix(user, prefix))) return [];
         return [{ ...tab, route: tabRoute }];
       }),
-    [user, course?.certificateRequired],
+    [user, course?.certificateRequired, course?.pastCourse],
   );
   const activeTab = tabs.find((tab) => tab.key === searchParams.get("tab")) ?? tabs[0];
 
@@ -177,7 +183,16 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
                 {course.scoreLocked === true ? "Mở chỉnh sửa điểm" : "Khóa chỉnh sửa điểm"}
               </Button>
             ) : null}
-            {editHref && canUseAction(user, route.actions?.edit) && !courseDisabled ? (
+            {isPastCourse ? (
+              hasPermissionPrefix(user, "training.course.create_past.") && !courseDisabled ? (
+                <Button asChild variant="outline">
+                  <Link href={`/training/courses/past/${encodeURIComponent(id)}/edit` as Route}>
+                    <PencilSimple size={16} />
+                    Sửa khóa quá khứ
+                  </Link>
+                </Button>
+              ) : null
+            ) : editHref && canUseAction(user, route.actions?.edit) && !courseDisabled ? (
               <Button asChild variant="outline">
                 <Link href={editHref as Route}>
                   <PencilSimple size={16} />
@@ -189,7 +204,7 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
         </div>
         {course ? (
           <Panel className="flex flex-wrap gap-x-7 gap-y-1.5 px-4 py-3">
-            {summaryColumns.map((column) => (
+            {(isPastCourse ? pastSummaryColumns : summaryColumns).map((column) => (
               <div className="flex min-w-0 items-baseline gap-1.5 text-[13px]" key={column}>
                 <span className="shrink-0 text-muted">{summaryLabels[column] ?? column}:</span>
                 <span className="min-w-0 font-medium text-foreground">
@@ -272,6 +287,8 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
                 scoreLocked: course ? course.scoreLocked === true : undefined,
                 courseFinished: course ? Boolean(course.finishedAt) : undefined,
                 courseDisabled,
+                coursePast: course?.pastCourse === true,
+                courseName: course && typeof course.courseName === "string" ? course.courseName : undefined,
               }}
             >
               {activeTab.key === "certificate-approvals" ? <CertificateResourceView route={activeTab.route} /> : <TrainingWorkflowResourceView route={activeTab.route} />}
@@ -316,6 +333,7 @@ function scoringWindowHint(course: Record<string, unknown>) {
 
 const summaryLabels: Record<string, string> = {
   courseTypeName: "Loại khóa",
+  resultingLevelName: "Cấp độ đạt được",
   hostYear: "Năm tổ chức",
   yearsActive: "Số năm hoạt động",
   passingScore: "Điểm đạt",

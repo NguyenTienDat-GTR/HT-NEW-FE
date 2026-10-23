@@ -22,7 +22,8 @@ export function achievableLevels(item: Pick<ExceptionLevelItem, "leaderLevel" | 
   return getLeaderLevels().filter((level) => level.displayOrder > current && level.displayOrder <= max);
 }
 
-export type CertificateSigner = { signerType: "CHAPLAIN" | "OTHER"; signerName: string; signerTitle: string };
+// approvalDate (yyyy-MM-dd): ngày duyệt do người duyệt chọn, bắt buộc với chứng nhận của khóa quá khứ.
+export type CertificateSigner = { signerType: "CHAPLAIN" | "OTHER"; signerName: string; signerTitle: string; approvalDate?: string };
 
 type ReasonScope = "shared" | "individual";
 
@@ -40,6 +41,7 @@ export function ApprovalDialog({
   captureSigner,
   exceptionItems,
   exceptionReasons,
+  requireApprovalDate,
 }: {
   loading?: boolean;
   onClose: () => void;
@@ -55,6 +57,8 @@ export function ApprovalDialog({
   exceptionItems?: ExceptionLevelItem[];
   // Hồ sơ đặc cách đang xử lý: hiện lý do đặc cách của từng hồ sơ trong hộp thoại (duyệt hoặc từ chối).
   exceptionReasons?: ExceptionReasonItem[];
+  // Chứng nhận của khóa quá khứ: phải chọn ngày duyệt, không tự lấy ngày hiện tại.
+  requireApprovalDate?: boolean;
 }) {
   const [note, setNote] = useState("");
   const [scope, setScope] = useState<ReasonScope>("shared");
@@ -63,7 +67,11 @@ export function ApprovalDialog({
   const [signerName, setSignerName] = useState("");
   const [signerTitle, setSignerTitle] = useState("");
   const [levels, setLevels] = useState<Record<string, string>>({});
+  const [approvalDate, setApprovalDate] = useState("");
   const reject = mode === "reject";
+  const needDate = Boolean(requireApprovalDate) && !reject;
+  const todayText = new Date().toLocaleDateString("sv-SE");
+  const missingDate = needDate && (!approvalDate || approvalDate > todayText);
   const levelItems = reject ? [] : (exceptionItems ?? []);
   const missingLevel = levelItems.some((item) => !levels[item.id] || !achievableLevels(item).some((level) => level.levelCode === levels[item.id]));
   const levelsOut = levelItems.length ? Object.fromEntries(levelItems.map((item) => [item.id, levels[item.id]])) : undefined;
@@ -76,7 +84,12 @@ export function ApprovalDialog({
   const missingCount = individual ? (items ?? []).filter((item) => !reasons[item.id]?.trim()).length : 0;
 
   const signer: CertificateSigner | undefined = needSigner
-    ? { signerType, signerName: signerName.trim(), signerTitle: signerType === "OTHER" ? signerTitle.trim() : "Linh mục tuyên úy" }
+    ? {
+        signerType,
+        signerName: signerName.trim(),
+        signerTitle: signerType === "OTHER" ? signerTitle.trim() : "Linh mục tuyên úy",
+        approvalDate: needDate ? approvalDate : undefined,
+      }
     : undefined;
 
   function confirm() {
@@ -248,12 +261,31 @@ export function ApprovalDialog({
             </div>
           ) : null}
 
+          {needDate ? (
+            <div className="mt-4 rounded-lg border border-border p-3">
+              <label className="block">
+                <span className="block text-sm font-semibold text-foreground">
+                  Ngày duyệt <span className="text-danger">*</span>
+                </span>
+                <span className="mt-0.5 block text-xs text-muted">Khóa trong quá khứ: ngày duyệt được dùng làm ngày cấp chứng nhận và ngày ghi vào lịch sử cấp độ.</span>
+                <input
+                  className={cn(inputClass, "mt-2 max-w-[220px]")}
+                  data-testid="approval-date-input"
+                  max={todayText}
+                  onChange={(event) => setApprovalDate(event.target.value)}
+                  type="date"
+                  value={approvalDate}
+                />
+              </label>
+            </div>
+          ) : null}
+
           <div className="mt-5 flex items-center justify-end gap-3">
             {missingCount > 0 ? <span className="mr-auto text-xs text-danger">Còn {missingCount} hồ sơ chưa nhập lý do</span> : null}
             <Button onClick={onClose} type="button" variant="outline">
               Hủy
             </Button>
-            <Button disabled={missingReason || missingSigner || missingLevel} loading={loading} onClick={confirm} type="button" variant={reject ? "destructive" : "primary"}>
+            <Button disabled={missingReason || missingSigner || missingLevel || missingDate} loading={loading} onClick={confirm} type="button" variant={reject ? "destructive" : "primary"}>
               {reject ? "Từ chối" : "Duyệt"}
             </Button>
           </div>

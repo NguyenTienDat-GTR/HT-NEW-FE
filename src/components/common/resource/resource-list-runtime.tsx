@@ -11,13 +11,15 @@ import { Button } from "@/components/ui/button";
 import { Tip } from "@/components/ui/tip";
 import { Panel } from "@/components/ui/panel";
 import { rowsFromResponse } from "@/components/form/resource-form/api-utils";
-import { apiDownload, apiFetch, apiMutation, getApiErrorMessage, parseContentDispositionFilename, type PageResponse } from "@/lib/api/client";
+import { apiDownload, apiFetch, apiMutation, apiMutationOnce, getApiErrorMessage, parseContentDispositionFilename, type PageResponse } from "@/lib/api/client";
 import { useAuthStore } from "@/lib/auth/auth-store";
-import { canUseAction } from "@/lib/auth/permissions";
+import { canUseAction, hasPermissionPrefix } from "@/lib/auth/permissions";
 import { resolveRouteForUser } from "@/modules/workspace/super-admin-route-overrides";
 import { ApprovalDialog, type CertificateSigner, type ExceptionLevelItem, type ExceptionReasonItem } from "./approval-dialog";
 import { embeddedTabHref, useEmbeddedResource, withReturnTo } from "./embedded-resource-context";
 import { ConfirmActionDialog } from "./confirm-action-dialog";
+import { ExcelExportButton, EXCEL_EXPORT_FILES } from "./excel-export-button";
+import { ExcelImportDialog } from "./excel-import-dialog";
 import { RevokeCertificateDialog } from "./revoke-certificate-dialog";
 import { CourseStatusDialog } from "@/modules/training-courses/components/course-status-dialog";
 import { UnitToggleDialog } from "@/modules/organizations/components/unit-toggle-dialog";
@@ -50,7 +52,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
         ...resolvedRoute,
         filters: (resolvedRoute.filters ?? []).filter((filter) => !(filter.key in embedded.fixedFilters)),
         createPath: resolvedRoute.createPath
-          ? withReturnTo(resolvedRoute.createPath, embedded, embedded.fixedFilters["course.courseCode"] ? { courseCode: embedded.fixedFilters["course.courseCode"] } : {})
+          ? withReturnTo(resolvedRoute.createPath, embedded, embedded.fixedFilters["course.courseCode"] ? { courseCode: embedded.fixedFilters["course.courseCode"], ...(embedded.courseName ? { courseName: embedded.courseName } : {}) } : {})
           : undefined,
       }
     : resolvedRoute;
@@ -130,7 +132,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
     canBulkApprove
       ? selectedIds.filter((id) => {
           const row = rowById(id);
-          return Boolean(row) && (isAwaitingApproval(row!) || (allowReapprove && isReapprovable(row!))) && row!.courseFinished !== true;
+          return Boolean(row) && (isAwaitingApproval(row!) || (allowReapprove && isReapprovable(row!))) && (row!.courseFinished !== true || row!.coursePast === true);
         })
       : [];
   const bulkApprovableIds = bulkEligibleIds(true);
@@ -170,16 +172,21 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
         const target = effectiveRoute.kind === "role-permissions" ? { roleCode: row?.roleCode } : { username: row?.username };
         return apiMutation(`${effectiveRoute.endpoint}/revoke`, "POST", { ...target, permissionCodes: [row?.permissionCode] });
       }
-      if (action === "revoke") return apiMutation(`${effectiveRoute.endpoint}/${encodeURIComponent(id)}/revoke`, "POST", { reason: note });
-      if (action === "reissue") return apiMutation(`${effectiveRoute.endpoint}/${encodeURIComponent(id)}/reissue`, "POST", { reason: note });
-      if (action === "remove") return apiMutation(config.buildRemovePath?.(id) ?? `${effectiveRoute.endpoint}/${encodeURIComponent(id)}`, "DELETE");
+      // Thu hồi / cấp lại / duyệt / từ chối dùng Idempotency-Key: bấm đúp hoặc gửi lại sau lỗi mạng chỉ thực hiện một lần.
+      if (action === "revoke") return apiMutationOnce(`${effectiveRoute.endpoint}/${encodeURIComponent(id)}/revoke`, "POST", { reason: note });
+      if (action === "reissue") return apiMutationOnce(`${effectiveRoute.endpoint}/${encodeURIComponent(id)}/reissue`, "POST", { reason: note });
+      if (action === "remove") {
+        // Khóa quá khứ có endpoint xóa học viên riêng (hồ sơ được xóa hẳn, không chuyển về trạng thái từ chối).
+        if (embedded?.coursePast === true && scoreCourseCode) return apiMutation(`/training/courses/${encodeURIComponent(scoreCourseCode)}/participants/${encodeURIComponent(id)}`, "DELETE");
+        return apiMutation(config.buildRemovePath?.(id) ?? `${effectiveRoute.endpoint}/${encodeURIComponent(id)}`, "DELETE");
+      }
       if (action === "withdraw") return apiMutation(config.buildWithdrawPath?.(id) ?? `${effectiveRoute.endpoint}/${encodeURIComponent(id)}`, "DELETE");
       if (action === "toggle") return apiMutation(`${effectiveRoute.endpoint}/${encodeURIComponent(id)}/toggle-status`, "PATCH", { confirmationText: "Xác nhận" });
       if (action === "approve" || action === "reject") {
         const approved = action === "approve";
         const approvePath = config.buildApprovePath?.(effectiveRoute, rows, id, approved) ?? `${effectiveRoute.endpoint}/${encodeURIComponent(id)}/approve`;
         const approveBody = config.buildApproveBody?.(effectiveRoute, note, approved, signer, achievedLevel) ?? { approved, review: note || undefined };
-        return apiMutation(approvePath, "POST", approveBody);
+        return apiMutationOnce(approvePath, "POST", approveBody);
       }
       throw new Error("Unsupported resource action");
     },
@@ -196,7 +203,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
 
   const bulkMutation = useMutation({
     mutationFn: ({ approved, note, reasons, signer, achievedLevels }: { approved: boolean; note: string; reasons?: Record<string, string>; signer?: CertificateSigner; achievedLevels?: Record<string, string> }) =>
-      apiMutation<{ successCount: number; failedCount: number; failures: { leaderFullName?: string; reason: string }[] }>(
+      apiMutationOnce<{ successCount: number; failedCount: number; failures: { leaderFullName?: string; reason: string }[] }>(
         config.bulkApprovePath ?? "",
         "POST",
         config.buildBulkBody?.(approved ? bulkApprovableIds : bulkRejectableIds, approved, note, reasons, signer, achievedLevels) ?? { ids: approved ? bulkApprovableIds : bulkRejectableIds, approved, review: note || undefined, reviews: reasons, achievedLevels },
@@ -458,6 +465,33 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
       }
     : undefined;
 
+  // Xuất Excel theo đúng bộ lọc/tìm kiếm/sắp xếp đang dùng (cả danh sách lẻ lẫn tab trong khóa).
+  const exportEndpoint = effectiveRoute.endpoint;
+  const excelExportButton =
+    exportEndpoint && EXCEL_EXPORT_FILES[exportEndpoint] ? <ExcelExportButton endpoint={exportEndpoint} queryString={queryState.queryString} /> : null;
+  // Import Excel: hồ sơ huynh trưởng (quyền tạo huynh trưởng) và danh sách tham dự của khóa quá khứ (quyền riêng do super-admin cấp).
+  const excelImportButton =
+    !embedded && effectiveRoute.kind === "leaders" && effectiveRoute.endpoint === "/leaders" && canCreate ? (
+      <ExcelImportDialog
+        description="Tạo nhiều huynh trưởng cùng lúc từ file Excel mẫu. Chỉ cần một dòng sai thì không có huynh trưởng nào được lưu."
+        endpoint="/leaders/import"
+        templateFileName="mau-import-ho-so-huynh-truong.xlsx"
+        templatePath="/leaders/import-template"
+        hint="Mọi cột đều bắt buộc trừ Cấp độ (để trống là Chưa có cấp): Tên thánh, Họ và tên, Ngày sinh (dd/MM/yyyy), Giới tính (Nam/Nữ), Email, Số điện thoại, Giáo hạt, Giáo xứ. Giáo hạt và giáo xứ phải đã có trong hệ thống. Email và số điện thoại không được trùng với huynh trưởng khác."
+        title="Nhập excel hồ sơ huynh trưởng"
+      />
+    ) : embedded?.coursePast === true && effectiveRoute.endpoint === "/training/participants" && scoreCourseCode && !courseDisabled && hasPermissionPrefix(user, "training.course.create_past.") ? (
+      <ExcelImportDialog
+        description="Nhập danh sách tham dự của khóa quá khứ kèm điểm và kết quả. Huynh trưởng được tìm theo email hoặc số điện thoại; chưa có hồ sơ thì tạo mới ngay từ thông tin trong file."
+        endpoint={`/training/courses/${encodeURIComponent(scoreCourseCode)}/participants/import`}
+        templateFileName="mau-import-danh-sach-tham-du-khoa-qua-khu.xlsx"
+        templatePath="/training/courses/past/import-template"
+        hint="Mọi dòng phải nhập đủ các cột, chỉ được bỏ trống Nhận xét và Cấp độ: Email, Số điện thoại, Tổng điểm, Kết quả (Đạt / Không đạt), Tên thánh, Họ và tên, Ngày sinh, Giới tính, Giáo hạt, Giáo xứ (giáo hạt, giáo xứ phải đã có trong hệ thống). Huynh trưởng đã có hồ sơ thì chỉ được thêm vào khóa (hồ sơ không bị sửa); chưa có thì được tạo mới từ chính dòng đó. Học viên Đạt của khóa có cấp độ đạt được sẽ chuyển sang tab Duyệt chứng nhận."
+        title="Nhập excel danh sách tham dự"
+        triggerLabel="Nhập excel danh sách tham dự"
+      />
+    ) : null;
+
   return (
     <div className="space-y-6">
       <ResourceListHeader
@@ -493,6 +527,8 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
           extraActions={
             <>
               {config.toolbarActions}
+              {excelExportButton}
+              {excelImportButton}
               {config.cardView && !embedded ? <ViewModeToggle mode={viewMode} onChange={setViewMode} /> : null}
               {saveScoresButton}
               {permissionRevokeButton}
@@ -582,6 +618,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
         captureSigner={config.captureSigner}
         exceptionItems={approveExceptionItems}
         exceptionReasons={approveId ? exceptionReasonsOf([approveId]) : undefined}
+        requireApprovalDate={Boolean(approveId && rowById(approveId)?.coursePast === true)}
         loading={actionMutation.isPending}
         onClose={closeQueryDialog}
         onConfirm={(note, _reasons, signer, achievedLevels) => approveId && actionMutation.mutate({ action: "approve", id: approveId, note, signer, achievedLevel: achievedLevels?.[approveId] })}
@@ -592,6 +629,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
         captureSigner={config.captureSigner}
         exceptionItems={bulkExceptionItems}
         exceptionReasons={bulkMode ? exceptionReasonsOf(bulkTargetIds) : undefined}
+        requireApprovalDate={bulkMode === "approve" && bulkTargetIds.some((id) => rowById(id)?.coursePast === true)}
         loading={bulkMutation.isPending}
         mode={bulkMode === "reject" ? "reject" : "approve"}
         onClose={() => setBulkMode(null)}
@@ -615,14 +653,18 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
       />
       <ConfirmActionDialog
         action="withdraw"
-        confirmLabel="Chuyển"
-        description="Hồ sơ sẽ chuyển về trạng thái từ chối duyệt đăng ký (không bị xóa hẳn) và điểm đã nhập sẽ bị xóa. Có thể duyệt lại ở màn Duyệt đăng ký. Không xử lý được hồ sơ đã có chứng nhận."
+        confirmLabel={embedded?.coursePast === true ? "Xóa khỏi khóa" : "Chuyển"}
+        description={
+          embedded?.coursePast === true
+            ? "Học viên (và chứng nhận chờ duyệt của học viên) sẽ bị xóa khỏi khóa quá khứ; có thể import lại nếu nhập nhầm. Không xóa được học viên đã có chứng nhận được duyệt, hãy thu hồi chứng nhận trước."
+            : "Hồ sơ sẽ chuyển về trạng thái từ chối duyệt đăng ký (không bị xóa hẳn) và điểm đã nhập sẽ bị xóa. Có thể duyệt lại ở màn Duyệt đăng ký. Không xử lý được hồ sơ đã có chứng nhận."
+        }
         loading={actionMutation.isPending}
         onClose={closeQueryDialog}
         onConfirm={() => removeId && actionMutation.mutate({ action: "remove", id: removeId })}
         open={Boolean(removeId)}
         requireConfirmText={false}
-        title="Chuyển hồ sơ về trạng thái từ chối duyệt"
+        title={embedded?.coursePast === true ? "Xóa học viên khỏi khóa quá khứ" : "Chuyển hồ sơ về trạng thái từ chối duyệt"}
       />
       <ConfirmActionDialog
         action="withdraw"

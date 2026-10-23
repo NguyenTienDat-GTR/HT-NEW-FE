@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Tip } from "@/components/ui/tip";
 import type { RouteConfig } from "@/config/routes/routes";
 import { useAuthStore, type AuthUser } from "@/lib/auth/auth-store";
-import { canUseAction, hasPermission, isSuperAdmin } from "@/lib/auth/permissions";
+import { canUseAction, hasPermission, hasPermissionPrefix, isSuperAdmin } from "@/lib/auth/permissions";
 import { Avatar, columnLabels, ResourceCell } from "./resource-format";
 import { useEmbeddedResource, resourceActionHref, withReturnTo } from "./embedded-resource-context";
 import { fillRoute, getResourceId, isAwaitingApproval, isReapprovable } from "./resource-actions";
@@ -219,13 +219,15 @@ export function RowActions({ route, row, onExportRow, exportingRow, scoreNotes }
   // Chỉ xuất PDF cho chứng nhận đã duyệt.
   const canExportRow = Boolean(onExportRow) && route.kind === "certificates" && (row.approvalStatus === "APPROVED" || row.certificateApprovalStatus === "APPROVED");
 
-  const editHref = fillRoute(route.editPath, { id });
+  // Khóa quá khứ sửa ở form riêng (chỉ tài khoản được cấp quyền create_past).
+  const pastCourseRow = route.kind === "courses" && row.pastCourse === true;
+  const editHref = pastCourseRow ? `/training/courses/past/${encodeURIComponent(id)}/edit` : fillRoute(route.editPath, { id });
   const detailHref = fillRoute(route.detailPath, { id });
   const scoreHref = fillRoute(route.actions?.score?.route, { id });
   const canView = canUseAction(user, route.actions?.view);
   // Khóa bị vô hiệu hóa (đang xem danh sách khóa hoặc đang ở trong khóa đó): chỉ xem, không thao tác gì (BE cũng chặn).
   const courseDisabled = embedded?.courseDisabled === true || (route.kind === "courses" && row.status === false);
-  const canEdit = canShowEditAction(route, row, user) && !courseDisabled;
+  const canEdit = (pastCourseRow ? hasPermissionPrefix(user, "training.course.create_past.") : canShowEditAction(route, row, user)) && !courseDisabled;
   const canToggle = canUseAction(user, route.actions?.toggle) && canToggleRow(route, row, user);
   // Phân quyền vai trò / tài khoản: thu hồi từng quyền (vĩnh viễn) thay cho bật/tắt; quyền đã thu hồi hoặc hết hạn thì không còn nút.
   const canRevokePermission =
@@ -242,11 +244,13 @@ export function RowActions({ route, row, onExportRow, exportingRow, scoreNotes }
   const actorId = user?.leaderId || user?.username;
   const canWithdraw = canUseAction(user, route.actions?.withdraw) && Boolean(actorId) && row.createdBy === actorId && isAwaitingApproval(row) && !courseDisabled;
   // Khóa đã kết thúc thì không duyệt/từ chối chứng nhận được, chỉ xuất PDF.
-  const courseFinished = (route.kind === "certificates" || route.kind === "participations") && row.courseFinished === true;
+  const courseFinished = (route.kind === "certificates" || route.kind === "participations") && row.courseFinished === true && row.coursePast !== true;
   const reapprovable = route.kind === "participations" && isReapprovable(row);
   const canApprove = canUseAction(user, route.actions?.approve) && (awaitingApproval || reapprovable) && !courseFinished && !courseDisabled;
   // Hồ sơ đã có chứng nhận được duyệt thì không xóa được.
-  const canRemove = canUseAction(user, route.actions?.remove) && row.certificateApprovalStatus !== "APPROVED" && row.approvalStatus !== "REJECTED" && !courseFinished && !courseDisabled;
+  // Khóa quá khứ: xóa học viên nhập nhầm bằng quyền create_past (endpoint riêng của khóa quá khứ).
+  const canRemovePast = route.kind === "participations" && row.coursePast === true && hasPermissionPrefix(user, "training.course.create_past.");
+  const canRemove = (canRemovePast || canUseAction(user, route.actions?.remove)) && row.certificateApprovalStatus !== "APPROVED" && row.approvalStatus !== "REJECTED" && !courseFinished && !courseDisabled;
   const canReject = canUseAction(user, route.actions?.reject) && awaitingApproval && !courseFinished && !courseDisabled;
   // Chỉ thu hồi được chứng nhận đã duyệt (kể cả khi khóa đã kết thúc).
   const canRevoke = canUseAction(user, route.actions?.revoke) && route.kind === "certificates" && row.approvalStatus === "APPROVED" && !courseDisabled;

@@ -51,7 +51,7 @@ function buildApprovePath(_route: RouteConfig, _rows: Record<string, unknown>[],
 
 function buildApproveBody(_route: RouteConfig, note?: string, approved = true, signer?: CertificateSigner) {
   return approved
-    ? { approvalReason: note || undefined, signerType: signer?.signerType, signerName: signer?.signerName, signerTitle: signer?.signerTitle }
+    ? { approvalReason: note || undefined, signerType: signer?.signerType, signerName: signer?.signerName, signerTitle: signer?.signerTitle, approvalDate: signer?.approvalDate }
     : { reason: note || undefined };
 }
 
@@ -64,5 +64,6 @@ function buildBulkBody(ids: string[], approved: boolean, note: string, reasons?:
     signerType: signer?.signerType,
     signerName: signer?.signerName,
     signerTitle: signer?.signerTitle,
+    approvalDate: signer?.approvalDate,
   };
 }

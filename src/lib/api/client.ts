@@ -26,6 +26,8 @@ export type PageResponse<T> = {
 export type ApiError = Error & {
   status?: number;
   errorCode?: string | null;
+  // Dữ liệu kèm theo lỗi (ví dụ danh sách dòng lỗi khi import Excel).
+  details?: unknown;
 };
 
 export const openapi = createClient<paths>({ baseUrl: "/backend" });
@@ -66,6 +68,7 @@ async function parseEnvelope<T>(response: Response) {
     throw Object.assign(new Error(message), {
       status: response.status,
       errorCode: body?.errorCode,
+      details: body?.data,
     }) satisfies ApiError;
   }
   return body?.data as T;
@@ -164,11 +167,109 @@ export function parseContentDispositionFilename(header: string | null): string |
   return plain?.[1]?.trim() ?? null;
 }
 
-export async function apiMutation<T>(path: string, method: "POST" | "PUT" | "PATCH" | "DELETE", body?: unknown) {
+// Tải file về máy (xuất Excel...): trả về tên file thực tế lấy từ header Content-Disposition.
+export async function downloadFile(path: string, fallbackName: string) {
+  const response = await apiDownload(path);
+  const blob = await response.blob();
+  const filename = parseContentDispositionFilename(response.headers.get("content-disposition")) ?? fallbackName;
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+  return filename;
+}
+
+// Một dòng lỗi khi import Excel: sheet, số dòng (theo Excel), cột và nội dung.
+export type ImportErrorRow = { sheet: string; row: number; column: string; message: string };
+
+export type ExcelJobStatus = "QUEUED" | "RUNNING" | "SUCCEEDED" | "FAILED" | "CANCELLED";
+
+// Tác vụ Excel chạy nền (xuất / nhập) do backend quản lý.
+export type ExcelJob = {
+  id: string;
+  kind: string;
+  label: string;
+  importJob: boolean;
+  target?: string | null;
+  status: ExcelJobStatus;
+  processed: number;
+  total: number;
+  warning?: string | null;
+  errorMessage?: string | null;
+  errors?: ImportErrorRow[] | null;
+  created?: number | null;
+  resultMessage?: string | null;
+  downloadable: boolean;
+  fileName?: string | null;
+  createdAt?: string | null;
+  finishedAt?: string | null;
+  expiresAt?: string | null;
+  replayed: boolean;
+};
+
+export const EXCEL_JOB_TERMINAL: ExcelJobStatus[] = ["SUCCEEDED", "FAILED", "CANCELLED"];
+
+// Khóa idempotency: sinh một lần cho mỗi ý định của người dùng và dùng lại khi gửi lại, để bấm đúp / retry không thực hiện hai lần.
+export function newIdempotencyKey() {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") return crypto.randomUUID();
+  return `k-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+}
+
+// Tạo tác vụ xuất Excel nền (POST, không có body); backend trả 202 kèm tác vụ.
+export function createExcelExportJob(path: string, idempotencyKey: string) {
+  return apiFetch<ExcelJob>(path, { method: "POST", headers: { "Idempotency-Key": idempotencyKey } });
+}
+
+// Tải file Excel lên và tạo tác vụ nhập nền (multipart).
+export function createExcelImportJob(path: string, file: File, idempotencyKey: string) {
+  const form = new FormData();
+  form.append("file", file);
+  return apiFetch<ExcelJob>(path, { method: "POST", body: form, headers: { "Idempotency-Key": idempotencyKey } });
+}
+
+export function fetchExcelJob(id: string) {
+  return apiFetch<ExcelJob>(`/excel-jobs/${encodeURIComponent(id)}`);
+}
+
+export function cancelExcelJob(id: string) {
+  return apiFetch<ExcelJob>(`/excel-jobs/${encodeURIComponent(id)}/cancel`, { method: "POST" });
+}
+
+export function downloadExcelJobFile(id: string, fallbackName: string) {
+  return downloadFile(`/excel-jobs/${encodeURIComponent(id)}/file`, fallbackName);
+}
+
+export function importErrorRows(error: unknown): ImportErrorRow[] {
+  const details = (error as ApiError | undefined)?.details;
+  return Array.isArray(details) ? (details as ImportErrorRow[]) : [];
+}
+
+// Khóa idempotency theo "ý định" (đường dẫn + nội dung): gửi lại đúng yêu cầu đó (bấm đúp, retry sau lỗi mạng) dùng lại cùng khóa nên
+// backend chỉ thực hiện một lần; đổi nội dung thì sinh khóa mới. Khóa bị xóa khi thành công.
+const intentKeys = new Map<string, string>();
+
+export async function apiMutationOnce<T>(path: string, method: "POST" | "PUT" | "PATCH" | "DELETE", body?: unknown) {
+  const intent = `${method} ${path} ${JSON.stringify(body ?? null)}`;
+  let key = intentKeys.get(intent);
+  if (!key) {
+    key = newIdempotencyKey();
+    intentKeys.set(intent, key);
+  }
+  const result = await apiMutation<T>(path, method, body, { idempotencyKey: key });
+  intentKeys.delete(intent);
+  return result;
+}
+
+export async function apiMutation<T>(path: string, method: "POST" | "PUT" | "PATCH" | "DELETE", body?: unknown, options?: { idempotencyKey?: string }) {
   try {
     return await apiFetch<T>(path, {
       method,
       body: body === undefined ? undefined : JSON.stringify(body),
+      headers: options?.idempotencyKey ? { "Idempotency-Key": options.idempotencyKey } : undefined,
     });
   } catch (error) {
     toast.error(getApiErrorMessage(error));
