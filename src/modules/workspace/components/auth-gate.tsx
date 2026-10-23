@@ -39,7 +39,8 @@ function AuthGateInner({ children, initialUser }: { children: React.ReactNode; i
       return apiFetch<AuthUser>("/auth/me");
     },
     initialData: initialUser ?? undefined,
-    retry: false,
+    // Chỉ lỗi 401 mới là hết phiên; 429/5xx/mạng chập chờn thì thử lại thay vì đá người dùng ra đăng nhập.
+    retry: (count, error) => (error as { status?: number }).status !== 401 && count < 3,
   });
 
   useEffect(() => {
@@ -58,8 +59,8 @@ function AuthGateInner({ children, initialUser }: { children: React.ReactNode; i
   }, []);
 
   useEffect(() => {
-    if (query.isError) router.replace(`/login?next=${encodeURIComponent(pathname)}`);
-  }, [pathname, query.isError, router]);
+    if (query.isError && (query.error as { status?: number }).status === 401) router.replace(`/login?next=${encodeURIComponent(pathname)}`);
+  }, [pathname, query.error, query.isError, router]);
 
   useEffect(() => {
     if (query.data?.unitLocked && pathname !== "/notifications") router.replace("/notifications");
