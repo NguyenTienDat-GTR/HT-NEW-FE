@@ -80,8 +80,16 @@ function statusMessage(status: number) {
   return "Không thể hoàn tất yêu cầu";
 }
 
-export async function apiFetch<T>(path: string, init: RequestInit = {}, retry = true): Promise<T> {
+// Chưa có access token trong bộ nhớ (vừa tải lại trang, hoặc phiên vừa bị xóa): lấy token bằng refresh cookie trước,
+// khỏi gửi một loạt request chắc chắn bị 401 rồi mới refresh. Các API xác thực tự quản lý token nên bỏ qua.
+async function currentAccessToken(path: string) {
   const token = useAuthStore.getState().accessToken;
+  if (token || path.startsWith("/auth/")) return token;
+  return (await refreshAccessToken()) ?? useAuthStore.getState().accessToken;
+}
+
+export async function apiFetch<T>(path: string, init: RequestInit = {}, retry = true): Promise<T> {
+  const token = await currentAccessToken(path);
   const headers = new Headers(init.headers);
   headers.set("accept", "application/json");
   if (!(init.body instanceof FormData) && init.body !== undefined) {
@@ -96,9 +104,12 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}, retry = 
   });
 
   if (response.status === 401 && retry) {
+    // Token đã đổi trong lúc request bay (vừa đăng nhập lại): gửi lại bằng token mới, không refresh và không xóa phiên mới.
+    const current = useAuthStore.getState().accessToken;
+    if (current && current !== token) return apiFetch<T>(path, init, false);
     const newToken = await refreshAccessToken();
     if (newToken) return apiFetch<T>(path, init, false);
-    useAuthStore.getState().clear();
+    if (useAuthStore.getState().accessToken === token) useAuthStore.getState().clear();
   }
 
   return parseEnvelope<T>(response);
@@ -106,7 +117,7 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}, retry = 
 
 // Tải nhị phân (ví dụ PDF). Trả về Response thô để đọc blob và header Content-Disposition.
 export async function apiDownload(path: string, init: RequestInit = {}, retry = true): Promise<Response> {
-  const token = useAuthStore.getState().accessToken;
+  const token = await currentAccessToken(path);
   const headers = new Headers(init.headers);
   if (!(init.body instanceof FormData) && init.body !== undefined) {
     headers.set("content-type", "application/json");
@@ -120,9 +131,11 @@ export async function apiDownload(path: string, init: RequestInit = {}, retry = 
   });
 
   if (response.status === 401 && retry) {
+    const current = useAuthStore.getState().accessToken;
+    if (current && current !== token) return apiDownload(path, init, false);
     const newToken = await refreshAccessToken();
     if (newToken) return apiDownload(path, init, false);
-    useAuthStore.getState().clear();
+    if (useAuthStore.getState().accessToken === token) useAuthStore.getState().clear();
   }
 
   if (!response.ok) {
