@@ -242,11 +242,11 @@ export function RowActions({ route, row, onExportRow, exportingRow, scoreNotes }
   const actorId = user?.leaderId || user?.username;
   const canWithdraw = canUseAction(user, route.actions?.withdraw) && Boolean(actorId) && row.createdBy === actorId && isAwaitingApproval(row) && !courseDisabled;
   // Khóa đã kết thúc thì không duyệt/từ chối chứng nhận được, chỉ xuất PDF.
-  const courseFinished = route.kind === "certificates" && row.courseFinished === true;
+  const courseFinished = (route.kind === "certificates" || route.kind === "participations") && row.courseFinished === true;
   const reapprovable = route.kind === "participations" && isReapprovable(row);
   const canApprove = canUseAction(user, route.actions?.approve) && (awaitingApproval || reapprovable) && !courseFinished && !courseDisabled;
   // Hồ sơ đã có chứng nhận được duyệt thì không xóa được.
-  const canRemove = canUseAction(user, route.actions?.remove) && row.certificateApprovalStatus !== "APPROVED" && row.approvalStatus !== "REJECTED" && !courseDisabled;
+  const canRemove = canUseAction(user, route.actions?.remove) && row.certificateApprovalStatus !== "APPROVED" && row.approvalStatus !== "REJECTED" && !courseFinished && !courseDisabled;
   const canReject = canUseAction(user, route.actions?.reject) && awaitingApproval && !courseFinished && !courseDisabled;
   // Chỉ thu hồi được chứng nhận đã duyệt (kể cả khi khóa đã kết thúc).
   const canRevoke = canUseAction(user, route.actions?.revoke) && route.kind === "certificates" && row.approvalStatus === "APPROVED" && !courseDisabled;
