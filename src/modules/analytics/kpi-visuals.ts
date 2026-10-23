@@ -26,6 +26,8 @@ const VISUALS: Record<string, KpiVisual> = {
   attendanceRate: { icon: CalendarCheck, tone: "var(--viz-2)" },
   passRate: { icon: Target, tone: "var(--viz-3)" },
   cancellationRate: { icon: Prohibit, tone: "var(--viz-8)" },
+  rejectionRate: { icon: Prohibit, tone: "var(--viz-8)" },
+  rejectedRegistrations: { icon: Prohibit, tone: "var(--viz-8)" },
   certificateRate: { icon: Certificate, tone: "var(--viz-4)" },
   averageScore: { icon: Star, tone: "var(--viz-5)" },
   pendingApproval: { icon: Hourglass, tone: "var(--viz-4)" },

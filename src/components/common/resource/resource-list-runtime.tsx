@@ -24,7 +24,7 @@ import { UnitToggleDialog } from "@/modules/organizations/components/unit-toggle
 import { DetailDrawer } from "./detail-drawer";
 import { PositionFormDialog } from "@/modules/executive-board/components/position-form-dialog";
 import { AssignmentFormDialog } from "@/modules/executive-board/components/assignment-form-dialog";
-import { getResourceId, isAwaitingApproval } from "./resource-actions";
+import { getResourceId, isAwaitingApproval, isReapprovable } from "./resource-actions";
 import { isInvalidScore, originalNote, originalScore, runWithConcurrency, sameScore, type ScoreComponent, type ScoreDrafts, type ScoreEntry, type ScoreNoteDrafts } from "./score-entry";
 import { ScoreStats } from "./score-stats";
 import { ResourceListEmptyState } from "./resource-list-empty-state";
@@ -125,12 +125,17 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
 
   // Hồ sơ có thể duyệt/từ chối hàng loạt: đang chờ duyệt và khóa chưa kết thúc (khóa đã kết thúc chỉ xuất PDF).
   const rowById = (id: string) => rows.find((row) => getResourceId(effectiveRoute, row) === id);
-  const bulkApprovableIds = canBulkApprove
-    ? selectedIds.filter((id) => {
-        const row = rowById(id);
-        return Boolean(row) && isAwaitingApproval(row as Record<string, unknown>) && (row as Record<string, unknown>).courseFinished !== true;
-      })
-    : [];
+  // Duyệt được cả hồ sơ bị từ chối (duyệt lại); từ chối chỉ áp dụng cho hồ sơ đang chờ duyệt.
+  const bulkEligibleIds = (allowReapprove: boolean) =>
+    canBulkApprove
+      ? selectedIds.filter((id) => {
+          const row = rowById(id);
+          return Boolean(row) && (isAwaitingApproval(row!) || (allowReapprove && isReapprovable(row!))) && row!.courseFinished !== true;
+        })
+      : [];
+  const bulkApprovableIds = bulkEligibleIds(true);
+  const bulkRejectableIds = bulkEligibleIds(false);
+  const bulkTargetIds = bulkMode === "reject" ? bulkRejectableIds : bulkApprovableIds;
 
   const revokeTarget = (id: string) => {
     const row = rowById(id);
@@ -179,7 +184,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
       throw new Error("Unsupported resource action");
     },
     onSuccess: async (_data, variables) => {
-      toast.success(variables.action === "toggle" ? "Đổi trạng thái thành công" : variables.action === "revokePermission" ? "Đã thu hồi quyền" : variables.action === "reject" ? "Đã từ chối duyệt" : variables.action === "revoke" ? "Đã thu hồi chứng nhận" : variables.action === "reissue" ? "Đã cấp lại chứng nhận" : variables.action === "withdraw" ? "Đã thu hồi đăng ký" : variables.action === "remove" ? "Đã xóa hồ sơ khỏi danh sách tham dự" : "Duyệt thành công");
+      toast.success(variables.action === "toggle" ? "Đổi trạng thái thành công" : variables.action === "revokePermission" ? "Đã thu hồi quyền" : variables.action === "reject" ? "Đã từ chối duyệt" : variables.action === "revoke" ? "Đã thu hồi chứng nhận" : variables.action === "reissue" ? "Đã cấp lại chứng nhận" : variables.action === "withdraw" ? "Đã thu hồi đăng ký" : variables.action === "remove" ? "Đã chuyển hồ sơ về trạng thái từ chối duyệt" : "Duyệt thành công");
       closeQueryDialog();
       // Thao tác có thể đổi dữ liệu ở các danh sách khác (hồ sơ tham dự, chứng nhận, khóa) và ở drawer chi tiết đang mở.
       await queryClient.invalidateQueries({ queryKey: ["resource"] });
@@ -194,7 +199,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
       apiMutation<{ successCount: number; failedCount: number; failures: { leaderFullName?: string; reason: string }[] }>(
         config.bulkApprovePath ?? "",
         "POST",
-        config.buildBulkBody?.(bulkApprovableIds, approved, note, reasons, signer, achievedLevels) ?? { ids: bulkApprovableIds, approved, review: note || undefined, reviews: reasons, achievedLevels },
+        config.buildBulkBody?.(approved ? bulkApprovableIds : bulkRejectableIds, approved, note, reasons, signer, achievedLevels) ?? { ids: approved ? bulkApprovableIds : bulkRejectableIds, approved, review: note || undefined, reviews: reasons, achievedLevels },
       ),
     onSuccess: async (result, variables) => {
       const action = variables.approved ? "Duyệt" : "Từ chối";
@@ -432,13 +437,13 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
   const bulkActions = canBulkApprove ? (
     <>
       <span className="whitespace-nowrap text-sm text-muted">Có thể duyệt {bulkApprovableIds.length} hồ sơ</span>
-      <Tip disabled={bulkApprovableIds.length === 0} label="Duyệt các hồ sơ đang chờ (khóa đã kết thúc sẽ bị bỏ qua)">
+      <Tip disabled={bulkApprovableIds.length === 0} label="Duyệt các hồ sơ đang chờ hoặc duyệt lại hồ sơ bị từ chối (khóa đã kết thúc sẽ bị bỏ qua)">
         <Button disabled={bulkApprovableIds.length === 0} onClick={() => setBulkMode("approve")} size="sm" type="button">
           Duyệt đã chọn
         </Button>
       </Tip>
-      <Tip disabled={bulkApprovableIds.length === 0} label="Từ chối các hồ sơ đang chờ, bắt buộc nhập lý do (khóa đã kết thúc sẽ bị bỏ qua)">
-        <Button disabled={bulkApprovableIds.length === 0} onClick={() => setBulkMode("reject")} size="sm" type="button" variant="outline">
+      <Tip disabled={bulkRejectableIds.length === 0} label="Từ chối các hồ sơ đang chờ, bắt buộc nhập lý do (khóa đã kết thúc sẽ bị bỏ qua)">
+        <Button disabled={bulkRejectableIds.length === 0} onClick={() => setBulkMode("reject")} size="sm" type="button" variant="outline">
           Từ chối đã chọn
         </Button>
       </Tip>
@@ -586,12 +591,12 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
         key={bulkMode ?? "bulk-closed"}
         captureSigner={config.captureSigner}
         exceptionItems={bulkExceptionItems}
-        exceptionReasons={bulkMode ? exceptionReasonsOf(bulkApprovableIds) : undefined}
+        exceptionReasons={bulkMode ? exceptionReasonsOf(bulkTargetIds) : undefined}
         loading={bulkMutation.isPending}
         mode={bulkMode === "reject" ? "reject" : "approve"}
         onClose={() => setBulkMode(null)}
         onConfirm={(note, reasons, signer, achievedLevels) => bulkMode && bulkMutation.mutate({ approved: bulkMode === "approve", note, reasons, signer, achievedLevels })}
-        items={bulkApprovableIds.map((id) => {
+        items={bulkTargetIds.map((id) => {
           const row = rowById(id);
           return { id, label: String(row?.leaderFullName ?? id) };
         })}
@@ -610,14 +615,14 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
       />
       <ConfirmActionDialog
         action="withdraw"
-        confirmLabel="Xóa"
-        description="Hồ sơ sẽ bị xóa khỏi danh sách tham dự kể cả điểm đã nhập (nếu có). Không xóa được hồ sơ đã có chứng nhận."
+        confirmLabel="Chuyển"
+        description="Hồ sơ sẽ chuyển về trạng thái từ chối duyệt đăng ký (không bị xóa hẳn) và điểm đã nhập sẽ bị xóa. Có thể duyệt lại ở màn Duyệt đăng ký. Không xử lý được hồ sơ đã có chứng nhận."
         loading={actionMutation.isPending}
         onClose={closeQueryDialog}
         onConfirm={() => removeId && actionMutation.mutate({ action: "remove", id: removeId })}
         open={Boolean(removeId)}
         requireConfirmText={false}
-        title="Xóa khỏi danh sách tham dự"
+        title="Chuyển hồ sơ về trạng thái từ chối duyệt"
       />
       <ConfirmActionDialog
         action="withdraw"

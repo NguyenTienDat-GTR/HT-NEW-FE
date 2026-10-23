@@ -10,7 +10,7 @@ import { useAuthStore, type AuthUser } from "@/lib/auth/auth-store";
 import { canUseAction, hasPermission, isSuperAdmin } from "@/lib/auth/permissions";
 import { Avatar, columnLabels, ResourceCell } from "./resource-format";
 import { useEmbeddedResource, resourceActionHref, withReturnTo } from "./embedded-resource-context";
-import { fillRoute, getResourceId, isAwaitingApproval } from "./resource-actions";
+import { fillRoute, getResourceId, isAwaitingApproval, isReapprovable } from "./resource-actions";
 import type { ScoreEntry, ScoreNotes } from "./score-entry";
 import { ScoreNoteAction } from "./score-note-action";
 import { RegistrationToggleButton } from "@/modules/training-courses/components/registration-toggle-button";
@@ -242,10 +242,11 @@ export function RowActions({ route, row, onExportRow, exportingRow, scoreNotes }
   const actorId = user?.leaderId || user?.username;
   const canWithdraw = canUseAction(user, route.actions?.withdraw) && Boolean(actorId) && row.createdBy === actorId && isAwaitingApproval(row) && !courseDisabled;
   // Khóa đã kết thúc thì không duyệt/từ chối chứng nhận được, chỉ xuất PDF.
-  const courseFinished = route.kind === "certificates" && row.courseFinished === true;
-  const canApprove = canUseAction(user, route.actions?.approve) && awaitingApproval && !courseFinished && !courseDisabled;
+  const courseFinished = (route.kind === "certificates" || route.kind === "participations") && row.courseFinished === true;
+  const reapprovable = route.kind === "participations" && isReapprovable(row);
+  const canApprove = canUseAction(user, route.actions?.approve) && (awaitingApproval || reapprovable) && !courseFinished && !courseDisabled;
   // Hồ sơ đã có chứng nhận được duyệt thì không xóa được.
-  const canRemove = canUseAction(user, route.actions?.remove) && row.certificateApprovalStatus !== "APPROVED" && !courseDisabled;
+  const canRemove = canUseAction(user, route.actions?.remove) && row.certificateApprovalStatus !== "APPROVED" && row.approvalStatus !== "REJECTED" && !courseFinished && !courseDisabled;
   const canReject = canUseAction(user, route.actions?.reject) && awaitingApproval && !courseFinished && !courseDisabled;
   // Chỉ thu hồi được chứng nhận đã duyệt (kể cả khi khóa đã kết thúc).
   const canRevoke = canUseAction(user, route.actions?.revoke) && route.kind === "certificates" && row.approvalStatus === "APPROVED" && !courseDisabled;
@@ -285,8 +286,8 @@ export function RowActions({ route, row, onExportRow, exportingRow, scoreNotes }
         </Tip>
       ) : null}
       {canApprove ? (
-        <Tip label="Duyệt hồ sơ này">
-          <Button asChild aria-label="Duyệt" className="h-8 min-w-8 rounded-lg" size="icon" variant="icon">
+        <Tip label={reapprovable ? "Duyệt lại hồ sơ bị từ chối" : "Duyệt hồ sơ này"}>
+          <Button asChild aria-label={reapprovable ? "Duyệt lại" : "Duyệt"} className="h-8 min-w-8 rounded-lg" size="icon" variant="icon">
             <Link href={resourceActionHref(route.path, embedded, { approve: id }) as Route}>
               <CheckCircleIcon size={16} />
             </Link>
@@ -303,8 +304,8 @@ export function RowActions({ route, row, onExportRow, exportingRow, scoreNotes }
         </Tip>
       ) : null}
       {canRemove ? (
-        <Tip label="Xóa khỏi danh sách tham dự">
-          <Button asChild aria-label="Xóa khỏi danh sách tham dự" className="h-8 min-w-8 rounded-lg text-danger" size="icon" variant="icon">
+        <Tip label="Chuyển về từ chối duyệt (không xóa hẳn hồ sơ)">
+          <Button asChild aria-label="Chuyển về từ chối duyệt" className="h-8 min-w-8 rounded-lg text-danger" size="icon" variant="icon">
             <Link href={resourceActionHref(route.path, embedded, { remove: id }) as Route}>
               <TrashIcon size={16} />
             </Link>

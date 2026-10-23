@@ -172,7 +172,7 @@ export function CoursesTab({ data, filters, busy, onDrill }: TabProps) {
 
   return (
     <div className="space-y-6">
-      <KpiGrid busy={busy} data={data} keys={["totalCourses", "registrations", "attendanceRate", "passRate", "cancellationRate", "certificateRate", "averageScore", "trainedLeaders"]} />
+      <KpiGrid busy={busy} data={data} keys={["totalCourses", "registrations", "attendanceRate", "passRate", "cancellationRate", "rejectionRate", "certificateRate", "averageScore", "trainedLeaders"]} />
       <GroupedSection busy={busy} data={data} metrics={["registrations", "attended", "passed"]} onSelect={drill} />
 
       <div className="grid gap-6 xl:grid-cols-3">

@@ -36,6 +36,8 @@ export const kpiMeta: Record<string, KpiMeta> = {
   attendanceRate: { label: "Tỷ lệ tham dự", hint: "Tham dự / đăng ký hợp lệ (không tính hồ sơ đã hủy hoặc bị từ chối).", upIsGood: true },
   passRate: { label: "Tỷ lệ đạt", hint: "Hồ sơ đạt / hồ sơ đã tham dự, trong các khóa bắt đầu trong kỳ.", upIsGood: true },
   cancellationRate: { label: "Tỷ lệ hủy", hint: "Hồ sơ đã hủy / tổng lượt đăng ký.", upIsGood: false },
+  rejectionRate: { label: "Tỷ lệ từ chối", hint: "Hồ sơ bị từ chối duyệt (gồm hồ sơ bị xóa khỏi danh sách tham dự) / tổng lượt đăng ký. Hồ sơ được duyệt lại sẽ không còn tính.", upIsGood: false },
+  rejectedRegistrations: { label: "Hồ sơ bị từ chối", hint: "Hồ sơ đang ở trạng thái từ chối duyệt, có thể được duyệt lại.", upIsGood: false },
   certificateRate: { label: "Đã có chứng nhận", hint: "Hồ sơ đạt đã có chứng nhận được duyệt / hồ sơ đạt.", upIsGood: true },
   averageScore: { label: "Điểm trung bình", hint: "Điểm tổng kết trung bình của hồ sơ đã tham dự và có điểm.", upIsGood: true },
   pendingApproval: { label: "Chờ duyệt đăng ký", hint: "Hồ sơ đăng ký đang chờ duyệt.", upIsGood: false },
@@ -169,6 +171,7 @@ export const severityMeta: Record<AlertSeverity, { label: string }> = {
 
 export const workQueueMeta: Record<string, { title: string; description: string }> = {
   pendingRegistrations: { title: "Đăng ký chờ duyệt", description: "Rà soát hồ sơ theo cấp duyệt hiện tại." },
+  rejectedRegistrations: { title: "Hồ sơ bị từ chối", description: "Hồ sơ bị từ chối hoặc bị xóa khỏi danh sách tham dự, có thể duyệt lại." },
   pendingScoring: { title: "Hồ sơ chờ chấm điểm", description: "Nhập điểm cho hồ sơ đã tham dự và chưa khóa điểm." },
   closingCourses: { title: "Khóa sắp đóng đăng ký", description: "Cửa sổ đăng ký kết thúc trong 7 ngày tới." },
   pendingCertificates: { title: "Chứng nhận chờ duyệt", description: "Kiểm tra điểm liệt và lý do ngoại lệ." },

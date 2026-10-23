@@ -1,15 +1,16 @@
 "use client";
 
-import { ArrowRight, CalendarCheck, Certificate, ClipboardText, PencilLine } from "@phosphor-icons/react";
+import { ArrowCounterClockwise, ArrowRight, CalendarCheck, Certificate, ClipboardText, PencilLine } from "@phosphor-icons/react";
 import type { Route } from "next";
 import Link from "next/link";
 import { cn, viNumber } from "@/lib/utils";
 import { workQueueMeta } from "@/modules/analytics/labels";
 import type { WorkQueueItem } from "@/modules/analytics/types";
 
-const ICONS = { pendingRegistrations: ClipboardText, pendingScoring: PencilLine, closingCourses: CalendarCheck, pendingCertificates: Certificate } as const;
+const ICONS = { pendingRegistrations: ClipboardText, rejectedRegistrations: ArrowCounterClockwise, pendingScoring: PencilLine, closingCourses: CalendarCheck, pendingCertificates: Certificate } as const;
 const TONES: Record<string, string> = {
   pendingRegistrations: "bg-primary-soft text-primary",
+  rejectedRegistrations: "bg-[#fdecec] text-[#a12b2b]",
   pendingScoring: "bg-[#e6f4ff] text-[#1c5cab]",
   closingCourses: "bg-[#fff4d6] text-[#8a5a00]",
   pendingCertificates: "bg-[#e8f5e8] text-[#006300]",
@@ -18,7 +19,7 @@ const TONES: Record<string, string> = {
 /** Lối tắt tới việc cần xử lý; thẻ có việc nổi lên (chấm + số đậm), thẻ trống mờ đi nhưng vẫn bấm được. */
 export function WorkQueue({ items }: { items: WorkQueueItem[] }) {
   return (
-    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
       {items.map((item, index) => {
         const meta = workQueueMeta[item.key];
         if (!meta) return null;
