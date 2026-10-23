@@ -20,6 +20,10 @@ export type EmbeddedResource = {
   courseFinished?: boolean;
   // Khóa đã bị vô hiệu hóa: chỉ xem, mọi thao tác trong khóa bị chặn (BE cũng chặn).
   courseDisabled?: boolean;
+  // Khóa quá khứ: có nút import danh sách tham dự từ Excel, duyệt chứng nhận phải chọn ngày duyệt.
+  coursePast?: boolean;
+  // Tên khóa đang xem (để form mở từ tab hiện tên khóa thay vì mã).
+  courseName?: string;
 };
 
 const EmbeddedResourceContext = createContext<EmbeddedResource | null>(null);

@@ -20,6 +20,8 @@ export const workflowFormSpecs: ResourceFormSpec[] = [
         optionsEndpoint: "/training/courses/registrable",
         optionValue: "courseCode",
         optionLabel: "courseName",
+        // Mở từ tab "Đăng ký tham dự" của khóa thì luôn là khóa đang chọn và không đổi được; mở trực tiếp (chưa có khóa) vẫn chọn được.
+        readOnlyOnCreate: true,
         section: "Khóa",
       },
       {

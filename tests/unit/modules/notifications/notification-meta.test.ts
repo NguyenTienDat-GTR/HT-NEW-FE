@@ -24,4 +24,24 @@ describe("notification meta", () => {
     expect(notificationHref(item)).toBe(MY_PERMISSIONS_PATH);
     expect(notificationHref({ id: "5", eventType: "ROLE_PERMISSION_GRANTED" })).toBe(MY_PERMISSIONS_PATH);
   });
+
+  it("treats permission revocation like a grant: same group, opens the permission list modal and the current permissions page", () => {
+    for (const eventType of ["ROLE_PERMISSION_REVOKED", "ACCOUNT_PERMISSION_REVOKED", "ROLE_PERMISSION_EXPIRED", "ACCOUNT_PERMISSION_EXPIRED"]) {
+      const item = {
+        id: eventType,
+        eventType,
+        payload: JSON.stringify({
+          kind: "PERMISSION_REVOKE",
+          targetType: "ACCOUNT",
+          targetName: "an",
+          heading: "Quyền vừa bị thu hồi",
+          items: [{ label: "Xem hồ sơ", detail: "Huynh trưởng · Xem · Giáo phận", code: "organization.leader.read.diocese" }],
+        }),
+      };
+      expect(notificationGroupOf(item)).toBe("access");
+      expect(notificationHref(item)).toBe(MY_PERMISSIONS_PATH);
+      expect(notificationDetail(item)?.kind).toBe("PERMISSION_REVOKE");
+      expect(notificationDetail(item)?.items[0]?.label).toBe("Xem hồ sơ");
+    }
+  });
 });

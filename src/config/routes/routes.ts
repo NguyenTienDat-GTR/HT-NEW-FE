@@ -2,7 +2,7 @@ import { dashboardRouteGroup } from "./groups/dashboard";
 import { organizationRouteGroup } from "./groups/organization";
 import { leaderRouteGroup } from "./groups/leader";
 import { executiveBoardRouteGroup } from "./groups/executive-board";
-import { trainingRouteGroup } from "./groups/training";
+import { pastCourseRouteGroup, trainingRouteGroup } from "./groups/training";
 import { trainingWorkflowRouteGroup } from "./groups/training-workflow";
 import { certificateRouteGroup } from "./groups/certificate";
 import { systemRouteGroup } from "./groups/system";
@@ -22,7 +22,7 @@ export const routeGroups: RouteGroup[] = [
 
 // Quy trình huấn luyện (đăng ký, duyệt, tham dự, chấm điểm) hiển thị thành tab trong chi tiết khóa huấn luyện,
 // không còn menu trên sidebar nhưng route vẫn được khai báo cho form, liên kết và phân quyền.
-const embeddedRouteGroups: RouteGroup[] = [trainingWorkflowRouteGroup];
+const embeddedRouteGroups: RouteGroup[] = [trainingWorkflowRouteGroup, pastCourseRouteGroup];
 
 export const routes: RouteConfig[] = [...routeGroups, ...embeddedRouteGroups].flatMap((group) => group.children);
 

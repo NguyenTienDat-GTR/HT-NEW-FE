@@ -9,6 +9,7 @@ import { usePathname, useRouter } from "next/navigation";
 import type React from "react";
 import { useMemo, useState } from "react";
 import { BrandMark } from "@/components/brand/brand-mark";
+import { ExcelJobsTray } from "@/components/common/resource/excel-jobs-tray";
 import { TooltipIconButton } from "@/components/ui/tooltip-icon-button";
 import { apiFetch } from "@/lib/api/client";
 import { useAuthStore, type AuthUser } from "@/lib/auth/auth-store";
@@ -155,6 +156,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </header>
         <main className="mx-auto max-w-7xl px-4 py-6 lg:px-8 lg:py-8">{children}</main>
+        <ExcelJobsTray />
       </div>
     </div>
   );

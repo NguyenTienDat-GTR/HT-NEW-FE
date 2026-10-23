@@ -57,6 +57,7 @@ export function ResourceFormPage({
   // Mở từ tab khóa huấn luyện: quay về đúng tab sau khi lưu và chọn sẵn khóa.
   const returnTo = safeReturnTo(searchParams.get("returnTo"));
   const prefillCourseCode = searchParams.get("courseCode");
+  const prefillCourseName = searchParams.get("courseName");
   const createDefaults: Record<string, unknown> =
     mode === "create"
       ? { ...(spec?.getInitialValues?.(user) ?? {}), ...(prefillCourseCode && spec?.fields.some((field) => field.name === "courseCode") ? { courseCode: prefillCourseCode } : {}) }
@@ -72,6 +73,8 @@ export function ResourceFormPage({
       optionsEndpoint: field.buildOptionsEndpoint?.(mergedValues) ?? field.optionsEndpointForUser?.(user) ?? field.optionsEndpoint,
       required: field.requiredWhen?.(mergedValues, mode) ?? field.required,
       readOnlyOnEdit: field.readOnlyOnEdit || (field.readOnlyWhen?.(mergedValues, mode) ?? false),
+      // Khóa được chọn sẵn từ tab của khóa: hiện tên khóa (không phải mã) kể cả khi khóa không nằm trong danh sách lựa chọn.
+      currentLabel: field.name === "courseCode" && prefillCourseName ? prefillCourseName : field.currentLabel,
     }));
 
   const mutation = useMutation({

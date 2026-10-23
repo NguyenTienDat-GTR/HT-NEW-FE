@@ -41,6 +41,8 @@ export type FormFieldSpec = {
   requiredWhen?: (values: Record<string, unknown>, mode: ResourceFormMode) => boolean;
   readOnlyWhen?: (values: Record<string, unknown>, mode: ResourceFormMode) => boolean;
   readOnlyOnCreate?: boolean;
+  // Nhãn hiển thị của giá trị hiện tại khi giá trị chưa có trong danh sách lựa chọn tải từ API (ví dụ tên khóa được truyền từ trang trước).
+  currentLabel?: string;
   readOnlyOnEdit?: boolean;
   clearable?: boolean;
   // Nhãn ô đánh dấu xóa giá trị khi sửa (mặc định "Xóa giá trị khi lưu").

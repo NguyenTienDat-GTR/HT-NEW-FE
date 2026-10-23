@@ -269,7 +269,7 @@ function OptionControl({
   const excludedValues = new Set([...(field.excludeOptionValues ?? []), ...(field.excludeOptionValuesWhen?.(user ?? null) ?? [])]);
   const filteredOptions = (field.options ?? apiOptions).filter((option) => !excludedValues.has(option.value));
   const currentValue = !multiple && !checkboxList ? String(value ?? "") : "";
-  const options = preserveCurrentOption(filteredOptions, currentValue, Boolean(field.optionsEndpoint && !field.options));
+  const options = preserveCurrentOption(filteredOptions, currentValue, Boolean(field.optionsEndpoint && !field.options), field.currentLabel);
 
   useEffect(() => {
     if (query.isLoading || field.options) return;
@@ -380,11 +380,11 @@ function OptionControl({
   );
 }
 
-function preserveCurrentOption(options: Option[], currentValue: string, remoteOptions: boolean) {
+function preserveCurrentOption(options: Option[], currentValue: string, remoteOptions: boolean, currentLabel?: string) {
   if (!remoteOptions || !currentValue || options.some((option) => option.value === currentValue)) {
     return options;
   }
-  return [{ value: currentValue, label: currentValue }, ...options];
+  return [{ value: currentValue, label: currentLabel || currentValue }, ...options];
 }
 
 function SearchableSelect({

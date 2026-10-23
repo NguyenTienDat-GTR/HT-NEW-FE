@@ -29,6 +29,45 @@ function courseTypesInScope(resource: ManagedResource) {
 // Khóa đã có hồ sơ tham gia (BE trả hasParticipations ở chi tiết khóa) thì khóa các trường này khi sửa.
 const lockedByParticipations = (values: Record<string, unknown>, mode: string) => mode === "edit" && values.hasParticipations === true;
 
+const pastCourseFields: ResourceFormSpec["fields"] = [
+  { name: "courseName", label: "Tên khóa", required: true, section: "Thông tin khóa" },
+  {
+    name: "hostYear",
+    label: "Năm tổ chức",
+    type: "number",
+    required: true,
+    min: 1900,
+    readOnlyWhen: lockedByParticipations,
+    helper: "Không được sau năm hiện tại. Khóa đã có danh sách tham dự thì không đổi được năm tổ chức.",
+    section: "Thông tin khóa",
+  },
+  {
+    name: "resultingLevel",
+    label: "Cấp độ đạt được",
+    type: "select",
+    optionsEndpoint: "/leader-levels/options",
+    optionValue: "levelCode",
+    optionLabel: "levelName",
+    readOnlyWhen: lockedByParticipations,
+    helper:
+      "Không bắt buộc. Có cấp độ thì học viên Đạt được chuyển sang duyệt chứng nhận; khi chứng nhận được duyệt, cấp độ được ghi vào lịch sử cấp độ (cấp hiện tại chỉ tăng nếu cấp mới cao hơn).",
+    section: "Thông tin khóa",
+  },
+  { name: "location", label: "Địa điểm", section: "Thông tin khóa" },
+  { name: "startDate", label: "Ngày bắt đầu", type: "date", helper: "Không bắt buộc, có thể bỏ qua thời gian diễn ra.", section: "Thời gian" },
+  { name: "endDate", label: "Ngày kết thúc", type: "date", section: "Thời gian" },
+  {
+    name: "passingScore",
+    label: "Điểm đạt",
+    type: "number",
+    min: 0,
+    readOnlyWhen: lockedByParticipations,
+    helper: "Không bắt buộc (mặc định 0). Kết quả Đạt / Không đạt của từng học viên lấy theo file Excel.",
+    section: "Cấu hình chấm điểm",
+  },
+  { name: "additionalNotes", label: "Ghi chú", type: "textarea", section: "Thông tin bổ sung" },
+];
+
 export const trainingFormSpecs: ResourceFormSpec[] = [
   {
     kind: "course-types",
@@ -204,6 +243,21 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
       return payload;
     },
   },
+  ...(["create", "edit"] as const).map(
+    (actionType): ResourceFormSpec => ({
+      kind: "courses",
+      moduleName: "training.course.past",
+      actionType,
+      createTitle: "Tạo khóa huấn luyện quá khứ",
+      editTitle: "Chỉnh sửa khóa huấn luyện quá khứ",
+      description:
+        "Lưu lại khóa đã tổ chức trong quá khứ: chỉ cần tên khóa và năm tổ chức, không cần loại khóa hay thời gian đăng ký. Sau khi tạo, import danh sách tham dự (kèm điểm và kết quả) từ Excel ở chi tiết khóa.",
+      getInitialValues: () => ({ passingScore: 0 }),
+      buildEndpoint: (_values, id) => (id ? `/training/courses/past/${encodeURIComponent(id)}` : "/training/courses/past"),
+      fields: pastCourseFields,
+      mapSubmit: (values) => compactPayload(values),
+    }),
+  ),
   {
     kind: "score-components",
     createTitle: "Thêm thành phần điểm",

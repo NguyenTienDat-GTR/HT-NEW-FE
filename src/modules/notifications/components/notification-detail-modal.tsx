@@ -21,13 +21,16 @@ export function NotificationDetailModal({
   item,
   onClose,
   onViewPermissions,
+  onOpenTarget,
 }: {
   item: NotificationItem | null;
   onClose: () => void;
   onViewPermissions?: () => void;
+  // Mở màn hình liên quan (khóa huấn luyện / chứng nhận) của thông báo kết quả hồ sơ.
+  onOpenTarget?: () => void;
 }) {
   const detail = item ? notificationDetail(item) : null;
-  const isPermission = detail?.kind === "PERMISSION_GRANT";
+  const isPermission = detail?.kind === "PERMISSION_GRANT" || detail?.kind === "PERMISSION_REVOKE";
   return (
     <Dialog.Root onOpenChange={(open) => (!open ? onClose() : undefined)} open={Boolean(item && detail)}>
       <Dialog.Portal>
@@ -39,6 +42,7 @@ export function NotificationDetailModal({
               <Dialog.Description className="mt-1 text-[13px] leading-5 text-text-secondary">
                 {detail?.heading ? <span className="font-medium text-foreground">{detail.heading}</span> : null}
                 {detail?.decision && decisionLabels[detail.decision] ? <span> · {decisionLabels[detail.decision]}</span> : null}
+                {detail?.actorName ? <span> · Thực hiện bởi {detail.actorName}</span> : null}
                 {isPermission && detail?.targetName ? (
                   <span>
                     {" · "}
@@ -69,6 +73,11 @@ export function NotificationDetailModal({
           <div className="flex items-center justify-between gap-2 border-t border-border px-5 py-3">
             <span className="text-xs text-muted">{detail?.items.length ?? 0} mục</span>
             <div className="flex gap-2">
+              {detail?.kind === "DECISION_LIST" && onOpenTarget ? (
+                <Button onClick={onOpenTarget} type="button">
+                  {item?.eventType?.startsWith("training.certificate.") ? "Xem chứng nhận" : "Mở khóa huấn luyện"}
+                </Button>
+              ) : null}
               {isPermission && onViewPermissions ? (
                 <Button onClick={onViewPermissions} type="button">
                   <ShieldCheck size={18} weight="bold" />

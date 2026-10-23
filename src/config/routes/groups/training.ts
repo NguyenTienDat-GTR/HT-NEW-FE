@@ -64,3 +64,30 @@ export const trainingRouteGroup: RouteGroup = {
       }),
     ],
   };
+
+// Khóa huấn luyện quá khứ: chỉ tài khoản được super-admin cấp quyền training.course.create_past.* thấy và dùng.
+// Không hiện trên sidebar (nằm trong nhóm nhúng), dùng chung đường dẫn danh sách khóa; chỉ khác đường dẫn tạo / sửa và quyền.
+export const pastCourseRouteGroup: RouteGroup = {
+  moduleName: "training.course.past",
+  label: "Khóa quá khứ",
+  icon: GraduationCap,
+  children: [
+    route({
+      path: "/training/courses",
+      createPath: "/training/courses/past/new",
+      editPath: "/training/courses/past/:id/edit",
+      moduleName: "training.course.past",
+      title: "Khóa huấn luyện quá khứ",
+      subtitle: "Lưu lịch sử khóa đã tổ chức: chỉ cần tên khóa và năm tổ chức, sau đó import danh sách tham dự từ Excel",
+      endpoint: "/training/courses",
+      idField: "courseCode",
+      kind: "courses",
+      icon: GraduationCap,
+      columns: ["courseName", "hostYear"],
+      permissionPrefixes: ["training.course.create_past."],
+      primaryActionLabel: "Tạo khóa quá khứ",
+      primaryActionPermissionPrefixes: ["training.course.create_past."],
+      actions: { edit: { label: "Sửa khóa quá khứ", permissionPrefixes: ["training.course.create_past."] } },
+    }),
+  ],
+};
