@@ -14,3 +14,8 @@ export function fillRoute(template: string | undefined, params: Record<string, s
 export function isAwaitingApproval(row: Record<string, unknown>) {
   return ["PENDING", "SUBMITTED"].includes(String(row.approvalStatus ?? ""));
 }
+
+// Hồ sơ bị từ chối duyệt (kể cả bị xóa khỏi danh sách tham dự) vẫn được duyệt lại.
+export function isReapprovable(row: Record<string, unknown>) {
+  return row.approvalStatus === "REJECTED";
+}

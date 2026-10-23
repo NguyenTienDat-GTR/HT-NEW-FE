@@ -116,7 +116,7 @@ export const trainingWorkflowRouteGroup: RouteGroup = {
         path: "/training/approvals",
         moduleName: "training.approval",
         title: "Duyệt đăng ký",
-        subtitle: "Duyệt hoặc từ chối hồ sơ theo đúng cấp workflow.",
+        subtitle: "Duyệt, từ chối hoặc duyệt lại hồ sơ bị từ chối theo đúng cấp workflow.",
         endpoint: "/training/participations",
         idField: "id",
         kind: "participations",
@@ -153,8 +153,8 @@ export const trainingWorkflowRouteGroup: RouteGroup = {
         actionPermissionPrefixes: ["training.participation.approve.", "training.participation.score."],
         primaryActionLabel: "Xử lý hồ sơ",
         filters: participantFilters,
-        // Người có quyền duyệt được xóa hồ sơ khỏi danh sách tham dự (trừ hồ sơ đã có chứng nhận).
-        actions: { remove: { label: "Xóa khỏi danh sách", permissionPrefixes: ["training.participation.approve."] } },
+        // Người có quyền duyệt đưa hồ sơ khỏi danh sách tham dự về trạng thái từ chối duyệt (trừ hồ sơ đã có chứng nhận); hồ sơ không bị xóa và duyệt lại được ở màn Duyệt đăng ký.
+        actions: { remove: { label: "Chuyển về từ chối duyệt", permissionPrefixes: ["training.participation.approve."] } },
         filterLabels: ["Khóa huấn luyện", "Trạng thái tham dự"],
         workflowHint: "Score form khóa khi certificateApprovalStatus là APPROVED.",
       }),
