@@ -135,7 +135,7 @@ export function InfoHint({ text }: { text: string }) {
         <Info className="h-3.5 w-3.5" weight="bold" />
       </button>
       <span
-        className="pointer-events-none absolute left-1/2 top-full z-30 mt-1.5 w-60 -translate-x-1/2 translate-y-1 rounded-lg border border-border bg-white p-2.5 text-left text-xs font-normal leading-5 text-text-secondary opacity-0 shadow-[var(--shadow-elevated)] transition duration-150 group-hover/hint:translate-y-0 group-hover/hint:opacity-100 group-focus-within/hint:translate-y-0 group-focus-within/hint:opacity-100"
+        className="pointer-events-none absolute right-0 top-full z-50 mt-1.5 w-64 max-w-[min(16rem,80vw)] translate-y-1 rounded-lg border border-border bg-white p-2.5 text-left text-xs font-normal leading-5 text-text-secondary opacity-0 shadow-[var(--shadow-elevated)] transition duration-150 group-hover/hint:translate-y-0 group-hover/hint:opacity-100 group-focus-within/hint:translate-y-0 group-focus-within/hint:opacity-100"
         role="tooltip"
       >
         {text}
@@ -167,7 +167,7 @@ export function KpiCard({ kpi, index = 0, label, onClick, busy, compare = true }
     <Wrapper
       animate={reduced ? undefined : { opacity: 1, y: 0, scale: 1 }}
       className={cn(
-        "group/kpi relative flex min-h-[96px] flex-col justify-between overflow-hidden rounded-xl border border-border bg-white p-3.5 text-left shadow-sm transition-[transform,box-shadow,border-color,opacity] duration-200 hover:-translate-y-0.5 hover:shadow-[var(--shadow-elevated)]",
+        "group/kpi relative flex min-h-[96px] flex-col justify-between rounded-xl border border-border bg-white p-3.5 text-left shadow-sm transition-[transform,box-shadow,border-color,opacity] duration-200 hover:-translate-y-0.5 hover:z-20 hover:shadow-[var(--shadow-elevated)] focus-within:z-20",
         onClick && "cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary",
         busy && "opacity-60",
       )}
@@ -176,8 +176,11 @@ export function KpiCard({ kpi, index = 0, label, onClick, busy, compare = true }
       transition={{ delay: Math.min(index, 10) * 0.05, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
       type={onClick ? "button" : undefined}
     >
-      <span aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[3px] origin-left scale-x-[0.28] transition-transform duration-500 ease-out group-hover/kpi:scale-x-100" style={{ background: tone }} />
-      <span aria-hidden className="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full opacity-[0.09] transition-opacity duration-300 group-hover/kpi:opacity-[0.18]" style={{ background: tone }} />
+      {/* Phần trang trí cắt theo góc bo của thẻ; thẻ không cắt nội dung để tooltip hiện đè ra ngoài. */}
+      <span aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden rounded-xl">
+        <span aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[3px] origin-left scale-x-[0.28] transition-transform duration-500 ease-out group-hover/kpi:scale-x-100" style={{ background: tone }} />
+        <span aria-hidden className="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full opacity-[0.09] transition-opacity duration-300 group-hover/kpi:opacity-[0.18]" style={{ background: tone }} />
+      </span>
       <div className="relative flex items-center gap-2">
         <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg" style={{ background: `color-mix(in srgb, ${tone} 14%, white)`, color: tone }}>
           <Icon className="h-4 w-4" weight="bold" />
