@@ -145,7 +145,7 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
     createTitle: "Tạo khóa huấn luyện",
     editTitle: "Chỉnh sửa khóa huấn luyện",
     description: "Khóa học, thời gian, cửa sổ đăng ký và điểm đạt. Sau khi khóa có hồ sơ tham gia, không đổi được loại khóa, năm tổ chức, số năm hoạt động và điểm đạt.",
-    getInitialValues: () => ({ yearsActive: 0, autoApproveEligible: false, scoreVisible: false }),
+    getInitialValues: () => ({ yearsActive: 0, autoApproveEligible: false, scoreVisible: false, attendanceEnabled: false, autoSendInvitation: false }),
     fields: [
       { name: "courseName", label: "Tên khóa", required: true, section: "Thông tin khóa" },
       {
@@ -217,6 +217,22 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
         switchLabels: ["Bật: hiển thị điểm trong chứng nhận và kết quả", "Tắt: chỉ cấp sở hữu khóa hoặc cấp cao hơn xem điểm"],
         helper: "Cấp sở hữu khóa và cấp cao hơn luôn xem được điểm. Bật để các cấp còn lại (giáo xứ, huynh trưởng) cũng thấy điểm trong chứng nhận và tab kết quả của hồ sơ huynh trưởng.",
         section: "Duyệt và hiển thị",
+      },
+      {
+        name: "attendanceEnabled",
+        label: "Bật điểm danh bằng mã QR",
+        type: "switch",
+        switchLabels: ["Bật: hồ sơ trong danh sách tham dự có mã QR để quét điểm danh", "Tắt: không điểm danh bằng mã QR"],
+        helper: "Khi bật, mỗi hồ sơ trong danh sách tham dự có mã QR riêng (in trên thẻ hoặc gửi trong email) để quét điểm danh ở tab Thẻ & điểm danh. Phải bật mới gửi được mã QR trong email.",
+        section: "Điểm danh và thẻ tham dự",
+      },
+      {
+        name: "autoSendInvitation",
+        label: "Tự gửi email thông tin tham dự khi duyệt",
+        type: "switch",
+        switchLabels: ["Bật: hồ sơ được duyệt sẽ nhận email thông tin tham dự", "Tắt: chỉ gửi email thủ công"],
+        helper: "Email gồm tên thánh, họ tên, giáo xứ, giáo hạt, giáo phận, tên khóa, thời gian tổ chức; kèm mã QR điểm danh nếu khóa bật điểm danh. Hồ sơ không có email hoặc email lỗi được ghi chú ở tab Thẻ & điểm danh, các hồ sơ còn lại vẫn được gửi. Hồ sơ đã gửi không bị gửi lại.",
+        section: "Điểm danh và thẻ tham dự",
       },
       {
         name: "recipientUsernames",

@@ -115,6 +115,8 @@ export const columnLabels: Record<string, string> = {
   passingScore: "Điểm đạt",
   scoreLocked: "Khóa chỉnh sửa điểm",
   autoApproveEligible: "Tự động duyệt hồ sơ hợp lệ",
+  attendanceEnabled: "Bật điểm danh bằng QR",
+  autoSendInvitation: "Tự gửi email khi duyệt",
   scoreVisible: "Hiển thị điểm của khóa",
   patronSaintDay: "Ngày bổn mạng",
   permissionCode: "Mã quyền",

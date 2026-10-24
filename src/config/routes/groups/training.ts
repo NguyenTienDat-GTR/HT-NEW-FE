@@ -1,4 +1,4 @@
-import { ChartBar, GraduationCap, ListChecks } from "@phosphor-icons/react";
+import { ChartBar, GraduationCap, IdentificationBadge, ListChecks } from "@phosphor-icons/react";
 import { route, type RouteGroup } from "../route-config";
 
 export const trainingRouteGroup: RouteGroup = {
@@ -23,6 +23,19 @@ export const trainingRouteGroup: RouteGroup = {
         primaryActionLabel: "Thêm loại khóa",
         filterLabels: ["Loại khóa", "Cấp quản lý", "Trạng thái"],
         workflowHint: "Điểm tổng kết = trung bình có hệ số; thành phần tắt cờ tính vào điểm tổng kết sẽ không được tính.",
+      }),
+      route({
+        path: "/training/badge-config",
+        moduleName: "training.badge-config",
+        title: "Cấu hình thẻ tham dự",
+        subtitle: "Thư viện cấu hình thẻ tham dự khóa huấn luyện: khổ thẻ, mặt trước / mặt sau, ảnh nền, trường mail merge và mã QR điểm danh. Dùng khi xuất thẻ trong từng khóa.",
+        endpoint: "/badges/config",
+        idField: "id",
+        kind: "badge-config",
+        icon: IdentificationBadge,
+        columns: [],
+        permissionPrefixes: ["training.badge_config.read."],
+        actionPermissionPrefixes: ["training.badge_config.create.", "training.badge_config.update.", "training.badge_config.delete."],
       }),
       route({
         path: "/training/score-components",

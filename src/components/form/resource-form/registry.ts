@@ -15,10 +15,13 @@ export function getFormSpec(route: RouteConfig, actionType: "create" | "edit" | 
   const orderedSpecs = isSuperAdmin(user)
     ? [...matchingSpecs.filter((spec) => spec.superAdminOnly), ...matchingSpecs.filter((spec) => !spec.superAdminOnly)]
     : matchingSpecs;
+  // Spec gắn với một module riêng (ví dụ khóa quá khứ) không được dùng thay cho route của module khác cùng loại tài nguyên:
+  // nếu không, form khóa huấn luyện thường sẽ bị thay bằng form khóa quá khứ.
+  const sharedOrOwn = (spec: ResourceFormSpec) => !spec.moduleName || spec.moduleName === route.moduleName;
   return (
     orderedSpecs.find((spec) => spec.moduleName === route.moduleName && spec.actionType === actionType) ??
-    orderedSpecs.find((spec) => spec.kind === route.kind && spec.actionType === actionType) ??
-    orderedSpecs.find((spec) => spec.kind === route.kind && !spec.actionType)
+    orderedSpecs.find((spec) => sharedOrOwn(spec) && spec.kind === route.kind && spec.actionType === actionType) ??
+    orderedSpecs.find((spec) => sharedOrOwn(spec) && spec.kind === route.kind && !spec.actionType)
   );
 }
 

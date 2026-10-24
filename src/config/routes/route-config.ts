@@ -19,6 +19,7 @@ export type ResourceKind =
   | "participations"
   | "certificates"
   | "certificate-config"
+  | "badge-config"
   | "leader-levels"
   | "accounts"
   | "roles"

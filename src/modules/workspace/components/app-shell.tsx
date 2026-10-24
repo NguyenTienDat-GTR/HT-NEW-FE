@@ -17,6 +17,7 @@ import { hasPermissionPrefix, isSuperAdmin } from "@/lib/auth/permissions";
 import { cn } from "@/lib/utils";
 import { routeGroups, type RouteConfig, type RouteGroup } from "@/config/routes/routes";
 import { NotificationPopover } from "@/modules/notifications/components/notification-popover";
+import { QuickAttendanceButton } from "@/modules/course-participants/components/quick-attendance-button";
 import { AccountMenu } from "@/modules/account/components/account-menu";
 import { PROFILE_PATH } from "@/modules/account/account-display";
 import { useNotificationsSocket } from "@/modules/workspace/hooks/notifications-socket";
@@ -149,6 +150,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </label>
 
             <div className="flex shrink-0 items-center gap-2">
+              <QuickAttendanceButton />
               <NotificationPopover />
               <span aria-hidden className="mx-1 hidden h-6 w-px bg-border sm:block" />
               <AccountMenu loggingOut={isLoggingOut} onLogout={logout} />
