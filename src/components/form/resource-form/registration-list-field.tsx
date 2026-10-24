@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { apiFetch, type PageResponse } from "@/lib/api/client";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
 import { useLeaderLevelList } from "@/modules/leader-levels/leader-level-store";
+import { CourseConditionsBox } from "@/modules/training-courses/components/course-conditions";
 import { cn } from "@/lib/utils";
 import { formatDate } from "@/modules/leaders/components/leader-detail-utils";
 import { optionFromRow, rowsFromResponse } from "./api-utils";
@@ -258,6 +259,8 @@ function RegistrationCandidateModal({
             <X size={20} />
           </button>
         </div>
+
+        <CourseConditionsBox courseCode={courseCode} />
 
         <div className="flex flex-wrap items-center gap-3 border-b border-border px-5 py-3">
           <div className="relative min-w-[240px] flex-1">

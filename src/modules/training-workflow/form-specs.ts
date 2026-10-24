@@ -7,7 +7,7 @@ export const workflowFormSpecs: ResourceFormSpec[] = [
     moduleName: "training.registration",
     actionType: "create",
     createTitle: "Đăng ký tham dự khóa",
-    description: "Gửi batch đăng ký huynh trưởng vào một khóa huấn luyện.",
+    description: "Gửi danh sách huynh trưởng đăng ký vào một khóa huấn luyện.",
     buildEndpoint: (values) => `/training/courses/${encodeURIComponent(String(values.courseCode ?? ""))}/registrations`,
     method: "POST",
     fields: [

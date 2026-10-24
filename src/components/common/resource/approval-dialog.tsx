@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { getLeaderLevels, leaderLevelName, leaderLevelRank } from "@/modules/leader-levels/leader-level-store";
+import { ExceptionCourseConditions, ExceptionProfilePanel, type ExceptionReviewTarget } from "@/modules/training-workflow/components/exception-review-info";
 
 export type ApprovalDialogItem = { id: string; label: string };
 
@@ -42,6 +43,7 @@ export function ApprovalDialog({
   exceptionItems,
   exceptionReasons,
   requireApprovalDate,
+  exceptionProfile,
 }: {
   loading?: boolean;
   onClose: () => void;
@@ -59,6 +61,8 @@ export function ApprovalDialog({
   exceptionReasons?: ExceptionReasonItem[];
   // Chứng nhận của khóa quá khứ: phải chọn ngày duyệt, không tự lấy ngày hiện tại.
   requireApprovalDate?: boolean;
+  // Duyệt một hồ sơ ngoại lệ: hiện hồ sơ huynh trưởng, lịch sử cấp độ và điều kiện của khóa để người duyệt tham chiếu.
+  exceptionProfile?: ExceptionReviewTarget | null;
 }) {
   const [note, setNote] = useState("");
   const [scope, setScope] = useState<ReasonScope>("shared");
@@ -111,7 +115,7 @@ export function ApprovalDialog({
         <Dialog.Content
           className={cn(
             "fixed left-1/2 top-1/2 z-50 flex max-h-[90vh] w-[calc(100vw-32px)] -translate-x-1/2 -translate-y-1/2 flex-col rounded-xl border border-border bg-white p-5 shadow-2xl focus:outline-none",
-            individual ? "max-w-[640px]" : "max-w-[500px]",
+            exceptionProfile ? "max-w-[900px]" : individual ? "max-w-[640px]" : "max-w-[500px]",
           )}
         >
           <div className="flex items-start justify-between gap-4">
@@ -134,6 +138,12 @@ export function ApprovalDialog({
               </Button>
             </Dialog.Close>
           </div>
+
+          {/* Duyệt ngoại lệ: hai cột — trái là hồ sơ để tham chiếu, phải là điều kiện của khóa và phần quyết định. */}
+          <div className={exceptionProfile ? "mt-4 grid min-h-0 flex-1 gap-4 overflow-y-auto pr-1 md:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]" : "contents"}>
+          {exceptionProfile ? <ExceptionProfilePanel target={exceptionProfile} /> : null}
+          <div className={exceptionProfile ? "-mt-4 min-w-0" : "contents"}>
+          {exceptionProfile ? <div className="mt-4"><ExceptionCourseConditions courseCode={exceptionProfile.courseCode} /></div> : null}
 
           {exceptionReasons?.length ? (
             <div className="mt-4 max-h-48 space-y-2 overflow-y-auto rounded-lg border border-warning/40 bg-warning/5 p-3">
@@ -279,6 +289,9 @@ export function ApprovalDialog({
               </label>
             </div>
           ) : null}
+
+          </div>
+          </div>
 
           <div className="mt-5 flex items-center justify-end gap-3">
             {missingCount > 0 ? <span className="mr-auto text-xs text-danger">Còn {missingCount} hồ sơ chưa nhập lý do</span> : null}

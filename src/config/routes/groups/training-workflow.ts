@@ -47,6 +47,15 @@ const approvalFilters: RouteFilterConfig[] = [
       { value: "REJECTED", label: "Từ chối" },
     ],
   },
+  {
+    key: "eligible",
+    label: "Điều kiện",
+    type: "boolean",
+    options: [
+      { value: "true", label: "Đủ điều kiện" },
+      { value: "false", label: "Ngoại lệ" },
+    ],
+  },
   ...unitFilters,
 ];
 
@@ -65,8 +74,18 @@ const participantFilters: RouteFilterConfig[] = [
   ...unitFilters,
 ];
 
+// Kết quả theo điểm: Đạt khi điểm tổng kết từ điểm đạt của khóa trở lên, còn lại (kể cả chưa chấm) là Không đạt.
 const scoreFilters: RouteFilterConfig[] = [
   courseFilter,
+  {
+    key: "result",
+    label: "Kết quả",
+    type: "select",
+    options: [
+      { value: "COMPLETED", label: "Đạt" },
+      { value: "UNCOMPLETED", label: "Không đạt" },
+    ],
+  },
   ...unitFilters,
 ];
 
@@ -130,7 +149,7 @@ export const trainingWorkflowRouteGroup: RouteGroup = {
         filters: approvalFilters,
         // Hồ sơ đã duyệt đăng ký chuyển sang danh sách tham dự: danh sách này chỉ giữ hồ sơ chờ duyệt và bị từ chối.
         baseFilters: { approvalStatus: ["PENDING", "SUBMITTED", "REJECTED"] },
-        filterLabels: ["Khóa huấn luyện", "Trạng thái duyệt"],
+        filterLabels: ["Khóa huấn luyện", "Trạng thái duyệt", "Điều kiện"],
       }),
       route({
         path: "/training/participations",

@@ -18,6 +18,8 @@ import { resolveRouteForUser } from "@/modules/workspace/super-admin-route-overr
 import { ApprovalDialog, type CertificateSigner, type ExceptionLevelItem, type ExceptionReasonItem } from "./approval-dialog";
 import { embeddedTabHref, useEmbeddedResource, withReturnTo } from "./embedded-resource-context";
 import { ConfirmActionDialog } from "./confirm-action-dialog";
+import { HelpTip } from "@/components/ui/help-tip";
+import type { ExceptionReviewTarget } from "@/modules/training-workflow/components/exception-review-info";
 import { ExcelExportButton, EXCEL_EXPORT_FILES } from "./excel-export-button";
 import { ExcelImportDialog } from "./excel-import-dialog";
 import { RevokeCertificateDialog } from "./revoke-certificate-dialog";
@@ -135,7 +137,8 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
           return Boolean(row) && (isAwaitingApproval(row!) || (allowReapprove && isReapprovable(row!))) && (row!.courseFinished !== true || row!.coursePast === true);
         })
       : [];
-  const bulkApprovableIds = bulkEligibleIds(true);
+  // Duyệt hàng loạt chỉ áp dụng cho hồ sơ đủ điều kiện; hồ sơ ngoại lệ phải duyệt riêng để chọn cấp độ đạt được.
+  const bulkApprovableIds = bulkEligibleIds(true).filter((id) => rowById(id)?.eligible !== false);
   const bulkRejectableIds = bulkEligibleIds(false);
   const bulkTargetIds = bulkMode === "reject" ? bulkRejectableIds : bulkApprovableIds;
 
@@ -160,6 +163,20 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
     const row = rowById(id);
     const reason = typeof row?.exceptionReason === "string" ? row.exceptionReason.trim() : "";
     return reason ? { id, label: String(row?.leaderFullName ?? id), reason } : null;
+  };
+  // Thông tin tham chiếu khi duyệt một hồ sơ ngoại lệ (chỉ màn Duyệt đăng ký có hồ sơ ngoại lệ).
+  const exceptionProfileFor = (id: string): ExceptionReviewTarget | null => {
+    const row = rowById(id);
+    if (!config.exceptionLevel || !row || row.eligible !== false || typeof row.leaderId !== "string" || typeof row.courseCode !== "string") return null;
+    return {
+      leaderId: row.leaderId,
+      courseCode: row.courseCode,
+      holyName: typeof row.leaderHolyName === "string" ? row.leaderHolyName : undefined,
+      fullName: typeof row.leaderFullName === "string" ? row.leaderFullName : undefined,
+      parishName: typeof row.parishName === "string" ? row.parishName : undefined,
+      deaneryName: typeof row.deaneryName === "string" ? row.deaneryName : undefined,
+      leaderLevel: typeof row.leaderLevel === "string" ? row.leaderLevel : undefined,
+    };
   };
   const exceptionReasonsOf = (ids: string[]) => ids.map(exceptionReasonFor).filter((item): item is ExceptionReasonItem => item !== null);
   const approveExceptionItems = approveId ? [exceptionItemFor(approveId)].filter((item): item is ExceptionLevelItem => item !== null) : [];
@@ -443,7 +460,12 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
     ) : null;
   const bulkActions = canBulkApprove ? (
     <>
-      <span className="whitespace-nowrap text-sm text-muted">Có thể duyệt {bulkApprovableIds.length} hồ sơ</span>
+      <span className="inline-flex items-center gap-1 whitespace-nowrap text-sm text-muted">
+        Có thể duyệt {bulkApprovableIds.length} hồ sơ
+        <HelpTip label="Giải thích duyệt hàng loạt">
+          Duyệt hàng loạt chỉ áp dụng cho hồ sơ đủ điều kiện. Hồ sơ ngoại lệ phải duyệt riêng từng hồ sơ để xem thông tin và chọn cấp độ đạt được; từ chối hàng loạt vẫn áp dụng cho mọi hồ sơ đang chờ.
+        </HelpTip>
+      </span>
       <Tip disabled={bulkApprovableIds.length === 0} label="Duyệt các hồ sơ đang chờ hoặc duyệt lại hồ sơ bị từ chối (khóa đã kết thúc sẽ bị bỏ qua)">
         <Button disabled={bulkApprovableIds.length === 0} onClick={() => setBulkMode("approve")} size="sm" type="button">
           Duyệt đã chọn
@@ -468,8 +490,15 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
   // Xuất Excel theo đúng bộ lọc/tìm kiếm/sắp xếp đang dùng (cả danh sách lẻ lẫn tab trong khóa).
   const exportEndpoint = effectiveRoute.endpoint;
   const excelExportButton =
-    exportEndpoint && EXCEL_EXPORT_FILES[exportEndpoint] ? <ExcelExportButton endpoint={exportEndpoint} queryString={queryState.queryString} /> : null;
+    exportEndpoint && EXCEL_EXPORT_FILES[exportEndpoint] ? (
+      <ExcelExportButton empty={query.isLoading || query.isError || rows.length === 0} endpoint={exportEndpoint} queryString={queryState.queryString} />
+    ) : null;
   // Import Excel: hồ sơ huynh trưởng (quyền tạo huynh trưởng) và danh sách tham dự của khóa quá khứ (quyền riêng do super-admin cấp).
+  // Khóa quá khứ: quyền create_past do super-admin cấp; khóa thường: người duyệt đăng ký (khóa chưa kết thúc).
+  const canImportParticipants =
+    embedded?.coursePast === true
+      ? hasPermissionPrefix(user, "training.course.create_past.")
+      : hasPermissionPrefix(user, "training.participation.approve.") && embedded?.courseFinished !== true;
   const excelImportButton =
     !embedded && effectiveRoute.kind === "leaders" && effectiveRoute.endpoint === "/leaders" && canCreate ? (
       <ExcelImportDialog
@@ -480,13 +509,21 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
         hint="Mọi cột đều bắt buộc trừ Cấp độ (để trống là Chưa có cấp): Tên thánh, Họ và tên, Ngày sinh (dd/MM/yyyy), Giới tính (Nam/Nữ), Email, Số điện thoại, Giáo hạt, Giáo xứ. Giáo hạt và giáo xứ phải đã có trong hệ thống. Email và số điện thoại không được trùng với huynh trưởng khác."
         title="Nhập excel hồ sơ huynh trưởng"
       />
-    ) : embedded?.coursePast === true && effectiveRoute.endpoint === "/training/participants" && scoreCourseCode && !courseDisabled && hasPermissionPrefix(user, "training.course.create_past.") ? (
+    ) : embedded?.tab === "participations" && effectiveRoute.endpoint === "/training/participants" && scoreCourseCode && !courseDisabled && canImportParticipants ? (
       <ExcelImportDialog
-        description="Nhập danh sách tham dự của khóa quá khứ kèm điểm và kết quả. Huynh trưởng được tìm theo email hoặc số điện thoại; chưa có hồ sơ thì tạo mới ngay từ thông tin trong file."
+        description={
+          embedded.coursePast === true
+            ? "Nhập danh sách tham dự của khóa quá khứ kèm điểm và kết quả. Huynh trưởng được tìm theo email hoặc số điện thoại; chưa có hồ sơ thì tạo mới ngay từ thông tin trong file."
+            : "Nhập danh sách tham dự của khóa từ file Excel mẫu. Huynh trưởng được tìm theo email hoặc số điện thoại; chưa có hồ sơ thì tạo mới ngay từ thông tin trong file."
+        }
         endpoint={`/training/courses/${encodeURIComponent(scoreCourseCode)}/participants/import`}
-        templateFileName="mau-import-danh-sach-tham-du-khoa-qua-khu.xlsx"
-        templatePath="/training/courses/past/import-template"
-        hint="Mọi dòng phải nhập đủ các cột, chỉ được bỏ trống Nhận xét và Cấp độ: Email, Số điện thoại, Tổng điểm, Kết quả (Đạt / Không đạt), Tên thánh, Họ và tên, Ngày sinh, Giới tính, Giáo hạt, Giáo xứ (giáo hạt, giáo xứ phải đã có trong hệ thống). Huynh trưởng đã có hồ sơ thì chỉ được thêm vào khóa (hồ sơ không bị sửa); chưa có thì được tạo mới từ chính dòng đó. Học viên Đạt của khóa có cấp độ đạt được sẽ chuyển sang tab Duyệt chứng nhận."
+        templateFileName={embedded.coursePast === true ? "mau-import-danh-sach-tham-du-khoa-qua-khu.xlsx" : "mau-import-danh-sach-tham-du.xlsx"}
+        templatePath={embedded.coursePast === true ? "/training/courses/past/import-template" : "/training/courses/participants/import-template"}
+        hint={
+          embedded.coursePast === true
+            ? "Mọi dòng phải nhập đủ các cột, chỉ được bỏ trống Nhận xét và Cấp độ: Email, Số điện thoại, Tổng điểm, Kết quả (Đạt / Không đạt), Tên thánh, Họ và tên, Ngày sinh, Giới tính, Giáo hạt, Giáo xứ (giáo hạt, giáo xứ phải đã có trong hệ thống). Huynh trưởng đã có hồ sơ thì chỉ được thêm vào khóa (hồ sơ không bị sửa); chưa có thì được tạo mới từ chính dòng đó. Học viên Đạt của khóa có cấp độ đạt được sẽ chuyển sang tab Duyệt chứng nhận."
+            : "Sheet \"Danh sách tham dự\" cho huynh trưởng đủ điều kiện của khóa (vào thẳng danh sách tham dự), sheet \"Ngoại lệ\" cho huynh trưởng không đủ điều kiện (vào danh sách chờ duyệt đăng ký, gắn cờ ngoại lệ, thêm cột Lí do ngoại lệ). Mọi dòng phải nhập đủ các cột, chỉ được bỏ trống Cấp độ: Email, Số điện thoại, Tên thánh, Họ và tên, Ngày sinh, Giới tính, Giáo hạt, Giáo xứ (giáo hạt, giáo xứ phải đã có trong hệ thống). Huynh trưởng đã có hồ sơ thì chỉ được thêm vào khóa (hồ sơ không bị sửa); chưa có thì được tạo mới từ chính dòng đó. Không cần điểm: điểm được chấm ở tab Chấm điểm."
+        }
         title="Nhập excel danh sách tham dự"
         triggerLabel="Nhập excel danh sách tham dự"
       />
@@ -618,6 +655,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
         captureSigner={config.captureSigner}
         exceptionItems={approveExceptionItems}
         exceptionReasons={approveId ? exceptionReasonsOf([approveId]) : undefined}
+        exceptionProfile={approveId ? exceptionProfileFor(approveId) : null}
         requireApprovalDate={Boolean(approveId && rowById(approveId)?.coursePast === true)}
         loading={actionMutation.isPending}
         onClose={closeQueryDialog}
