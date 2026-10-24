@@ -5,7 +5,7 @@ import * as Popover from "@radix-ui/react-popover";
 import { useQueryClient } from "@tanstack/react-query";
 import type { Route } from "next";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import type React from "react";
 import { useMemo, useState } from "react";
 import { BrandMark } from "@/components/brand/brand-mark";
@@ -30,7 +30,6 @@ const defaultOpenGroups: Record<string, boolean> = {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter();
   const queryClient = useQueryClient();
   const user = useAuthStore((state) => state.user);
   const clear = useAuthStore((state) => state.clear);
@@ -66,8 +65,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     } finally {
       queryClient.clear();
       clear();
-      router.replace("/login");
-      setIsLoggingOut(false);
+      // Điều hướng cứng để bỏ Router Cache chứa dữ liệu của tài khoản vừa đăng xuất.
+      window.location.assign("/login");
     }
   }
 
