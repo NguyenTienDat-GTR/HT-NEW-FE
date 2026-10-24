@@ -2,8 +2,7 @@
 
 import {zodResolver} from "@hookform/resolvers/zod";
 import {Church, Eye, EyeSlash, LockKey, User} from "@phosphor-icons/react";
-import type {Route} from "next";
-import {useRouter, useSearchParams} from "next/navigation";
+import {useSearchParams} from "next/navigation";
 import {useForm} from "react-hook-form";
 import {toast} from "sonner";
 import {z} from "zod";
@@ -29,7 +28,6 @@ type LoginResponse = {
 };
 
 export function LoginView() {
-    const router = useRouter();
     const searchParams = useSearchParams();
     const setAccessToken = useAuthStore((state) => state.setAccessToken);
     const setUser = useAuthStore((state) => state.setUser);
@@ -49,7 +47,9 @@ export function LoginView() {
             setUser(data.user);
             toast.success("Đăng nhập thành công");
             const next = data.user.mustChangePassword ? "/change-password" : safeNextPath(searchParams.get("next"));
-            router.replace(next as Route);
+            // Điều hướng cứng: router.replace giữ Router Cache của layout dashboard đã render cho tài khoản trước,
+            // nên đăng nhập tài khoản B vẫn thấy tài khoản A. Tải lại trang để server đọc lại cookie phiên mới.
+            window.location.assign(next);
         } catch (error) {
             const message = getApiErrorMessage(error);
             form.setError("root", {message});
