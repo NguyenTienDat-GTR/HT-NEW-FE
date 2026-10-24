@@ -36,6 +36,8 @@ import {
 import { CertificateResourceView } from "@/modules/certificates/components/certificate-resource-view";
 import { TrainingWorkflowResourceView } from "@/modules/training-workflow/components/training-workflow-resource-view";
 import { CourseTeamsView } from "@/modules/training-teams/components/course-teams-view";
+import { AutoSendBanner } from "@/modules/course-participants/components/auto-send-banner";
+import { CourseParticipantsHub } from "@/modules/course-participants/components/course-participants-hub";
 import { useSessionState } from "@/lib/use-session-state";
 import { CourseConditionList, courseConditionItems } from "@/modules/training-courses/components/course-conditions";
 
@@ -45,6 +47,8 @@ const workflowTabs = [
   { key: "approvals", label: "Duyệt đăng ký", path: "/training/approvals" },
   { key: "participations", label: "Danh sách tham dự", path: "/training/participations" },
   { key: "teams", label: "Chia đội", path: "/training/teams" },
+  // Thẻ tham dự, email thông tin tham dự và điểm danh bằng QR; dùng chung quyền xem danh sách tham dự.
+  { key: "attendance", label: "Thẻ & điểm danh", path: "/training/participations" },
   { key: "scores", label: "Chấm điểm", path: "/training/scores" },
   { key: "certificate-approvals", label: "Duyệt chứng nhận", path: "/certificates/approvals" },
 ] as const;
@@ -60,7 +64,7 @@ const pastSummaryGroups: SummaryGroup[] = [
 const summaryGroups: SummaryGroup[] = [
   { title: "Thông tin chung", columns: ["courseTypeName", "hostYear", "passingScore", "location"] },
   { title: "Thời gian", columns: ["startDate", "endDate", "registrationPeriod"] },
-  { title: "Trạng thái và cấu hình", columns: ["registrationStatus", "organizingStatus", "autoApproveEligible", "scoreVisible"] },
+  { title: "Trạng thái và cấu hình", columns: ["registrationStatus", "organizingStatus", "autoApproveEligible", "scoreVisible", "attendanceEnabled", "autoSendInvitation"] },
 ];
 
 export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig }) {
@@ -106,6 +110,10 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
   });
 
   const course = courseQuery.data;
+  // Gửi email thông tin tham dự, quét và sửa điểm danh: người duyệt đăng ký đúng cấp quản lý khóa (BE kiểm tra lại theo đơn vị).
+  const canManage = hasPermissionPrefix(user, "training.participation.approve.");
+  // Quét / xác nhận điểm danh là quyền riêng theo phạm vi, tách khỏi quyền duyệt đăng ký.
+  const canScan = hasPermissionPrefix(user, "training.attendance.scan.");
   // Khóa bị vô hiệu hóa: chỉ xem, mọi thao tác trong khóa bị chặn.
   const courseDisabled = course?.status === false;
   const isPastCourse = course?.pastCourse === true;
@@ -277,6 +285,10 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
         title="Kết thúc khóa huấn luyện"
       />
 
+      {course && course.autoSendInvitation === true && !isPastCourse && canManage && !courseDisabled && !course.finishedAt ? (
+        <AutoSendBanner attendanceEnabled={course.attendanceEnabled === true} courseCode={id} courseName={String(course.courseName ?? id)} />
+      ) : null}
+
       {tabs.length === 0 ? (
         <Panel className="p-6 text-sm text-muted">Bạn không có quyền xem quy trình huấn luyện của khóa này.</Panel>
       ) : (
@@ -296,7 +308,7 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
                   role="tab"
                 >
                   {tab.label}
-                  {tab.key !== "teams" && tabCounts[tab.key] !== undefined ? (
+                  {tab.key !== "teams" && tab.key !== "attendance" && tabCounts[tab.key] !== undefined ? (
                     <span className={cn("ml-2 inline-flex min-w-6 items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-semibold", active ? "bg-primary-soft text-primary" : "bg-surface-2 text-text-secondary")}>
                       {tabCounts[tab.key]}
                     </span>
@@ -326,6 +338,20 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
                 <CertificateResourceView route={activeTab.route} />
               ) : activeTab.key === "teams" ? (
                 <CourseTeamsView route={activeTab.route} />
+              ) : activeTab.key === "attendance" && course ? (
+                <CourseParticipantsHub
+                  course={{
+                    courseCode: id,
+                    courseName: String(course.courseName ?? id),
+                    attendanceEnabled: course.attendanceEnabled === true,
+                    autoSendInvitation: course.autoSendInvitation === true,
+                    disabled: courseDisabled,
+                    finished: Boolean(course.finishedAt),
+                    canManage,
+                    canScan,
+                  }}
+                  search={search}
+                />
               ) : (
                 <TrainingWorkflowResourceView route={activeTab.route} />
               )}
@@ -375,6 +401,8 @@ const summaryLabels: Record<string, string> = {
   passingScore: "Điểm đạt",
   autoApproveEligible: "Tự động duyệt hồ sơ hợp lệ",
   scoreVisible: "Hiển thị điểm của khóa",
+  attendanceEnabled: "Bật điểm danh bằng QR",
+  autoSendInvitation: "Tự gửi email khi duyệt",
   location: "Địa điểm",
   startDate: "Ngày bắt đầu",
   endDate: "Ngày kết thúc",
