@@ -17,6 +17,7 @@ export const EXCEL_EXPORT_FILES: Record<string, string> = {
   "/training/courses": "khoa-huan-luyen.xlsx",
   "/training/participations": "dang-ky-tham-du.xlsx",
   "/training/participants": "danh-sach-tham-du.xlsx",
+  "/training/participants/teams": "chia-doi.xlsx",
   "/certificates": "chung-nhan.xlsx",
 };
 

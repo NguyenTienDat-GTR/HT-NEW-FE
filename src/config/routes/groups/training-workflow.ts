@@ -74,6 +74,19 @@ const participantFilters: RouteFilterConfig[] = [
   ...unitFilters,
 ];
 
+// Chia đội: như danh sách tham dự, thêm bộ lọc theo đội (danh sách đội của khóa lấy từ API, :courseCode được thay bằng khóa đang xem).
+const teamFilters: RouteFilterConfig[] = [
+  ...participantFilters,
+  {
+    key: "teamName",
+    label: "Đội",
+    type: "select",
+    optionsEndpoint: "/training/courses/:courseCode/teams/options",
+    optionValue: "teamName",
+    optionLabel: "teamName",
+  },
+];
+
 // Kết quả theo điểm: Đạt khi điểm tổng kết từ điểm đạt của khóa trở lên, còn lại (kể cả chưa chấm) là Không đạt.
 const scoreFilters: RouteFilterConfig[] = [
   courseFilter,
@@ -176,6 +189,28 @@ export const trainingWorkflowRouteGroup: RouteGroup = {
         actions: { remove: { label: "Chuyển về từ chối duyệt", permissionPrefixes: ["training.participation.approve."] } },
         filterLabels: ["Khóa huấn luyện", "Trạng thái tham dự"],
         workflowHint: "Score form khóa khi certificateApprovalStatus là APPROVED.",
+      }),
+      route({
+        path: "/training/teams",
+        moduleName: "training.team",
+        title: "Chia đội",
+        subtitle: "Chia hồ sơ trong danh sách tham dự vào các đội, cân bằng nam nữ.",
+        endpoint: "/training/participants",
+        idField: "id",
+        kind: "participations",
+        icon: ClipboardText,
+        columns: ["leaderFullName", "leaderGender", "parishName", "deaneryName", "teamName", "participationStatus"],
+        sortFields: { leaderFullName: "leader.firstName+leader.lastName", leaderGender: "leader.gender", parishName: "leader.parish.name", deaneryName: "leader.parish.deanery.name", teamName: "teamName" },
+        searchFields: participationSearchFields,
+        permissionPrefixes: [
+          "training.participation.read.deanery",
+          "training.participation.read.diocese",
+          "training.participation.approve.deanery",
+          "training.participation.approve.diocese",
+        ],
+        actionPermissionPrefixes: ["training.participation.approve."],
+        filters: teamFilters,
+        filterLabels: ["Trạng thái tham dự", "Giáo hạt", "Giáo xứ", "Đội"],
       }),
       route({
         path: "/training/scores",

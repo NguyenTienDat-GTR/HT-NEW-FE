@@ -1,16 +1,21 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { getResourceId } from "@/components/common/resource/resource-actions";
 import { ResourceListRuntime } from "@/components/common/resource/resource-list-runtime";
+import type { ResourceListModuleConfig } from "@/components/common/resource/resource-list-types";
 import type { RouteConfig } from "@/config/routes/routes";
 
-export function TrainingWorkflowResourceView({ route }: { route: RouteConfig }) {
+export function TrainingWorkflowResourceView({ route, toolbarActions, exportEndpoint, cellEditors }: { route: RouteConfig; toolbarActions?: ReactNode; exportEndpoint?: string; cellEditors?: ResourceListModuleConfig["cellEditors"] }) {
   return (
     <ResourceListRuntime
       route={route}
       config={{
         moduleLabel: "Quy trình huấn luyện",
         moduleDescription: "Theo dõi đăng ký, duyệt, tham dự và chấm điểm theo trạng thái workflow.",
+        toolbarActions,
+        exportEndpoint,
+        cellEditors,
         buildApprovePath,
         buildApproveBody,
         // Hồ sơ ngoại lệ: người duyệt chọn cấp độ đạt được sau khi hoàn thành khóa.

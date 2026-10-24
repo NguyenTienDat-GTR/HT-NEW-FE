@@ -31,7 +31,7 @@ describe("buildExportPath", () => {
 
   it("chỉ các danh sách có endpoint export ở backend mới có tên file xuất", () => {
     expect(Object.keys(EXCEL_EXPORT_FILES).sort()).toEqual(
-      ["/certificates", "/deaneries", "/dioceses", "/leaders", "/parishes", "/training/courses", "/training/participants", "/training/participations"].sort(),
+      ["/certificates", "/deaneries", "/dioceses", "/leaders", "/parishes", "/training/courses", "/training/participants", "/training/participants/teams", "/training/participations"].sort(),
     );
   });
 });

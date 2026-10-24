@@ -109,6 +109,8 @@ export const columnLabels: Record<string, string> = {
   parishCount: "Số giáo xứ",
   parishName: "Giáo xứ",
   participationStatus: "Trạng thái tham dự",
+  teamName: "Đội",
+  leaderGender: "Giới tính",
   passed: "Kết quả",
   passingScore: "Điểm đạt",
   scoreLocked: "Khóa chỉnh sửa điểm",
@@ -206,7 +208,7 @@ export function ResourceCell({ column, row, value, displayMode = "table" }: Reso
   if (column === "status" && value === true && row.effectiveStatus === false) return <Badge tone="warning">Ngưng theo đơn vị cha</Badge>;
   if (column === "status" && typeof value === "boolean") return <StatusBadge active={value} />;
   if (column === "validity" && typeof value === "string") return <PermissionValidityBadge validity={value} />;
-  if (column === "gender" && typeof value === "string") return <TextValue full={full}>{genderLabels[value] ?? value}</TextValue>;
+  if ((column === "gender" || column === "leaderGender") && typeof value === "string") return <TextValue full={full}>{genderLabels[value] ?? value}</TextValue>;
   if (["moduleCode", "resourceCode", "actionCode", "scopeCode"].includes(column) && typeof value === "string") {
     return <TextValue full={full}>{formatPermissionTaxonomyValue(permissionTaxonomyKindFromColumn(column), value) ?? value}</TextValue>;
   }
