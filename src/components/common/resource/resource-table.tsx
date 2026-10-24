@@ -28,11 +28,13 @@ export function ResourceTable({
   sortDirection,
   selection,
   scoreEntry,
+  cellEditors,
   onExportRow,
   exportingRow,
   page = 0,
 }: {
   page?: number;
+  cellEditors?: Record<string, (row: Record<string, unknown>) => React.ReactNode>;
   scoreEntry?: ScoreEntry;
   // Chọn nhiều hồ sơ để duyệt/từ chối hàng loạt.
   selection?: { selectedIds: string[]; selectableIds: string[]; onToggle: (id: string) => void; onToggleAll: (on: boolean) => void };
@@ -102,7 +104,7 @@ export function ResourceTable({
             <th className="h-11 border-b border-border bg-slate-50 px-3 text-right text-xs font-semibold uppercase tracking-wide text-text-secondary">Thao tác</th>
           </tr>
         </thead>
-        <tbody>{isLoading ? <ResourceTableSkeleton columns={visibleColumns} size={size} /> : <ResourceRows columns={visibleColumns} indexOffset={embedded ? page * size : undefined} route={route} rows={rows} scoreEntry={scoreEntry} selection={selection} onExportRow={onExportRow} exportingRow={exportingRow} />}</tbody>
+        <tbody>{isLoading ? <ResourceTableSkeleton columns={visibleColumns} size={size} /> : <ResourceRows columns={visibleColumns} indexOffset={embedded ? page * size : undefined} route={route} rows={rows} scoreEntry={scoreEntry} cellEditors={cellEditors} selection={selection} onExportRow={onExportRow} exportingRow={exportingRow} />}</tbody>
       </table>
     </div>
   );
@@ -140,10 +142,12 @@ function ResourceRows({
   rows,
   selection,
   scoreEntry,
+  cellEditors,
   indexOffset,
   onExportRow,
   exportingRow,
 }: {
+  cellEditors?: Record<string, (row: Record<string, unknown>) => React.ReactNode>;
   // Có giá trị thì hiển thị cột STT bắt đầu từ offset (số hàng của các trang trước).
   indexOffset?: number;
   scoreEntry?: ScoreEntry;
@@ -175,7 +179,7 @@ function ResourceRows({
       {indexOffset !== undefined ? <td className="h-14 w-12 border-b border-slate-100 px-3 align-middle text-muted">{indexOffset + rowIndex + 1}</td> : null}
       {columns.map((column) => (
         <td className="h-14 border-b border-slate-100 px-3 align-middle" key={column}>
-          {route.kind === "leaders" && column === "fullName" ? <LeaderIdentity row={row} /> : <ResourceCell column={column} row={row} value={row[column]} />}
+          {route.kind === "leaders" && column === "fullName" ? <LeaderIdentity row={row} /> : cellEditors?.[column] ? cellEditors[column](row) : <ResourceCell column={column} row={row} value={row[column]} />}
         </td>
       ))}
       {scoreEntry?.components.map((component) => {

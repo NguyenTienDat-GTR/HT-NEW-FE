@@ -27,6 +27,10 @@ export type ResourceListModuleConfig = {
   enablePdfExport?: boolean;
   // Trang đích của mục module trên breadcrumb (chỉ khai báo khi module có trang tương ứng).
   moduleHref?: string;
+  // Endpoint xuất Excel riêng (mặc định là endpoint của danh sách), ví dụ tab Chia đội xuất ít cột hơn danh sách tham dự.
+  exportEndpoint?: string;
+  // Ô nhập ngay trên bảng cho một cột (ví dụ gán tên đội): thay cho cách hiển thị mặc định của cột đó.
+  cellEditors?: Record<string, (row: Record<string, unknown>) => ReactNode>;
   // Nút bổ sung trên thanh công cụ danh sách (vd quét mã QR chứng nhận).
   toolbarActions?: ReactNode;
   pdfExportPath?: string;

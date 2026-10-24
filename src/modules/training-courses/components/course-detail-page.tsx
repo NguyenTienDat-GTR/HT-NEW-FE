@@ -35,6 +35,7 @@ import {
 } from "@/modules/training-courses/registration-state";
 import { CertificateResourceView } from "@/modules/certificates/components/certificate-resource-view";
 import { TrainingWorkflowResourceView } from "@/modules/training-workflow/components/training-workflow-resource-view";
+import { CourseTeamsView } from "@/modules/training-teams/components/course-teams-view";
 import { useSessionState } from "@/lib/use-session-state";
 import { CourseConditionList, courseConditionItems } from "@/modules/training-courses/components/course-conditions";
 
@@ -43,6 +44,7 @@ const workflowTabs = [
   { key: "registrations", label: "Đăng ký tham dự", path: "/training/registrations" },
   { key: "approvals", label: "Duyệt đăng ký", path: "/training/approvals" },
   { key: "participations", label: "Danh sách tham dự", path: "/training/participations" },
+  { key: "teams", label: "Chia đội", path: "/training/teams" },
   { key: "scores", label: "Chấm điểm", path: "/training/scores" },
   { key: "certificate-approvals", label: "Duyệt chứng nhận", path: "/certificates/approvals" },
 ] as const;
@@ -294,7 +296,7 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
                   role="tab"
                 >
                   {tab.label}
-                  {tabCounts[tab.key] !== undefined ? (
+                  {tab.key !== "teams" && tabCounts[tab.key] !== undefined ? (
                     <span className={cn("ml-2 inline-flex min-w-6 items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-semibold", active ? "bg-primary-soft text-primary" : "bg-surface-2 text-text-secondary")}>
                       {tabCounts[tab.key]}
                     </span>
@@ -320,7 +322,13 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
                 courseName: course && typeof course.courseName === "string" ? course.courseName : undefined,
               }}
             >
-              {activeTab.key === "certificate-approvals" ? <CertificateResourceView route={activeTab.route} /> : <TrainingWorkflowResourceView route={activeTab.route} />}
+              {activeTab.key === "certificate-approvals" ? (
+                <CertificateResourceView route={activeTab.route} />
+              ) : activeTab.key === "teams" ? (
+                <CourseTeamsView route={activeTab.route} />
+              ) : (
+                <TrainingWorkflowResourceView route={activeTab.route} />
+              )}
             </EmbeddedResourceProvider>
           ) : null}
         </>

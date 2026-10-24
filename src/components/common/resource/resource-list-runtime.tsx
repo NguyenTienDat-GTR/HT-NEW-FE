@@ -488,7 +488,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
     : undefined;
 
   // Xuất Excel theo đúng bộ lọc/tìm kiếm/sắp xếp đang dùng (cả danh sách lẻ lẫn tab trong khóa).
-  const exportEndpoint = effectiveRoute.endpoint;
+  const exportEndpoint = config.exportEndpoint ?? effectiveRoute.endpoint;
   const excelExportButton =
     exportEndpoint && EXCEL_EXPORT_FILES[exportEndpoint] ? (
       <ExcelExportButton empty={query.isLoading || query.isError || rows.length === 0} endpoint={exportEndpoint} queryString={queryState.queryString} />
@@ -587,6 +587,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
           onExportRow={canExportPdf ? (id) => exportPdf([id]) : undefined}
           exportingRow={exporting}
           scoreEntry={scoreEntry}
+          cellEditors={config.cellEditors}
           page={queryState.page}
           isLoading={query.isLoading}
           route={effectiveRoute}

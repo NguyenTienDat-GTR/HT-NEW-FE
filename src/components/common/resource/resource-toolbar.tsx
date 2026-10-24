@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Tip } from "@/components/ui/tip";
 import { Input } from "@/components/ui/input";
 import { apiFetch, type PageResponse } from "@/lib/api/client";
+import { useEmbeddedResource } from "./embedded-resource-context";
 
 import type { RouteConfig } from "@/config/routes/routes";
 import type { RouteFilterConfig } from "@/config/routes/route-config";
@@ -164,11 +165,18 @@ export function ResourceFilters({
   );
 }
 
+// Đường dẫn lựa chọn có ":courseCode" được thay bằng mã khóa của trang chứa (tab trong chi tiết khóa), ví dụ danh sách đội của khóa.
+const COURSE_CODE_PLACEHOLDER = ":courseCode";
+
 function useFilterOptions(filter: RouteFilterConfig, parentValue: string) {
+  const embedded = useEmbeddedResource();
+  const courseCode = embedded?.fixedFilters["course.courseCode"];
+  const needsCourse = Boolean(filter.optionsEndpoint?.includes(COURSE_CODE_PLACEHOLDER));
+  const resolved = needsCourse && courseCode ? { ...filter, optionsEndpoint: filter.optionsEndpoint?.replace(COURSE_CODE_PLACEHOLDER, encodeURIComponent(courseCode)) } : filter;
   const query = useQuery({
-    queryKey: ["toolbar-filter-options", filter.key, filter.optionsEndpoint, filter.optionCollection, parentValue],
-    enabled: Boolean(filter.optionsEndpoint),
-    queryFn: () => fetchFilterOptions(filter, parentValue),
+    queryKey: ["toolbar-filter-options", filter.key, resolved.optionsEndpoint, filter.optionCollection, parentValue],
+    enabled: Boolean(resolved.optionsEndpoint) && !(needsCourse && !courseCode),
+    queryFn: () => fetchFilterOptions(resolved, parentValue),
   });
   const apiOptions = filterRowsFromResponse(query.data, filter.optionCollection).map((row) => optionFromRow(row, filter.optionValue, filter.optionLabel));
   const options = localizeFilterOptions(filter, filter.options ?? apiOptions);
