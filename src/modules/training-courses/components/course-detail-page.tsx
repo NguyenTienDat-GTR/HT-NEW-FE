@@ -36,6 +36,7 @@ import {
 import { CertificateResourceView } from "@/modules/certificates/components/certificate-resource-view";
 import { TrainingWorkflowResourceView } from "@/modules/training-workflow/components/training-workflow-resource-view";
 import { useSessionState } from "@/lib/use-session-state";
+import { CourseConditionList, courseConditionItems } from "@/modules/training-courses/components/course-conditions";
 
 // Quy trình huấn luyện của một khóa: mỗi tab dùng lại đúng màn hình/logic của menu cũ, lọc theo khóa đang chọn.
 const workflowTabs = [
@@ -46,10 +47,19 @@ const workflowTabs = [
   { key: "certificate-approvals", label: "Duyệt chứng nhận", path: "/certificates/approvals" },
 ] as const;
 
-// Khóa quá khứ: không có loại khóa, thời gian đăng ký và trạng thái đăng ký.
-const pastSummaryColumns = ["hostYear", "resultingLevelName", "passingScore", "location", "startDate", "endDate"];
+// Thông tin khóa chia nhóm để dễ đọc. Khóa quá khứ: không có loại khóa, thời gian đăng ký, trạng thái và cấu hình.
+type SummaryGroup = { title: string; columns: string[] };
 
-const summaryColumns = ["courseTypeName", "hostYear", "yearsActive", "passingScore", "location", "startDate", "endDate", "registrationPeriod", "registrationStatus", "organizingStatus", "autoApproveEligible", "scoreVisible"];
+const pastSummaryGroups: SummaryGroup[] = [
+  { title: "Thông tin chung", columns: ["hostYear", "resultingLevelName", "passingScore", "location"] },
+  { title: "Thời gian", columns: ["startDate", "endDate"] },
+];
+
+const summaryGroups: SummaryGroup[] = [
+  { title: "Thông tin chung", columns: ["courseTypeName", "hostYear", "passingScore", "location"] },
+  { title: "Thời gian", columns: ["startDate", "endDate", "registrationPeriod"] },
+  { title: "Trạng thái và cấu hình", columns: ["registrationStatus", "organizingStatus", "autoApproveEligible", "scoreVisible"] },
+];
 
 export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig }) {
   const user = useAuthStore((state) => state.user);
@@ -97,6 +107,7 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
   // Khóa bị vô hiệu hóa: chỉ xem, mọi thao tác trong khóa bị chặn.
   const courseDisabled = course?.status === false;
   const isPastCourse = course?.pastCourse === true;
+  const conditionItems = useMemo(() => courseConditionItems(course), [course]);
   const tabs = useMemo(
     () =>
       workflowTabs.flatMap((tab) => {
@@ -203,16 +214,34 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
           </div>
         </div>
         {course ? (
-          <Panel className="flex flex-wrap gap-x-7 gap-y-1.5 px-4 py-3">
-            {(isPastCourse ? pastSummaryColumns : summaryColumns).map((column) => (
-              <div className="flex min-w-0 items-baseline gap-1.5 text-[13px]" key={column}>
-                <span className="shrink-0 text-muted">{summaryLabels[column] ?? column}:</span>
-                <span className="min-w-0 font-medium text-foreground">
-                  <SummaryValue column={column} course={course} />
-                </span>
+          <div className="space-y-3">
+            <Panel className="px-4 py-3.5">
+              <h2 className="mb-3 text-sm font-semibold text-foreground">Thông tin khóa</h2>
+              <div className={cn("grid gap-x-8 gap-y-4", isPastCourse ? "md:grid-cols-2" : "md:grid-cols-3")}>
+                {(isPastCourse ? pastSummaryGroups : summaryGroups).map((group) => (
+                  <section className="min-w-0" key={group.title}>
+                    <h3 className="mb-2 border-b border-border pb-1.5 text-xs font-semibold uppercase tracking-[0.02em] text-text-secondary">{group.title}</h3>
+                    <dl className="space-y-1.5">
+                      {group.columns.map((column) => (
+                        <div className="flex min-w-0 items-baseline justify-between gap-3 text-[13px]" key={column}>
+                          <dt className="shrink-0 text-muted">{summaryLabels[column] ?? column}</dt>
+                          <dd className="min-w-0 text-right font-medium text-foreground">
+                            <SummaryValue column={column} course={course} />
+                          </dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </section>
+                ))}
               </div>
-            ))}
-          </Panel>
+            </Panel>
+            {!isPastCourse ? (
+              <Panel className="px-4 py-3.5">
+                <h2 className="mb-2 text-sm font-semibold text-foreground">Điều kiện của khóa</h2>
+                {conditionItems.length > 0 ? <CourseConditionList items={conditionItems} /> : <p className="text-[13px] text-muted">Khóa không đặt điều kiện tham dự.</p>}
+              </Panel>
+            ) : null}
+          </div>
         ) : null}
         {courseDisabled ? (
           <div className="flex items-start gap-3 rounded-xl border border-danger/30 bg-danger/5 px-4 py-3 text-sm text-foreground" role="alert">
@@ -335,7 +364,6 @@ const summaryLabels: Record<string, string> = {
   courseTypeName: "Loại khóa",
   resultingLevelName: "Cấp độ đạt được",
   hostYear: "Năm tổ chức",
-  yearsActive: "Số năm hoạt động",
   passingScore: "Điểm đạt",
   autoApproveEligible: "Tự động duyệt hồ sơ hợp lệ",
   scoreVisible: "Hiển thị điểm của khóa",

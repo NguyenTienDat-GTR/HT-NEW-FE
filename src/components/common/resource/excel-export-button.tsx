@@ -30,7 +30,7 @@ export function buildExportPath(endpoint: string, queryString: string) {
 }
 
 // Xuất chạy nền: nút chỉ tạo tác vụ rồi trả quyền điều khiển ngay; tiến độ và nút tải về nằm ở khay tác vụ.
-export function ExcelExportButton({ endpoint, queryString }: { endpoint: string; queryString: string }) {
+export function ExcelExportButton({ endpoint, queryString, empty = false }: { endpoint: string; queryString: string; empty?: boolean }) {
   const [exporting, setExporting] = useState(false);
   // Một khóa idempotency cho mỗi bộ lọc: bấm đúp hoặc thử lại cùng bộ lọc luôn trỏ về cùng một tác vụ, không xuất hai lần.
   const keys = useRef<Map<string, string>>(new Map());
@@ -64,8 +64,8 @@ export function ExcelExportButton({ endpoint, queryString }: { endpoint: string;
   }
 
   return (
-    <Tip label="Xuất Excel theo bộ lọc đang chọn (không lọc thì xuất tất cả)">
-      <Button disabled={exporting} loading={exporting} onClick={exportExcel} type="button" variant="outline">
+    <Tip disabled={empty} label={empty ? "Không có dữ liệu để xuất" : "Xuất Excel theo bộ lọc đang chọn (không lọc thì xuất tất cả)"}>
+      <Button disabled={exporting || empty} loading={exporting} onClick={exportExcel} type="button" variant="outline">
         <FileXls size={18} />
         Xuất Excel
       </Button>
