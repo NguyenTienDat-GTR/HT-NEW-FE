@@ -35,6 +35,8 @@ export type ScanStatus = "CHECKED_IN" | "ALREADY_CHECKED_IN" | "CHECK_IN_CANCELL
 export type ScanResult = {
   status: ScanStatus;
   participationId: string;
+  courseCode?: string | null;
+  courseName?: string | null;
   holyName?: string | null;
   fullName: string;
   parishName?: string | null;

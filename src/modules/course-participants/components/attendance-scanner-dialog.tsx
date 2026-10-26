@@ -3,31 +3,39 @@
 import * as Dialog from "@radix-ui/react-dialog";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowRight, CheckCircle, ImageSquare, QrCode, Warning, X } from "@phosphor-icons/react";
-import jsQR from "jsqr";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { getApiErrorMessage } from "@/lib/api/client";
+import { apiFetch, getApiErrorMessage } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
+import { certificateDetailHref } from "@/modules/certificates/scan-utils";
+import { classifyScan } from "@/modules/qr-scan/scan-payload";
+import { useQrCamera } from "@/modules/qr-scan/use-qr-camera";
 import { lookupAttendance, participantKeys, scanAttendance } from "../api";
-import { attendanceTokenFromScan, explainRejectedScan } from "../attendance-token";
+import { explainRejectedScan, LEGACY_ATTENDANCE_MESSAGE } from "../attendance-token";
 import { INITIAL_SCAN_FLOW, scanFlowReducer } from "../scan-flow";
 import { markScanned, shouldProcessScan, type ScanGateState } from "../scan-gate";
 
-// Quét mã QR điểm danh: quét -> hiện người được quét -> người dùng bấm "Xác nhận điểm danh" (hoặc "Bỏ qua") -> thành công thì "Quét tiếp".
+// Quét mã QR: quét -> hiện người được quét -> người dùng bấm "Xác nhận điểm danh" (hoặc "Bỏ qua") -> thành công thì "Quét tiếp".
 // Camera chỉ đọc khi đang chờ quét; có thể dùng súng quét USB, dán mã hoặc chọn ảnh.
-export function AttendanceScannerDialog({ courseCode, courseName, open, onOpenChange }: { courseCode: string; courseName?: string; open: boolean; onOpenChange: (open: boolean) => void }) {
+// - Có `courseCode` (trang điểm danh của một khóa): chỉ nhận mã điểm danh đúng khóa đó.
+// - Không có `courseCode` (nút quét ở header): nhận cả mã điểm danh (khóa lấy từ chính mã) lẫn mã chứng nhận; chứng nhận được mở thẳng trang chi tiết.
+export function AttendanceScannerDialog({ courseCode, courseName, open, onOpenChange }: { courseCode?: string; courseName?: string; open: boolean; onOpenChange: (open: boolean) => void }) {
+  const universal = !courseCode;
   return (
     <Dialog.Root onOpenChange={onOpenChange} open={open}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-40 bg-slate-900/45 backdrop-blur-[4px]" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 flex max-h-[92vh] w-[min(94vw,560px)] -translate-x-1/2 -translate-y-1/2 flex-col rounded-xl border border-border bg-white p-5 shadow-[var(--shadow-elevated)] focus:outline-none">
+        <Dialog.Content className="fixed inset-0 z-50 flex flex-col bg-white p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-[var(--shadow-elevated)] focus:outline-none sm:inset-auto sm:left-1/2 sm:top-1/2 sm:max-h-[92vh] sm:w-[min(94vw,560px)] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:border sm:border-border sm:p-5">
           <div className="flex items-start justify-between gap-4">
-            <div>
-              <Dialog.Title className="text-lg font-semibold text-foreground">Điểm danh bằng mã QR</Dialog.Title>
+            <div className="min-w-0">
+              <Dialog.Title className="text-lg font-semibold text-foreground">{universal ? "Quét mã QR" : "Điểm danh bằng mã QR"}</Dialog.Title>
               <Dialog.Description className="mt-1 text-sm text-muted">
                 {courseName ? <span className="font-medium text-foreground">{courseName}. </span> : null}
-                Đưa mã QR trên thẻ hoặc trong email vào khung hình, kiểm tra người được quét rồi bấm xác nhận.
+                {universal
+                  ? "Quét mã QR trên thẻ tham dự để điểm danh, hoặc mã QR trên chứng nhận để mở trang chi tiết chứng nhận."
+                  : "Đưa mã QR trên thẻ hoặc trong email vào khung hình, kiểm tra người được quét rồi bấm xác nhận."}
               </Dialog.Description>
             </div>
             <Dialog.Close asChild>
@@ -36,25 +44,23 @@ export function AttendanceScannerDialog({ courseCode, courseName, open, onOpenCh
               </Button>
             </Dialog.Close>
           </div>
-          {open ? <Scanner courseCode={courseCode} /> : null}
+          {open ? <Scanner courseCode={courseCode} onClose={() => onOpenChange(false)} /> : null}
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
   );
 }
 
-function Scanner({ courseCode }: { courseCode: string }) {
+function Scanner({ courseCode, onClose }: { courseCode?: string; onClose: () => void }) {
+  const universal = !courseCode;
   const queryClient = useQueryClient();
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const router = useRouter();
   const gate = useRef<ScanGateState>(null);
   const [flow, dispatch] = useReducer(scanFlowReducer, INITIAL_SCAN_FLOW);
   const flowRef = useRef(flow);
   useEffect(() => {
     flowRef.current = flow;
   }, [flow]);
-  const [starting, setStarting] = useState(true);
-  const [cameraError, setCameraError] = useState<string | null>(null);
   const [manual, setManual] = useState("");
 
   const lookup = useMutation({
@@ -66,112 +72,56 @@ function Scanner({ courseCode }: { courseCode: string }) {
     mutationFn: (token: string) => scanAttendance(courseCode, token),
     onSuccess: async (person) => {
       dispatch({ type: "confirmed", person });
-      await queryClient.invalidateQueries({ queryKey: participantKeys.all(courseCode) });
+      await queryClient.invalidateQueries({ queryKey: courseCode ? participantKeys.all(courseCode) : ["course-participants"] });
     },
     onError: (error) => dispatch({ type: "failed", message: getApiErrorMessage(error) }),
   });
+  // Chứng nhận: kiểm tra tồn tại trước; không có thì báo lỗi ngay ở khung quét, có (kể cả đã thu hồi) thì sang trang chi tiết.
+  const certificate = useMutation({
+    mutationFn: async (code: string) => ({ code, detail: await apiFetch<Record<string, unknown>>(`/certificates/${encodeURIComponent(code)}`) }),
+    onSuccess: ({ code, detail }) => {
+      queryClient.setQueryData(["resource-detail", "/certificates", code], detail);
+      onClose();
+      router.push(certificateDetailHref(code) as never);
+    },
+    onError: (error, code) => {
+      const status = (error as { status?: number }).status;
+      dispatch({ type: "failed", message: status === 404 ? `Không tìm thấy chứng nhận ${code}. Hãy kiểm tra lại mã QR.` : getApiErrorMessage(error) });
+    },
+  });
   const { mutate: doLookup } = lookup;
+  const { mutate: doCertificate } = certificate;
 
-  // Chỉ nhận mã khi đang chờ quét; mã đọc được sẽ được tra cứu rồi chờ người dùng xác nhận.
+  // Chỉ nhận mã khi đang chờ quét; mã điểm danh được tra cứu rồi chờ người dùng xác nhận, mã chứng nhận chuyển thẳng sang chi tiết.
   const handleText = useCallback(
     (raw: string) => {
       if (flowRef.current.step !== "scanning") return;
-      const token = attendanceTokenFromScan(raw);
       const now = Date.now();
-      if (!token) {
-        if (shouldProcessScan(raw.trim(), now, gate.current)) {
-          gate.current = markScanned(raw.trim(), now);
-          dispatch({ type: "failed", message: explainRejectedScan(raw) });
-        }
+      const payload = classifyScan(raw);
+      const key = payload.kind === "attendance" ? payload.token : payload.kind === "certificate" ? payload.code : raw.trim();
+      if (!key || !shouldProcessScan(key, now, gate.current)) return;
+      gate.current = markScanned(key, now);
+
+      if (payload.kind === "attendance" || (payload.kind === "certificate" && universal)) {
+        flowRef.current = { step: "looking", token: key };
+        dispatch({ type: "scanned", token: key });
+        if (payload.kind === "attendance") doLookup(payload.token);
+        else doCertificate(payload.code);
         return;
       }
-      if (!shouldProcessScan(token, now, gate.current)) return;
-      gate.current = markScanned(token, now);
-      flowRef.current = { step: "looking", token };
-      dispatch({ type: "scanned", token });
-      doLookup(token);
+      const message = payload.kind === "legacy-attendance" ? LEGACY_ATTENDANCE_MESSAGE : explainRejectedScan(raw);
+      dispatch({ type: "failed", message: universal && payload.kind === "unknown" ? "Mã QR không phải mã điểm danh hay mã chứng nhận của hệ thống." : message });
     },
-    [doLookup],
+    [doCertificate, doLookup, universal],
   );
 
-  useEffect(() => {
-    let stream: MediaStream | null = null;
-    let frame = 0;
-    let cancelled = false;
+  const onImageError = useCallback((message: string) => dispatch({ type: "failed", message }), []);
+  const { videoRef, canvasRef, starting, cameraError, scanImage } = useQrCamera({ onText: handleText, onImageError, active: flow.step === "scanning" });
 
-    async function start() {
-      if (!navigator.mediaDevices?.getUserMedia) {
-        setCameraError("Trình duyệt không hỗ trợ camera (cần HTTPS). Có thể dùng súng quét, dán mã hoặc chọn ảnh bên dưới.");
-        setStarting(false);
-        return;
-      }
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio: false });
-        if (cancelled) {
-          stream.getTracks().forEach((track) => track.stop());
-          return;
-        }
-        const video = videoRef.current;
-        if (!video) return;
-        video.srcObject = stream;
-        await video.play();
-        setStarting(false);
-        tick();
-      } catch {
-        setCameraError("Không mở được camera. Hãy cấp quyền camera hoặc dùng súng quét / dán mã / chọn ảnh bên dưới.");
-        setStarting(false);
-      }
-    }
-
-    function tick() {
-      const video = videoRef.current;
-      const canvas = canvasRef.current;
-      if (cancelled) return;
-      if (video && canvas && flowRef.current.step === "scanning" && video.readyState === video.HAVE_ENOUGH_DATA && video.videoWidth > 0) {
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        const context = canvas.getContext("2d", { willReadFrequently: true });
-        if (context) {
-          context.drawImage(video, 0, 0, canvas.width, canvas.height);
-          const image = context.getImageData(0, 0, canvas.width, canvas.height);
-          const result = jsQR(image.data, image.width, image.height, { inversionAttempts: "dontInvert" });
-          if (result?.data) handleText(result.data);
-        }
-      }
-      frame = requestAnimationFrame(tick);
-    }
-
-    void start();
-    return () => {
-      cancelled = true;
-      cancelAnimationFrame(frame);
-      stream?.getTracks().forEach((track) => track.stop());
-    };
-  }, [handleText]);
-
-  function scanFile(event: React.ChangeEvent<HTMLInputElement>) {
+  function pickFile(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     event.target.value = "";
-    if (!file) return;
-    const url = URL.createObjectURL(file);
-    const image = new Image();
-    image.onload = () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = image.naturalWidth;
-      canvas.height = image.naturalHeight;
-      const context = canvas.getContext("2d", { willReadFrequently: true });
-      context?.drawImage(image, 0, 0);
-      const data = context?.getImageData(0, 0, canvas.width, canvas.height);
-      URL.revokeObjectURL(url);
-      const result = data ? jsQR(data.data, data.width, data.height) : null;
-      if (!result?.data) dispatch({ type: "failed", message: "Không tìm thấy mã QR trong ảnh." });
-      else handleText(result.data);
-    };
-    image.onerror = () => {
-      URL.revokeObjectURL(url);
-      dispatch({ type: "failed", message: "Không đọc được ảnh đã chọn." });
-    };
-    image.src = url;
+    if (file) scanImage(file);
   }
 
   function submitManual(event: React.FormEvent) {
@@ -192,7 +142,7 @@ function Scanner({ courseCode }: { courseCode: string }) {
     <div className="mt-4 flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
       {showCamera ? (
         <>
-          <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-slate-900">
+          <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-slate-900 sm:aspect-video">
             <video className="h-full w-full object-cover" muted playsInline ref={videoRef} />
             <canvas className="hidden" ref={canvasRef} />
             {starting ? <div className="absolute inset-0 grid place-items-center text-sm text-white/80">Đang mở camera…</div> : null}
@@ -200,14 +150,14 @@ function Scanner({ courseCode }: { courseCode: string }) {
             <div className="pointer-events-none absolute inset-[16%] rounded-xl border-2 border-white/80" />
           </div>
           {cameraError ? <p className="rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm text-foreground">{cameraError}</p> : null}
-          <form className="flex items-center gap-2" onSubmit={submitManual}>
+          <form className="flex flex-col gap-2 sm:flex-row sm:items-center" onSubmit={submitManual}>
             <div className="relative min-w-0 flex-1">
               <QrCode aria-hidden className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
               <Input aria-label="Mã điểm danh" autoComplete="off" className="pl-9" onChange={(event) => setManual(event.target.value)} placeholder="Súng quét USB hoặc dán mã rồi nhấn Enter" value={manual} />
             </div>
-            <label className="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-[8px] border border-border bg-white px-3 text-sm font-semibold text-foreground shadow-sm transition-colors hover:border-primary hover:text-primary">
+            <label className="inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-[8px] border border-border bg-white px-3 text-sm font-semibold text-foreground shadow-sm transition-colors hover:border-primary hover:text-primary sm:min-h-10">
               <ImageSquare size={16} /> Chọn ảnh
-              <input accept="image/*" className="sr-only" onChange={scanFile} type="file" />
+              <input accept="image/*" className="sr-only" onChange={pickFile} type="file" />
             </label>
           </form>
         </>
@@ -218,6 +168,7 @@ function Scanner({ courseCode }: { courseCode: string }) {
           <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">Xác nhận điểm danh</p>
           <p className="text-lg font-bold text-foreground">{name}</p>
           {place ? <p className="text-sm text-text-secondary">{place}</p> : null}
+          {universal && person?.courseName ? <p className="text-sm font-medium text-foreground">Khóa: {person.courseName}</p> : null}
           <div className="flex flex-wrap gap-2 pt-1">
             <Button
               loading={flow.step === "confirming"}
@@ -243,7 +194,11 @@ function Scanner({ courseCode }: { courseCode: string }) {
             <div className="min-w-0">
               <p className="text-sm font-semibold text-foreground">{flow.step === "done" ? `${name} đã điểm danh thành công` : `${name} đã điểm danh trước đó`}</p>
               <p className="text-[13px] text-text-secondary">
-                {[place, person?.checkedInAt ? `lúc ${new Date(person.checkedInAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}` : ""].filter(Boolean).join(" · ")}
+                {[
+                  universal ? person?.courseName : "",
+                  place,
+                  person?.checkedInAt ? `lúc ${new Date(person.checkedInAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}` : "",
+                ].filter(Boolean).join(" · ")}
               </p>
             </div>
           </div>

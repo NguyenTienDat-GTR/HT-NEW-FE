@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { attendanceTokenFromScan, explainRejectedScan } from "@/modules/course-participants/attendance-token";
+import { attendanceTokenFromScan, explainRejectedScan, isLegacyAttendanceToken } from "@/modules/course-participants/attendance-token";
 import { categorizeIssue, groupIssues, issuesToCsv, summarizeInvitation } from "@/modules/course-participants/invitation-summary";
 import { pollUntilDone } from "@/modules/course-participants/job-runner";
 import {
@@ -10,6 +10,7 @@ import {
   buildParticipantParams,
   invitationBody,
 } from "@/modules/course-participants/participant-query";
+import { classifyScan } from "@/modules/qr-scan/scan-payload";
 import type { InvitationIssue, InvitationResult } from "@/modules/course-participants/types";
 
 function result(overrides: Partial<InvitationResult> = {}): InvitationResult {
@@ -17,13 +18,13 @@ function result(overrides: Partial<InvitationResult> = {}): InvitationResult {
 }
 
 describe("attendanceTokenFromScan", () => {
-  it("accepts a signed token", () => {
-    expect(attendanceTokenFromScan("HTATT1.3f2a-uuid.abcDEF_123")).toBe("HTATT1.3f2a-uuid.abcDEF_123");
+  it("accepts a signed token that carries the course code", () => {
+    expect(attendanceTokenFromScan("HTATT2.KH-2026-1.3f2a-uuid.abcDEF_123")).toBe("HTATT2.KH-2026-1.3f2a-uuid.abcDEF_123");
   });
 
   it("tolerates scanner whitespace and trailing newlines", () => {
-    expect(attendanceTokenFromScan("  HTATT1.id.sig \r\n")).toBe("HTATT1.id.sig");
-    expect(attendanceTokenFromScan("HTATT1.id.sig\nextra line")).toBe("HTATT1.id.sig");
+    expect(attendanceTokenFromScan("  HTATT2.kh.id.sig \r\n")).toBe("HTATT2.kh.id.sig");
+    expect(attendanceTokenFromScan("HTATT2.kh.id.sig\nextra line")).toBe("HTATT2.kh.id.sig");
   });
 
   it("rejects other QR contents", () => {
@@ -31,16 +32,23 @@ describe("attendanceTokenFromScan", () => {
     expect(attendanceTokenFromScan("   ")).toBeNull();
     expect(attendanceTokenFromScan("https://ht.example.com/certificates/GPPC-1")).toBeNull();
     expect(attendanceTokenFromScan("GPPC-HTI-2026-1")).toBeNull();
-    expect(attendanceTokenFromScan("htatt1.id.sig")).toBeNull();
+    expect(attendanceTokenFromScan("htatt2.kh.id.sig")).toBeNull();
   });
 
   it("rejects malformed tokens", () => {
-    expect(attendanceTokenFromScan("HTATT1.id")).toBeNull();
-    expect(attendanceTokenFromScan("HTATT1..sig")).toBeNull();
-    expect(attendanceTokenFromScan("HTATT1.id.")).toBeNull();
-    expect(attendanceTokenFromScan("HTATT1.id.sig.extra")).toBeNull();
-    expect(attendanceTokenFromScan("HTATT1.id with space.sig")).toBeNull();
-    expect(attendanceTokenFromScan(`HTATT1.id.${"a".repeat(300)}`)).toBeNull();
+    expect(attendanceTokenFromScan("HTATT2.kh.id")).toBeNull();
+    expect(attendanceTokenFromScan("HTATT2.kh..sig")).toBeNull();
+    expect(attendanceTokenFromScan("HTATT2..id.sig")).toBeNull();
+    expect(attendanceTokenFromScan("HTATT2.kh.id.")).toBeNull();
+    expect(attendanceTokenFromScan("HTATT2.kh.id.sig.extra")).toBeNull();
+    expect(attendanceTokenFromScan("HTATT2.kh.id with space.sig")).toBeNull();
+    expect(attendanceTokenFromScan(`HTATT2.kh.id.${"a".repeat(300)}`)).toBeNull();
+  });
+
+  it("does not accept the old token without a course code", () => {
+    expect(attendanceTokenFromScan("HTATT1.id.sig")).toBeNull();
+    expect(isLegacyAttendanceToken(" HTATT1.id.sig\n")).toBe(true);
+    expect(isLegacyAttendanceToken("HTATT2.kh.id.sig")).toBe(false);
   });
 });
 
@@ -49,8 +57,31 @@ describe("explainRejectedScan", () => {
     expect(explainRejectedScan("https://ht.example.com/certificates/GPPC-1")).toContain("mã QR của chứng nhận");
   });
 
+  it("asks for a new code when the old format is scanned", () => {
+    expect(explainRejectedScan("HTATT1.id.sig")).toContain("phiên bản cũ");
+  });
+
   it("gives a generic hint for anything else", () => {
     expect(explainRejectedScan("hello")).toContain("không phải mã điểm danh");
+  });
+});
+
+describe("classifyScan", () => {
+  it("tells attendance codes, certificate links and plain certificate codes apart", () => {
+    expect(classifyScan("HTATT2.kh.id.sig")).toEqual({ kind: "attendance", token: "HTATT2.kh.id.sig" });
+    expect(classifyScan("https://ht.example.com/certificates/GPPC-HTI-2026-1")).toEqual({ kind: "certificate", code: "GPPC-HTI-2026-1" });
+    expect(classifyScan("GPPC-HTI-2026-1")).toEqual({ kind: "certificate", code: "GPPC-HTI-2026-1" });
+  });
+
+  it("flags the old attendance format and never treats HTATT strings as certificates", () => {
+    expect(classifyScan("HTATT1.id.sig")).toEqual({ kind: "legacy-attendance" });
+    expect(classifyScan("HTATT2.broken")).toEqual({ kind: "unknown" });
+  });
+
+  it("rejects everything else", () => {
+    expect(classifyScan("")).toEqual({ kind: "unknown" });
+    expect(classifyScan("https://evil.example.com/login")).toEqual({ kind: "unknown" });
+    expect(classifyScan("hello world")).toEqual({ kind: "unknown" });
   });
 });
 

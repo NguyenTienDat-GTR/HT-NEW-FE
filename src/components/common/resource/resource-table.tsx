@@ -13,6 +13,8 @@ import { useEmbeddedResource, resourceActionHref, withReturnTo } from "./embedde
 import { fillRoute, getResourceId, isAwaitingApproval, isReapprovable } from "./resource-actions";
 import type { ScoreEntry, ScoreNotes } from "./score-entry";
 import { ScoreNoteAction } from "./score-note-action";
+import { useIsDesktop } from "@/lib/use-media-query";
+import { ResourceCardList } from "./resource-card-list";
 import { RegistrationToggleButton } from "@/modules/training-courses/components/registration-toggle-button";
 import type { ResourcePageSize } from "./use-resource-query-state";
 
@@ -51,11 +53,31 @@ export function ResourceTable({
 }) {
   const user = useAuthStore((state) => state.user);
   const embedded = useEmbeddedResource();
+  const isDesktop = useIsDesktop();
   // Trong chi tiết khóa, bảng đã thuộc về một khóa nên không cần cột khóa.
   const visibleColumns = visibleResourceColumns(route, rows, user)
     .filter((column) => !(embedded && column === "courseName"))
     // Hồ sơ huynh trưởng: ảnh + tên thánh + họ tên gộp thành một ô nhận diện.
     .filter((column) => !(route.kind === "leaders" && (column === "imageUrl" || column === "holyName")));
+
+  // Dưới 1024px (tablet dọc, điện thoại) bảng rộng phải cuộn ngang nên chuyển sang dạng thẻ; từ 1024px trở lên giữ bảng.
+  if (!isDesktop) {
+    return (
+      <ResourceCardList
+        cellEditors={cellEditors}
+        columns={visibleColumns}
+        indexOffset={embedded ? page * size : undefined}
+        isLoading={isLoading}
+        renderActions={(row) => <RowActions exportingRow={exportingRow} onExportRow={onExportRow} route={route} row={row} scoreNotes={scoreEntry?.notes} />}
+        renderIdentity={(row) => <LeaderIdentity row={row} />}
+        route={route}
+        rows={rows}
+        scoreEntry={scoreEntry}
+        selection={selection}
+        size={size}
+      />
+    );
+  }
 
   return (
     <div className="max-w-full overflow-x-auto">
@@ -460,6 +482,7 @@ function StatusSwitch({ active, href }: { active: boolean; href: Route }) {
   return (
     <Link
       aria-label={active ? "Tắt trạng thái" : "Bật trạng thái"}
+      data-switch
       className={`inline-flex h-7 w-12 items-center rounded-full border px-0.5 transition-colors focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-primary ${
         active
           ? "justify-end border-(--toggle-active) bg-(--toggle-active-surface) hover:bg-(--toggle-active-surface-hover)"
