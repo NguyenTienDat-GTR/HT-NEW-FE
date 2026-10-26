@@ -31,7 +31,7 @@ export function SectionCard({ title, description, actions, children, className, 
   const inView = useInView(ref, { once: true, margin: "0px 0px -8% 0px" });
   return (
     <Panel
-      className={cn("analytics-reveal p-5 transition-shadow duration-200 hover:shadow-md sm:p-6", inView && "is-in", className)}
+      className={cn("analytics-reveal min-w-0 p-3.5 transition-shadow duration-200 hover:shadow-md sm:p-5 lg:p-6", inView && "is-in", className)}
       ref={ref}
       style={{ transitionDelay: inView ? `${delay}ms` : undefined }}
     >
@@ -46,7 +46,7 @@ export function SectionCard({ title, description, actions, children, className, 
           </div>
           {actions}
         </div>
-        <div className={cn("mt-4 transition-opacity duration-200", busy && "opacity-55")} aria-busy={busy || undefined}>
+        <div className={cn("mt-3 transition-opacity sm:mt-4 duration-200", busy && "opacity-55")} aria-busy={busy || undefined}>
           {children}
         </div>
       </RevealContext.Provider>

@@ -37,13 +37,17 @@ export function fetchParticipantDetail(courseCode: string, participationId: stri
   return apiFetch<ParticipantDetail>(`${base(courseCode)}/attendance/participants/${encodeURIComponent(participationId)}`);
 }
 
-export function scanAttendance(courseCode: string, token: string) {
-  return apiMutation<ScanResult>(`${base(courseCode)}/attendance/scan`, "POST", { token });
+// Quét ở header không chọn khóa (courseCode rỗng): khóa nằm trong chính mã QR và BE tự kiểm tra khóa có đang điểm danh được không.
+const attendancePath = (courseCode: string | undefined, action: "scan" | "lookup") =>
+  courseCode ? `${base(courseCode)}/attendance/${action}` : `/training/attendance/${action}`;
+
+export function scanAttendance(courseCode: string | undefined, token: string) {
+  return apiMutation<ScanResult>(attendancePath(courseCode, "scan"), "POST", { token });
 }
 
 // Tra cứu mã QR (chưa điểm danh) để người dùng xác nhận.
-export function lookupAttendance(courseCode: string, token: string) {
-  return apiMutation<ScanResult>(`${base(courseCode)}/attendance/lookup`, "POST", { token });
+export function lookupAttendance(courseCode: string | undefined, token: string) {
+  return apiMutation<ScanResult>(attendancePath(courseCode, "lookup"), "POST", { token });
 }
 
 export function setCheckedIn(courseCode: string, participationId: string, checkedIn: boolean) {

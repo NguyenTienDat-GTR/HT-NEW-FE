@@ -2,7 +2,8 @@
 
 import { CaretDown, CaretUp, Info, Minus } from "@phosphor-icons/react";
 import { animate, motion, useReducedMotion } from "motion/react";
-import { useEffect, useLayoutEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
 import { kpiVisual } from "@/modules/analytics/kpi-visuals";
 import { formatKpiValue, kpiMeta, snapshotKpis } from "@/modules/analytics/labels";
@@ -116,7 +117,7 @@ export function Sparkline({ points, color = "var(--viz-1)" }: { points: SparkPoi
   const end = runs[runs.length - 1][runs[runs.length - 1].length - 1];
 
   return (
-    <svg aria-hidden className="h-6 w-[60px] shrink-0 overflow-visible" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none">
+    <svg aria-hidden className="hidden h-6 w-[60px] shrink-0 overflow-visible sm:block" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none">
       {runs.map((items) => (
         <g key={items[0].x}>
           {items.length > 1 ? <path d={area(items)} fill={color} opacity={0.1} /> : null}
@@ -128,18 +129,59 @@ export function Sparkline({ points, color = "var(--viz-1)" }: { points: SparkPoi
   );
 }
 
+const HINT_WIDTH = 256;
+const HINT_MARGIN = 8;
+
+/** Gợi ý của thẻ KPI: hiện khi rê chuột, focus hoặc chạm. Vị trí tính theo viewport và kẹp trong màn hình để thẻ ở mép trái / phải không bị tràn ra ngoài. */
 export function InfoHint({ text }: { text: string }) {
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const [pos, setPos] = useState<{ left: number; top: number; width: number } | null>(null);
+
+  function show() {
+    const rect = buttonRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const width = Math.min(HINT_WIDTH, window.innerWidth - HINT_MARGIN * 2);
+    const left = Math.min(Math.max(rect.right - width, HINT_MARGIN), window.innerWidth - width - HINT_MARGIN);
+    setPos({ left, top: rect.bottom + 6, width });
+  }
+
+  useEffect(() => {
+    if (!pos) return;
+    const hide = () => setPos(null);
+    window.addEventListener("scroll", hide, true);
+    window.addEventListener("resize", hide);
+    return () => {
+      window.removeEventListener("scroll", hide, true);
+      window.removeEventListener("resize", hide);
+    };
+  }, [pos]);
+
   return (
-    <span className="group/hint relative inline-flex">
-      <button aria-label={text} className="grid h-5 w-5 cursor-help place-items-center rounded-full text-muted transition-colors hover:text-primary focus-visible:text-primary" type="button">
+    <span className="relative inline-flex" onBlur={() => setPos(null)} onMouseEnter={show} onMouseLeave={() => setPos(null)}>
+      <button
+        aria-label={text}
+        className="grid h-6 w-6 cursor-help place-items-center rounded-full text-muted transition-colors hover:text-primary focus-visible:text-primary sm:h-5 sm:w-5"
+        onClick={(event) => {
+          event.stopPropagation();
+          if (pos) setPos(null);
+          else show();
+        }}
+        onFocus={show}
+        ref={buttonRef}
+        type="button"
+      >
         <Info className="h-3.5 w-3.5" weight="bold" />
       </button>
-      <span
-        className="pointer-events-none absolute right-0 top-full z-50 mt-1.5 w-64 max-w-[min(16rem,80vw)] translate-y-1 rounded-lg border border-border bg-white p-2.5 text-left text-xs font-normal leading-5 text-text-secondary opacity-0 shadow-[var(--shadow-elevated)] transition duration-150 group-hover/hint:translate-y-0 group-hover/hint:opacity-100 group-focus-within/hint:translate-y-0 group-focus-within/hint:opacity-100"
-        role="tooltip"
-      >
-        {text}
-      </span>
+      {pos ? createPortal(
+        <span
+          className="pointer-events-none fixed z-50 rounded-lg border border-border bg-white p-2.5 text-left text-xs font-normal leading-5 text-text-secondary shadow-[var(--shadow-elevated)]"
+          role="tooltip"
+          style={{ left: pos.left, top: pos.top, width: pos.width }}
+        >
+          {text}
+        </span>,
+        document.body,
+      ) : null}
     </span>
   );
 }
@@ -171,7 +213,7 @@ export function KpiCard({ kpi, index = 0, label, onClick, busy, compare = true }
     <Wrapper
       animate={reduced ? undefined : { opacity: 1, y: 0, scale: 1 }}
       className={cn(
-        "group/kpi relative flex min-h-[96px] flex-col justify-between rounded-xl border border-border bg-white p-3.5 text-left shadow-sm transition-[transform,box-shadow,border-color,opacity] duration-200 hover:-translate-y-0.5 hover:z-20 hover:shadow-[var(--shadow-elevated)] focus-within:z-20",
+        "group/kpi relative flex min-h-[84px] flex-col justify-between rounded-xl border border-border bg-white p-2.5 sm:min-h-[96px] sm:p-3.5 text-left shadow-sm transition-[transform,box-shadow,border-color,opacity] duration-200 hover:-translate-y-0.5 hover:z-20 hover:shadow-[var(--shadow-elevated)] focus-within:z-20",
         onClick && "cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary",
         busy && "opacity-60",
       )}
@@ -186,15 +228,15 @@ export function KpiCard({ kpi, index = 0, label, onClick, busy, compare = true }
         <span aria-hidden className="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full opacity-[0.09] transition-opacity duration-300 group-hover/kpi:opacity-[0.18]" style={{ background: tone }} />
       </span>
       <div className="relative flex items-center gap-2">
-        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg" style={{ background: `color-mix(in srgb, ${tone} 14%, white)`, color: tone }}>
+        <span className="grid h-6 w-6 shrink-0 place-items-center rounded-lg sm:h-7 sm:w-7" style={{ background: `color-mix(in srgb, ${tone} 14%, white)`, color: tone }}>
           <Icon className="h-4 w-4" weight="bold" />
         </span>
-        <p className="min-w-0 flex-1 truncate text-xs font-medium text-text-secondary">{title}</p>
+        <p className="min-w-0 flex-1 truncate text-[11px] font-medium text-text-secondary sm:text-xs">{title}</p>
         {meta?.hint ? <InfoHint text={meta.hint} /> : null}
       </div>
       <div className="relative mt-2">
         <div className="flex items-center justify-between gap-2">
-          <p className="min-w-0 truncate text-xl font-bold leading-6 tracking-[-0.01em] tabular-nums text-foreground">
+          <p className="min-w-0 truncate text-lg font-bold leading-6 sm:text-xl tracking-[-0.01em] tabular-nums text-foreground">
             <CountUp unit={kpi.unit} value={kpi.value} />
             {meta?.unitLabel && kpi.value !== null ? <span className="ml-1 text-xs font-medium text-muted">{meta.unitLabel}</span> : null}
           </p>

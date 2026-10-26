@@ -17,7 +17,7 @@ import { hasPermissionPrefix, isSuperAdmin } from "@/lib/auth/permissions";
 import { cn } from "@/lib/utils";
 import { routeGroups, type RouteConfig, type RouteGroup } from "@/config/routes/routes";
 import { NotificationPopover } from "@/modules/notifications/components/notification-popover";
-import { QuickAttendanceButton } from "@/modules/course-participants/components/quick-attendance-button";
+import { HeaderScanButton } from "@/modules/qr-scan/components/header-scan-button";
 import { AccountMenu } from "@/modules/account/components/account-menu";
 import { PROFILE_PATH } from "@/modules/account/account-display";
 import { useNotificationsSocket } from "@/modules/workspace/hooks/notifications-socket";
@@ -118,7 +118,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {mobileOpen ? (
         <div className="fixed inset-0 z-50 bg-foreground/40 backdrop-blur-sm lg:hidden" onClick={() => setMobileOpen(false)}>
-          <aside className="h-full w-[312px] bg-white shadow-[var(--shadow-elevated)]" onClick={(event) => event.stopPropagation()}>
+          <aside className="flex h-full w-[min(312px,88vw)] flex-col bg-white shadow-[var(--shadow-elevated)]" onClick={(event) => event.stopPropagation()}>
             <div className="flex h-16 items-center justify-between border-b border-border px-4">
               <BrandMark />
               <TooltipIconButton label="Đóng menu" onClick={() => setMobileOpen(false)}>
@@ -149,7 +149,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </label>
 
             <div className="flex shrink-0 items-center gap-2">
-              <QuickAttendanceButton />
+              <HeaderScanButton />
               <NotificationPopover />
               <span aria-hidden className="mx-1 hidden h-6 w-px bg-border sm:block" />
               <AccountMenu loggingOut={isLoggingOut} onLogout={logout} />
@@ -236,7 +236,7 @@ function SidebarNav({
   }
 
   return (
-    <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 py-4">
+    <nav className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto overscroll-contain px-3 py-4">
       {groups.map((group) => {
         const GroupIcon = group.icon;
         const groupActive = group.children.some((route) => route.path === pathname);

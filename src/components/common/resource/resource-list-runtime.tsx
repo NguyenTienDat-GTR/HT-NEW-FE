@@ -36,6 +36,7 @@ import { ResourceListHeader } from "./resource-list-header";
 import type { ResourceListRuntimeProps } from "./resource-list-types";
 import { asPageResponse } from "./resource-list-utils";
 import { ResourcePagination } from "./resource-pagination";
+import { useIsDesktop } from "@/lib/use-media-query";
 import { ResourceTable } from "./resource-table";
 import { ViewModeToggle } from "./view-mode-toggle";
 import { ResourceFilters } from "./resource-toolbar";
@@ -97,7 +98,9 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
   const reissueId = searchParams.get("reissue");
   const removeId = searchParams.get("remove");
   const [viewMode, setViewMode] = useState<"table" | "card">(config.cardView?.defaultMode ?? "table");
-  const showCards = Boolean(config.cardView) && !embedded && viewMode === "card";
+  const isDesktop = useIsDesktop();
+  // Dưới 1024px bảng rộng khó dùng nên luôn xem dạng thẻ (ẩn công tắc Bảng / Thẻ); từ 1024px người dùng tự chọn.
+  const showCards = Boolean(config.cardView) && !embedded && (viewMode === "card" || !isDesktop);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkMode, setBulkMode] = useState<"approve" | "reject" | null>(null);
   const [scoreDrafts, setScoreDrafts] = useState<ScoreDrafts>({});
@@ -575,7 +578,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
               {config.toolbarActions}
               {excelExportButton}
               {excelImportButton}
-              {config.cardView && !embedded ? <ViewModeToggle mode={viewMode} onChange={setViewMode} /> : null}
+              {config.cardView && !embedded && isDesktop ? <ViewModeToggle mode={viewMode} onChange={setViewMode} /> : null}
               {saveScoresButton}
               {permissionRevokeButton}
             </>

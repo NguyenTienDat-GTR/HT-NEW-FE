@@ -3,18 +3,19 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useAuthStore } from "@/lib/auth/auth-store";
+import { HeaderScanButton } from "@/modules/qr-scan/components/header-scan-button";
 import { AttendanceScannerDialog } from "@/modules/course-participants/components/attendance-scanner-dialog";
-import { QuickAttendanceButton } from "@/modules/course-participants/components/quick-attendance-button";
-import { attendanceCourses } from "@/modules/course-participants/open-courses";
 import { INITIAL_SCAN_FLOW, scanFlowReducer, type ScanFlowState } from "@/modules/course-participants/scan-flow";
 import type { ScanResult } from "@/modules/course-participants/types";
 
 vi.mock("jsqr", () => ({ default: vi.fn(() => null) }));
+const push = vi.fn();
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push, replace: vi.fn() }) }));
 
 const envelope = (data: unknown, status = 200) =>
   new Response(JSON.stringify({ success: status < 400, data, message: status < 400 ? null : data }), { status, headers: { "content-type": "application/json" } });
 
-const TOKEN = "HTATT1.3f2a9c10-aaaa-bbbb.Zm9vYmFyYmF6cXV4";
+const TOKEN = "HTATT2.KH-1.3f2a9c10-aaaa-bbbb.Zm9vYmFyYmF6cXV4";
 const person = (status: ScanResult["status"], extra: Partial<ScanResult> = {}): ScanResult => ({ status, participationId: "p1", holyName: "Giuse", fullName: "Nguyễn An", parishName: "Bà Lụa", teamName: "Đội 1", ...extra });
 
 function wrap(ui: React.ReactElement) {
@@ -181,61 +182,107 @@ describe("AttendanceScannerDialog", () => {
   });
 });
 
-describe("attendanceCourses", () => {
-  it("keeps only open regular courses with attendance on", () => {
-    const rows = [
-      { courseCode: "A", courseName: "Khóa A", attendanceEnabled: true, status: true, organizingStatus: "ONGOING" },
-      { courseCode: "B", courseName: "Tắt điểm danh", attendanceEnabled: false },
-      { courseCode: "C", attendanceEnabled: true, status: false },
-      { courseCode: "D", attendanceEnabled: true, pastCourse: true },
-      { courseCode: "E", attendanceEnabled: true, finishedAt: "2026-01-01T00:00:00Z" },
-      { courseCode: "F", attendanceEnabled: true, organizingStatus: "ENDED" },
-      { courseName: "Không mã", attendanceEnabled: true },
-      { courseCode: "G", attendanceEnabled: true },
-    ];
-    expect(attendanceCourses(rows)).toEqual([
-      { courseCode: "A", courseName: "Khóa A" },
-      { courseCode: "G", courseName: "G" },
-    ]);
-  });
-});
+describe("header scanner (no course chosen)", () => {
+  const openHeader = () => wrap(<AttendanceScannerDialog onOpenChange={() => undefined} open />);
+  const CERT_URL = "https://ht.example.com/certificates/GPPC-HTI-2026-1";
 
-describe("QuickAttendanceButton", () => {
-  const login = (permissions: string[], extra: object = {}) => useAuthStore.getState().setUser({ username: "u", roles: [], permissions, ...extra });
+  beforeEach(() => push.mockClear());
 
-  it("is hidden without the scan permission or when the unit is locked", () => {
-    login(["training.participation.read.deanery"]);
-    const first = wrap(<QuickAttendanceButton />);
-    expect(screen.queryByRole("button", { name: /Quét QR điểm danh nhanh/ })).toBeNull();
-    first.unmount();
-    login(["training.attendance.scan.deanery"], { unitLocked: true });
-    wrap(<QuickAttendanceButton />);
-    expect(screen.queryByRole("button", { name: /Quét QR điểm danh nhanh/ })).toBeNull();
-  });
-
-  it("lists only the open courses and opens the scanner for the chosen one", async () => {
-    login(["training.attendance.scan.deanery"]);
+  it("checks attendance through the course-less endpoint and shows which course it belongs to", async () => {
     const urls: string[] = [];
     vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
       urls.push(String(input));
-      return envelope({ content: [{ courseCode: "KH-1", courseName: "Khóa Dự trưởng", attendanceEnabled: true, status: true }, { courseCode: "KH-2", courseName: "Khóa tắt", attendanceEnabled: false }], totalElements: 2, totalPages: 1 });
+      return String(input).endsWith("/lookup") ? envelope(person("READY", { courseCode: "KH-1", courseName: "Khóa Dự trưởng" })) : envelope(person("CHECKED_IN", { courseName: "Khóa Dự trưởng" }));
     });
-    wrap(<QuickAttendanceButton />);
-    fireEvent.pointerDown(screen.getByRole("button", { name: /Quét QR điểm danh nhanh/ }), { button: 0, ctrlKey: false });
-    expect(await screen.findByText("Khóa Dự trưởng")).toBeInTheDocument();
-    expect(screen.queryByText("Khóa tắt")).toBeNull();
-    expect(urls[0]).toContain("/training/courses?");
-    expect(decodeURIComponent(urls[0])).toContain("attendanceEnabled");
-    fireEvent.click(screen.getByText("Khóa Dự trưởng"));
-    expect(await screen.findByText("Điểm danh bằng mã QR")).toBeInTheDocument();
-    expect(screen.getByText("Khóa Dự trưởng.")).toBeInTheDocument();
+    openHeader();
+    submit(TOKEN);
+    expect(await screen.findByText("Khóa: Khóa Dự trưởng")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Xác nhận điểm danh/ }));
+    expect(await screen.findByText("Giuse Nguyễn An đã điểm danh thành công")).toBeInTheDocument();
+    expect(urls.map((url) => url.split("/training/")[1])).toEqual(["attendance/lookup", "attendance/scan"]);
   });
 
-  it("tells the user when no course is open", async () => {
+  it("shows the server message when the course is not running", async () => {
+    mockApi(() => envelope("Khóa huấn luyện đã kết thúc nên không thể điểm danh", 409));
+    openHeader();
+    submit(TOKEN);
+    expect(await screen.findByText(/đã kết thúc nên không thể điểm danh/)).toBeInTheDocument();
+    expect(push).not.toHaveBeenCalled();
+  });
+
+  it("opens the certificate detail page straight away when the certificate exists", async () => {
+    const urls: string[] = [];
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      urls.push(String(input));
+      return envelope({ certificateCode: "GPPC-HTI-2026-1", approvalStatus: "APPROVED" });
+    });
+    openHeader();
+    submit(CERT_URL);
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/certificates/GPPC-HTI-2026-1"));
+    expect(urls).toHaveLength(1);
+    expect(urls[0]).toContain("/certificates/GPPC-HTI-2026-1");
+  });
+
+  it("still opens the detail page for a revoked certificate", async () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation(async () => envelope({ certificateCode: "GPPC-HTI-2026-1", approvalStatus: "REVOKED" }));
+    openHeader();
+    submit(CERT_URL);
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/certificates/GPPC-HTI-2026-1"));
+  });
+
+  it("reports a missing certificate on the spot and does not navigate", async () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation(async () => envelope("Không tìm thấy chứng nhận", 404));
+    openHeader();
+    submit(CERT_URL);
+    expect(await screen.findByText(/Không tìm thấy chứng nhận GPPC-HTI-2026-1/)).toBeInTheDocument();
+    expect(push).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: /Quét tiếp/ }));
+    expect(await screen.findByLabelText("Mã điểm danh")).toBeInTheDocument();
+  });
+
+  it("asks for a new code when the old attendance format is scanned", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async () => envelope({}));
+    openHeader();
+    submit("HTATT1.p1.AAAAAAAAAAAAAAAAAAAAAA");
+    expect(await screen.findByText(/phiên bản cũ/)).toBeInTheDocument();
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it("rejects codes that are neither attendance nor certificate", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async () => envelope({}));
+    openHeader();
+    submit("https://evil.example.com/login");
+    expect(await screen.findByText(/không phải mã điểm danh hay mã chứng nhận/)).toBeInTheDocument();
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe("HeaderScanButton", () => {
+  const login = (permissions: string[], extra: object = {}) => useAuthStore.getState().setUser({ username: "u", roles: [], permissions, ...extra });
+  const name = /Quét mã QR/;
+
+  it("shows for attendance scanners or certificate readers and hides otherwise", () => {
+    login(["training.participation.read.deanery"]);
+    const first = wrap(<HeaderScanButton />);
+    expect(screen.queryByRole("button", { name })).toBeNull();
+    first.unmount();
+    login(["training.attendance.scan.deanery"], { unitLocked: true });
+    const second = wrap(<HeaderScanButton />);
+    expect(screen.queryByRole("button", { name })).toBeNull();
+    second.unmount();
     login(["training.attendance.scan.deanery"]);
-    vi.spyOn(globalThis, "fetch").mockImplementation(async () => envelope({ content: [], totalElements: 0, totalPages: 0 }));
-    wrap(<QuickAttendanceButton />);
-    fireEvent.pointerDown(screen.getByRole("button", { name: /Quét QR điểm danh nhanh/ }), { button: 0, ctrlKey: false });
-    expect(await screen.findByText(/Không có khóa huấn luyện nào đang mở/)).toBeInTheDocument();
+    const third = wrap(<HeaderScanButton />);
+    expect(screen.getByRole("button", { name })).toBeInTheDocument();
+    third.unmount();
+    login(["training.certificate.read.diocese"], { unitLocked: true });
+    wrap(<HeaderScanButton />);
+    expect(screen.getByRole("button", { name })).toBeInTheDocument();
+  });
+
+  it("opens the combined scanner", async () => {
+    login(["training.certificate.read.diocese"]);
+    wrap(<HeaderScanButton />);
+    fireEvent.click(screen.getByRole("button", { name }));
+    expect(await screen.findByText(/mã QR trên chứng nhận để mở trang chi tiết/)).toBeInTheDocument();
   });
 });

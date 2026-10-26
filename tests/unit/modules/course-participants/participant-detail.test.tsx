@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useAuthStore } from "@/lib/auth/auth-store";
 import { CourseParticipantsHub } from "@/modules/course-participants/components/course-participants-hub";
 import { ParticipantDetailDrawer } from "@/modules/course-participants/components/participant-detail-drawer";
-import { QuickAttendanceButton } from "@/modules/course-participants/components/quick-attendance-button";
+import { HeaderScanButton } from "@/modules/qr-scan/components/header-scan-button";
 import { formatDateTime, genderLabel, invitationLabel } from "@/modules/course-participants/participant-detail";
 import type { ParticipantDetail } from "@/modules/course-participants/types";
 
@@ -167,12 +167,12 @@ describe("hub: detail link and separate scan permission", () => {
 describe("header button permission", () => {
   it("is hidden for the approve permission and shown for the scan permission", () => {
     useAuthStore.getState().setUser({ username: "u", roles: [], permissions: ["training.participation.approve.deanery", "training.participation.read.deanery"] });
-    const first = wrap(<QuickAttendanceButton />);
-    expect(screen.queryByRole("button", { name: /Quét QR điểm danh nhanh/ })).toBeNull();
+    const first = wrap(<HeaderScanButton />);
+    expect(screen.queryByRole("button", { name: /Quét mã QR/ })).toBeNull();
     first.unmount();
     useAuthStore.getState().setUser({ username: "u", roles: [], permissions: ["training.attendance.scan.diocese"] });
-    wrap(<QuickAttendanceButton />);
-    expect(screen.getByRole("button", { name: /Quét QR điểm danh nhanh/ })).toBeInTheDocument();
+    wrap(<HeaderScanButton />);
+    expect(screen.getByRole("button", { name: /Quét mã QR/ })).toBeInTheDocument();
     void waitFor;
   });
 });

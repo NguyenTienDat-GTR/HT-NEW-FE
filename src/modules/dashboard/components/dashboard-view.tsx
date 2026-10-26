@@ -84,17 +84,17 @@ export function DashboardView() {
         <ErrorState onRetry={() => overview.refetch()} />
       ) : !data ? (
         <>
-          <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+          <section className="grid grid-cols-2 gap-2.5 sm:gap-4 md:grid-cols-3 2xl:grid-cols-6">
             <KpiSkeletons count={6} />
           </section>
-          <div className="grid gap-6 xl:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 lg:gap-6 xl:grid-cols-3">
             <ChartSkeletonCard className="xl:col-span-2" />
             <ChartSkeletonCard />
           </div>
         </>
       ) : (
         <>
-          <section aria-label="Chỉ số chính" className={cn("grid gap-4 sm:grid-cols-2", systemWide ? "xl:grid-cols-4" : "sm:grid-cols-3 xl:grid-cols-6")}>
+          <section aria-label="Chỉ số chính" className={cn("grid grid-cols-2 gap-2.5 sm:gap-4", systemWide ? "xl:grid-cols-4" : "md:grid-cols-3 xl:grid-cols-6")}>
             {(systemWide || isParish ? data.kpis : HERO_KPIS.map((key) => data.kpis.find((kpi) => kpi.key === key)).filter((kpi): kpi is NonNullable<typeof kpi> => Boolean(kpi))).map((kpi, index) => (
               <KpiCard busy={busy} color={SERIES_COLOR[kpi.key]} compare={Boolean(data.filters.compareFromDate)} index={index} key={kpi.key} kpi={kpi} />
             ))}
@@ -104,7 +104,7 @@ export function DashboardView() {
             <Panel className="p-5 text-sm text-text-secondary">Tài khoản quản trị hệ thống chỉ xem số liệu tổng số. Phân tích chi tiết nằm ở các tài khoản theo giáo phận, giáo hạt hoặc giáo xứ.</Panel>
           ) : isParish ? (
             <>
-              <div className="grid gap-6 xl:grid-cols-3">
+              <div className="grid grid-cols-1 gap-4 lg:gap-6 xl:grid-cols-3">
                 <SectionCard className="xl:col-span-2" description="Khóa của giáo hạt và giáo phận đang nhận đăng ký. Bấm vào khóa để sang khóa đó và đăng ký tham dự." title="Khóa huấn luyện đang mở đăng ký" tone="var(--viz-3)">
                   <OpenCourses courses={openCourses.data} loading={openCourses.isLoading} />
                 </SectionCard>
@@ -112,7 +112,7 @@ export function DashboardView() {
                   <AlertsPanel alerts={data.alerts ?? []} />
                 </SectionCard>
               </div>
-              <div className="grid gap-6 xl:grid-cols-3">
+              <div className="grid grid-cols-1 gap-4 lg:gap-6 xl:grid-cols-3">
                 <SectionCard busy={busy} className="xl:col-span-2" description="Hồ sơ huynh trưởng mới và thăng cấp của giáo xứ. Đường nét đứt là kỳ liền trước." title="Nhân sự theo kỳ" tone="var(--viz-1)">
                   <TrendChart ariaLabel="Hồ sơ mới và thăng cấp" rows={rows} series={["newLeaders", "promotions"].map((key) => ({ key, label: trendLabels[key], color: SERIES_COLOR[key] }))} showPrevious={filters.compare} />
                 </SectionCard>
@@ -126,7 +126,7 @@ export function DashboardView() {
                   />
                 </SectionCard>
               </div>
-              <div className="grid gap-6 lg:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4 lg:gap-6 lg:grid-cols-2">
                 <SectionCard busy={busy} description="Cấp bậc hiện tại của huynh trưởng." title="Cấp bậc" tone="var(--viz-7)">
                   <BarList
                     ariaLabel="Cấp bậc"
@@ -152,7 +152,7 @@ export function DashboardView() {
             </>
           ) : (
             <>
-              <div className="grid gap-6 xl:grid-cols-3">
+              <div className="grid grid-cols-1 gap-4 lg:gap-6 xl:grid-cols-3">
                 <SectionCard className="xl:col-span-2" description="Những việc đang chờ bạn. Bấm để mở đúng màn hình xử lý." title="Việc cần xử lý">
                   {workQueue.data ? <WorkQueue items={workQueue.data} /> : <SkeletonBlock className="h-[132px] w-full" />}
                 </SectionCard>
@@ -161,7 +161,7 @@ export function DashboardView() {
                 </SectionCard>
               </div>
 
-              <div className="grid gap-6 xl:grid-cols-3">
+              <div className="grid grid-cols-1 gap-4 lg:gap-6 xl:grid-cols-3">
                 <SectionCard busy={busy} className="xl:col-span-2" description="Theo ngày bắt đầu khóa. Đường nét đứt là kỳ liền trước cùng độ dài." title="Hoạt động huấn luyện theo kỳ">
                   <TrendChart ariaLabel="Xu hướng đăng ký, tham dự, đạt" rows={rows} series={["registrations", "attended", "passed"].map((key) => ({ key, label: trendLabels[key], color: SERIES_COLOR[key] }))} showPrevious={filters.compare} />
                 </SectionCard>
@@ -170,7 +170,7 @@ export function DashboardView() {
                 </SectionCard>
               </div>
 
-              <div className="grid gap-6 lg:grid-cols-2 2xl:grid-cols-3">
+              <div className="grid grid-cols-1 gap-4 lg:gap-6 lg:grid-cols-2 2xl:grid-cols-3">
                 <SectionCard busy={busy} defer description="Khóa có nhiều lượt đăng ký nhất trong kỳ." title="Khóa nổi bật">
                   <BarList ariaLabel="Khóa có nhiều đăng ký" items={bars(breakdownsOf(data, "course"), "course")} limit={5} onSelect={(bar) => drillTo("course", bar.key, bar.label)} />
                 </SectionCard>
