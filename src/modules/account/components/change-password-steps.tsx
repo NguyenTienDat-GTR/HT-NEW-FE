@@ -144,11 +144,14 @@ export function NewPasswordStep({
   loading,
   oldPassword,
   onSubmit,
+  submitLabel = "Đổi mật khẩu",
 }: {
   error?: string | null;
   loading: boolean;
-  oldPassword: string;
+  /** Không truyền khi quên mật khẩu (không có mật khẩu hiện tại để so sánh). */
+  oldPassword?: string;
   onSubmit: (newPassword: string, confirmPassword: string) => void;
+  submitLabel?: string;
 }) {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -159,7 +162,7 @@ export function NewPasswordStep({
       ok: newPassword.length >= PASSWORD_MIN_LENGTH && newPassword.length <= PASSWORD_MAX_LENGTH,
       label: `Từ ${PASSWORD_MIN_LENGTH} đến ${PASSWORD_MAX_LENGTH} ký tự`,
     },
-    { ok: newPassword.length > 0 && newPassword !== oldPassword, label: "Khác mật khẩu hiện tại" },
+    ...(oldPassword !== undefined ? [{ ok: newPassword.length > 0 && newPassword !== oldPassword, label: "Khác mật khẩu hiện tại" }] : []),
     { ok: confirmPassword.length > 0 && confirmPassword === newPassword, label: "Mật khẩu xác nhận khớp" },
   ];
   const hints = strongPasswordHints.map((hint) => ({ ok: hint.test(newPassword), label: hint.label }));
@@ -203,7 +206,7 @@ export function NewPasswordStep({
       </div>
       <FormError message={error} />
       <Button className="w-full" disabled={!valid} loading={loading} size="lg" type="submit">
-        Đổi mật khẩu
+        {submitLabel}
       </Button>
     </form>
   );

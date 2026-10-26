@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowsCounterClockwiseIcon, ArrowUUpLeftIcon, CaretDownIcon, CheckCircleIcon, EyeIcon, FilePdfIcon, PencilSimpleIcon, ProhibitInsetIcon, TrashIcon, XCircleIcon } from "@phosphor-icons/react";
+import { ArrowsCounterClockwiseIcon, ArrowUUpLeftIcon, CaretDownIcon, CheckCircleIcon, EyeIcon, FilePdfIcon, KeyIcon, PencilSimpleIcon, ProhibitInsetIcon, TrashIcon, XCircleIcon } from "@phosphor-icons/react";
 import type { Route } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -233,6 +233,8 @@ export function RowActions({ route, row, onExportRow, exportingRow, scoreNotes }
   const courseDisabled = embedded?.courseDisabled === true || (route.kind === "courses" && row.status === false);
   const canEdit = (pastCourseRow ? hasPermissionPrefix(user, "training.course.create_past.") : canShowEditAction(route, row, user)) && !courseDisabled;
   const canToggle = canUseAction(user, route.actions?.toggle) && canToggleRow(route, row, user);
+  // Đặt lại mật khẩu tạm: chỉ tài khoản đang hoạt động, không phải chính mình hay SUPER_ADMIN (BE kiểm tra lại phạm vi và vai trò).
+  const canResetPassword = route.kind === "accounts" && canUseAction(user, route.actions?.resetPassword) && canResetPasswordRow(row, user);
   // Phân quyền vai trò / tài khoản: thu hồi từng quyền (vĩnh viễn) thay cho bật/tắt; quyền đã thu hồi hoặc hết hạn thì không còn nút.
   const canRevokePermission =
     (route.kind === "role-permissions" || route.kind === "account-permissions") &&
@@ -363,6 +365,15 @@ export function RowActions({ route, row, onExportRow, exportingRow, scoreNotes }
           </Button>
         </Tip>
       ) : null}
+      {canResetPassword ? (
+        <Tip label="Đặt lại mật khẩu, gửi mật khẩu tạm qua email">
+          <Button asChild aria-label="Đặt lại mật khẩu" className="h-8 min-w-8 rounded-lg" size="icon" variant="icon">
+            <Link href={resourceActionHref(route.path, embedded, { resetPassword: id }) as Route}>
+              <KeyIcon size={16} />
+            </Link>
+          </Button>
+        </Tip>
+      ) : null}
       {canToggle ? (
         <Tip label="Bật hoặc tắt trạng thái hoạt động">
           <StatusSwitch active={isToggleActive(route, row)} href={resourceActionHref(route.path, embedded, { toggle: id }) as Route} />
@@ -419,6 +430,10 @@ function isSystemRoleRow(route: RouteConfig, row: Record<string, unknown>) {
   if (route.kind === "roles") return row.isSystem === true;
   if (route.kind !== "role-permissions") return false;
   return row.roleIsSystem === true || (typeof row.roleCode === "string" && systemRoleCodes.has(row.roleCode));
+}
+
+function canResetPasswordRow(row: Record<string, unknown>, user: AuthUser | null) {
+  return row.status === true && !isOwnAccount(row, user) && !rowHasPrimaryRole(row, "SUPER_ADMIN");
 }
 
 function isOwnAccount(row: Record<string, unknown>, user: AuthUser | null) {

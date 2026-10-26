@@ -49,6 +49,7 @@ const taxonomyLabels: Record<PermissionTaxonomyKind, Record<string, string>> = {
     lock: "Khóa/mở",
     manage: "Quản lý",
     read: "Xem",
+    reset_password: "Đặt lại mật khẩu",
     revoke: "Thu hồi",
     scan: "Quét điểm danh",
     score: "Chấm điểm",

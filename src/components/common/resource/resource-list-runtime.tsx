@@ -93,6 +93,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
   const withdrawId = searchParams.get("withdraw");
   const revokeId = searchParams.get("revoke");
   const revokePermissionId = searchParams.get("revokePermission");
+  const resetPasswordId = searchParams.get("resetPassword");
   const reissueId = searchParams.get("reissue");
   const removeId = searchParams.get("remove");
   const [viewMode, setViewMode] = useState<"table" | "card">(config.cardView?.defaultMode ?? "table");
@@ -183,7 +184,9 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
   const bulkExceptionItems = bulkApprovableIds.map(exceptionItemFor).filter((item): item is ExceptionLevelItem => item !== null);
   const closeQueryDialog = () => router.push((embedded ? embeddedTabHref(embedded) : effectiveRoute.path) as Route);
   const actionMutation = useMutation({
-    mutationFn: ({ action, id, note, signer, achievedLevel }: { action: "toggle" | "approve" | "reject" | "revoke" | "reissue" | "withdraw" | "remove" | "revokePermission"; id: string; note?: string; signer?: CertificateSigner; achievedLevel?: string }) => {
+    mutationFn: ({ action, id, note, signer, achievedLevel }: { action: "toggle" | "approve" | "reject" | "revoke" | "reissue" | "withdraw" | "remove" | "revokePermission" | "resetPassword"; id: string; note?: string; signer?: CertificateSigner; achievedLevel?: string }) => {
+      // Đặt lại mật khẩu: mật khẩu tạm chỉ gửi qua email, API chỉ trả về email đã che và hạn dùng.
+      if (action === "resetPassword") return apiMutationOnce<{ maskedEmail?: string }>(`${effectiveRoute.endpoint}/${encodeURIComponent(id)}/reset-password`, "POST");
       if (action === "revokePermission") {
         const row = rowById(id);
         const target = effectiveRoute.kind === "role-permissions" ? { roleCode: row?.roleCode } : { username: row?.username };
@@ -207,8 +210,8 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
       }
       throw new Error("Unsupported resource action");
     },
-    onSuccess: async (_data, variables) => {
-      toast.success(variables.action === "toggle" ? "Đổi trạng thái thành công" : variables.action === "revokePermission" ? "Đã thu hồi quyền" : variables.action === "reject" ? "Đã từ chối duyệt" : variables.action === "revoke" ? "Đã thu hồi chứng nhận" : variables.action === "reissue" ? "Đã cấp lại chứng nhận" : variables.action === "withdraw" ? "Đã thu hồi đăng ký" : variables.action === "remove" ? "Đã chuyển hồ sơ về trạng thái từ chối duyệt" : "Duyệt thành công");
+    onSuccess: async (data, variables) => {
+      toast.success(variables.action === "resetPassword" ? `Đã gửi mật khẩu tạm tới ${(data as { maskedEmail?: string } | undefined)?.maskedEmail ?? "email đã đăng ký"}, hiệu lực 10 phút` : variables.action === "toggle" ? "Đổi trạng thái thành công" : variables.action === "revokePermission" ? "Đã thu hồi quyền" : variables.action === "reject" ? "Đã từ chối duyệt" : variables.action === "revoke" ? "Đã thu hồi chứng nhận" : variables.action === "reissue" ? "Đã cấp lại chứng nhận" : variables.action === "withdraw" ? "Đã thu hồi đăng ký" : variables.action === "remove" ? "Đã chuyển hồ sơ về trạng thái từ chối duyệt" : "Duyệt thành công");
       closeQueryDialog();
       // Thao tác có thể đổi dữ liệu ở các danh sách khác (hồ sơ tham dự, chứng nhận, khóa) và ở drawer chi tiết đang mở.
       await queryClient.invalidateQueries({ queryKey: ["resource"] });
@@ -678,6 +681,16 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
           return { id, label: String(row?.leaderFullName ?? id) };
         })}
         open={bulkMode !== null}
+      />
+      <ConfirmActionDialog
+        action="withdraw"
+        confirmLabel="Đặt lại"
+        description="Hệ thống tạo mật khẩu tạm 8 ký tự rồi gửi tới email đăng ký của tài khoản hoặc email của huynh trưởng gắn với tài khoản. Mật khẩu chỉ có hiệu lực 10 phút, người dùng phải đổi mật khẩu khi đăng nhập và mọi phiên đăng nhập hiện tại bị đăng xuất. Nhập chính xác Xác nhận để tiếp tục."
+        loading={actionMutation.isPending}
+        onClose={closeQueryDialog}
+        onConfirm={() => resetPasswordId && actionMutation.mutate({ action: "resetPassword", id: resetPasswordId })}
+        open={Boolean(resetPasswordId)}
+        title={resetPasswordId ? `Đặt lại mật khẩu tài khoản ${resetPasswordId}` : "Đặt lại mật khẩu"}
       />
       <ConfirmActionDialog
         action="withdraw"
