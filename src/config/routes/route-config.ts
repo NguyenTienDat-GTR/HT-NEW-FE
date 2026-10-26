@@ -29,7 +29,7 @@ export type ResourceKind =
   | "account-permissions"
   | "audit-logs";
 
-export type ResourceAction = "view" | "create" | "edit" | "toggle" | "submit" | "approve" | "reject" | "revoke" | "reissue" | "withdraw" | "remove" | "score" | "matrix" | "read";
+export type ResourceAction = "view" | "create" | "edit" | "toggle" | "submit" | "approve" | "reject" | "revoke" | "reissue" | "withdraw" | "remove" | "score" | "matrix" | "read" | "resetPassword";
 
 export type ResourceActionConfig = {
   label: string;

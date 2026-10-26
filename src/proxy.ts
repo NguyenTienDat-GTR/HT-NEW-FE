@@ -16,5 +16,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/|backend/|login|change-password).*)"],
+  matcher: ["/((?!_next/|backend/|login|forgot-password|change-password).*)"],
 };

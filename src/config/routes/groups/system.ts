@@ -41,6 +41,10 @@ export const systemRouteGroup: RouteGroup = {
         },
       ],
       workflowHint: "FE không gửi username/password/avatarUrl; backend tự sinh credential.",
+      // Đặt lại mật khẩu dùng quyền riêng theo phạm vi, không suy ra từ quyền quản lý tài khoản.
+      actions: {
+        resetPassword: { label: "Đặt lại mật khẩu", permissionPrefixes: ["system.account.reset_password."] },
+      },
     }),
     route({
       path: "/system/roles",
