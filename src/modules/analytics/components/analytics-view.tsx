@@ -76,7 +76,7 @@ export function AnalyticsView() {
     <div className="space-y-6">
       <PageHeader eyebrow="Phân tích" subtitle="Khám phá khóa huấn luyện, chứng nhận, nhân sự và tổ chức theo thời gian, đơn vị và nhóm. Bấm vào biểu đồ để xem danh sách chi tiết." title="Phân tích dữ liệu" />
 
-      <div aria-label="Nhóm phân tích" className={cn("grid gap-2 rounded-xl border border-border bg-white p-1.5 shadow-sm sm:grid-cols-2", visibleTabs.length === 4 ? "xl:grid-cols-4" : "xl:grid-cols-3")} role="tablist">
+      <div aria-label="Nhóm phân tích" className={cn("grid gap-2 rounded-xl border border-border bg-white p-1.5 shadow-sm grid-cols-2", visibleTabs.length === 4 ? "xl:grid-cols-4" : "xl:grid-cols-3")} role="tablist">
         {visibleTabs.map((item) => {
           const selected = tab === item.id;
           const Icon = item.icon;
@@ -119,7 +119,7 @@ export function AnalyticsView() {
         <ErrorState onRetry={() => query.refetch()} />
       ) : !common ? (
         <div className="space-y-6">
-          <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <section className="grid grid-cols-2 gap-2.5 sm:gap-4 xl:grid-cols-4">
             <KpiSkeletons count={8} />
           </section>
           <ChartSkeletonCard />

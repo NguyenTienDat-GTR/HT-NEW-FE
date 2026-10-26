@@ -1,6 +1,7 @@
 "use client";
 
-import { ArrowLeft, Flag, LockSimple, LockSimpleOpen, MagnifyingGlass, PencilSimple, Prohibit } from "@phosphor-icons/react";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import { ArrowLeft, CaretDown, Flag, LockSimple, LockSimpleOpen, MagnifyingGlass, PencilSimple, Prohibit } from "@phosphor-icons/react";
 import { keepPreviousData, useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Route } from "next";
 import Link from "next/link";
@@ -40,6 +41,7 @@ import { AutoSendBanner } from "@/modules/course-participants/components/auto-se
 import { CourseParticipantsHub } from "@/modules/course-participants/components/course-participants-hub";
 import { PrerequisiteCopyDialog } from "@/modules/prerequisite-copy/components/prerequisite-copy-dialog";
 import { useSessionState } from "@/lib/use-session-state";
+import { useIsDesktop } from "@/lib/use-media-query";
 import { CourseConditionList, courseConditionItems } from "@/modules/training-courses/components/course-conditions";
 
 // Quy trình huấn luyện của một khóa: mỗi tab dùng lại đúng màn hình/logic của menu cũ, lọc theo khóa đang chọn.
@@ -77,6 +79,10 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
   // Ô tìm kiếm chung cho cả 5 tab: nằm dưới thông tin khóa, giữ nguyên nội dung khi đổi tab.
   const [searchText, setSearchText] = useSessionState(`course-search:${id}`, "");
   const firstSearch = useRef(true);
+  const isDesktop = useIsDesktop();
+  // Khối thông tin khóa thu gọn / mở rộng ở mọi thiết bị: mặc định mở trên desktop, thu gọn trên tablet và điện thoại cho đỡ chiếm màn hình.
+  const [infoOverride, setInfoOverride] = useState<boolean | null>(null);
+  const infoOpen = infoOverride ?? isDesktop;
 
   const courseQuery = useQuery({
     queryKey: ["resource-detail", route.endpoint, id],
@@ -159,7 +165,7 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
       firstSearch.current = false;
       return;
     }
-    if (activeTab) router.replace(`${basePath}?tab=${activeTab.key}` as Route);
+    if (activeTab) router.replace(`${basePath}?tab=${activeTab.key}` as Route, { scroll: false });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
   const editHref = fillRoute(route.editPath, { id });
@@ -226,34 +232,55 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
           </div>
         </div>
         {course ? (
-          <div className="space-y-3">
-            <Panel className="px-4 py-3.5">
-              <h2 className="mb-3 text-sm font-semibold text-foreground">Thông tin khóa</h2>
-              <div className={cn("grid gap-x-8 gap-y-4", isPastCourse ? "md:grid-cols-2" : "md:grid-cols-2 lg:grid-cols-4")}>
-                {(isPastCourse ? pastSummaryGroups : summaryGroups).map((group) => (
-                  <section className="min-w-0" key={group.title}>
-                    <h3 className="mb-2 border-b border-border pb-1.5 text-xs font-semibold uppercase tracking-[0.02em] text-text-secondary">{group.title}</h3>
-                    <dl className="space-y-1.5">
-                      {group.columns.filter((column) => column !== "targetDeaneries" || targetDeaneryNames(course).length > 0).map((column) => (
-                        <div className="flex min-w-0 items-baseline justify-between gap-3 text-[13px]" key={column}>
-                          <dt className="shrink-0 text-muted">{summaryLabels[column] ?? column}</dt>
-                          <dd className="min-w-0 text-right font-medium text-foreground">
-                            <SummaryValue column={column} course={course} />
-                          </dd>
-                        </div>
-                      ))}
-                    </dl>
-                  </section>
-                ))}
+          <Panel className="px-4 py-3">
+            <button
+              aria-controls="course-info"
+              aria-expanded={infoOpen}
+              className="flex min-h-11 w-full cursor-pointer items-center justify-between gap-3 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary sm:min-h-9"
+              onClick={() => setInfoOverride(!infoOpen)}
+              type="button"
+            >
+              <span className="min-w-0">
+                <span className="block text-sm font-semibold text-foreground">Thông tin khóa</span>
+                {infoOpen ? null : (
+                  <span className="mt-0.5 block truncate text-xs text-muted">
+                    <SummaryValue column="organizingStatus" course={course} /> · <SummaryValue column="startDate" course={course} /> → <SummaryValue column="endDate" course={course} />
+                  </span>
+                )}
+              </span>
+              <span className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-primary">
+                <span className="hidden sm:inline">{infoOpen ? "Thu gọn" : "Mở rộng"}</span>
+                <CaretDown aria-hidden className={cn("transition-transform", infoOpen && "rotate-180")} size={16} />
+              </span>
+            </button>
+            {infoOpen ? (
+              <div className="mt-3 space-y-4" id="course-info">
+                <div className={cn("grid gap-x-8 gap-y-4", isPastCourse ? "md:grid-cols-2" : "md:grid-cols-2 lg:grid-cols-4")}>
+                  {(isPastCourse ? pastSummaryGroups : summaryGroups).map((group) => (
+                    <section className="min-w-0" key={group.title}>
+                      <h3 className="mb-2 border-b border-border pb-1.5 text-xs font-semibold uppercase tracking-[0.02em] text-text-secondary">{group.title}</h3>
+                      <dl className="space-y-1.5">
+                        {group.columns.filter((column) => column !== "targetDeaneries" || targetDeaneryNames(course).length > 0).map((column) => (
+                          <div className="flex min-w-0 items-baseline justify-between gap-3 text-[13px]" key={column}>
+                            <dt className="shrink-0 text-muted">{summaryLabels[column] ?? column}</dt>
+                            <dd className="min-w-0 text-right font-medium text-foreground">
+                              <SummaryValue column={column} course={course} />
+                            </dd>
+                          </div>
+                        ))}
+                      </dl>
+                    </section>
+                  ))}
+                </div>
+                {!isPastCourse ? (
+                  <div className="border-t border-border pt-3">
+                    <h3 className="mb-2 text-sm font-semibold text-foreground">Điều kiện của khóa</h3>
+                    {conditionItems.length > 0 ? <CourseConditionList items={conditionItems} /> : <p className="text-[13px] text-muted">Khóa không đặt điều kiện tham dự.</p>}
+                  </div>
+                ) : null}
               </div>
-            </Panel>
-            {!isPastCourse ? (
-              <Panel className="px-4 py-3.5">
-                <h2 className="mb-2 text-sm font-semibold text-foreground">Điều kiện của khóa</h2>
-                {conditionItems.length > 0 ? <CourseConditionList items={conditionItems} /> : <p className="text-[13px] text-muted">Khóa không đặt điều kiện tham dự.</p>}
-              </Panel>
             ) : null}
-          </div>
+          </Panel>
         ) : null}
         {courseDisabled ? (
           <div className="flex items-start gap-3 rounded-xl border border-danger/30 bg-danger/5 px-4 py-3 text-sm text-foreground" role="alert">
@@ -295,30 +322,69 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
         <Panel className="p-6 text-sm text-muted">Bạn không có quyền xem quy trình huấn luyện của khóa này.</Panel>
       ) : (
         <>
-          <div aria-label="Quy trình huấn luyện" className="flex flex-wrap gap-1 border-b border-border" role="tablist">
-            {tabs.map((tab) => {
-              const active = tab.key === activeTab?.key;
-              return (
-                <Link
-                  aria-selected={active}
-                  className={cn(
-                    "-mb-px border-b-2 px-4 py-3 text-sm font-semibold transition-colors",
-                    active ? "border-primary text-primary" : "border-transparent text-text-secondary hover:text-foreground",
-                  )}
-                  href={`${basePath}?tab=${tab.key}` as Route}
-                  key={tab.key}
-                  role="tab"
+          {isDesktop ? (
+            <div aria-label="Quy trình huấn luyện" className="flex flex-wrap gap-1 border-b border-border" role="tablist">
+              {tabs.map((tab) => {
+                const active = tab.key === activeTab?.key;
+                return (
+                  <Link
+                    aria-selected={active}
+                    className={cn(
+                      "-mb-px border-b-2 px-4 py-3 text-sm font-semibold transition-colors",
+                      active ? "border-primary text-primary" : "border-transparent text-text-secondary hover:text-foreground",
+                    )}
+                    href={`${basePath}?tab=${tab.key}` as Route}
+                    key={tab.key}
+                    role="tab"
+                    scroll={false}
+                  >
+                    {tab.label}
+                    <TabCount active={active} count={tab.key !== "teams" && tab.key !== "attendance" ? tabCounts[tab.key] : undefined} />
+                  </Link>
+                );
+              })}
+            </div>
+          ) : (
+            // Tablet / điện thoại: các tab gộp thành một menu thả xuống để khỏi xuống dòng nhiều tầng.
+            <DropdownMenu.Root>
+              <DropdownMenu.Trigger asChild>
+                <button
+                  aria-label="Chọn bước quy trình huấn luyện"
+                  className="flex min-h-11 w-full cursor-pointer items-center justify-between gap-3 rounded-xl border border-border bg-white px-4 text-left text-sm font-semibold text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                  type="button"
                 >
-                  {tab.label}
-                  {tab.key !== "teams" && tab.key !== "attendance" && tabCounts[tab.key] !== undefined ? (
-                    <span className={cn("ml-2 inline-flex min-w-6 items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-semibold", active ? "bg-primary-soft text-primary" : "bg-surface-2 text-text-secondary")}>
-                      {tabCounts[tab.key]}
-                    </span>
-                  ) : null}
-                </Link>
-              );
-            })}
-          </div>
+                  <span className="min-w-0 truncate">
+                    {activeTab?.label}
+                    <TabCount active count={activeTab && activeTab.key !== "teams" && activeTab.key !== "attendance" ? tabCounts[activeTab.key] : undefined} />
+                  </span>
+                  <CaretDown aria-hidden className="shrink-0 text-muted" size={16} />
+                </button>
+              </DropdownMenu.Trigger>
+              <DropdownMenu.Portal>
+                <DropdownMenu.Content align="start" className="z-50 max-h-[70vh] w-(--radix-dropdown-menu-trigger-width) overflow-y-auto rounded-xl border border-border bg-white p-1.5 shadow-(--shadow-elevated) focus:outline-none" sideOffset={6}>
+                  {tabs.map((tab) => {
+                    const active = tab.key === activeTab?.key;
+                    return (
+                      <DropdownMenu.Item asChild key={tab.key}>
+                        <Link
+                          aria-current={active ? "page" : undefined}
+                          className={cn(
+                            "flex min-h-11 cursor-pointer items-center justify-between rounded-lg px-3 text-sm font-medium outline-none data-highlighted:bg-surface-hover",
+                            active ? "bg-primary-soft text-primary" : "text-foreground",
+                          )}
+                          href={`${basePath}?tab=${tab.key}` as Route}
+                          scroll={false}
+                        >
+                          {tab.label}
+                          <TabCount active={active} count={tab.key !== "teams" && tab.key !== "attendance" ? tabCounts[tab.key] : undefined} />
+                        </Link>
+                      </DropdownMenu.Item>
+                    );
+                  })}
+                </DropdownMenu.Content>
+              </DropdownMenu.Portal>
+            </DropdownMenu.Root>
+          )}
           {activeTab ? (
             <EmbeddedResourceProvider
               key={activeTab.key}
@@ -365,6 +431,15 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
         </>
       )}
     </div>
+  );
+}
+
+function TabCount({ active, count }: { active: boolean; count?: number }) {
+  if (count === undefined) return null;
+  return (
+    <span className={cn("ml-2 inline-flex min-w-6 items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-semibold", active ? "bg-primary-soft text-primary" : "bg-surface-2 text-text-secondary")}>
+      {count}
+    </span>
   );
 }
 

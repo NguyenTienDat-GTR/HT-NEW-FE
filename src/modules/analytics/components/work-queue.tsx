@@ -19,7 +19,7 @@ const TONES: Record<string, string> = {
 /** Lối tắt tới việc cần xử lý; thẻ có việc nổi lên (chấm + số đậm), thẻ trống mờ đi nhưng vẫn bấm được. */
 export function WorkQueue({ items }: { items: WorkQueueItem[] }) {
   return (
-    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+    <div className="grid grid-cols-2 gap-2.5 sm:gap-3 md:grid-cols-3 xl:grid-cols-5">
       {items.map((item, index) => {
         const meta = workQueueMeta[item.key];
         if (!meta) return null;

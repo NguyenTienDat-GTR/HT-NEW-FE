@@ -127,7 +127,7 @@ export function TrendChart({ rows, series, showPrevious = false, variant = "line
           </table>
         </div>
       ) : (
-        <div aria-label={ariaLabel} role="img" style={{ height }}>
+        <div aria-label={ariaLabel} className="h-(--trend-h) sm:h-(--trend-h-lg)" role="img" style={{ "--trend-h": `${Math.round(height * 0.75)}px`, "--trend-h-lg": `${height}px` } as React.CSSProperties}>
           <ResponsiveContainer height="100%" width="100%">
             <ComposedChart data={rows} margin={{ top: 8, right: 12, bottom: 0, left: 0 }}>
               <defs>
