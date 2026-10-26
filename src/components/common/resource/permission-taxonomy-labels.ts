@@ -50,6 +50,7 @@ const taxonomyLabels: Record<PermissionTaxonomyKind, Record<string, string>> = {
     manage: "Quản lý",
     read: "Xem",
     reset_password: "Đặt lại mật khẩu",
+    cross_approve: "Đồng ý gửi liên giáo hạt",
     revoke: "Thu hồi",
     scan: "Quét điểm danh",
     score: "Chấm điểm",

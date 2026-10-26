@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Route } from "next";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { HelpTip } from "@/components/ui/help-tip";
@@ -14,6 +14,7 @@ import type { RouteConfig } from "@/config/routes/routes";
 import { apiFetch, apiMutation, getApiErrorMessage } from "@/lib/api/client";
 import { useAuthStore } from "@/lib/auth/auth-store";
 import { canUseAction, hasPermissionPrefix } from "@/lib/auth/permissions";
+import { OffTargetConfirmDialog } from "@/modules/training-workflow/components/off-target-confirm-dialog";
 import { CertificateConfigPicker } from "@/modules/certificates/components/certificate-config-picker";
 import { cn } from "@/lib/utils";
 import { resolveRouteForUser } from "@/modules/workspace/super-admin-route-overrides";
@@ -46,6 +47,9 @@ export function ResourceFormPage({
   const canOpen = canUseAction(user, action);
   const [values, setValues] = useState<Record<string, unknown>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
+  // Hồ sơ gửi ngoài đợt: hỏi xác nhận kèm lí do riêng; sau khi lưu lí do vào form mới gửi (submitRequested chạy ở effect sau khi render lại).
+  const [offTargetOpen, setOffTargetOpen] = useState(false);
+  const [submitRequested, setSubmitRequested] = useState(false);
 
   const detailQuery = useQuery({
     queryKey: ["resource-detail", effectiveRoute.endpoint, id],
@@ -106,7 +110,14 @@ export function ResourceFormPage({
     onError: (error) => {
       toast.error(getApiErrorMessage(error));
     },
+    onSettled: () => setSubmitRequested(false),
   });
+
+  useEffect(() => {
+    if (!submitRequested) return;
+    mutation.mutate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [submitRequested]);
 
   if (!spec) return <FormState title="Chưa hỗ trợ form" message="Màn hình này hiện không có mutation form trong contract backend." backHref={effectiveRoute.path} />;
   if (!canOpen) return <FormState title="403" message="Bạn không có quyền mở form này." backHref={effectiveRoute.path} />;
@@ -130,6 +141,23 @@ export function ResourceFormPage({
   }
 
   const backHref = (returnTo ?? effectiveRoute.path) as Route;
+  const offTargetList = spec.offTarget?.collect(mergedValues) ?? [];
+
+  function handleSubmit() {
+    // Có hồ sơ ngoài đợt thì cảnh báo và bắt nhập lí do riêng trước khi gửi.
+    if (offTargetList.length > 0) {
+      setOffTargetOpen(true);
+      return;
+    }
+    mutation.mutate();
+  }
+
+  function confirmOffTarget(reasons: Record<string, string>) {
+    const patch = spec?.offTarget?.apply(mergedValues, reasons) ?? {};
+    setValues((current) => ({ ...current, ...patch }));
+    setOffTargetOpen(false);
+    setSubmitRequested(true);
+  }
 
   return (
     <div className={cn("mx-auto space-y-4 pb-20", compactForm ? "max-w-[720px]" : "max-w-[1120px]")}>
@@ -176,6 +204,15 @@ export function ResourceFormPage({
         </Panel>
       ) : null}
 
+      {offTargetOpen ? (
+        <OffTargetConfirmDialog
+          courseName={prefillCourseName ?? undefined}
+          entries={offTargetList}
+          onCancel={() => setOffTargetOpen(false)}
+          onConfirm={confirmOffTarget}
+        />
+      ) : null}
+
       <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-white/95 px-4 py-2.5 shadow-[var(--shadow-bottom-bar)] backdrop-blur-md">
         <div className={cn("mx-auto flex justify-end gap-3", compactForm ? "max-w-[720px]" : "max-w-[1120px]")}>
           <Button asChild variant="outline">
@@ -184,7 +221,7 @@ export function ResourceFormPage({
               Hủy
             </Link>
           </Button>
-          <Button loading={mutation.isPending} onClick={() => mutation.mutate()} type="button">
+          <Button loading={mutation.isPending} onClick={handleSubmit} type="button">
             <FloppyDisk size={16} />
             {spec.submitLabel ?? (mode === "create" ? "Tạo mới" : "Lưu cập nhật")}
           </Button>

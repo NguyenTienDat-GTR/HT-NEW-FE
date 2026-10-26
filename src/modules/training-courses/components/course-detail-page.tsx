@@ -63,7 +63,7 @@ const pastSummaryGroups: SummaryGroup[] = [
 ];
 
 const summaryGroups: SummaryGroup[] = [
-  { title: "Thông tin chung", columns: ["courseTypeName", "hostYear", "passingScore", "location"] },
+  { title: "Thông tin chung", columns: ["courseTypeName", "hostYear", "passingScore", "location", "targetDeaneries"] },
   { title: "Thời gian", columns: ["startDate", "endDate", "registrationPeriod"] },
   { title: "Trạng thái và cấu hình", columns: ["registrationStatus", "organizingStatus", "autoApproveEligible", "scoreVisible", "attendanceEnabled", "autoSendInvitation"] },
 ];
@@ -233,7 +233,7 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
                   <section className="min-w-0" key={group.title}>
                     <h3 className="mb-2 border-b border-border pb-1.5 text-xs font-semibold uppercase tracking-[0.02em] text-text-secondary">{group.title}</h3>
                     <dl className="space-y-1.5">
-                      {group.columns.map((column) => (
+                      {group.columns.filter((column) => column !== "targetDeaneries" || targetDeaneryNames(course).length > 0).map((column) => (
                         <div className="flex min-w-0 items-baseline justify-between gap-3 text-[13px]" key={column}>
                           <dt className="shrink-0 text-muted">{summaryLabels[column] ?? column}</dt>
                           <dd className="min-w-0 text-right font-medium text-foreground">
@@ -384,12 +384,21 @@ function SummaryValue({ column, course }: { column: string; course: Record<strin
     const state = resolveOrganizingState(course);
     return <span className={toneTextClass[organizingStateTones[state]]}>{organizingStateLabels[state]}</span>;
   }
+  if (column === "targetDeaneries") {
+    return <span>{targetDeaneryNames(course).join(", ")}</span>;
+  }
   if (column === "registrationPeriod") {
     const start = formatVietnamDateValue(typeof course.registrationStartAt === "string" ? course.registrationStartAt : null);
     const end = formatVietnamDateValue(typeof course.registrationEndAt === "string" ? course.registrationEndAt : null);
     return <span>{start || end ? `${start ?? "…"} → ${end ?? "…"}` : "Chưa có"}</span>;
   }
   return <ResourceCell column={column} row={course} value={course[column]} />;
+}
+
+// Giáo hạt mà khóa giáo phận (một đợt) dành cho; rỗng = mở cho tất cả.
+function targetDeaneryNames(course: Record<string, unknown>): string[] {
+  const items = Array.isArray(course.targetDeaneries) ? (course.targetDeaneries as { name?: string | null }[]) : [];
+  return items.map((item) => item.name).filter((name): name is string => Boolean(name));
 }
 
 function scoringWindowHint(course: Record<string, unknown>) {
@@ -400,6 +409,7 @@ function scoringWindowHint(course: Record<string, unknown>) {
 
 const summaryLabels: Record<string, string> = {
   courseTypeName: "Loại khóa",
+  targetDeaneries: "Dành cho giáo hạt",
   resultingLevelName: "Cấp độ đạt được",
   hostYear: "Năm tổ chức",
   passingScore: "Điểm đạt",

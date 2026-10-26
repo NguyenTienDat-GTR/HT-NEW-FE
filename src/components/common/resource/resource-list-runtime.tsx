@@ -162,8 +162,13 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
   // Lý do đặc cách của hồ sơ đăng ký ngoại lệ (giáo xứ nêu khi đăng ký), hiện trong hộp thoại duyệt / từ chối.
   const exceptionReasonFor = (id: string): ExceptionReasonItem | null => {
     const row = rowById(id);
-    const reason = typeof row?.exceptionReason === "string" ? row.exceptionReason.trim() : "";
-    return reason ? { id, label: String(row?.leaderFullName ?? id), reason } : null;
+    const parts: string[] = [];
+    if (typeof row?.exceptionReason === "string" && row.exceptionReason.trim()) parts.push(row.exceptionReason.trim());
+    if (typeof row?.offTargetReason === "string" && row.offTargetReason.trim()) parts.push(`Gửi ngoài đợt: ${row.offTargetReason.trim()}`);
+    if (typeof row?.crossDeaneryReason === "string" && row.crossDeaneryReason.trim()) {
+      parts.push(`Gửi liên giáo hạt${typeof row.homeDeaneryName === "string" && row.homeDeaneryName ? ` (từ ${row.homeDeaneryName})` : ""}: ${row.crossDeaneryReason.trim()}`);
+    }
+    return parts.length ? { id, label: String(row?.leaderFullName ?? id), reason: parts.join("\n") } : null;
   };
   // Thông tin tham chiếu khi duyệt một hồ sơ ngoại lệ (chỉ màn Duyệt đăng ký có hồ sơ ngoại lệ).
   const exceptionProfileFor = (id: string): ExceptionReviewTarget | null => {

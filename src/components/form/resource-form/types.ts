@@ -1,5 +1,6 @@
 import type { ResourceKind } from "@/config/routes/routes";
 import type { AuthUser } from "@/lib/auth/auth-store";
+import type { RegistrationEntry } from "./registration-list-field";
 
 export type Option = {
   value: string;
@@ -80,6 +81,11 @@ export type ResourceFormSpec = {
   submitLabel?: string;
   fields: FormFieldSpec[];
   mapSubmit?: (values: Record<string, unknown>, mode: ResourceFormMode) => Record<string, unknown>;
+  // Form đăng ký: hồ sơ ngoài đợt của khóa phải được xác nhận kèm lí do riêng trước khi gửi.
+  offTarget?: {
+    collect: (values: Record<string, unknown>) => RegistrationEntry[];
+    apply: (values: Record<string, unknown>, reasons: Record<string, string>) => Record<string, unknown>;
+  };
 };
 
 export function enumOptions(values: string[]): Option[] {

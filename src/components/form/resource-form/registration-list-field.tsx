@@ -27,10 +27,12 @@ export type RegistrationCandidate = {
   parishName?: string | null;
   deaneryId?: string | null;
   deaneryName?: string | null;
+  // Giáo hạt của huynh trưởng nằm ngoài các giáo hạt mà khóa giáo phận dành cho.
+  offTarget?: boolean | null;
 };
 
-// Mỗi phần tử của danh sách ngoại lệ có thêm lí do.
-export type RegistrationEntry = RegistrationCandidate & { reason?: string };
+// Mỗi phần tử của danh sách ngoại lệ có thêm lí do; mọi hồ sơ có thể kèm ghi chú, hồ sơ ngoài đợt có lí do riêng.
+export type RegistrationEntry = RegistrationCandidate & { reason?: string; note?: string; offTargetReason?: string };
 
 export type RegistrationListMode = "standard" | "exception";
 
@@ -77,12 +79,22 @@ export function RegistrationListField({
         <ul className="divide-y divide-border rounded-[8px] border border-border bg-white">
           {entries.map((entry) => (
             <li className="flex items-start justify-between gap-3 px-3 py-2 text-sm" key={entry.id}>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="font-semibold text-foreground">
                   {[entry.holyName, entry.fullName].filter(Boolean).join(" ")}
                   <span className="ml-2 font-normal text-muted">{[entry.parishName, entry.deaneryName].filter(Boolean).join(" · ")}</span>
+                  {entry.offTarget ? <OffTargetBadge /> : null}
                 </p>
                 {exception && entry.reason ? <p className="text-xs text-muted">Lí do: {entry.reason}</p> : null}
+                <input
+                  aria-label={`Ghi chú cho ${entry.fullName ?? ""}`}
+                  className="mt-1.5 h-8 w-full max-w-[520px] rounded-[6px] border border-border bg-white px-2.5 text-xs focus:border-primary focus:outline-none focus:ring-2 focus:ring-[var(--primary-ring)] disabled:opacity-60"
+                  disabled={readonly}
+                  maxLength={1000}
+                  onChange={(event) => onChange(entries.map((item) => (item.id === entry.id ? { ...item, note: event.target.value } : item)))}
+                  placeholder="Ghi chú (tùy chọn)"
+                  value={entry.note ?? ""}
+                />
               </div>
               <button
                 aria-label="Bỏ khỏi danh sách"
@@ -109,6 +121,15 @@ export function RegistrationListField({
         />
       ) : null}
     </div>
+  );
+}
+
+// Nhãn hồ sơ thuộc giáo hạt ngoài đợt của khóa: gửi phải kèm lí do riêng và duyệt thủ công.
+function OffTargetBadge() {
+  return (
+    <span className="ml-2 inline-flex rounded-full border border-warning/40 bg-warning/10 px-2 py-0.5 align-middle text-[11px] font-semibold text-warning" title="Giáo hạt này không nằm trong đợt của khóa">
+      Ngoài đợt
+    </span>
   );
 }
 
@@ -377,7 +398,10 @@ function RegistrationCandidateModal({
                     </td>
                     <td className="py-2">{page * PAGE_SIZE + index + 1}</td>
                     <td className="py-2">{row.holyName ?? "—"}</td>
-                    <td className="py-2 font-semibold text-foreground">{row.fullName ?? "—"}</td>
+                    <td className="py-2 font-semibold text-foreground">
+                      {row.fullName ?? "—"}
+                      {row.offTarget ? <OffTargetBadge /> : null}
+                    </td>
                     <td className="py-2">{formatDate(row.birthDate)}</td>
                     <td className="py-2">{row.phoneNumber ?? "—"}</td>
                     <td className="py-2">{row.email ?? "—"}</td>
