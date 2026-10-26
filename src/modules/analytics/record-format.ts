@@ -62,6 +62,7 @@ export function formatDateVi(value: string) {
 export function formatRecordValue(column: string, value: RecordCell): string {
   if (value === null || value === undefined || value === "") return "";
   if (typeof value === "boolean") return value ? "Có" : "Không";
+  if (typeof value === "number" && /year$/i.test(column)) return String(value);
   if (typeof value === "number") return new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 2 }).format(value);
   if (DATE_COLUMNS.has(column)) return formatDateVi(value);
   if (column === "result") return RESULT_LABELS[value] ?? value;

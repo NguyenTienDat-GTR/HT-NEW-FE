@@ -299,12 +299,13 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
     for (const [id, draft] of scoreSnapshot) {
       const label = String(draft.row.leaderFullName ?? id);
       const entries = scoreComponents.map((component) => ({ component, text: draft.values[component.id] ?? originalScore(draft.row, component.id) }));
-      const missing = entries.filter((entry) => entry.text.trim() === "");
-      if (missing.length) {
-        problems.push(`${label}: thiếu điểm ${missing.map((entry) => entry.component.name).join(", ")}`);
+      // Cho phép lưu riêng từng cột điểm: chỉ gửi những cột đã có điểm, cột trống để nhập sau.
+      const filled = entries.filter((entry) => entry.text.trim() !== "");
+      if (filled.length === 0) {
+        problems.push(`${label}: chưa nhập điểm nào`);
         continue;
       }
-      const invalid = entries.find((entry) => isInvalidScore(entry.component, entry.text));
+      const invalid = filled.find((entry) => isInvalidScore(entry.component, entry.text));
       if (invalid) {
         problems.push(`${label}: điểm ${invalid.component.name} phải từ 0 đến ${Number(invalid.component.maxScore)}`);
         continue;
@@ -317,7 +318,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
         note,
         kind: "score",
         body: {
-          componentScores: entries.map((entry) => ({ componentId: entry.component.id, score: Number(entry.text) })),
+          componentScores: filled.map((entry) => ({ componentId: entry.component.id, score: Number(entry.text) })),
           review: typeof draft.row.review === "string" ? draft.row.review : undefined,
           scoreNote: note,
         },

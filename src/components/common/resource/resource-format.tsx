@@ -259,7 +259,8 @@ export function ResourceCell({ column, row, value, displayMode = "table" }: Reso
   }
   if (typeof value === "boolean") return <Badge tone={value ? "success" : "neutral"}>{value ? "Có" : "Không"}</Badge>;
   if (value === null || value === undefined || value === "") return <span className="text-muted">Chưa có</span>;
-  if (typeof value === "number") return viNumber.format(value);
+  // Cột năm (hostYear, courseHostYear...) là mã năm, không phân tách hàng nghìn: 2026, không phải 2.026.
+  if (typeof value === "number") return /year$/i.test(column) ? String(value) : viNumber.format(value);
   return <TextValue full={full}>{String(value)}</TextValue>;
 }
 
