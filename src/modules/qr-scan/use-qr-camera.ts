@@ -5,9 +5,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 // Camera quét QR dùng chung cho trình quét điểm danh / chứng nhận: mở camera sau, đọc từng khung hình bằng jsQR.
 // `active` = false thì vẫn giữ camera nhưng không đọc (ví dụ đang chờ người dùng xác nhận). Ảnh QR chọn từ máy qua `scanImage`.
-export function useQrCamera({ onText, onImageError, active = true }: { onText: (text: string) => void; onImageError: (message: string) => void; active?: boolean }) {
+export function useQrCamera({ onText, onImageError, active = true, visible = true }: { onText: (text: string) => void; onImageError: (message: string) => void; active?: boolean; visible?: boolean }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const activeRef = useRef(active);
   const onTextRef = useRef(onText);
   const [starting, setStarting] = useState(true);
@@ -37,6 +38,7 @@ export function useQrCamera({ onText, onImageError, active = true }: { onText: (
         }
         const video = videoRef.current;
         if (!video) return;
+        streamRef.current = stream;
         video.srcObject = stream;
         await video.play();
         setStarting(false);
@@ -72,6 +74,15 @@ export function useQrCamera({ onText, onImageError, active = true }: { onText: (
       stream?.getTracks().forEach((track) => track.stop());
     };
   }, []);
+
+  // Khung camera bị gỡ khỏi màn hình khi hiện kết quả rồi gắn lại khi "Quét tiếp": phần tử <video> mới phải được nối lại với luồng camera đang mở.
+  useEffect(() => {
+    const video = videoRef.current;
+    const stream = streamRef.current;
+    if (!visible || !video || !stream || video.srcObject === stream) return;
+    video.srcObject = stream;
+    void video.play().catch(() => undefined);
+  }, [visible]);
 
   const scanImage = useCallback(
     (file: File) => {

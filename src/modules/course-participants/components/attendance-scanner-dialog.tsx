@@ -116,7 +116,7 @@ function Scanner({ courseCode, onClose }: { courseCode?: string; onClose: () => 
   );
 
   const onImageError = useCallback((message: string) => dispatch({ type: "failed", message }), []);
-  const { videoRef, canvasRef, starting, cameraError, scanImage } = useQrCamera({ onText: handleText, onImageError, active: flow.step === "scanning" });
+  const { videoRef, canvasRef, starting, cameraError, scanImage } = useQrCamera({ onText: handleText, onImageError, active: flow.step === "scanning", visible: flow.step === "scanning" || flow.step === "looking" });
 
   function pickFile(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
