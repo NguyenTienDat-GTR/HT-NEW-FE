@@ -1,5 +1,6 @@
 import { registrationEntries } from "@/components/form/resource-form/registration-list-field";
 import { compactPayload, type ResourceFormSpec } from "@/components/form/resource-form/types";
+import { applyOffTargetReasons, entryDisplayName, missingOffTargetReasons, offTargetEntries, registrationExtras } from "./off-target";
 
 export const workflowFormSpecs: ResourceFormSpec[] = [
   {
@@ -41,9 +42,21 @@ export const workflowFormSpecs: ResourceFormSpec[] = [
         section: "Ngoại lệ",
       },
     ],
+    // Hồ sơ gửi ngoài đợt của khóa giáo phận: hỏi xác nhận và bắt nhập lí do riêng từng hồ sơ trước khi gửi.
+    offTarget: {
+      collect: (values) => offTargetEntries(registrationEntries(values.leaderIds), registrationEntries(values.exceptionLeaders)),
+      apply: (current, reasons) => ({
+        leaderIds: applyOffTargetReasons(registrationEntries(current.leaderIds), reasons),
+        exceptionLeaders: applyOffTargetReasons(registrationEntries(current.exceptionLeaders), reasons),
+      }),
+    },
     mapSubmit: (values) => {
       const standard = registrationEntries(values.leaderIds);
       const exceptions = registrationEntries(values.exceptionLeaders);
+      const missing = missingOffTargetReasons([...standard, ...exceptions]);
+      if (missing.length) {
+        throw new Error(`Hồ sơ ngoài đợt cần lí do riêng: ${missing.map(entryDisplayName).join(", ")}`);
+      }
       if (!standard.length && !exceptions.length) {
         throw new Error("Cần lập danh sách đăng ký hoặc thêm ít nhất một huynh trưởng ngoại lệ");
       }
@@ -56,6 +69,9 @@ export const workflowFormSpecs: ResourceFormSpec[] = [
       if (exceptions.length) {
         payload.exceptionReasonsByLeaderId = Object.fromEntries(exceptions.map((entry) => [entry.id, entry.reason ?? ""]));
       }
+      const extras = registrationExtras([...standard, ...exceptions]);
+      if (Object.keys(extras.offTargetReasonsByLeaderId).length) payload.offTargetReasonsByLeaderId = extras.offTargetReasonsByLeaderId;
+      if (Object.keys(extras.notesByLeaderId).length) payload.notesByLeaderId = extras.notesByLeaderId;
       return payload;
     },
   },

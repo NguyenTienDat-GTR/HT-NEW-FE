@@ -1,5 +1,6 @@
 import { compactPayload, unitTypeSelectOptions, type ResourceFormSpec } from "@/components/form/resource-form/types";
 import type { AuthUser } from "@/lib/auth/auth-store";
+import { useAuthStore } from "@/lib/auth/auth-store";
 import { hasPermission } from "@/lib/auth/permissions";
 import { leaderLevelSelect } from "@/modules/organizations/form-specs";
 
@@ -235,6 +236,20 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
         section: "Điểm danh và thẻ tham dự",
       },
       {
+        name: "targetDeaneryIds",
+        label: "Khóa dành cho giáo hạt",
+        type: "multiselect",
+        searchable: true,
+        placeholder: "Chọn các giáo hạt mà khóa này (một đợt) dành cho",
+        optionsEndpoint: "/deaneries",
+        optionValue: "id",
+        optionLabel: "name",
+        // Chỉ khóa giáo phận: giáo hạt không chọn được (giáo hạt khác gửi hồ sơ sang khóa giáo hạt qua màn Gửi liên giáo hạt).
+        visibleWhen: (values) => values.managementUnitType !== "DEANERY" && managedUnitTypes(useAuthStore.getState().user, "course").includes("DIOCESE"),
+        helper: "Bỏ trống nếu khóa mở cho tất cả giáo hạt. Giáo xứ thuộc giáo hạt khác vẫn đăng ký được nhưng phải kèm lí do riêng cho từng hồ sơ và hồ sơ được duyệt thủ công.",
+        section: "Đợt của khóa",
+      },
+      {
         name: "recipientUsernames",
         label: "Tài khoản nhận danh sách đăng ký",
         type: "multiselect",
@@ -256,6 +271,8 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
       if (mode === "edit") delete payload.courseCode;
       // Gửi cả danh sách rỗng khi sửa để có thể bỏ chọn toàn bộ người nhận.
       payload.recipientUsernames = Array.isArray(values.recipientUsernames) ? values.recipientUsernames : [];
+      // Khóa giáo phận: gửi cả danh sách rỗng khi sửa để bỏ chọn toàn bộ giáo hạt; khóa giáo hạt / chưa chọn thì không gửi.
+      if (Array.isArray(values.targetDeaneryIds)) payload.targetDeaneryIds = values.targetDeaneryIds;
       return payload;
     },
   },

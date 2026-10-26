@@ -21,6 +21,7 @@ const CourseDetailPage = dynamic(() => import("@/modules/training-courses/compon
 const ResourceFormPage = dynamic(() => import("@/components/form/resource-form/resource-form-page").then((m) => m.ResourceFormPage), { ssr: false, loading: () => <ViewSkeleton /> });
 const CertificateDetailPage = dynamic(() => import("@/modules/certificates/components/certificate-detail-page").then((m) => m.CertificateDetailPage), { ssr: false, loading: () => <ViewSkeleton /> });
 const CertificateConfigView = dynamic(() => import("@/modules/certificates/components/certificate-config-view").then((m) => m.CertificateConfigView), { ssr: false, loading: () => <ViewSkeleton /> });
+const CrossDeaneryView = dynamic(() => import("@/modules/cross-deanery/components/cross-deanery-view").then((m) => m.CrossDeaneryView), { ssr: false, loading: () => <ViewSkeleton /> });
 const BadgeConfigView = dynamic(() => import("@/modules/badges/components/badge-config-view").then((m) => m.BadgeConfigView), { ssr: false, loading: () => <ViewSkeleton /> });
 const MyPermissionsView = dynamic(() => import("@/modules/permissions/components/my-permissions-view").then((m) => m.MyPermissionsView), { ssr: false, loading: () => <ViewSkeleton /> });
 const LeaderLevelsView = dynamic(() => import("@/modules/leader-levels/components/leader-levels-view").then((m) => m.LeaderLevelsView), { ssr: false, loading: () => <ViewSkeleton /> });
@@ -83,6 +84,7 @@ export function WorkspacePage({ segments }: { segments: string[] }) {
   else if (route.kind === "dashboard") content = <DashboardView />;
   else if (route.kind === "analytics") content = <AnalyticsView />;
   else if (route.kind === "certificate-config") content = <CertificateConfigView route={route} />;
+  else if (route.kind === "cross-deanery") content = <CrossDeaneryView />;
   else if (route.kind === "badge-config") content = <BadgeConfigView route={route} />;
   else if (route.kind === "leader-levels") content = <LeaderLevelsView route={route} />;
   else if (route.kind === "my-permissions") content = <MyPermissionsView />;

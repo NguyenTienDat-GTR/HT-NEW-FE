@@ -36,7 +36,10 @@ export const columnLabels: Record<string, string> = {
   revokedBy: "Người thu hồi",
   revocationReason: "Lý do thu hồi",
   parishSubmittedAt: "Ngày gửi đăng ký",
-  review: "Ghi chú",
+  review: "Ghi chú duyệt",
+  registrationNote: "Ghi chú",
+  offTargetReason: "Lí do gửi ngoài đợt",
+  crossDeaneryReason: "Lí do gửi liên giáo hạt",
   scoreNote: "Nhận xét",
   certificateCode: "Mã chứng nhận",
   certificateName: "Tên chứng nhận",
@@ -195,8 +198,20 @@ type ResourceCellProps = {
 
 export function ResourceCell({ column, row, value, displayMode = "table" }: ResourceCellProps) {
   const full = displayMode === "detail";
-  if (column === "leaderFullName" && typeof value === "string" && typeof row.leaderHolyName === "string" && row.leaderHolyName.trim()) {
-    return <TextValue full={full}>{`${row.leaderHolyName.trim()} ${value}`}</TextValue>;
+  if (column === "leaderFullName" && typeof value === "string") {
+    const holy = typeof row.leaderHolyName === "string" ? row.leaderHolyName.trim() : "";
+    const name = holy ? `${holy} ${value}` : value;
+    // Hồ sơ gửi ngoài đợt của khóa giáo phận hoặc gửi liên giáo hạt được gắn nhãn để người duyệt thấy ngay.
+    if (row.offTarget === true || row.crossDeanery === true) {
+      return (
+        <span className="flex flex-wrap items-center gap-1.5">
+          <TextValue full={full}>{name}</TextValue>
+          {row.offTarget === true ? <Badge tone="warning">Ngoài đợt</Badge> : null}
+          {row.crossDeanery === true ? <Badge tone="info">Liên giáo hạt</Badge> : null}
+        </span>
+      );
+    }
+    if (holy) return <TextValue full={full}>{name}</TextValue>;
   }
   if (column === "resource" && typeof value === "string") return <TextValue full={full}>{formatPermissionTaxonomyValue("resource", value) ?? value}</TextValue>;
   if (column === "resourceName") {

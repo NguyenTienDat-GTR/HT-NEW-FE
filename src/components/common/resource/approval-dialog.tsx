@@ -147,7 +147,7 @@ export function ApprovalDialog({
 
           {exceptionReasons?.length ? (
             <div className="mt-4 max-h-48 space-y-2 overflow-y-auto rounded-lg border border-warning/40 bg-warning/5 p-3">
-              <p className="text-xs font-semibold uppercase text-warning">Lý do đặc cách</p>
+              <p className="text-xs font-semibold uppercase text-warning">Lý do đặc cách / gửi ngoài đợt / liên giáo hạt</p>
               {exceptionReasons.map((item) => (
                 <div className="text-sm leading-6" key={item.id}>
                   {exceptionReasons.length > 1 ? <span className="font-semibold text-foreground">{item.label}: </span> : null}
