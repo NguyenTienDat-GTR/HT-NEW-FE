@@ -175,7 +175,7 @@ export function CoursesTab({ data, filters, busy, onDrill }: TabProps) {
       <KpiGrid busy={busy} data={data} keys={["totalCourses", "registrations", "attendanceRate", "passRate", "cancellationRate", "rejectionRate", "certificateRate", "averageScore", "trainedLeaders"]} />
       <GroupedSection busy={busy} data={data} metrics={["registrations", "attended", "passed"]} onSelect={drill} />
 
-      <div className="grid gap-4 lg:gap-6 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 lg:gap-6 xl:grid-cols-3">
         <SectionCard busy={busy} className="xl:col-span-2" description="Theo ngày bắt đầu khóa. Đường nét đứt là kỳ liền trước cùng độ dài." title="Đăng ký, tham dự và đạt theo kỳ">
           <TrendChart ariaLabel="Xu hướng đăng ký, tham dự, đạt" rows={rows} series={series(["registrations", "attended", "passed"])} showPrevious={filters.compare} />
         </SectionCard>
@@ -184,7 +184,7 @@ export function CoursesTab({ data, filters, busy, onDrill }: TabProps) {
         </SectionCard>
       </div>
 
-      <div className="grid gap-4 lg:gap-6 lg:grid-cols-2 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 lg:gap-6 lg:grid-cols-2 xl:grid-cols-3">
         <SectionCard busy={busy} description="Ba tỷ lệ chính của kỳ, tính trên cùng tập hồ sơ." title="Tỷ lệ chính" tone="var(--viz-3)">
           <GaugeRow data={data} items={[{ key: "attendanceRate", color: "var(--viz-2)" }, { key: "passRate", color: "var(--viz-3)" }, { key: "certificateRate", color: "var(--viz-4)" }]} />
         </SectionCard>
@@ -196,7 +196,7 @@ export function CoursesTab({ data, filters, busy, onDrill }: TabProps) {
         </SectionCard>
       </div>
 
-      <div className="grid gap-4 lg:gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:gap-6 lg:grid-cols-2">
         <SectionCard busy={busy} defer description="Lượt đăng ký theo loại khóa. Bấm để xem hồ sơ." title="Theo loại khóa">
           <BarList ariaLabel="Đăng ký theo loại khóa" items={asBars(breakdownsOf(data, "courseType"), "courseType")} onSelect={select("courseType")} />
         </SectionCard>
@@ -211,7 +211,7 @@ export function CoursesTab({ data, filters, busy, onDrill }: TabProps) {
         )}
       </div>
 
-      <div className="grid gap-4 lg:gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:gap-6 lg:grid-cols-2">
         {units.length ? (
           <SectionCard busy={busy} defer description="Lượt đăng ký theo cấp bậc hiện tại của huynh trưởng." title="Theo cấp bậc">
             <BarList ariaLabel="Đăng ký theo cấp bậc" items={asBars(breakdownsOf(data, "leaderLevel"), "leaderLevel")} onSelect={select("leaderLevel")} />
@@ -263,7 +263,7 @@ export function CertificatesTab({ data, filters, busy, onDrill }: TabProps) {
       <KpiGrid busy={busy} data={data} keys={["totalCertificates", "approvalRate", "conversionRate", "medianApprovalHours", "pending", "rejected", "revoked", "exceptionRate"]} />
       <GroupedSection busy={busy} data={data} metrics={["total", "approved", "pending", "rejected"]} onSelect={drill} />
 
-      <div className="grid gap-4 lg:gap-6 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 lg:gap-6 xl:grid-cols-3">
         <SectionCard busy={busy} className="xl:col-span-2" description="Theo ngày cấp, hoặc ngày tạo khi chưa cấp để hồ sơ chờ duyệt không bị bỏ sót." title="Chứng nhận theo trạng thái và kỳ">
           <TrendChart ariaLabel="Chứng nhận theo trạng thái" rows={rows} series={series(["approved", "pending", "rejected", "revoked"])} variant="stackedBar" />
         </SectionCard>
@@ -294,7 +294,7 @@ export function CertificatesTab({ data, filters, busy, onDrill }: TabProps) {
         </SectionCard>
       </div>
 
-      <div className="grid gap-4 lg:gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:gap-6 lg:grid-cols-2">
         <SectionCard busy={busy} defer description="Hồ sơ đạt đã được cấp chứng nhận trong cùng tập hồ sơ." title="Chuyển đổi từ kết quả đạt">
           {data.funnel?.length ? <FunnelChart labels={funnelLabels} steps={data.funnel} /> : <EmptyState />}
         </SectionCard>
@@ -354,7 +354,7 @@ export function LeadersTab({ data, filters, busy, onDrill }: TabProps) {
         <TrendChart ariaLabel="Hồ sơ mới và thăng cấp" rows={rows} series={series(["newLeaders", "promotions"])} showPrevious={filters.compare} />
       </SectionCard>
 
-      <div className="grid gap-4 lg:gap-6 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 lg:gap-6 xl:grid-cols-3">
         <SectionCard busy={busy} description="Số hồ sơ cộng dồn theo kỳ; chưa trừ huynh trưởng đã nghỉ vì hệ thống không lưu lịch sử trạng thái." title="Quy mô hồ sơ tích lũy" tone="var(--viz-7)" className="xl:col-span-2">
           <TrendChart ariaLabel="Hồ sơ tích lũy" height={240} rows={rows} series={series(["cumulative"])} variant="area" />
         </SectionCard>
@@ -363,7 +363,7 @@ export function LeadersTab({ data, filters, busy, onDrill }: TabProps) {
         </SectionCard>
       </div>
 
-      <div className="grid gap-4 lg:gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:gap-6 lg:grid-cols-2">
         <SectionCard busy={busy} description="Cơ cấu hiện tại. Bấm để xem danh sách." title="Giới tính" tone="var(--viz-5)">
           <DonutChart ariaLabel="Cơ cấu giới tính" centerLabel="Huynh trưởng" onSelect={(segment) => drill("gender", segment.key, segment.label)} segments={toDonut(breakdownsOf(data, "gender"))} />
         </SectionCard>
@@ -440,7 +440,7 @@ export function OrganizationTab({ data, filters, busy, onDrill }: TabProps) {
     <div className="space-y-6">
       <KpiGrid busy={busy} data={data} keys={["totalDeaneries", "totalParishes", "parishesWithoutLeaders", "leadersPerParish", "totalLeaders", "activeRate", "trainedRate", "newLeaders"]} />
 
-      <div className="grid gap-4 lg:gap-6 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 lg:gap-6 xl:grid-cols-3">
         <SectionCard busy={busy} className="xl:col-span-2" description="Hồ sơ huynh trưởng mới và thăng cấp theo kỳ." title="Phát triển nhân sự theo kỳ">
           <TrendChart ariaLabel="Phát triển nhân sự" rows={rows} series={series(["newLeaders", "promotions"])} showPrevious={filters.compare} />
         </SectionCard>
@@ -449,7 +449,7 @@ export function OrganizationTab({ data, filters, busy, onDrill }: TabProps) {
         </SectionCard>
       </div>
 
-      <div className="grid gap-4 lg:gap-6 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 lg:gap-6 xl:grid-cols-3">
         <SectionCard busy={busy} description="Hoạt động và đã qua huấn luyện trên tổng huynh trưởng." title="Tỉ lệ hoạt động và huấn luyện" tone="var(--viz-3)">
           <GaugeRow data={data} items={[{ key: "activeRate", color: "var(--viz-3)" }, { key: "trainedRate", color: "var(--viz-7)" }]} />
         </SectionCard>
@@ -465,7 +465,7 @@ export function OrganizationTab({ data, filters, busy, onDrill }: TabProps) {
       </div>
 
       {unitRows.length ? (
-        <div className="grid gap-4 lg:gap-6 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 lg:gap-6 xl:grid-cols-3">
           <SectionCard busy={busy} defer description="Số huynh trưởng mỗi đơn vị." title={isDiocese ? "Huynh trưởng theo giáo hạt" : "Huynh trưởng theo giáo xứ"}>
             <BarList ariaLabel="Huynh trưởng theo đơn vị" items={unitBars} onSelect={(bar) => drill(isDiocese ? "deanery" : "parish", bar.key, bar.label)} />
           </SectionCard>

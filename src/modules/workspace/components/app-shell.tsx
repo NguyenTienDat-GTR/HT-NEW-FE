@@ -118,7 +118,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {mobileOpen ? (
         <div className="fixed inset-0 z-50 bg-foreground/40 backdrop-blur-sm lg:hidden" onClick={() => setMobileOpen(false)}>
-          <aside className="h-full w-[312px] bg-white shadow-[var(--shadow-elevated)]" onClick={(event) => event.stopPropagation()}>
+          <aside className="flex h-full w-[min(312px,88vw)] flex-col bg-white shadow-[var(--shadow-elevated)]" onClick={(event) => event.stopPropagation()}>
             <div className="flex h-16 items-center justify-between border-b border-border px-4">
               <BrandMark />
               <TooltipIconButton label="Đóng menu" onClick={() => setMobileOpen(false)}>
@@ -236,7 +236,7 @@ function SidebarNav({
   }
 
   return (
-    <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 py-4">
+    <nav className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto overscroll-contain px-3 py-4">
       {groups.map((group) => {
         const GroupIcon = group.icon;
         const groupActive = group.children.some((route) => route.path === pathname);

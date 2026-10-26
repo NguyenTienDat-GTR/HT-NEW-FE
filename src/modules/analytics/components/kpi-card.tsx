@@ -2,7 +2,8 @@
 
 import { CaretDown, CaretUp, Info, Minus } from "@phosphor-icons/react";
 import { animate, motion, useReducedMotion } from "motion/react";
-import { useEffect, useLayoutEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
 import { kpiVisual } from "@/modules/analytics/kpi-visuals";
 import { formatKpiValue, kpiMeta, snapshotKpis } from "@/modules/analytics/labels";
@@ -128,18 +129,59 @@ export function Sparkline({ points, color = "var(--viz-1)" }: { points: SparkPoi
   );
 }
 
+const HINT_WIDTH = 256;
+const HINT_MARGIN = 8;
+
+/** Gợi ý của thẻ KPI: hiện khi rê chuột, focus hoặc chạm. Vị trí tính theo viewport và kẹp trong màn hình để thẻ ở mép trái / phải không bị tràn ra ngoài. */
 export function InfoHint({ text }: { text: string }) {
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const [pos, setPos] = useState<{ left: number; top: number; width: number } | null>(null);
+
+  function show() {
+    const rect = buttonRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const width = Math.min(HINT_WIDTH, window.innerWidth - HINT_MARGIN * 2);
+    const left = Math.min(Math.max(rect.right - width, HINT_MARGIN), window.innerWidth - width - HINT_MARGIN);
+    setPos({ left, top: rect.bottom + 6, width });
+  }
+
+  useEffect(() => {
+    if (!pos) return;
+    const hide = () => setPos(null);
+    window.addEventListener("scroll", hide, true);
+    window.addEventListener("resize", hide);
+    return () => {
+      window.removeEventListener("scroll", hide, true);
+      window.removeEventListener("resize", hide);
+    };
+  }, [pos]);
+
   return (
-    <span className="group/hint relative inline-flex">
-      <button aria-label={text} className="grid h-5 w-5 cursor-help place-items-center rounded-full text-muted transition-colors hover:text-primary focus-visible:text-primary" type="button">
+    <span className="relative inline-flex" onBlur={() => setPos(null)} onMouseEnter={show} onMouseLeave={() => setPos(null)}>
+      <button
+        aria-label={text}
+        className="grid h-6 w-6 cursor-help place-items-center rounded-full text-muted transition-colors hover:text-primary focus-visible:text-primary sm:h-5 sm:w-5"
+        onClick={(event) => {
+          event.stopPropagation();
+          if (pos) setPos(null);
+          else show();
+        }}
+        onFocus={show}
+        ref={buttonRef}
+        type="button"
+      >
         <Info className="h-3.5 w-3.5" weight="bold" />
       </button>
-      <span
-        className="pointer-events-none absolute right-0 top-full z-50 mt-1.5 w-64 max-w-[min(16rem,80vw)] translate-y-1 rounded-lg border border-border bg-white p-2.5 text-left text-xs font-normal leading-5 text-text-secondary opacity-0 shadow-[var(--shadow-elevated)] transition duration-150 group-hover/hint:translate-y-0 group-hover/hint:opacity-100 group-focus-within/hint:translate-y-0 group-focus-within/hint:opacity-100"
-        role="tooltip"
-      >
-        {text}
-      </span>
+      {pos ? createPortal(
+        <span
+          className="pointer-events-none fixed z-50 rounded-lg border border-border bg-white p-2.5 text-left text-xs font-normal leading-5 text-text-secondary shadow-[var(--shadow-elevated)]"
+          role="tooltip"
+          style={{ left: pos.left, top: pos.top, width: pos.width }}
+        >
+          {text}
+        </span>,
+        document.body,
+      ) : null}
     </span>
   );
 }
