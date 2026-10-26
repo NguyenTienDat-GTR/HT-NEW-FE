@@ -116,7 +116,7 @@ export function Sparkline({ points, color = "var(--viz-1)" }: { points: SparkPoi
   const end = runs[runs.length - 1][runs[runs.length - 1].length - 1];
 
   return (
-    <svg aria-hidden className="h-7 w-[76px] shrink-0 overflow-visible" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none">
+    <svg aria-hidden className="h-6 w-[60px] shrink-0 overflow-visible" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none">
       {runs.map((items) => (
         <g key={items[0].x}>
           {items.length > 1 ? <path d={area(items)} fill={color} opacity={0.1} /> : null}
@@ -156,7 +156,11 @@ type KpiCardProps = {
   compare?: boolean;
 };
 
-/** Thẻ KPI gọn: biểu tượng màu theo chỉ số, số 24px, sparkline nhỏ; hover nâng nhẹ và rọi màu của chính chỉ số đó. */
+/**
+ * Thẻ KPI gọn: biểu tượng màu theo chỉ số, số 20px, sparkline nhỏ; hover nâng nhẹ và rọi màu của chính chỉ số đó.
+ * Số liệu và sparkline nằm một hàng, dòng so sánh / tử số-mẫu số nằm hàng dưới chiếm trọn chiều ngang thẻ,
+ * nên thẻ tỷ lệ (có "điểm" so với kỳ trước, "x / y") không bị co lệch so với thẻ đếm số.
+ */
 export function KpiCard({ kpi, index = 0, label, onClick, busy, compare = true }: KpiCardProps) {
   const meta = kpiMeta[kpi.key];
   const reduced = useReducedMotion();
@@ -188,21 +192,21 @@ export function KpiCard({ kpi, index = 0, label, onClick, busy, compare = true }
         <p className="min-w-0 flex-1 truncate text-xs font-medium text-text-secondary">{title}</p>
         {meta?.hint ? <InfoHint text={meta.hint} /> : null}
       </div>
-      <div className="relative mt-2 flex items-end justify-between gap-2">
-        <div className="min-w-0">
-          <p className="truncate text-2xl font-bold leading-7 tracking-[-0.02em] text-foreground">
+      <div className="relative mt-2">
+        <div className="flex items-center justify-between gap-2">
+          <p className="min-w-0 truncate text-xl font-bold leading-6 tracking-[-0.01em] tabular-nums text-foreground">
             <CountUp unit={kpi.unit} value={kpi.value} />
             {meta?.unitLabel && kpi.value !== null ? <span className="ml-1 text-xs font-medium text-muted">{meta.unitLabel}</span> : null}
           </p>
-          <div className="mt-1 min-h-4">
-            {snapshotKpis.has(kpi.key) ? (
-              <span className="text-[11px] text-muted">{kpi.unit === "PERCENT" && kpi.denominator ? `${new Intl.NumberFormat("vi-VN").format(kpi.numerator ?? 0)} / ${new Intl.NumberFormat("vi-VN").format(kpi.denominator)}` : "Hiện tại"}</span>
-            ) : compare ? (
-              <DeltaBadge compact kpi={kpi} upIsGood={meta?.upIsGood} />
-            ) : null}
-          </div>
+          {kpi.sparkline?.length ? <Sparkline color={tone} points={kpi.sparkline} /> : null}
         </div>
-        {kpi.sparkline?.length ? <Sparkline color={tone} points={kpi.sparkline} /> : null}
+        <div className="mt-1 flex min-h-5 items-center">
+          {snapshotKpis.has(kpi.key) ? (
+            <span className="text-[11px] text-muted">{kpi.unit === "PERCENT" && kpi.denominator ? `${new Intl.NumberFormat("vi-VN").format(kpi.numerator ?? 0)} / ${new Intl.NumberFormat("vi-VN").format(kpi.denominator)}` : "Hiện tại"}</span>
+          ) : compare ? (
+            <DeltaBadge compact kpi={kpi} upIsGood={meta?.upIsGood} />
+          ) : null}
+        </div>
       </div>
     </Wrapper>
   );
