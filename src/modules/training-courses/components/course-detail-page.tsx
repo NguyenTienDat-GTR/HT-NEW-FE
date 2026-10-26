@@ -65,7 +65,8 @@ const pastSummaryGroups: SummaryGroup[] = [
 const summaryGroups: SummaryGroup[] = [
   { title: "Thông tin chung", columns: ["courseTypeName", "hostYear", "passingScore", "location", "targetDeaneries"] },
   { title: "Thời gian", columns: ["startDate", "endDate", "registrationPeriod"] },
-  { title: "Trạng thái và cấu hình", columns: ["registrationStatus", "organizingStatus", "autoApproveEligible", "scoreVisible", "attendanceEnabled", "autoSendInvitation"] },
+  { title: "Trạng thái", columns: ["registrationStatus", "organizingStatus"] },
+  { title: "Cấu hình", columns: ["autoApproveEligible", "scoreVisible", "attendanceEnabled", "autoSendInvitation"] },
 ];
 
 export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig }) {
@@ -228,7 +229,7 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
           <div className="space-y-3">
             <Panel className="px-4 py-3.5">
               <h2 className="mb-3 text-sm font-semibold text-foreground">Thông tin khóa</h2>
-              <div className={cn("grid gap-x-8 gap-y-4", isPastCourse ? "md:grid-cols-2" : "md:grid-cols-3")}>
+              <div className={cn("grid gap-x-8 gap-y-4", isPastCourse ? "md:grid-cols-2" : "md:grid-cols-2 lg:grid-cols-4")}>
                 {(isPastCourse ? pastSummaryGroups : summaryGroups).map((group) => (
                   <section className="min-w-0" key={group.title}>
                     <h3 className="mb-2 border-b border-border pb-1.5 text-xs font-semibold uppercase tracking-[0.02em] text-text-secondary">{group.title}</h3>
