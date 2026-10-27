@@ -1,9 +1,9 @@
-import { UsersThree } from "@phosphor-icons/react";
+import { Stairs, UsersThree } from "@phosphor-icons/react";
 import { route, type RouteGroup } from "../route-config";
 
 export const leaderRouteGroup: RouteGroup = {
     moduleName: "leader",
-    label: "Hồ sơ huynh trưởng",
+    label: "Huynh trưởng",
     icon: UsersThree,
     children: [
       route({
@@ -30,6 +30,19 @@ export const leaderRouteGroup: RouteGroup = {
         },
         filterLabels: ["Giáo hạt", "Giáo xứ", "Cấp HT", "Trạng thái"],
         workflowHint: "Khi chỉnh sửa, hệ thống không gửi lại họ tên, ngày sinh hoặc cấp huynh trưởng.",
+      }),
+      route({
+        path: "/system/leader-levels",
+        moduleName: "system.leader-level",
+        title: "Cấp độ huynh trưởng",
+        subtitle: "Danh mục cấp độ riêng của giáo phận bạn: kéo thả để đổi thứ tự, cấp ngay phía trên là điều kiện để đạt cấp kế tiếp.",
+        endpoint: "/leader-levels",
+        idField: "levelCode",
+        kind: "leader-levels",
+        icon: Stairs,
+        columns: [],
+        permissionPrefixes: ["system.leader_level.read."],
+        actionPermissionPrefixes: ["system.leader_level.create.", "system.leader_level.update.", "system.leader_level.delete."],
       }),
     ],
   };

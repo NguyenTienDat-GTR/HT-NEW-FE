@@ -1,4 +1,4 @@
-import { Bell, FileText, Key, LockKey, Medal, ShieldCheck, Stairs } from "@phosphor-icons/react";
+import { FileText, LockKey, Medal, ShieldCheck } from "@phosphor-icons/react";
 import { route, type RouteGroup } from "../route-config";
 
 export const systemRouteGroup: RouteGroup = {
@@ -340,42 +340,6 @@ export const systemRouteGroup: RouteGroup = {
           optionLabel: "name",
         },
       ],
-    }),
-    route({
-      path: "/notifications",
-      moduleName: "system.notification",
-      title: "Thông báo",
-      subtitle: "Inbox workflow và realtime notification theo user hiện tại.",
-      endpoint: "/system/notifications",
-      idField: "id",
-      kind: "notifications",
-      icon: Bell,
-      columns: ["title", "eventType", "courseCode", "readAt", "createdAt", "status"],
-      permissionPrefixes: [],
-      filterLabels: ["Tất cả", "Chưa đọc", "Đã đọc"],
-    }),
-    route({
-      path: "/my-permissions",
-      moduleName: "system.my-permission",
-      title: "Quyền của tôi",
-      subtitle: "Danh sách quyền đang có hiệu lực của tài khoản và vai trò hiện tại.",
-      kind: "my-permissions",
-      icon: Key,
-      columns: [],
-      permissionPrefixes: [],
-    }),
-    route({
-      path: "/system/leader-levels",
-      moduleName: "system.leader-level",
-      title: "Cấp độ huynh trưởng",
-      subtitle: "Danh mục cấp độ riêng của giáo phận bạn: kéo thả để đổi thứ tự, cấp ngay phía trên là điều kiện để đạt cấp kế tiếp.",
-      endpoint: "/leader-levels",
-      idField: "levelCode",
-      kind: "leader-levels",
-      icon: Stairs,
-      columns: [],
-      permissionPrefixes: ["system.leader_level.read."],
-      actionPermissionPrefixes: ["system.leader_level.create.", "system.leader_level.update.", "system.leader_level.delete."],
     }),
     route({
       path: "/system/audit-logs",
