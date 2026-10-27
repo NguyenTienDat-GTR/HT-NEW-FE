@@ -24,7 +24,7 @@ export function resolveRouteForUser(route: RouteConfig, user: AuthUser | null): 
       return {
         ...route,
         title: "Tài khoản",
-        subtitle: "SUPER_ADMIN chỉ quản lý tài khoản SUPER_ADMIN và ADMIN_DIOCESE.",
+        subtitle: "SUPER_ADMIN quản lý tài khoản SUPER_ADMIN, ADMIN_DIOCESE và các vai trò toàn hệ thống do super-admin tạo.",
         columns: ["username", "primaryRoleName", "dioceseName", "status"],
         filterLabels: ["Vai trò", "Giáo phận", "Trạng thái"],
         filters: [
@@ -38,15 +38,7 @@ export function resolveRouteForUser(route: RouteConfig, user: AuthUser | null): 
               { value: "inactive", label: "Tạm ngưng" },
             ],
           },
-          {
-            key: "roleCode",
-            label: "Vai trò",
-            type: "select",
-            options: [
-              { value: "SUPER_ADMIN", label: "Super admin" },
-              { value: "ADMIN_DIOCESE", label: "Admin giáo phận" },
-            ],
-          },
+          roleFilter(),
           { key: "dioceseId", label: "Giáo phận", type: "select", optionsEndpoint: "/dioceses", optionValue: "id", optionLabel: "name" },
         ],
       };

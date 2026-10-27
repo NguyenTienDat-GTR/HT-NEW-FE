@@ -70,6 +70,11 @@ function postJson<T>(path: string, body: unknown) {
   return apiFetch<T>(path, { method: "POST", body: JSON.stringify(body) });
 }
 
+export const emailApi = {
+  update: (email: string, currentPassword: string) =>
+    apiFetch<{ email: string }>("/auth/me/email", { method: "PUT", body: JSON.stringify({ email, currentPassword }) }),
+};
+
 export const passwordChangeApi = {
   sendOtp: (oldPassword: string) => postJson<PasswordOtpSendResult>("/auth/password/otp", { oldPassword }),
   verifyOtp: (otp: string) => postJson<PasswordOtpVerifyResult>("/auth/password/otp/verify", { otp }),
