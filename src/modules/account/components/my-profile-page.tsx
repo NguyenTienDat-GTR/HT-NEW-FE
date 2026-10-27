@@ -26,6 +26,7 @@ import { type MyLeaderProfile, type MyProfile, useMyProfile } from "../account-a
 import { displayName } from "../account-display";
 import { RoleChip } from "./account-menu";
 import { CertificatesSection, RankHistorySection, SectionTitle } from "./my-profile-sections";
+import { ChangeEmailDialog } from "./change-email-dialog";
 import { ChangePasswordDialog } from "./change-password-dialog";
 import { UserAvatar } from "./user-avatar";
 
@@ -35,6 +36,7 @@ export function MyProfilePage() {
   const user = useAuthStore((state) => state.user);
   const profileQuery = useMyProfile();
   const [passwordOpen, setPasswordOpen] = useState(false);
+  const [emailOpen, setEmailOpen] = useState(false);
 
   if (profileQuery.isLoading || (!profileQuery.data && !profileQuery.isError)) return <ProfileSkeleton />;
   if (profileQuery.isError) {
@@ -90,7 +92,7 @@ export function MyProfilePage() {
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         {leader ? <LeaderInfo leader={leader} /> : <NoLeaderState />}
-        <AccountInfo profile={profile} />
+        <AccountInfo onChangeEmail={() => setEmailOpen(true)} profile={profile} />
       </div>
 
       {leader ? (
@@ -101,6 +103,7 @@ export function MyProfilePage() {
       ) : null}
 
       <ChangePasswordDialog onOpenChange={setPasswordOpen} open={passwordOpen} />
+      {profile.hasLeader ? null : <ChangeEmailDialog currentEmail={profile.email} onOpenChange={setEmailOpen} open={emailOpen} />}
     </div>
   );
 }
@@ -142,7 +145,7 @@ function NoLeaderState() {
   );
 }
 
-function AccountInfo({ profile }: { profile: MyProfile }) {
+function AccountInfo({ profile, onChangeEmail }: { profile: MyProfile; onChangeEmail: () => void }) {
   return (
     <Panel className="h-fit p-4 sm:p-5">
       <SectionTitle icon={ShieldCheck} title="Tài khoản" />
@@ -159,9 +162,18 @@ function AccountInfo({ profile }: { profile: MyProfile }) {
           }
         />
       </dl>
+      {/* Tài khoản gắn Huynh Trưởng dùng email trong hồ sơ Huynh Trưởng nên không tự đổi tại đây. */}
+      {!profile.hasLeader ? (
+        <Button className="mt-4 w-full" onClick={onChangeEmail} variant="outline">
+          <EnvelopeSimple aria-hidden className="h-4 w-4" />
+          {profile.email ? "Đổi email" : "Thêm email"}
+        </Button>
+      ) : null}
       {!profile.email ? (
         <p className="mt-4 rounded-lg bg-[var(--badge-warning-bg)] px-3 py-2 text-xs leading-5 text-[var(--badge-warning-fg)]">
-          Tài khoản chưa có email nên chưa thể đổi mật khẩu bằng OTP. Vui lòng liên hệ quản trị viên.
+          {profile.hasLeader
+            ? "Tài khoản chưa có email nên chưa thể đổi mật khẩu bằng OTP. Vui lòng liên hệ quản trị viên."
+            : "Tài khoản chưa có email nên chưa thể đổi mật khẩu bằng OTP. Hãy thêm email ở trên."}
         </p>
       ) : null}
     </Panel>

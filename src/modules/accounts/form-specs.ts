@@ -3,10 +3,9 @@ import { isSuperAdmin } from "@/lib/auth/permissions";
 import type { AuthUser } from "@/lib/auth/auth-store";
 
 const systemAdminRoleCodes = ["SUPER_ADMIN", "ADMIN_DIOCESE", "ADMIN_DEANERY", "ADMIN_PARISH"];
-const superAdminAccountRoleOptions = [
-  { value: "SUPER_ADMIN", label: "Super admin" },
-  { value: "ADMIN_DIOCESE", label: "Admin giáo phận" },
-];
+// SUPER_ADMIN chỉ cấp tài khoản cho vai trò toàn hệ thống: không cấp cho admin giáo hạt / giáo xứ.
+// /system/roles của SUPER_ADMIN đã loại vai trò do các giáo phận tạo, nên chỉ cần loại thêm hai vai trò hệ thống này.
+const superAdminAccountExcludedRoleCodes = ["ADMIN_DEANERY", "ADMIN_PARISH"];
 
 function hasRole(user: AuthUser | null | undefined, roleCode: string) {
   return Boolean(user?.roles.some((role) => role === roleCode || role === `ROLE_${roleCode}`));
@@ -32,7 +31,10 @@ export const systemFormSpecs: ResourceFormSpec[] = [
         label: "Vai trò",
         type: "select",
         required: true,
-        options: superAdminAccountRoleOptions,
+        optionsEndpoint: "/system/roles",
+        optionValue: "roleCode",
+        optionLabel: "roleName",
+        excludeOptionValues: superAdminAccountExcludedRoleCodes,
         createOnly: true,
         section: "Thông tin tài khoản",
       },
@@ -53,16 +55,16 @@ export const systemFormSpecs: ResourceFormSpec[] = [
         label: "Email nhận thông tin đăng nhập",
         type: "email",
         createOnly: true,
-        requiredWhen: (values) => values.roleCode === "SUPER_ADMIN" || values.roleCode === "ADMIN_DIOCESE",
+        helper: "Có thể trùng với email của tài khoản khác. Tên đăng nhập được sinh từ phần trước @.",
+        requiredWhen: (values) => Boolean(values.roleCode),
         section: "Thông tin tài khoản",
       },
     ],
     mapSubmit: (values) => {
       const payload = compactPayload(values);
-      if (payload.roleCode === "SUPER_ADMIN") {
-        delete payload.leaderId;
-        delete payload.dioceseId;
-      }
+      // Chỉ ADMIN_DIOCESE gắn giáo phận; mọi vai trò khác do SUPER_ADMIN cấp đều không gắn Huynh Trưởng hay đơn vị.
+      delete payload.leaderId;
+      if (payload.roleCode !== "ADMIN_DIOCESE") delete payload.dioceseId;
       return payload;
     },
   },

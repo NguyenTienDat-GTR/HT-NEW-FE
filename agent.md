@@ -497,3 +497,10 @@ BE tương ứng: `BE/project.md` mục "Training Course Registration Control an
 
 - Quy ước thiết bị: dưới 1024px (tablet dọc, điện thoại) bảng dữ liệu chuyển sang dạng thẻ (`components/common/resource/resource-card-list.tsx`, hook `lib/use-media-query.ts`): 1 cột trên điện thoại, 2 cột trên tablet; thao tác vùng chạm 44px; ô nhập điểm/chọn nhiều giữ nguyên. Từ 1024px giữ bảng. Danh sách có `cardView` (khóa, chứng nhận, huynh trưởng) luôn xem thẻ dưới 1024px và ẩn công tắc Bảng/Thẻ. Trình quét là sheet toàn màn hình trên điện thoại. Mọi thiết bị đều có nút quét QR ở header.
 - Quét QR hợp nhất: `modules/qr-scan/` (`HeaderScanButton`, `use-qr-camera`, `scan-payload`). Nút header mở `AttendanceScannerDialog` không có `courseCode`: mã điểm danh `HTATT2.<mã khóa>.<mã hồ sơ>.<chữ ký>` gọi `/training/attendance/{lookup,scan}` (không chọn khóa, BE báo khóa chưa bật điểm danh / đã kết thúc / bị vô hiệu hóa); mã chứng nhận gọi `GET /certificates/{mã}` trước: không có thì báo lỗi tại chỗ, có (kể cả đã thu hồi) thì chuyển tới trang chi tiết. Mã điểm danh cũ `HTATT1` bị từ chối kèm hướng dẫn xuất lại thẻ / gửi lại email. Nút hiện khi có quyền quét điểm danh hoặc xem chứng nhận. Đã bỏ `QuickAttendanceButton` và `open-courses.ts`.
+
+## 2026-10-27 Tạo tài khoản vai trò toàn hệ thống và đổi email hồ sơ (nhánh `feature/superadmin-create-accounts`)
+
+- `modules/accounts/form-specs.ts`: form tạo tài khoản của SUPER_ADMIN lấy vai trò từ `/system/roles`, loại ADMIN_DEANERY / ADMIN_PARISH; `credentialEmail` bắt buộc với mọi vai trò; `dioceseId` chỉ gửi cho ADMIN_DIOCESE.
+- `super-admin-route-overrides.ts`: bộ lọc vai trò của danh sách tài khoản dùng `/system/roles`.
+- Chi tiết tài khoản hiện dòng Email khi BE trả (chỉ SUPER_ADMIN).
+- Hồ sơ cá nhân: tài khoản không gắn Huynh Trưởng có nút Đổi/Thêm email (`ChangeEmailDialog`, `PUT /auth/me/email`, nhập mật khẩu hiện tại).

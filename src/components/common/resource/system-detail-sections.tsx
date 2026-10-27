@@ -38,6 +38,8 @@ const accountSections: DetailSection[] = [
     fields: [
       { key: "username", label: "Tên đăng nhập" },
       { key: "leaderFullName", label: "Huynh trưởng", visible: (row) => hasText(row.leaderFullName) },
+      // BE chỉ trả email cho SUPER_ADMIN nên các cấp khác không thấy dòng này.
+      { key: "email", label: "Email", visible: (row) => hasText(row.email) },
       { key: "authProvider", label: "Nguồn đăng nhập", value: (row) => mapped(AUTH_PROVIDER_LABELS, row.authProvider) },
       { key: "status", label: "Trạng thái" },
     ],

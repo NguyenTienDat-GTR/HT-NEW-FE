@@ -359,7 +359,7 @@ function detailKeys(route: RouteConfig, row: Record<string, unknown>, embedded: 
   }
   const baseKeys =
     route.kind === "accounts"
-      ? ["username", "primaryRoleName", "secondaryRoleNames", "dioceseName", "authProvider", "providerId", "status"]
+      ? ["username", "email", "primaryRoleName", "secondaryRoleNames", "dioceseName", "authProvider", "providerId", "status"]
       : Object.keys(row);
   return orderDetailKeys(route, withAuditKeys(baseKeys)).filter((key) => shouldRenderKey(route, row, key));
 }
@@ -470,6 +470,7 @@ function detailItemClass(key: string) {
 function shouldRenderKey(route: RouteConfig, row: Record<string, unknown>, key: string) {
   if (row[key] === undefined && !isAuditKey(key)) return false;
   if (route.kind === "accounts" && ["leaderId", "leaderFullName", "primaryRoleCode", "roleCodes", "roleNames", "deaneryId", "deaneryName", "parishId", "parishName"].includes(key)) return false;
+  if (route.kind === "accounts" && key === "email" && !row.email) return false;
   if (route.kind === "accounts" && key === "secondaryRoleNames" && Array.isArray(row[key]) && row[key].length === 0) return false;
   if (route.kind === "courses" && ["courseCode", "courseTypeCode", "dioceseId", "deaneryId", "registrationOpen"].includes(key)) return false;
   if (key === "conditions") return false;
