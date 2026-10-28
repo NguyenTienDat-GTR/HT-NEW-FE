@@ -81,7 +81,7 @@ export function ResourceTable({
 
   return (
     <div className="max-w-full overflow-x-auto">
-      <table className="w-full min-w-270 border-separate border-spacing-0 text-left text-sm">
+      <table className={`w-full border-separate border-spacing-0 text-left text-sm ${scoreEntry ? "" : "min-w-270"}`}>
         <thead>
           <tr className="bg-slate-50">
             {selection ? (
@@ -98,7 +98,7 @@ export function ResourceTable({
             ) : null}
             {embedded ? <th className="sticky top-0 z-10 h-10 w-12 border-b border-border bg-slate-50 px-3 text-xs font-semibold uppercase tracking-wide text-text-secondary">STT</th> : null}
             {visibleColumns.map((column) => (
-              <th className="sticky top-0 z-10 h-10 border-b border-border bg-slate-50 px-3 text-xs font-semibold uppercase tracking-wide text-text-secondary" key={column}>
+              <th className={`sticky top-0 z-10 h-10 border-b border-border bg-slate-50 text-xs font-semibold uppercase tracking-wide text-text-secondary ${scoreEntry ? "px-2" : "px-3"} ${scoreEntry && column === "leaderFullName" ? "min-w-40" : ""}`} key={column}>
                 {route.sortFields?.[column] === null ? (
                   <span className="inline-flex h-8 items-center px-1">{route.kind === "leaders" && column === "fullName" ? "Huynh trưởng" : (columnLabels[column] ?? column)}</span>
                 ) : (
@@ -115,9 +115,9 @@ export function ResourceTable({
               </th>
             ))}
             {scoreEntry?.components.map((component) => (
-              <th className="sticky top-0 z-10 h-10 border-b border-border bg-slate-50 px-3 text-xs font-semibold uppercase tracking-wide text-text-secondary" key={component.id}>
-                <span className="block whitespace-nowrap">{component.name}</span>
-                <span className="block text-[10px] font-normal text-muted">
+              <th className="sticky top-0 z-10 h-10 min-w-24 border-b border-border bg-slate-50 px-2 text-xs font-semibold uppercase leading-tight tracking-wide text-text-secondary" key={component.id}>
+                <span className="block">{component.name}</span>
+                <span className="block text-[10px] font-normal normal-case leading-tight text-muted">
                   Tối đa {Number(component.maxScore)}
                   {component.includeInFinal === false ? " · không tính tổng" : ` · hệ số ${Number(component.coefficient ?? 1)}`}
                 </span>
@@ -200,8 +200,8 @@ function ResourceRows({
       ) : null}
       {indexOffset !== undefined ? <td className="h-14 w-12 border-b border-slate-100 px-3 align-middle text-muted">{indexOffset + rowIndex + 1}</td> : null}
       {columns.map((column) => (
-        <td className="h-14 border-b border-slate-100 px-3 align-middle" key={column}>
-          {route.kind === "leaders" && column === "fullName" ? <LeaderIdentity row={row} /> : cellEditors?.[column] ? cellEditors[column](row) : <ResourceCell column={column} row={row} value={row[column]} />}
+        <td className={`h-14 border-b border-slate-100 align-middle ${scoreEntry ? "px-2 py-1" : "px-3"} ${scoreEntry && column === "leaderFullName" ? "min-w-40" : ""}`} key={column}>
+          {route.kind === "leaders" && column === "fullName" ? <LeaderIdentity row={row} /> : cellEditors?.[column] ? cellEditors[column](row) : <ResourceCell column={column} displayMode={scoreEntry ? "detail" : "table"} row={row} value={row[column]} />}
         </td>
       ))}
       {scoreEntry?.components.map((component) => {
@@ -209,7 +209,7 @@ function ResourceRows({
         const editable = Boolean(rowId) && scoreEntry.isEditable(row);
         const invalid = scoreEntry.isInvalid(component, value);
         return (
-          <td className="h-14 border-b border-slate-100 px-3 align-middle" key={component.id}>
+          <td className="h-14 min-w-24 border-b border-slate-100 px-2 align-middle" key={component.id}>
             {editable && rowId ? (
               <input
                 aria-label={`${component.name} của ${String(row.leaderFullName ?? "")}`}

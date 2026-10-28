@@ -504,3 +504,8 @@ BE tương ứng: `BE/project.md` mục "Training Course Registration Control an
 - `super-admin-route-overrides.ts`: bộ lọc vai trò của danh sách tài khoản dùng `/system/roles`.
 - Chi tiết tài khoản hiện dòng Email khi BE trả (chỉ SUPER_ADMIN).
 - Hồ sơ cá nhân: tài khoản không gắn Huynh Trưởng có nút Đổi/Thêm email (`ChangeEmailDialog`, `PUT /auth/me/email`, nhập mật khẩu hiện tại).
+
+## 2026-10-28 Bảng chấm điểm vừa khung (nhánh `fix/scoring-table-columns`)
+
+- `resource-table.tsx`: khi có `scoreEntry` (tab Chấm điểm) bảng bỏ `min-w-270`, bỏ cắt chữ một dòng ở cột Huynh trưởng và các cột chữ (cho xuống dòng), thu `px-3` → `px-2`, cột Huynh trưởng `min-w-40`, cột điểm `min-w-24` với tiêu đề thành phần cho xuống dòng. Mọi cột giữ nguyên; ở 1440px bảng vừa khung, không cần cuộn ngang.
+- Tạo giáo xứ: BE nay cho Admin giáo phận (có quyền `organization.parish.create.diocese`) tạo giáo xứ trong giáo hạt của giáo phận mình, nên nút "Thêm giáo xứ" khớp với quyền; không cần đổi FE.
