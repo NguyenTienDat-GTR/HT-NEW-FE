@@ -62,7 +62,7 @@ export function SendPanel({ onSent }: { onSent: () => void }) {
     <div className="space-y-4">
       <Panel className="space-y-3 p-4">
         <label className="block max-w-xl">
-          <span className="mb-1.5 block text-[13px] font-semibold text-foreground">Khóa của giáo hạt khác (đang mở đăng ký)</span>
+          <span className="mb-1.5 block text-[13px] font-semibold text-foreground">Khóa của giáo hạt khác (đang mở đăng ký và đã được giáo hạt bạn cho phép)</span>
           <select
             className="h-10 w-full cursor-pointer rounded-lg border border-input bg-white px-3 text-sm focus:border-primary focus:outline-none focus:ring-[3px] focus:ring-[var(--primary-ring)]"
             onChange={(event) => {
@@ -72,7 +72,7 @@ export function SendPanel({ onSent }: { onSent: () => void }) {
             }}
             value={courseCode}
           >
-            <option value="">{coursesQuery.isLoading ? "Đang tải…" : courses.length ? "Chọn khóa" : "Hiện không có khóa nào của giáo hạt khác đang mở đăng ký"}</option>
+            <option value="">{coursesQuery.isLoading ? "Đang tải…" : courses.length ? "Chọn khóa" : "Chưa có khóa nào được giáo hạt của bạn cho phép gửi hồ sơ"}</option>
             {courses.map((item) => (
               <option key={item.courseCode} value={item.courseCode}>
                 {item.courseName} — {item.deaneryName}

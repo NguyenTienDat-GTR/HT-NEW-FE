@@ -1,10 +1,15 @@
 "use client";
 
+import { ArrowsLeftRight } from "@phosphor-icons/react";
+import type { Route } from "next";
+import Link from "next/link";
 import type { ReactNode } from "react";
 import { useEmbeddedResource } from "@/components/common/resource/embedded-resource-context";
 import { getResourceId } from "@/components/common/resource/resource-actions";
 import { ResourceListRuntime } from "@/components/common/resource/resource-list-runtime";
 import type { ResourceListModuleConfig } from "@/components/common/resource/resource-list-types";
+import { Button } from "@/components/ui/button";
+import { Tip } from "@/components/ui/tip";
 import type { RouteConfig } from "@/config/routes/routes";
 import { useAuthStore } from "@/lib/auth/auth-store";
 import { hasPermissionPrefix } from "@/lib/auth/permissions";
@@ -12,6 +17,26 @@ import { RegistrationNoteCell } from "./registration-note-cell";
 
 // Các màn có cột Ghi chú đăng ký sửa tại chỗ: đăng ký, duyệt đăng ký, danh sách tham dự.
 const NOTE_ROUTES = new Set(["training.registration", "training.approval", "training.participation"]);
+
+// Từ màn Đăng ký tham dự sang màn Gửi liên giáo hạt: người gửi hồ sơ hoặc người đồng ý liên giáo hạt mới thấy nút.
+function CrossDeaneryButton() {
+  const user = useAuthStore((state) => state.user);
+  const allowed =
+    hasPermissionPrefix(user, "training.participation.submit.parish") ||
+    hasPermissionPrefix(user, "training.participation.submit.deanery") ||
+    hasPermissionPrefix(user, "training.participation.cross_approve.");
+  if (!allowed) return null;
+  return (
+    <Tip label="Gửi huynh trưởng sang khóa của giáo hạt khác cùng giáo phận, hoặc quyết định cho giáo xứ gửi">
+      <Button asChild variant="outline">
+        <Link href={"/training/cross-deanery" as Route}>
+          <ArrowsLeftRight size={18} />
+          Liên giáo hạt
+        </Link>
+      </Button>
+    </Tip>
+  );
+}
 
 export function TrainingWorkflowResourceView({ route, toolbarActions, exportEndpoint, cellEditors }: { route: RouteConfig; toolbarActions?: ReactNode; exportEndpoint?: string; cellEditors?: ResourceListModuleConfig["cellEditors"] }) {
   const user = useAuthStore((state) => state.user);
@@ -35,7 +60,7 @@ export function TrainingWorkflowResourceView({ route, toolbarActions, exportEndp
       config={{
         moduleLabel: "Quy trình huấn luyện",
         moduleDescription: "Theo dõi đăng ký, duyệt, tham dự và chấm điểm theo trạng thái workflow.",
-        toolbarActions,
+        toolbarActions: toolbarActions ?? (route.moduleName === "training.registration" && !embedded ? <CrossDeaneryButton /> : undefined),
         exportEndpoint,
         cellEditors: { ...noteEditor, ...cellEditors },
         buildApprovePath,

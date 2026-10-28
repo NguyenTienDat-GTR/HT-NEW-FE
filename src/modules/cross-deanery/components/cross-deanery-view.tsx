@@ -1,9 +1,11 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useAuthStore } from "@/lib/auth/auth-store";
 import { hasPermissionPrefix } from "@/lib/auth/permissions";
 import { cn } from "@/lib/utils";
+import { InvitationList } from "./invitation-list";
 import { RequestList } from "./request-list";
 import { SendPanel } from "./send-panel";
 
@@ -11,8 +13,12 @@ import { SendPanel } from "./send-panel";
 export function CrossDeaneryView() {
   const user = useAuthStore((state) => state.user);
   const canSend = hasPermissionPrefix(user, "training.participation.submit.parish") || hasPermissionPrefix(user, "training.participation.submit.deanery");
-  const [tab, setTab] = useState<"requests" | "send">("requests");
+  const canDecide = hasPermissionPrefix(user, "training.participation.cross_approve.");
+  // Thông báo "khóa mở liên giáo hạt" mở thẳng tab khóa mời (?tab=invitations).
+  const initialTab = useSearchParams().get("tab") === "invitations" && canDecide ? "invitations" : "requests";
+  const [tab, setTab] = useState<"invitations" | "requests" | "send">(initialTab);
   const tabs = [
+    ...(canDecide ? [{ key: "invitations" as const, label: "Khóa mở liên giáo hạt" }] : []),
     { key: "requests" as const, label: "Yêu cầu liên giáo hạt" },
     ...(canSend ? [{ key: "send" as const, label: "Gửi hồ sơ sang giáo hạt khác" }] : []),
   ];
@@ -22,7 +28,7 @@ export function CrossDeaneryView() {
       <div>
         <h1 className="text-xl font-bold leading-7 text-foreground">Gửi hồ sơ liên giáo hạt</h1>
         <p className="mt-1 text-sm text-muted">
-          Giáo xứ gửi huynh trưởng sang khóa của giáo hạt khác (cùng giáo phận): giáo hạt nhà đồng ý trước, rồi giáo hạt tổ chức khóa duyệt. Mỗi hồ sơ phải kèm lí do riêng.
+          Giáo hạt tổ chức khóa mở khóa cho giáo hạt khác (cùng giáo phận); giáo hạt nhà cho phép khóa, giáo xứ gửi huynh trưởng, giáo hạt nhà đồng ý từng yêu cầu, rồi giáo hạt tổ chức khóa duyệt. Mỗi hồ sơ phải kèm lí do riêng.
         </p>
       </div>
       <div className="flex gap-1 border-b border-border" role="tablist">
@@ -39,7 +45,7 @@ export function CrossDeaneryView() {
           </button>
         ))}
       </div>
-      {tab === "send" && canSend ? <SendPanel onSent={() => setTab("requests")} /> : <RequestList />}
+      {tab === "send" && canSend ? <SendPanel onSent={() => setTab("requests")} /> : tab === "invitations" && canDecide ? <InvitationList /> : <RequestList />}
     </div>
   );
 }

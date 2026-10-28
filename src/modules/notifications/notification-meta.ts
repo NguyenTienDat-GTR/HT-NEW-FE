@@ -87,6 +87,9 @@ const unitRoutes = {
 export function notificationHref(item: NotificationItem): string {
   const type = item.eventType ?? "";
   if (type.startsWith("training.certificate.")) return "/certificates";
+  // Khóa mở liên giáo hạt: giáo hạt nhà mở tab khóa mời để quyết định; các thông báo liên giáo hạt khác mở màn Gửi liên giáo hạt.
+  if (type === "training.cross_deanery.course_opened") return "/training/cross-deanery?tab=invitations";
+  if (type.startsWith("training.cross_deanery.")) return "/training/cross-deanery";
   if (type.startsWith("training.")) return item.courseCode ? `/training/courses/${encodeURIComponent(item.courseCode)}` : "/training/courses";
   if (accessRoutes[type]) return accessRoutes[type];
   if (type === "UNIT_STATUS_TOGGLED" && item.senderUnitType) {

@@ -44,4 +44,11 @@ describe("notification meta", () => {
       expect(notificationDetail(item)?.items[0]?.label).toBe("Xem hồ sơ");
     }
   });
+  it("routes cross-deanery notifications to the cross-deanery screen instead of the course page", () => {
+    expect(notificationHref({ id: "6", eventType: "training.cross_deanery.course_opened", courseCode: "KH-A" })).toBe("/training/cross-deanery?tab=invitations");
+    for (const eventType of ["training.cross_deanery.requested", "training.cross_deanery.approved", "training.cross_deanery.access_allowed", "training.cross_deanery.cancelled"]) {
+      expect(notificationHref({ id: eventType, eventType, courseCode: "KH-A" })).toBe("/training/cross-deanery");
+      expect(notificationGroupOf({ id: eventType, eventType })).toBe("training");
+    }
+  });
 });

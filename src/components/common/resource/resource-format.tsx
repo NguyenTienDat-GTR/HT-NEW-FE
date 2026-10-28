@@ -123,6 +123,7 @@ export const columnLabels: Record<string, string> = {
   autoApproveEligible: "Tự động duyệt hồ sơ hợp lệ",
   attendanceEnabled: "Bật điểm danh bằng QR",
   autoSendInvitation: "Tự gửi email khi duyệt",
+  openToOtherDeaneries: "Mở đăng ký cho giáo hạt khác",
   scoreVisible: "Hiển thị điểm của khóa",
   patronSaintDay: "Ngày bổn mạng",
   permissionCode: "Mã quyền",

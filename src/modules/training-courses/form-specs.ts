@@ -146,7 +146,7 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
     createTitle: "Tạo khóa huấn luyện",
     editTitle: "Chỉnh sửa khóa huấn luyện",
     description: "Khóa học, thời gian, cửa sổ đăng ký và điểm đạt. Sau khi khóa có hồ sơ tham gia, không đổi được loại khóa, năm tổ chức, số năm hoạt động và điểm đạt.",
-    getInitialValues: () => ({ yearsActive: 0, autoApproveEligible: false, scoreVisible: false, attendanceEnabled: false, autoSendInvitation: false }),
+    getInitialValues: () => ({ yearsActive: 0, autoApproveEligible: false, scoreVisible: false, attendanceEnabled: false, autoSendInvitation: false, openToOtherDeaneries: false }),
     fields: [
       { name: "courseName", label: "Tên khóa", required: true, section: "Thông tin khóa" },
       {
@@ -247,6 +247,16 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
         // Chỉ khóa giáo phận: giáo hạt không chọn được (giáo hạt khác gửi hồ sơ sang khóa giáo hạt qua màn Gửi liên giáo hạt).
         visibleWhen: (values) => values.managementUnitType !== "DEANERY" && managedUnitTypes(useAuthStore.getState().user, "course").includes("DIOCESE"),
         helper: "Bỏ trống nếu khóa mở cho tất cả giáo hạt. Giáo xứ thuộc giáo hạt khác vẫn đăng ký được nhưng phải kèm lí do riêng cho từng hồ sơ và hồ sơ được duyệt thủ công.",
+        section: "Đợt của khóa",
+      },
+      {
+        name: "openToOtherDeaneries",
+        label: "Mở đăng ký cho các giáo hạt khác",
+        type: "switch",
+        switchLabels: ["Bật: gửi thông báo cho các giáo hạt khác trong giáo phận để họ quyết định", "Tắt: chỉ giáo hạt tổ chức đăng ký"],
+        // Chỉ khóa giáo hạt: admin giáo hạt khác nhận thông báo và quyết định có cho giáo xứ của mình gửi hồ sơ sang khóa này hay không.
+        visibleWhen: (values) => values.managementUnitType !== "DIOCESE" && managedUnitTypes(useAuthStore.getState().user, "course").includes("DEANERY"),
+        helper: "Khi bật, admin các giáo hạt khác nhận thông báo kèm thông tin khóa. Chỉ giáo xứ của giáo hạt được cho phép mới gửi được hồ sơ liên giáo hạt (giáo hạt nhà vẫn đồng ý từng yêu cầu, rồi giáo hạt bạn duyệt).",
         section: "Đợt của khóa",
       },
       {

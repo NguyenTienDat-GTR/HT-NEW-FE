@@ -10,6 +10,7 @@ import { apiFetch, apiMutation } from "@/lib/api/client";
 import { formatVietnamDateValue } from "@/lib/date-format";
 import { candidateName } from "../send-form";
 import { itemStatusLabels, statusLabels, statusTones, type CrossRequest, type RequestStatus } from "../types";
+import { CourseInfoBlock } from "./course-info";
 import { DecisionDialog } from "./decision-dialog";
 
 const filters: { value: "" | RequestStatus; label: string }[] = [
@@ -94,6 +95,8 @@ export function RequestList() {
             </div>
             <Badge tone={statusTones[request.requestStatus]}>{statusLabels[request.requestStatus]}</Badge>
           </div>
+
+          <CourseInfoBlock hostDeaneryName={request.courseDeaneryName} info={request.course} />
 
           <ul className="divide-y divide-border rounded-lg border border-border">
             {request.items.map((item) => (
