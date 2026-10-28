@@ -68,7 +68,7 @@ const summaryGroups: SummaryGroup[] = [
   { title: "Thông tin chung", columns: ["courseTypeName", "hostYear", "passingScore", "location", "targetDeaneries"] },
   { title: "Thời gian", columns: ["startDate", "endDate", "registrationPeriod"] },
   { title: "Trạng thái", columns: ["registrationStatus", "organizingStatus"] },
-  { title: "Cấu hình", columns: ["autoApproveEligible", "scoreVisible", "attendanceEnabled", "autoSendInvitation"] },
+  { title: "Cấu hình", columns: ["autoApproveEligible", "scoreVisible", "attendanceEnabled", "autoSendInvitation", "openToOtherDeaneries"] },
 ];
 
 export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig }) {
@@ -493,6 +493,7 @@ const summaryLabels: Record<string, string> = {
   scoreVisible: "Hiển thị điểm của khóa",
   attendanceEnabled: "Bật điểm danh bằng QR",
   autoSendInvitation: "Tự gửi email khi duyệt",
+  openToOtherDeaneries: "Mở đăng ký cho giáo hạt khác",
   location: "Địa điểm",
   startDate: "Ngày bắt đầu",
   endDate: "Ngày kết thúc",

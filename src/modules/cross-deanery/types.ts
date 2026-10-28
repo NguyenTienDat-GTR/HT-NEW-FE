@@ -10,6 +10,35 @@ export type OpenCourse = {
   registrationEndAt: string | null;
 };
 
+// Thông tin khóa để giáo hạt nhà cân nhắc khi cho phép khóa / duyệt yêu cầu.
+export type CourseInfo = {
+  courseTypeName: string | null;
+  location: string | null;
+  startDate: string | null;
+  endDate: string | null;
+  registrationStartAt: string | null;
+  registrationEndAt: string | null;
+  additionalNotes: string | null;
+  requirements: string[];
+};
+
+export type AccessDecision = "PENDING" | "ALLOWED" | "DENIED";
+
+// Khóa giáo hạt khác mở liên giáo hạt và quyết định của giáo hạt nhà.
+export type CourseInvitation = {
+  courseCode: string;
+  courseName: string;
+  hostDeaneryId: string;
+  hostDeaneryName: string;
+  course: CourseInfo;
+  decision: AccessDecision;
+  decisionNote: string | null;
+  decidedByName: string | null;
+  decidedAt: string | null;
+  registrationClosed: boolean;
+  canDecide: boolean;
+};
+
 export type Candidate = {
   leaderId: string;
   holyName: string | null;
@@ -61,6 +90,7 @@ export type CrossRequest = {
   canDecide: boolean;
   canCancel: boolean;
   items: RequestItem[];
+  course: CourseInfo | null;
 };
 
 // Dữ liệu người dùng nhập cho từng huynh trưởng được chọn.
@@ -72,6 +102,18 @@ export const statusLabels: Record<RequestStatus, string> = {
   REJECTED: "Bị từ chối",
   CANCELLED: "Đã thu hồi",
   EXPIRED: "Hết hạn đăng ký",
+};
+
+export const accessLabels: Record<AccessDecision, string> = {
+  PENDING: "Chờ giáo hạt quyết định",
+  ALLOWED: "Đã cho phép",
+  DENIED: "Đã từ chối",
+};
+
+export const accessTones: Record<AccessDecision, "success" | "warning" | "danger" | "neutral" | "info"> = {
+  PENDING: "warning",
+  ALLOWED: "success",
+  DENIED: "danger",
 };
 
 export const itemStatusLabels: Record<ItemStatus, string> = {

@@ -5,6 +5,7 @@ import { X } from "@phosphor-icons/react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { candidateName } from "../send-form";
+import { CourseInfoBlock } from "./course-info";
 import type { CrossRequest } from "../types";
 
 // Giáo hạt nhà đồng ý (cả yêu cầu hoặc chọn từng hồ sơ) hoặc từ chối. Từ chối hoặc đồng ý một phần phải nhập ghi chú.
@@ -50,6 +51,7 @@ export function DecisionDialog({
             </Dialog.Close>
           </div>
           <div className="space-y-3 overflow-y-auto px-5 py-4">
+            <CourseInfoBlock hostDeaneryName={request.courseDeaneryName} info={request.course} />
             <ul className="space-y-2">
               {pending.map((item) => (
                 <li className="rounded-lg border border-border p-2.5 text-sm" key={item.id}>
