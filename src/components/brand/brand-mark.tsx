@@ -1,14 +1,22 @@
-import {CrossIcon, CrownCross} from "@phosphor-icons/react";
+import Image from "next/image";
 import {cn} from "@/lib/utils";
 
-export function BrandMark({className, compact = false}: { className?: string; compact?: boolean }) {
+export const BRAND_NAME = "C-LEAD";
+export const BRAND_TAGLINE_EN = "Forming Leaders, Serving Christ";
+export const BRAND_TAGLINE_VI = "Đào luyện người Huynh Trưởng, phụng sự Đức Kitô.";
+
+export function BrandMark({className, size = 44}: { className?: string; size?: number }) {
     return (
-        <span className={cn("inline-flex items-center gap-3", className)}>
-      <span
-          className="relative grid h-11 w-11 shrink-0 place-items-center rounded-[14px] bg-primary text-white shadow-(--shadow-accent)">
-        <span className="absolute inset-0.75 rounded-[11px] border border-white/20"/>
-        <CrossIcon className="relative h-6 w-6" weight="fill"/>
-      </span>
-    </span>
+        <span className={cn("inline-flex shrink-0 items-center", className)}>
+            <Image
+                alt="Logo C-LEAD"
+                className="shrink-0 object-contain"
+                height={size}
+                priority
+                src="/brand/c-lead.png"
+                style={{height: size, width: size}}
+                width={size}
+            />
+        </span>
     );
 }

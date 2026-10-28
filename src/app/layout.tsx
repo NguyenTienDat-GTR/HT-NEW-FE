@@ -12,8 +12,8 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "HT Management",
-  description: "Bảng điều khiển quản lí huynh trưởng",
+  title: "C-LEAD",
+  description: "C-LEAD — Đào luyện người Huynh Trưởng, phụng sự Đức Kitô.",
 };
 
 export default function RootLayout({
