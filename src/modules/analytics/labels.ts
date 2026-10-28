@@ -127,7 +127,7 @@ export function keyLabel(key: string, label?: string | null) {
 export const groupByOptions: { value: string; label: string; scopes?: string[] }[] = [
   { value: "", label: "Không nhóm thêm" },
   { value: "deanery", label: "Giáo hạt", scopes: ["diocese"] },
-  { value: "parish", label: "Giáo xứ", scopes: ["diocese", "deanery"] },
+  { value: "parish", label: "Giáo xứ / giáo họ / giáo điểm", scopes: ["diocese", "deanery"] },
   { value: "courseType", label: "Loại khóa" },
   { value: "course", label: "Khóa học" },
   { value: "leaderLevel", label: "Cấp bậc" },

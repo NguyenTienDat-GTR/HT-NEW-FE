@@ -80,7 +80,7 @@ function DetailSections({ detail }: { detail: ParticipantDetail }) {
         <Row label="Giới tính">{genderLabel(detail.gender)}</Row>
         <Row label="Ngày sinh">{detail.birthDate ? new Date(detail.birthDate).toLocaleDateString("vi-VN") : ""}</Row>
         <Row label="Số điện thoại">{detail.phone}</Row>
-        <Row label="Giáo xứ">{detail.parishName}</Row>
+        <Row label="Giáo xứ / giáo họ / giáo điểm">{detail.parishName}</Row>
         <Row label="Giáo hạt">{detail.deaneryName}</Row>
         <Row label="Giáo phận">{detail.dioceseName}</Row>
       </Section>

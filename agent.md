@@ -509,3 +509,10 @@ BE tương ứng: `BE/project.md` mục "Training Course Registration Control an
 
 - `resource-table.tsx`: khi có `scoreEntry` (tab Chấm điểm) bảng bỏ `min-w-270`, bỏ cắt chữ một dòng ở cột Huynh trưởng và các cột chữ (cho xuống dòng), thu `px-3` → `px-2`, cột Huynh trưởng `min-w-40`, cột điểm `min-w-24` với tiêu đề thành phần cho xuống dòng. Mọi cột giữ nguyên; ở 1440px bảng vừa khung, không cần cuộn ngang.
 - Tạo giáo xứ: BE nay cho Admin giáo phận (có quyền `organization.parish.create.diocese`) tạo giáo xứ trong giáo hạt của giáo phận mình, nên nút "Thêm giáo xứ" khớp với quyền; không cần đổi FE.
+
+## 2026-10-28 Giáo họ / giáo điểm (nhánh `feature/parish-sub-units`)
+
+- BE lưu giáo họ (`GIAO_HO`) và giáo điểm (`GIAO_DIEM`) cùng bảng `parish` (`unitType`, `parentParishId`), nên mọi nơi hiển thị `parishName` của huynh trưởng / hồ sơ / chứng nhận / thẻ tự ra đúng tên giáo họ. FE chỉ đổi nhãn cột "Giáo xứ" thành "Giáo xứ / giáo họ / giáo điểm" ở các bảng, drawer, bộ lọc và form liên quan.
+- Màn `/organization/parishes` đổi tên "Giáo xứ, giáo họ, giáo điểm": form có ô **Loại đơn vị** (không sửa được khi chỉnh sửa) và **Thuộc giáo xứ** (chỉ hiện với giáo họ / giáo điểm, liệt kê giáo xứ cùng giáo hạt qua `/parishes?filters={"deanery.id","unitType":"PARISH"}`); danh sách thêm cột Loại, Thuộc giáo xứ (bỏ cột SĐT, email, tuyên úy để đủ chỗ; xem ở chi tiết / Excel), bộ lọc Loại đơn vị; chi tiết có thêm số giáo họ / giáo điểm.
+- Ô chọn giáo xứ của huynh trưởng (`leaders/form-specs.ts`, `leader-detail-page.tsx`) hiển thị "Giáo họ B - Giáo xứ X" nhờ `optionLabelFields: ["name", "parentParishName"]`.
+- Không tái sinh `schema.d.ts` / `openapi` trong nhánh này (bản commit đã cũ so với BE, tái sinh sẽ kéo theo diff rất lớn không liên quan).

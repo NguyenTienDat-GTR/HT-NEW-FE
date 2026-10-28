@@ -60,7 +60,7 @@ describe("chọn tài khoản và quyền khi phân quyền", () => {
     fireEvent.focus(screen.getByRole("textbox"));
     expect(await screen.findByText("Vai trò: Admin giáo xứ")).toBeInTheDocument();
     expect(screen.getByText("Huynh trưởng: Phêrô Nguyễn Văn An")).toBeInTheDocument();
-    expect(screen.getByText("Giáo xứ: Bà Lụa")).toBeInTheDocument();
+    expect(screen.getByText("Giáo xứ / giáo họ / giáo điểm: Bà Lụa")).toBeInTheDocument();
     expect(screen.getByText("Giáo hạt: Thủ Dầu Một")).toBeInTheDocument();
 
     // Tìm theo tên huynh trưởng (không dấu) cũng ra đúng tài khoản.

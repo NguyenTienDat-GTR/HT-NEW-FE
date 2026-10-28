@@ -105,7 +105,7 @@ export function FilterBar({ filters, onChange, options, scope, scopes, visible =
   const chips: { key: string; label: string; clear: () => void }[] = [];
   const named = (list: FilterOption[] | undefined, value: string) => list?.find((item) => item.value === value)?.label ?? value;
   if (filters.deaneryId && showDeanery) chips.push({ key: "deanery", label: `Giáo hạt: ${named(options?.deaneries, filters.deaneryId)}`, clear: () => set({ deaneryId: "", parishId: "" }) });
-  if (filters.parishId && showParish) chips.push({ key: "parish", label: `Giáo xứ: ${named(options?.parishes, filters.parishId)}`, clear: () => set({ parishId: "" }) });
+  if (filters.parishId && showParish) chips.push({ key: "parish", label: `Giáo xứ / giáo họ / giáo điểm: ${named(options?.parishes, filters.parishId)}`, clear: () => set({ parishId: "" }) });
   if (filters.courseType && course) chips.push({ key: "type", label: `Loại khóa: ${named(options?.courseTypes, filters.courseType)}`, clear: () => set({ courseType: "", courseCode: "" }) });
   if (filters.courseCode && course) chips.push({ key: "course", label: `Khóa: ${named(options?.courses, filters.courseCode)}`, clear: () => set({ courseCode: "" }) });
   if (filters.leaderLevel && leader) chips.push({ key: "level", label: `Cấp bậc: ${named(options?.leaderLevels, filters.leaderLevel)}`, clear: () => set({ leaderLevel: "" }) });
@@ -222,7 +222,7 @@ export function FilterBar({ filters, onChange, options, scope, scopes, visible =
         <div className="overflow-hidden" inert={!open}>
           <div className="grid gap-3 pt-4 sm:grid-cols-2 lg:grid-cols-4">
             {showDeanery ? <Select label="Giáo hạt" onChange={(value) => set({ deaneryId: value, parishId: "" })} options={options?.deaneries ?? []} value={filters.deaneryId} /> : null}
-            {showParish ? <Select label="Giáo xứ" onChange={(value) => set({ parishId: value })} options={parishes} value={filters.parishId} /> : null}
+            {showParish ? <Select label="Giáo xứ / giáo họ / giáo điểm" onChange={(value) => set({ parishId: value })} options={parishes} value={filters.parishId} /> : null}
             {course ? <Select label="Loại khóa" onChange={(value) => set({ courseType: value, courseCode: "" })} options={options?.courseTypes ?? []} value={filters.courseType} /> : null}
             {course ? <Select label="Khóa học" onChange={(value) => set({ courseCode: value })} options={courses} value={filters.courseCode} /> : null}
             {leader ? <Select label="Cấp bậc" onChange={(value) => set({ leaderLevel: value })} options={options?.leaderLevels ?? []} value={filters.leaderLevel} /> : null}

@@ -57,7 +57,7 @@ const accountSections: DetailSection[] = [
     fields: [
       { key: "dioceseName", label: "Giáo phận", visible: (row) => hasText(row.dioceseName) },
       { key: "deaneryName", label: "Giáo hạt", visible: (row) => hasText(row.deaneryName) },
-      { key: "parishName", label: "Giáo xứ", visible: (row) => hasText(row.parishName) },
+      { key: "parishName", label: "Giáo xứ / giáo họ / giáo điểm", visible: (row) => hasText(row.parishName) },
     ],
   },
   AUDIT_SECTION,

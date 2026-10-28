@@ -419,7 +419,7 @@ export function OrganizationTab({ data, filters, busy, onDrill }: TabProps) {
   const columns: Column<Breakdown>[] = [
     {
       key: "unit",
-      label: isDiocese ? "Giáo hạt" : "Giáo xứ",
+      label: isDiocese ? "Giáo hạt" : "Giáo xứ / giáo họ / giáo điểm",
       render: (row) => (
         <span className="inline-flex items-center gap-2 font-medium">
           {row.label}

@@ -4,6 +4,7 @@ import { Badge, ResourceCell } from "@/components/common/resource/resource-forma
 import { ExecutiveBoardSection } from "@/modules/executive-board/components/executive-board-section";
 import { cn } from "@/lib/utils";
 import { isLockedByParent } from "../types";
+import { ParentParishCard } from "./parent-parish-card";
 import { UnitStatusHistory } from "./unit-status-history";
 
 export type UnitKind = "dioceses" | "deaneries" | "parishes";
@@ -30,7 +31,10 @@ const STATS: Record<UnitKind, Stat[]> = {
     { key: "parishCount", label: "Giáo xứ", tone: "emerald" },
     { key: "leaderCount", label: "Huynh trưởng", tone: "amber" },
   ],
-  parishes: [{ key: "leaderCount", label: "Huynh trưởng", tone: "amber" }],
+  parishes: [
+    { key: "subUnitCount", label: "Giáo họ / giáo điểm", tone: "emerald" },
+    { key: "leaderCount", label: "Huynh trưởng", tone: "amber" },
+  ],
 };
 
 const GENERAL_FIELDS: Record<UnitKind, Field[]> = {
@@ -45,6 +49,8 @@ const GENERAL_FIELDS: Record<UnitKind, Field[]> = {
     { key: "establishmentDate", label: "Ngày thành lập" },
   ],
   parishes: [
+    { key: "unitTypeLabel", label: "Loại đơn vị" },
+    { key: "parentParishName", label: "Thuộc giáo xứ" },
     { key: "chapterName", label: "Xứ đoàn" },
     { key: "patronSaintDay", label: "Ngày bổn mạng" },
     { key: "establishmentDate", label: "Ngày thành lập" },
@@ -74,7 +80,7 @@ export function UnitDetail({ kind, id, row }: { kind: UnitKind; id: string; row:
       <section className="rounded-xl border border-border bg-white p-4 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase text-muted">{UNIT_LABEL[kind]}</p>
+            <p className="text-xs font-semibold uppercase text-muted">{kind === "parishes" && typeof row.unitTypeLabel === "string" ? row.unitTypeLabel : UNIT_LABEL[kind]}</p>
             <h2 className="mt-1 break-words text-lg font-semibold leading-[26px] text-foreground">{String(row.name ?? "—")}</h2>
             {path.length ? <p className="mt-1 text-sm text-muted">{path.join(" › ")}</p> : null}
           </div>
@@ -84,7 +90,7 @@ export function UnitDetail({ kind, id, row }: { kind: UnitKind; id: string; row:
           </div>
         </div>
         <div className="mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
-          {STATS[kind].map((stat) => (
+          {STATS[kind].filter((stat) => !(stat.key === "subUnitCount" && row.unitType !== undefined && row.unitType !== "PARISH")).map((stat) => (
             <div className={cn("rounded-lg border px-3 py-2", STAT_TONES[stat.tone])} key={stat.key}>
               <p className="text-xs font-medium opacity-80">{stat.label}</p>
               <p className="mt-0.5 text-xl font-semibold leading-7">{typeof row[stat.key] === "number" ? (row[stat.key] as number).toLocaleString("vi-VN") : "0"}</p>
@@ -97,6 +103,8 @@ export function UnitDetail({ kind, id, row }: { kind: UnitKind; id: string; row:
         <FieldsCard columns={3} fields={GENERAL_FIELDS[kind]} row={row} title="Thông tin chung" />
         <FieldsCard columns={1} fields={CONTACT_FIELDS} row={row} title="Liên hệ" />
       </div>
+
+      {kind === "parishes" && typeof row.unitType === "string" && row.unitType !== "PARISH" ? <ParentParishCard id={id} row={row} /> : null}
 
       <ExecutiveBoardSection kind={kind} unitId={id} />
 

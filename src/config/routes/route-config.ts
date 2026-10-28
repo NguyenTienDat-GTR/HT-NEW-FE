@@ -77,7 +77,7 @@ export function deaneryUnitFilter(key: string, parentFilterKey?: string): RouteF
 export function parishUnitFilter(key: string, parentFilterKey?: string, parentIsDiocese = false): RouteFilterConfig {
   return {
     key,
-    label: "Giáo xứ",
+    label: "Giáo xứ / giáo họ / giáo điểm",
     type: "select",
     optionsEndpoint: "/parishes",
     optionValue: "id",
@@ -240,6 +240,16 @@ function inferRouteFilters(config: RouteConfig): RouteFilterConfig[] {
       break;
     case "parishes":
       filters.push({ key: "deanery.id", label: "Giáo hạt", type: "select", optionsEndpoint: "/deaneries", optionValue: "id", optionLabel: "name" });
+      filters.push({
+        key: "unitType",
+        label: "Loại đơn vị",
+        type: "select",
+        options: [
+          { value: "PARISH", label: "Giáo xứ" },
+          { value: "GIAO_HO", label: "Giáo họ" },
+          { value: "GIAO_DIEM", label: "Giáo điểm" },
+        ],
+      });
       break;
     case "leaders":
       filters.push(deaneryUnitFilter("parish.deanery.id"));

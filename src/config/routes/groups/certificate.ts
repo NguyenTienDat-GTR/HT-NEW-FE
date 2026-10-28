@@ -61,7 +61,7 @@ export const certificateRouteGroup: RouteGroup = {
         permissionPrefixes: ["training.certificate.read."],
         actionPermissionPrefixes: ["training.certificate.approve.", "training.certificate.revoke.", "training.certificate.reissue."],
         filters: certificateFilters,
-        filterLabels: ["Khóa huấn luyện", "Loại khóa", "Trạng thái", "Giáo hạt", "Giáo xứ", "Năm cấp"],
+        filterLabels: ["Khóa huấn luyện", "Loại khóa", "Trạng thái", "Giáo hạt", "Giáo xứ / giáo họ / giáo điểm", "Năm cấp"],
         workflowHint: "Thu hồi chứng nhận đã duyệt sẽ chuyển hồ sơ của khóa liên kết thành không đạt.",
       }),
       route({
