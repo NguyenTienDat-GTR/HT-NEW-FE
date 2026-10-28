@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
+import { ConfirmActionDialog } from "@/components/common/resource/confirm-action-dialog";
 import { Button } from "@/components/ui/button";
 import { apiFetch, apiMutation, getApiErrorMessage, type PageResponse } from "@/lib/api/client";
 import { hasPermissionPrefix } from "@/lib/auth/permissions";
@@ -18,6 +19,7 @@ export function ParentParishCard({ id, row }: { id: string; row: Record<string, 
   const deaneryId = typeof row.deaneryId === "string" ? row.deaneryId : "";
   const currentParentId = typeof row.parentParishId === "string" ? row.parentParishId : "";
   const [selected, setSelected] = useState(currentParentId);
+  const [confirmPromote, setConfirmPromote] = useState(false);
   const canChange = canChangeParentParish(user?.roles, hasPermissionPrefix(user, "organization.parish.create."));
 
   const optionsQuery = useQuery({
@@ -34,6 +36,17 @@ export function ParentParishCard({ id, row }: { id: string; row: Record<string, 
     mutationFn: () => apiMutation(`/parishes/${encodeURIComponent(id)}/parent`, "PATCH", { parentParishId: selected }),
     onSuccess: async () => {
       toast.success("Đã đổi giáo xứ cha");
+      await queryClient.invalidateQueries({ queryKey: ["resource"] });
+      await queryClient.invalidateQueries({ queryKey: ["resource-detail"] });
+    },
+    onError: (error) => toast.error(getApiErrorMessage(error)),
+  });
+
+  const promote = useMutation({
+    mutationFn: () => apiMutation(`/parishes/${encodeURIComponent(id)}/promote`, "PATCH"),
+    onSuccess: async () => {
+      toast.success("Đã chuyển thành giáo xứ");
+      setConfirmPromote(false);
       await queryClient.invalidateQueries({ queryKey: ["resource"] });
       await queryClient.invalidateQueries({ queryKey: ["resource-detail"] });
     },
@@ -62,7 +75,20 @@ export function ParentParishCard({ id, row }: { id: string; row: Record<string, 
         <Button disabled={!selected || selected === currentParentId} loading={mutation.isPending} onClick={() => mutation.mutate()} type="button" variant="primary">
           Đổi giáo xứ cha
         </Button>
+        <Button onClick={() => setConfirmPromote(true)} type="button" variant="outline">
+          Chuyển thành giáo xứ
+        </Button>
       </div>
+      <ConfirmActionDialog
+        action="toggle"
+        confirmLabel="Chuyển thành giáo xứ"
+        description="Đơn vị trở thành giáo xứ độc lập, không còn thuộc giáo xứ cha. Huynh trưởng và tài khoản giữ nguyên. Nhập chính xác Xác nhận để thực hiện."
+        loading={promote.isPending}
+        onClose={() => setConfirmPromote(false)}
+        onConfirm={() => promote.mutate()}
+        open={confirmPromote}
+        title="Chuyển thành giáo xứ"
+      />
     </section>
   );
 }
