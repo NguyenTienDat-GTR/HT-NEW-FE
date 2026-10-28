@@ -201,6 +201,7 @@ export function CertificateDetailBody({ detail, split }: { detail: ReturnType<ty
           </div>
           )}
           <div className={cn("space-y-4", split && !waiting && "lg:order-1")}>
+            {waiting ? <WaitingNotice row={row} /> : null}
             {sections.filter((section) => section.visible?.(row) ?? true).map((section) => (
               <Section key={section.title} row={row} section={section} />
             ))}
@@ -263,6 +264,25 @@ export function CertificateDetailDrawer({ id, onClose, endpoint }: { id?: string
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
+  );
+}
+
+// Chứng nhận chờ gửi / chờ duyệt không có bản xem trước và nhóm "Thông tin chứng nhận" (chứa ô Trạng thái), nên hiện trạng thái riêng ở đầu trang.
+function WaitingNotice({ row }: { row: Detail }) {
+  const submitted = row.approvalStatus === "SUBMITTED";
+  return (
+    <section className="rounded-xl border border-warning/40 bg-warning/5 p-4 text-sm text-foreground shadow-sm">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <h2 className="text-sm font-semibold">Trạng thái chứng nhận</h2>
+        <ResourceCell column="approvalStatus" displayMode="detail" row={row} value={row.approvalStatus} />
+      </div>
+      <p className="mt-2 text-muted">
+        {submitted
+          ? "Chứng nhận đã được gửi và đang chờ duyệt. Bản xem trước và thông tin chứng nhận chính thức sẽ có sau khi được duyệt."
+          : "Chứng nhận đang chờ xử lý. Bản xem trước và thông tin chứng nhận chính thức sẽ có sau khi được duyệt."}
+      </p>
+      {hasValue(row.certificateCode) ? <p className="mt-1 text-xs text-muted">Mã chứng nhận: {String(row.certificateCode)}</p> : null}
+    </section>
   );
 }
 

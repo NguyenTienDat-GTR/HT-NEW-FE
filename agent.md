@@ -516,3 +516,7 @@ BE tương ứng: `BE/project.md` mục "Training Course Registration Control an
 - Màn `/organization/parishes` đổi tên "Giáo xứ, giáo họ, giáo điểm": form có ô **Loại đơn vị** (không sửa được khi chỉnh sửa) và **Thuộc giáo xứ** (chỉ hiện với giáo họ / giáo điểm, liệt kê giáo xứ cùng giáo hạt qua `/parishes?filters={"deanery.id","unitType":"PARISH"}`); danh sách thêm cột Loại, Thuộc giáo xứ (bỏ cột SĐT, email, tuyên úy để đủ chỗ; xem ở chi tiết / Excel), bộ lọc Loại đơn vị; chi tiết có thêm số giáo họ / giáo điểm.
 - Ô chọn giáo xứ của huynh trưởng (`leaders/form-specs.ts`, `leader-detail-page.tsx`) hiển thị "Giáo họ B - Giáo xứ X" nhờ `optionLabelFields: ["name", "parentParishName"]`.
 - Không tái sinh `schema.d.ts` / `openapi` trong nhánh này (bản commit đã cũ so với BE, tái sinh sẽ kéo theo diff rất lớn không liên quan).
+
+## 2026-10-28 Trạng thái chứng nhận chờ duyệt ở trang chi tiết (nhánh `fix/certificate-pending-status`)
+
+- Chứng nhận `PENDING` / `SUBMITTED` ẩn nhóm "Thông tin chứng nhận" (nhóm duy nhất chứa ô Trạng thái) và bản xem trước, nên trước đây trang chi tiết và drawer không hiện trạng thái nào. `certificate-detail-drawer.tsx` thêm khối `WaitingNotice` ở đầu nội dung (badge trạng thái, giải thích vì sao chưa có bản xem trước, mã chứng nhận), dùng chung cho trang chi tiết và drawer.
