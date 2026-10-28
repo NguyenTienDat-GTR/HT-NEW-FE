@@ -116,7 +116,7 @@ function LeaderInfo({ leader }: { leader: MyLeaderProfile }) {
     { icon: GenderIntersex, label: "Giới tính", value: genderLabel(leader.gender) },
     { icon: EnvelopeSimple, label: "Email", value: displayValue(leader.email) },
     { icon: Phone, label: "Số điện thoại", value: displayValue(leader.phoneNumber) },
-    { icon: Church, label: "Giáo xứ", value: displayValue(leader.parishName) },
+    { icon: Church, label: "Giáo xứ / giáo họ / giáo điểm", value: displayValue(leader.parishName) },
     { icon: MapPin, label: "Giáo hạt", value: displayValue(leader.deaneryName) },
   ];
   return (

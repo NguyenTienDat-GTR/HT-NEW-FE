@@ -41,7 +41,7 @@ export function CandidateFilterBar({
         </select>
       </label>
       <label className="block">
-        <span className="mb-1.5 block text-[13px] font-medium text-text-secondary">Giáo xứ</span>
+        <span className="mb-1.5 block text-[13px] font-medium text-text-secondary">Giáo xứ / giáo họ / giáo điểm</span>
         <select className={selectClass} onChange={(event) => onChange({ ...filters, parishId: event.target.value })} value={filters.parishId}>
           <option value="">Tất cả giáo xứ</option>
           {parishes.map((option) => (

@@ -187,7 +187,7 @@ const ASSIGNMENT_SECTIONS: DetailSection[] = [
         wide: true,
         value: (row) => [row.leaderHolyName, row.leaderFullName].filter((part) => typeof part === "string" && part.trim()).join(" "),
       },
-      { key: "leaderParishName", label: "Giáo xứ" },
+      { key: "leaderParishName", label: "Giáo xứ / giáo họ / giáo điểm" },
       { key: "leaderDeaneryName", label: "Giáo hạt" },
       { key: "positionName", label: "Chức vụ" },
       { key: "unitType", label: "Cấp áp dụng" },
@@ -256,7 +256,7 @@ const PARTICIPATION_SECTIONS: DetailSection[] = [
     fields: [
       { key: "leaderFullName", label: "Họ và tên", wide: true },
       { key: "leaderLevel", label: "Cấp huynh trưởng" },
-      { key: "parishName", label: "Giáo xứ" },
+      { key: "parishName", label: "Giáo xứ / giáo họ / giáo điểm" },
       { key: "deaneryName", label: "Giáo hạt" },
     ],
   },

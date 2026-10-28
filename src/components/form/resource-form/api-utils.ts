@@ -45,7 +45,7 @@ function accountDetails(row: Record<string, unknown>): string[] | undefined {
   const details = [
     roles ? `Vai trò: ${roles}` : undefined,
     leader ? `Huynh trưởng: ${leader}` : undefined,
-    text(row.parishName) ? `Giáo xứ: ${text(row.parishName)}` : undefined,
+    text(row.parishName) ? `Giáo xứ / giáo họ / giáo điểm: ${text(row.parishName)}` : undefined,
     text(row.deaneryName) ? `Giáo hạt: ${text(row.deaneryName)}` : undefined,
   ].filter((item): item is string => Boolean(item));
   return details.length > 0 ? details : undefined;

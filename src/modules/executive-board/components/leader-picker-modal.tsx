@@ -166,7 +166,7 @@ function PickerContent({ selectedId, onClose, onSelect }: { selectedId?: string;
               <th className="py-2">Họ tên</th>
               <th className="py-2">Ngày sinh</th>
               <th className="py-2">Cấp huynh trưởng</th>
-              {showParish ? <th className="py-2">Giáo xứ</th> : null}
+              {showParish ? <th className="py-2">Giáo xứ / giáo họ / giáo điểm</th> : null}
               {showDeanery ? <th className="py-2">Giáo hạt</th> : null}
             </tr>
           </thead>

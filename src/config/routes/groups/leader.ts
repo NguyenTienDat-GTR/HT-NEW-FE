@@ -28,7 +28,7 @@ export const leaderRouteGroup: RouteGroup = {
         actions: {
           edit: { label: "Sửa", permissionPrefixes: ["organization.leader.update."], requiredRoles: ["ADMIN_PARISH", "ROLE_ADMIN_PARISH"] },
         },
-        filterLabels: ["Giáo hạt", "Giáo xứ", "Cấp HT", "Trạng thái"],
+        filterLabels: ["Giáo hạt", "Giáo xứ / giáo họ / giáo điểm", "Cấp HT", "Trạng thái"],
         workflowHint: "Khi chỉnh sửa, hệ thống không gửi lại họ tên, ngày sinh hoặc cấp huynh trưởng.",
       }),
       route({

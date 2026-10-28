@@ -324,7 +324,7 @@ function ProfileTab({
                         error={errors.parishId}
                         editValue={values.parishId}
                         field={leaderEditableFields.parishId}
-                        label="Giáo xứ"
+                        label="Giáo xứ / giáo họ / giáo điểm"
                         onChange={(value) => onChange("parishId", value)}
                         value={leader.parishName}
                     />
@@ -373,12 +373,13 @@ const leaderEditableFields = {
     },
     parishId: {
         name: "parishId",
-        label: "Giáo xứ",
+        label: "Giáo xứ / giáo họ / giáo điểm",
         type: "select",
         required: true,
         optionsEndpoint: "/parishes",
         optionValue: "id",
         optionLabel: "name",
+        optionLabelFields: ["name", "parentParishName"],
     },
 } satisfies Record<string, FormFieldSpec>;
 

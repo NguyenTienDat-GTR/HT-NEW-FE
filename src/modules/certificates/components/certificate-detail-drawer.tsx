@@ -76,7 +76,7 @@ const SECTIONS: SectionSpec[] = [
       { key: "leaderFullName", label: "Họ và tên", always: true },
       { key: "leaderHolyName", label: "Tên thánh" },
       { key: "leaderBirthDate", label: "Ngày sinh" },
-      { key: "leaderParishName", label: "Giáo xứ" },
+      { key: "leaderParishName", label: "Giáo xứ / giáo họ / giáo điểm" },
       { key: "leaderDeaneryName", label: "Giáo hạt" },
       { key: "leaderDioceseName", label: "Giáo phận" },
     ],

@@ -60,7 +60,7 @@ export function ExceptionProfilePanel({ target }: { target: ExceptionReviewTarge
         <dl className="grid grid-cols-2 gap-x-4 gap-y-2.5">
           <Field label="Ngày sinh" value={birth} />
           <Field label="Cấp độ hiện tại" value={levelCode ? leaderLevelName(levelCode) : ""} />
-          <Field label="Giáo xứ" value={target.parishName ?? ""} />
+          <Field label="Giáo xứ / giáo họ / giáo điểm" value={target.parishName ?? ""} />
           <Field label="Giáo hạt" value={target.deaneryName ?? ""} />
         </dl>
       </Group>

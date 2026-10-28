@@ -223,7 +223,7 @@ export const trainingWorkflowRouteGroup: RouteGroup = {
         ],
         actionPermissionPrefixes: ["training.participation.approve."],
         filters: teamFilters,
-        filterLabels: ["Trạng thái tham dự", "Giáo hạt", "Giáo xứ", "Đội"],
+        filterLabels: ["Trạng thái tham dự", "Giáo hạt", "Giáo xứ / giáo họ / giáo điểm", "Đội"],
       }),
       route({
         path: "/training/scores",

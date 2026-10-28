@@ -19,7 +19,7 @@ export const recordColumnLabels: Record<string, string> = {
   gender: "Giới tính",
   birthDate: "Ngày sinh",
   leaderLevel: "Cấp bậc",
-  parish: "Giáo xứ",
+  parish: "Giáo xứ / giáo họ / giáo điểm",
   deanery: "Giáo hạt",
   active: "Đang hoạt động",
   createdDate: "Ngày tạo hồ sơ",

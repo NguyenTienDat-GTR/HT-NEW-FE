@@ -30,7 +30,10 @@ const STATS: Record<UnitKind, Stat[]> = {
     { key: "parishCount", label: "Giáo xứ", tone: "emerald" },
     { key: "leaderCount", label: "Huynh trưởng", tone: "amber" },
   ],
-  parishes: [{ key: "leaderCount", label: "Huynh trưởng", tone: "amber" }],
+  parishes: [
+    { key: "subUnitCount", label: "Giáo họ / giáo điểm", tone: "emerald" },
+    { key: "leaderCount", label: "Huynh trưởng", tone: "amber" },
+  ],
 };
 
 const GENERAL_FIELDS: Record<UnitKind, Field[]> = {
@@ -45,6 +48,8 @@ const GENERAL_FIELDS: Record<UnitKind, Field[]> = {
     { key: "establishmentDate", label: "Ngày thành lập" },
   ],
   parishes: [
+    { key: "unitTypeLabel", label: "Loại đơn vị" },
+    { key: "parentParishName", label: "Thuộc giáo xứ" },
     { key: "chapterName", label: "Xứ đoàn" },
     { key: "patronSaintDay", label: "Ngày bổn mạng" },
     { key: "establishmentDate", label: "Ngày thành lập" },
