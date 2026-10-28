@@ -65,7 +65,7 @@ export const organizationRouteGroup: RouteGroup = {
         idField: "id",
         kind: "parishes",
         icon: Buildings,
-        columns: ["name", "unitTypeLabel", "parentParishName", "chapterName", "leaderCount", "deaneryId", "chaplain", "phoneNumber", "email", "status"],
+        columns: ["name", "unitTypeLabel", "parentParishName", "chapterName", "leaderCount", "deaneryId", "status"],
         sortFields: { leaderCount: null, deaneryId: "deanery.name", unitTypeLabel: "unitType", parentParishName: "parentParish.name" },
         // Chỉ tìm theo thuộc tính entity (leaderCount là số đếm tính ra, không tìm được).
         searchFields: ["name", "chapterName"],
