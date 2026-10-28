@@ -520,3 +520,10 @@ BE tương ứng: `BE/project.md` mục "Training Course Registration Control an
 ## 2026-10-28 Trạng thái chứng nhận chờ duyệt ở trang chi tiết (nhánh `fix/certificate-pending-status`)
 
 - Chứng nhận `PENDING` / `SUBMITTED` ẩn nhóm "Thông tin chứng nhận" (nhóm duy nhất chứa ô Trạng thái) và bản xem trước, nên trước đây trang chi tiết và drawer không hiện trạng thái nào. `certificate-detail-drawer.tsx` thêm khối `WaitingNotice` ở đầu nội dung (badge trạng thái, giải thích vì sao chưa có bản xem trước, mã chứng nhận), dùng chung cho trang chi tiết và drawer.
+## 2026-10-28 Tìm kiếm nhanh ở header (nhánh `feature/header-quick-search`)
+
+- Module mới `src/modules/search/`: `components/quick-search.tsx` (ô nhập ở header từ `md`, dropdown Radix Popover, Ctrl/⌘+K để focus), `components/quick-search-mobile.tsx` (nút kính lúp + hộp thoại dưới `md`), `components/quick-search-results.tsx` (kết quả gom nhóm), `hooks/use-quick-search.ts` (gọi `GET /search/quick?q=&limit=5`), `hooks/use-quick-search-nav.ts` (↑ ↓ Enter Esc), `lib/result-link.ts` (kết quả → đường dẫn).
+- Debounce dùng chung `useDebouncedValue` (400ms) như các ô tìm kiếm khác; chỉ gọi API khi từ khóa từ 2 ký tự trở lên.
+- Phân quyền do BE quyết định: BE chỉ trả nhóm mà tài khoản có quyền đọc, trong phạm vi của tài khoản, nên FE không tự lọc nhóm. Tài khoản `unitLocked` không thấy ô tìm kiếm.
+- Link kết quả: huynh trưởng `/leaders/profiles/:id`, khóa `/training/courses/:courseCode`, chứng chỉ `/certificates/:code`; giáo phận / giáo hạt / giáo xứ mở danh sách với `?detail=:id`.
+- Test: `tests/unit/modules/search/`.
