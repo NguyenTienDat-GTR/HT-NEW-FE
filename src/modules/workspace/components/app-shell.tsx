@@ -1,6 +1,6 @@
 "use client";
 
-import { CaretDown, CaretLeft, List, MagnifyingGlass } from "@phosphor-icons/react";
+import { CaretDown, CaretLeft, List } from "@phosphor-icons/react";
 import * as Popover from "@radix-ui/react-popover";
 import { useQueryClient } from "@tanstack/react-query";
 import type { Route } from "next";
@@ -17,6 +17,8 @@ import { hasPermissionPrefix, isSuperAdmin } from "@/lib/auth/permissions";
 import { cn } from "@/lib/utils";
 import { routeGroups, type RouteConfig, type RouteGroup } from "@/config/routes/routes";
 import { NotificationPopover } from "@/modules/notifications/components/notification-popover";
+import { QuickSearch } from "@/modules/search/components/quick-search";
+import { QuickSearchMobile } from "@/modules/search/components/quick-search-mobile";
 import { HeaderScanButton } from "@/modules/qr-scan/components/header-scan-button";
 import { AccountMenu } from "@/modules/account/components/account-menu";
 import { PROFILE_PATH } from "@/modules/account/account-display";
@@ -143,12 +145,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </div>
             </div>
 
-            <label className="hidden h-10 w-full max-w-[460px] items-center gap-3 rounded-lg border border-border bg-surface-1 px-3 text-sm text-muted md:flex">
-              <MagnifyingGlass className="h-5 w-5" />
-              <span className="truncate">Tìm kiếm nhanh...</span>
-            </label>
+            <QuickSearch />
 
             <div className="flex shrink-0 items-center gap-2">
+              <QuickSearchMobile />
               <HeaderScanButton />
               <NotificationPopover />
               <span aria-hidden className="mx-1 hidden h-6 w-px bg-border sm:block" />

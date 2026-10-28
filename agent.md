@@ -516,3 +516,11 @@ BE tương ứng: `BE/project.md` mục "Training Course Registration Control an
 - Màn `/organization/parishes` đổi tên "Giáo xứ, giáo họ, giáo điểm": form có ô **Loại đơn vị** (không sửa được khi chỉnh sửa) và **Thuộc giáo xứ** (chỉ hiện với giáo họ / giáo điểm, liệt kê giáo xứ cùng giáo hạt qua `/parishes?filters={"deanery.id","unitType":"PARISH"}`); danh sách thêm cột Loại, Thuộc giáo xứ (bỏ cột SĐT, email, tuyên úy để đủ chỗ; xem ở chi tiết / Excel), bộ lọc Loại đơn vị; chi tiết có thêm số giáo họ / giáo điểm.
 - Ô chọn giáo xứ của huynh trưởng (`leaders/form-specs.ts`, `leader-detail-page.tsx`) hiển thị "Giáo họ B - Giáo xứ X" nhờ `optionLabelFields: ["name", "parentParishName"]`.
 - Không tái sinh `schema.d.ts` / `openapi` trong nhánh này (bản commit đã cũ so với BE, tái sinh sẽ kéo theo diff rất lớn không liên quan).
+
+## 2026-10-28 Tìm kiếm nhanh ở header (nhánh `feature/header-quick-search`)
+
+- Module mới `src/modules/search/`: `components/quick-search.tsx` (ô nhập ở header từ `md`, dropdown Radix Popover, Ctrl/⌘+K để focus), `components/quick-search-mobile.tsx` (nút kính lúp + hộp thoại dưới `md`), `components/quick-search-results.tsx` (kết quả gom nhóm), `hooks/use-quick-search.ts` (gọi `GET /search/quick?q=&limit=5`), `hooks/use-quick-search-nav.ts` (↑ ↓ Enter Esc), `lib/result-link.ts` (kết quả → đường dẫn).
+- Debounce dùng chung `useDebouncedValue` (400ms) như các ô tìm kiếm khác; chỉ gọi API khi từ khóa từ 2 ký tự trở lên.
+- Phân quyền do BE quyết định: BE chỉ trả nhóm mà tài khoản có quyền đọc, trong phạm vi của tài khoản, nên FE không tự lọc nhóm. Tài khoản `unitLocked` không thấy ô tìm kiếm.
+- Link kết quả: huynh trưởng `/leaders/profiles/:id`, khóa `/training/courses/:courseCode`, chứng chỉ `/certificates/:code`; giáo phận / giáo hạt / giáo xứ mở danh sách với `?detail=:id`.
+- Test: `tests/unit/modules/search/`.
