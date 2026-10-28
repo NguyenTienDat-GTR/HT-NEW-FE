@@ -24,7 +24,7 @@ export const organizationFormSpecs: ResourceFormSpec[] = [
     description: "Giáo hạt thuộc giáo phận và thông tin liên hệ.",
     fields: [
       { name: "name", label: "Tên giáo hạt", required: true, section: "Thông tin cơ bản" },
-      { name: "associationName", label: "Tên hiệp đoàn", required: true, section: "Thông tin cơ bản" },
+      { name: "associationName", label: "Tên hiệp đoàn", helper: "Không bắt buộc - bỏ trống nếu giáo hạt chưa thành lập hiệp đoàn.", section: "Thông tin cơ bản" },
       {
         name: "dioceseId",
         label: "Giáo phận",
@@ -68,7 +68,7 @@ export const organizationFormSpecs: ResourceFormSpec[] = [
         section: "Thông tin cơ bản",
       },
       { name: "name", label: "Tên đơn vị", required: true, section: "Thông tin cơ bản" },
-      { name: "chapterName", label: "Tên xứ đoàn", required: true, section: "Thông tin cơ bản" },
+      { name: "chapterName", label: "Tên xứ đoàn", helper: "Không bắt buộc - bỏ trống nếu đơn vị chưa thành lập xứ đoàn.", section: "Thông tin cơ bản" },
       {
         name: "deaneryId",
         label: "Giáo hạt",

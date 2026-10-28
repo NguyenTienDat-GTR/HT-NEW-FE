@@ -2312,7 +2312,7 @@ export interface components {
             email?: string;
             /** Format: uuid */
             deaneryId: string;
-            chapterName: string;
+            chapterName?: string;
         };
         LeaderCreateRequest: {
             holyName: string;
@@ -2364,7 +2364,7 @@ export interface components {
             email?: string;
             /** Format: uuid */
             dioceseId: string;
-            associationName: string;
+            associationName?: string;
         };
         CertificateCreateRequest: {
             certificateCode: string;
