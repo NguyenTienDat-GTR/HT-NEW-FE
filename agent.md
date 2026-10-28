@@ -517,6 +517,9 @@ BE tương ứng: `BE/project.md` mục "Training Course Registration Control an
 - Ô chọn giáo xứ của huynh trưởng (`leaders/form-specs.ts`, `leader-detail-page.tsx`) hiển thị "Giáo họ B - Giáo xứ X" nhờ `optionLabelFields: ["name", "parentParishName"]`.
 - Không tái sinh `schema.d.ts` / `openapi` trong nhánh này (bản commit đã cũ so với BE, tái sinh sẽ kéo theo diff rất lớn không liên quan).
 
+## 2026-10-28 Trạng thái chứng nhận chờ duyệt ở trang chi tiết (nhánh `fix/certificate-pending-status`)
+
+- Chứng nhận `PENDING` / `SUBMITTED` ẩn nhóm "Thông tin chứng nhận" (nhóm duy nhất chứa ô Trạng thái) và bản xem trước, nên trước đây trang chi tiết và drawer không hiện trạng thái nào. `certificate-detail-drawer.tsx` thêm khối `WaitingNotice` ở đầu nội dung (badge trạng thái, giải thích vì sao chưa có bản xem trước, mã chứng nhận), dùng chung cho trang chi tiết và drawer.
 ## 2026-10-28 Tìm kiếm nhanh ở header (nhánh `feature/header-quick-search`)
 
 - Module mới `src/modules/search/`: `components/quick-search.tsx` (ô nhập ở header từ `md`, dropdown Radix Popover, Ctrl/⌘+K để focus), `components/quick-search-mobile.tsx` (nút kính lúp + hộp thoại dưới `md`), `components/quick-search-results.tsx` (kết quả gom nhóm), `hooks/use-quick-search.ts` (gọi `GET /search/quick?q=&limit=5`), `hooks/use-quick-search-nav.ts` (↑ ↓ Enter Esc), `lib/result-link.ts` (kết quả → đường dẫn).
