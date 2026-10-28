@@ -49,7 +49,7 @@ export function ChangePasswordView() {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(56,189,248,0.12),transparent_34%),linear-gradient(180deg,var(--background)_0%,var(--primary-soft)_100%)]" />
       <section className="relative m-auto w-full max-w-140 rounded-[18px] border border-white/80 bg-white/90 p-8 shadow-[var(--shadow-elevated)] backdrop-blur-xl sm:p-10">
         <div className="mb-8 flex flex-col items-center text-center">
-          <BrandMark className="justify-center" />
+          <BrandMark className="justify-center" size={72} />
           <span className="mt-6 grid h-12 w-12 place-items-center rounded-[14px] bg-primary/10 text-primary">
             <Key size={24} weight="bold" />
           </span>

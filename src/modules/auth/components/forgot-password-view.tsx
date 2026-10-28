@@ -101,7 +101,7 @@ export function ForgotPasswordView() {
   return (
     <AuthShell maxWidth="max-w-[520px]">
       <div className="mb-6 flex flex-col items-center text-center">
-        <BrandMark className="justify-center" />
+        <BrandMark className="justify-center" size={72} />
         <h1 className="mt-5 text-xl font-semibold text-foreground">Quên mật khẩu</h1>
         <p className="mt-1 text-sm leading-5 text-text-secondary">{stepDescriptions[state.step]}</p>
       </div>

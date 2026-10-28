@@ -8,7 +8,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type React from "react";
 import { useMemo, useState } from "react";
-import { BrandMark } from "@/components/brand/brand-mark";
+import { BRAND_NAME, BRAND_TAGLINE_EN, BRAND_TAGLINE_VI, BrandMark } from "@/components/brand/brand-mark";
 import { ExcelJobsTray } from "@/components/common/resource/excel-jobs-tray";
 import { TooltipIconButton } from "@/components/ui/tooltip-icon-button";
 import { apiFetch } from "@/lib/api/client";
@@ -90,11 +90,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         )}
       >
         <div className={cn("flex h-16 items-center border-b border-border px-4", sidebarCollapsed && "justify-center px-0")}>
-          <BrandMark compact={sidebarCollapsed} />
+          <BrandMark size={40} />
           {!sidebarCollapsed ? (
             <div className="ml-3 min-w-0">
-              <p className="truncate text-sm font-bold text-foreground">HT Management</p>
-              <p className="truncate text-xs text-muted">Quản lí huynh trưởng</p>
+              <p className="truncate text-sm font-bold text-foreground">{BRAND_NAME}</p>
+              <p className="truncate text-xs text-muted">{BRAND_TAGLINE_EN}</p>
             </div>
           ) : null}
         </div>
@@ -109,9 +109,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </button>
         {nav}
         {!sidebarCollapsed ? (
-          <div className="border-t border-border p-4 text-xs leading-5 text-muted">
-            <p className="font-medium text-foreground">© 2026 HT Management</p>
-            <p>Thống nhất để phục vụ.</p>
+          <div className="border-t border-border px-2 py-2 text-center text-[10px] leading-4 text-muted">
+            <p className="whitespace-nowrap font-medium text-foreground">© 2026 {BRAND_NAME}</p>
+            <p className="whitespace-nowrap tracking-tight">{BRAND_TAGLINE_VI}</p>
           </div>
         ) : null}
       </aside>
@@ -120,7 +120,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="fixed inset-0 z-50 bg-foreground/40 backdrop-blur-sm lg:hidden" onClick={() => setMobileOpen(false)}>
           <aside className="flex h-full w-[min(312px,88vw)] flex-col bg-white shadow-[var(--shadow-elevated)]" onClick={(event) => event.stopPropagation()}>
             <div className="flex h-16 items-center justify-between border-b border-border px-4">
-              <BrandMark />
+              <BrandMark size={40} />
               <TooltipIconButton label="Đóng menu" onClick={() => setMobileOpen(false)}>
                 <CaretLeft className="h-5 w-5" />
               </TooltipIconButton>
@@ -138,7 +138,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <List className="h-5 w-5" />
               </TooltipIconButton>
               <div className="hidden min-w-0 sm:block">
-                <p className="truncate text-sm font-semibold text-foreground">{activeRoute?.title ?? (pathname === PROFILE_PATH ? "Hồ sơ cá nhân" : "HT Management")}</p>
+                <p className="truncate text-sm font-semibold text-foreground">{activeRoute?.title ?? (pathname === PROFILE_PATH ? "Hồ sơ cá nhân" : BRAND_NAME)}</p>
                 <p className="truncate text-xs text-muted">{activeGroup?.label ?? (pathname === PROFILE_PATH ? "Tài khoản" : "workspace")}</p>
               </div>
             </div>
