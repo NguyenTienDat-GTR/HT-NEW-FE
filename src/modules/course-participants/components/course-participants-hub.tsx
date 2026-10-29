@@ -29,6 +29,8 @@ type CourseInfo = {
   // Khóa bị vô hiệu hóa hoặc đã kết thúc: chỉ xem / xuất thẻ, không gửi email hay điểm danh.
   disabled: boolean;
   finished: boolean;
+  // Chỉ điểm danh được trong thời gian diễn ra khóa và khi chưa khóa chỉnh sửa điểm; lý do chưa mở (nếu có) hiện ở thông báo.
+  attendanceClosedReason?: string | null;
   // Người duyệt đăng ký đúng cấp quản lý khóa mới gửi email, quét và sửa điểm danh được.
   canManage: boolean;
   // Quyền riêng quét / xác nhận điểm danh (training.attendance.scan.*), không phụ thuộc quyền duyệt đăng ký.
@@ -137,7 +139,7 @@ export function CourseParticipantsHub({ course, search }: { course: CourseInfo; 
   }
 
   const canSend = course.canManage && !course.disabled && !course.finished;
-  const canScan = course.canScan && !course.disabled && !course.finished && course.attendanceEnabled;
+  const canScan = course.canScan && !course.disabled && !course.finished && course.attendanceEnabled && !course.attendanceClosedReason;
   const filters = activeFilterCount(state);
 
   return (
@@ -158,6 +160,7 @@ export function CourseParticipantsHub({ course, search }: { course: CourseInfo; 
       {!course.attendanceEnabled ? (
         <Callout>Khóa chưa bật điểm danh nên chưa quét được mã QR và email thông tin tham dự không kèm mã QR. Bật trong “Sửa khóa” → mục Điểm danh và thẻ tham dự.</Callout>
       ) : null}
+      {course.attendanceEnabled && !course.finished && !course.disabled && course.attendanceClosedReason ? <Callout>{course.attendanceClosedReason}</Callout> : null}
       {course.finished || course.disabled ? <Callout tone="warning">Khóa đã kết thúc hoặc bị vô hiệu hóa: chỉ xuất thẻ và xem tình trạng, không gửi email hay điểm danh được nữa.</Callout> : null}
 
       <Panel className="overflow-hidden">

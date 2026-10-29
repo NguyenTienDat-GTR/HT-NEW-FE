@@ -415,6 +415,7 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
                     autoSendInvitation: course.autoSendInvitation === true,
                     disabled: courseDisabled,
                     finished: Boolean(course.finishedAt),
+                    attendanceClosedReason: attendanceClosedReason(course),
                     canManage,
                     canScan,
                   }}
@@ -475,6 +476,18 @@ function SummaryValue({ column, course }: { column: string; course: Record<strin
 function targetDeaneryNames(course: Record<string, unknown>): string[] {
   const items = Array.isArray(course.targetDeaneries) ? (course.targetDeaneries as { name?: string | null }[]) : [];
   return items.map((item) => item.name).filter((name): name is string => Boolean(name));
+}
+
+// Điểm danh chỉ mở trong thời gian diễn ra khóa và khi chưa khóa chỉnh sửa điểm (BE cũng kiểm tra khi quét).
+function attendanceClosedReason(course: Record<string, unknown>) {
+  const start = typeof course.startDate === "string" ? course.startDate : "";
+  if (!isCourseWithinDates(course)) {
+    return start && new Date().toISOString().slice(0, 10) < start
+      ? `Khóa chưa diễn ra (bắt đầu ngày ${start.split("-").reverse().join("/")}) nên chưa điểm danh được.`
+      : "Khóa không còn trong thời gian diễn ra nên không điểm danh được.";
+  }
+  if (course.scoreLocked === true) return "Khóa đã khóa chỉnh sửa điểm nên không điểm danh được. Mở chỉnh sửa điểm để tiếp tục.";
+  return null;
 }
 
 function scoringWindowHint(course: Record<string, unknown>) {
