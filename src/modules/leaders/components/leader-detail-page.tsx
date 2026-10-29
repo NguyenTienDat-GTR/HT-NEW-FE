@@ -41,6 +41,7 @@ import {ViewModeToggle, type ViewMode} from "@/components/common/resource/view-m
 import {cn} from "@/lib/utils";
 import {formatLeaderLevel} from "@/components/common/resource/resource-format";
 import {
+    actorLabel,
     displayValue,
     formatDate,
     genderLabel,
@@ -341,8 +342,8 @@ function ProfileTab({
                 </div>
                 <div className="mt-4 flex flex-wrap items-center justify-start gap-x-4 gap-y-1.5 border-t border-border pt-3 text-xs text-muted">
                     <StatusBadge active={leader.status === true}/>
-                    <MetaText label="Tạo" value={`${displayValue(leader.createdBy)} · ${formatDate(leader.createdAt)}`}/>
-                    <MetaText label="Cập nhật" value={`${displayValue(leader.updatedBy)} · ${formatDate(leader.updatedAt)}`}/>
+                    <MetaText label="Tạo" value={`${actorLabel(leader.createdByName, leader.createdBy)} · ${formatDate(leader.createdAt)}`}/>
+                    <MetaText label="Cập nhật" value={`${actorLabel(leader.updatedByName, leader.updatedBy)} · ${formatDate(leader.updatedAt)}`}/>
                 </div>
             </SectionCard>
 

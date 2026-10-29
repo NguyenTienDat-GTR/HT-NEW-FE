@@ -7,6 +7,9 @@ export type LeaderDetail = {
   createdBy?: string | null;
   updatedAt?: string | null;
   updatedBy?: string | null;
+  // Tên hiển thị của người tạo / người cập nhật do BE tra từ createdBy / updatedBy (mã huynh trưởng, tài khoản hoặc hệ thống).
+  createdByName?: string | null;
+  updatedByName?: string | null;
   status?: boolean | null;
   holyName?: string | null;
   fullName?: string | null;
@@ -151,4 +154,13 @@ export function workflowLabel(value: string | null | undefined) {
     .replace("FAIL", "Không đạt")
     .replace("DAT", "Đạt")
     .replace("KHONG_DAT", "Không đạt");
+}
+
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// Người thao tác: ưu tiên tên do BE tra; nếu chỉ còn mã UUID (hồ sơ không còn tra được) thì không hiện mã thô cho người dùng.
+export function actorLabel(name?: string | null, raw?: string | null) {
+  if (name && name.trim()) return name;
+  if (!raw || !raw.trim()) return "—";
+  return UUID_PATTERN.test(raw.trim()) ? "Không xác định" : raw;
 }
