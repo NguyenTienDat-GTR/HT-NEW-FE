@@ -159,7 +159,7 @@ export function CoursesTab({ data, filters, busy, onDrill }: TabProps) {
   const select = (dimension: string) => (bar: BarItem) => drill(dimension, bar.key.slice(dimension.length + 1), bar.label);
 
   const columns: Column<Breakdown>[] = [
-    { key: "name", label: "Khóa học", render: (row) => <span className="block max-w-[260px] truncate font-medium" title={row.label ?? row.key}>{row.label ?? row.key}</span>, sort: (row) => row.label ?? row.key },
+    { key: "name", label: "Khóa huấn luyện", render: (row) => <span className="block max-w-[260px] truncate font-medium" title={row.label ?? row.key}>{row.label ?? row.key}</span>, sort: (row) => row.label ?? row.key },
     { key: "type", label: "Loại khóa", render: (row) => <span className="block max-w-[180px] truncate text-text-secondary">{String(row.metrics.courseTypeLabel ?? "—")}</span>, sort: (row) => String(row.metrics.courseTypeLabel ?? "") },
     { key: "start", label: "Bắt đầu", render: (row) => String(row.metrics.startDate ?? "").split("-").reverse().join("/"), sort: (row) => String(row.metrics.startDate ?? "") },
     { key: "state", label: "Trạng thái", render: (row) => keyLabel(String(row.metrics.organizingStatus ?? "")), sort: (row) => String(row.metrics.organizingStatus ?? "") },
@@ -301,7 +301,7 @@ export function CertificatesTab({ data, filters, busy, onDrill }: TabProps) {
         <SectionCard busy={busy} defer description="Chứng nhận đã duyệt chia theo thời gian từ lúc tạo đến lúc duyệt." title="Tốc độ duyệt" tone="var(--viz-2)">
           <ColumnChart ariaLabel="Phân bố thời gian duyệt" color="var(--viz-2)" items={breakdownsOf(data, "approvalTime").map((item) => ({ key: item.key, label: keyLabel(item.key), value: metricNumber(item, "count"), color: STATUS_COLOR[item.key] }))} />
         </SectionCard>
-        <SectionCard busy={busy} defer description="Chứng nhận theo khóa học, nhiều nhất trước." title="Theo khóa học">
+        <SectionCard busy={busy} defer description="Chứng nhận theo khóa huấn luyện, nhiều nhất trước." title="Theo khóa huấn luyện">
           <BarList ariaLabel="Chứng nhận theo khóa" items={asBars(breakdownsOf(data, "course"), "course")} onSelect={select("course")} />
         </SectionCard>
         <SectionCard busy={busy} defer title="Theo loại khóa">

@@ -145,7 +145,7 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
     kind: "courses",
     createTitle: "Tạo khóa huấn luyện",
     editTitle: "Chỉnh sửa khóa huấn luyện",
-    description: "Khóa học, thời gian, cửa sổ đăng ký và điểm đạt. Sau khi khóa có hồ sơ tham gia, không đổi được loại khóa, năm tổ chức, số năm hoạt động và điểm đạt.",
+    description: "Khóa huấn luyện, thời gian, cửa sổ đăng ký và điểm đạt. Sau khi khóa có hồ sơ tham gia, không đổi được loại khóa, năm tổ chức, số năm hoạt động và điểm đạt.",
     getInitialValues: () => ({ yearsActive: 0, autoApproveEligible: false, scoreVisible: false, attendanceEnabled: false, autoSendInvitation: false, openToOtherDeaneries: false }),
     fields: [
       { name: "courseName", label: "Tên khóa", required: true, section: "Thông tin khóa" },

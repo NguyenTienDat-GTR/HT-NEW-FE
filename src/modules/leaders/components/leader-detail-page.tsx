@@ -26,11 +26,12 @@ import {FormField} from "@/components/form/resource-form/form-controls";
 import type {FormFieldSpec} from "@/components/form/resource-form/types";
 import {Button} from "@/components/ui/button";
 import {Panel} from "@/components/ui/panel";
-import type {RouteConfig} from "@/config/routes/routes";
+import {findRoute, type RouteConfig} from "@/config/routes/routes";
 import {apiFetch, getApiErrorMessage, type PageResponse} from "@/lib/api/client";
 import {serializeBaseSearch} from "@/lib/api/search";
 import {useAuthStore} from "@/lib/auth/auth-store";
 import {canUseAction, hasPermissionPrefix} from "@/lib/auth/permissions";
+import {DetailDrawer} from "@/components/common/resource/detail-drawer";
 import {CertificateDetailDrawer} from "@/modules/certificates/components/certificate-detail-drawer";
 import {CertificateCard} from "@/modules/certificates/components/certificate-card";
 import {ViewModeToggle, type ViewMode} from "@/components/common/resource/view-mode-toggle";
@@ -488,6 +489,7 @@ function MetaText({label, value}: { label: string; value: string }) {
 }
 
 function CourseTab({leaderId}: { leaderId: string }) {
+    const [viewingId, setViewingId] = useState<string | null>(null);
     const query = useQuery({
         queryKey: ["leader-detail-courses", leaderId],
         queryFn: () =>
@@ -495,20 +497,41 @@ function CourseTab({leaderId}: { leaderId: string }) {
                 `/training/participations?${leaderRelatedQuery({"leader.id": leaderId}, "registrationDate")}`,
             ),
     });
+    // Drawer chi tiết hồ sơ tham dự dùng chung với màn đăng ký; BE đã che điểm theo quyền xem điểm của khóa.
+    const participationRoute = findRoute("/training/registrations");
     return (
-        <RelatedPanel
-            columns={["Khóa học", "Ngày đăng ký", "Trạng thái", "Điểm", "Kết quả"]}
-            error={query.isError ? getApiErrorMessage(query.error) : undefined}
-            loading={query.isLoading}
-            rows={(query.data?.content ?? []).map((row) => [
-                row.courseName ?? row.courseCode,
-                formatDate(row.registrationDate),
-                workflowLabel(row.participationStatus),
-                row.scoreHidden === true ? "Không hiển thị" : scoreText(row.totalScore, row.passingScore),
-                row.passed === undefined || row.passed === null ? workflowLabel(row.result) : row.passed ? "Đạt" : "Không đạt",
-            ])}
-            title="Khóa đã tham dự"
-        />
+        <>
+            <RelatedPanel
+                columns={["Khóa huấn luyện", "Ngày đăng ký", "Trạng thái", "Điểm", "Kết quả", "Nhận xét", "Xem"]}
+                error={query.isError ? getApiErrorMessage(query.error) : undefined}
+                loading={query.isLoading}
+                rows={(query.data?.content ?? []).map((row) => [
+                    row.courseName ?? row.courseCode,
+                    formatDate(row.registrationDate),
+                    workflowLabel(row.participationStatus),
+                    row.scoreHidden === true ? "Không hiển thị" : scoreText(row.totalScore, row.passingScore),
+                    row.passed === undefined || row.passed === null ? workflowLabel(row.result) : row.passed ? "Đạt" : "Không đạt",
+                    row.scoreHidden === true ? "Không hiển thị" : row.scoreNote,
+                    row.id ? (
+                        <Button
+                            aria-label="Xem chi tiết kết quả khóa huấn luyện"
+                            className="h-8 min-w-8 rounded-lg"
+                            onClick={() => setViewingId(row.id ?? null)}
+                            size="icon"
+                            type="button"
+                            variant="icon"
+                        >
+                            <Eye size={16}/>
+                        </Button>
+                    ) : null,
+                ])}
+                title="Khóa đã tham dự"
+            />
+            {participationRoute ? (
+                <DetailDrawer id={viewingId} onClose={() => setViewingId(null)}
+                              route={{...participationRoute, title: "Kết quả khóa huấn luyện"}}/>
+            ) : null}
+        </>
     );
 }
 
@@ -543,7 +566,7 @@ function CertificateTab({leaderId}: { leaderId: string }) {
                         ))}
                     </ul>
                 ) : undefined}
-                columns={["Chứng nhận", "Khóa học", "Ngày cấp", "Trạng thái", "Người ký", "Xem"]}
+                columns={["Chứng nhận", "Khóa huấn luyện", "Ngày cấp", "Trạng thái", "Người ký", "Xem"]}
                 error={query.isError ? getApiErrorMessage(query.error) : undefined}
                 loading={query.isLoading}
                 rows={(query.data ?? []).map((row) => [
