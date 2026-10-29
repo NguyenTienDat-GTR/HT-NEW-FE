@@ -59,7 +59,7 @@ export function validateImageFile(file: File, preset: ImagePreset) {
 export type CropRect = { x: number; y: number; width: number; height: number };
 
 // Cắt đúng vùng người dùng đã căn trong khung 4x6 và xuất JPEG khổ dọc (rộng tối đa 480px, cao tối đa 720px).
-export async function cropPortraitToFile(image: CanvasImageSource, rect: CropRect, name: string): Promise<File> {
+export async function cropPortraitToFile(image: CanvasImageSource, rect: CropRect, name: string, quality: number = PRESETS.avatar.quality): Promise<File> {
   const outWidth = Math.max(1, Math.min(Math.round(AVATAR_MAX_HEIGHT * AVATAR_ASPECT), Math.round(rect.width)));
   const outHeight = Math.max(1, Math.round(outWidth / AVATAR_ASPECT));
   const canvas = document.createElement("canvas");
@@ -71,7 +71,7 @@ export async function cropPortraitToFile(image: CanvasImageSource, rect: CropRec
   context.fillRect(0, 0, outWidth, outHeight);
   context.imageSmoothingQuality = "high";
   context.drawImage(image, rect.x, rect.y, rect.width, rect.height, 0, 0, outWidth, outHeight);
-  const blob = await toBlob(canvas, PRESETS.avatar.quality);
+  const blob = await toBlob(canvas, quality);
   const baseName = name.replace(/\.[^.]+$/, "") || "avatar";
   return new File([blob], `${baseName}.jpg`, { type: "image/jpeg" });
 }
