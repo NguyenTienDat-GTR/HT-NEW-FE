@@ -30,6 +30,8 @@ export type RankHistoryRow = {
   newLevel?: string | null;
   promotionDate?: string | null;
   note?: string | null;
+  courseCode?: string | null;
+  courseName?: string | null;
 };
 
 export type CourseParticipationRow = {
@@ -45,6 +47,7 @@ export type CourseParticipationRow = {
   passed?: boolean | null;
   result?: string | null;
   review?: string | null;
+  scoreNote?: string | null;
   approvalStatus?: string | null;
   certificateApprovalStatus?: string | null;
   status?: boolean | null;

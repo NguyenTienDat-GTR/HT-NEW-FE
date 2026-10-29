@@ -10,7 +10,7 @@ import { datePresets, presetLabel } from "@/modules/analytics/presets";
 import { defaultFilters, type AnalyticsFilterState, type FilterOption, type FilterOptions, type ScopeOption, type ScopeType } from "@/modules/analytics/types";
 
 export type FilterVisibility = {
-  /** Bộ lọc theo khóa: loại khóa, khóa học. */
+  /** Bộ lọc theo khóa: loại khóa, khóa huấn luyện. */
   course?: boolean;
   /** Bộ lọc theo nhân sự: cấp bậc, giới tính. */
   leader?: boolean;
@@ -224,7 +224,7 @@ export function FilterBar({ filters, onChange, options, scope, scopes, visible =
             {showDeanery ? <Select label="Giáo hạt" onChange={(value) => set({ deaneryId: value, parishId: "" })} options={options?.deaneries ?? []} value={filters.deaneryId} /> : null}
             {showParish ? <Select label="Giáo xứ / giáo họ / giáo điểm" onChange={(value) => set({ parishId: value })} options={parishes} value={filters.parishId} /> : null}
             {course ? <Select label="Loại khóa" onChange={(value) => set({ courseType: value, courseCode: "" })} options={options?.courseTypes ?? []} value={filters.courseType} /> : null}
-            {course ? <Select label="Khóa học" onChange={(value) => set({ courseCode: value })} options={courses} value={filters.courseCode} /> : null}
+            {course ? <Select label="Khóa huấn luyện" onChange={(value) => set({ courseCode: value })} options={courses} value={filters.courseCode} /> : null}
             {leader ? <Select label="Cấp bậc" onChange={(value) => set({ leaderLevel: value })} options={options?.leaderLevels ?? []} value={filters.leaderLevel} /> : null}
             {leader ? <Select label="Giới tính" onChange={(value) => set({ gender: value })} options={genderOptions} value={filters.gender} /> : null}
             {groupBy ? <Select label="Phân tích theo nhóm" onChange={(value) => set({ groupBy: value })} options={groupOptions.filter((option) => option.value !== "")} placeholder="Không nhóm thêm" value={filters.groupBy} /> : null}

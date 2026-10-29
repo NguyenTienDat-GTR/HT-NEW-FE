@@ -23,7 +23,7 @@ export const recordColumnLabels: Record<string, string> = {
   deanery: "Giáo hạt",
   active: "Đang hoạt động",
   createdDate: "Ngày tạo hồ sơ",
-  courseName: "Khóa học",
+  courseName: "Khóa huấn luyện",
   courseType: "Loại khóa",
   issueDate: "Ngày cấp",
   startDate: "Ngày bắt đầu khóa",

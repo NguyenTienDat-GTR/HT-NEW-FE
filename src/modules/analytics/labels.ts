@@ -129,7 +129,7 @@ export const groupByOptions: { value: string; label: string; scopes?: string[] }
   { value: "deanery", label: "Giáo hạt", scopes: ["diocese"] },
   { value: "parish", label: "Giáo xứ / giáo họ / giáo điểm", scopes: ["diocese", "deanery"] },
   { value: "courseType", label: "Loại khóa" },
-  { value: "course", label: "Khóa học" },
+  { value: "course", label: "Khóa huấn luyện" },
   { value: "leaderLevel", label: "Cấp bậc" },
   { value: "gender", label: "Giới tính" },
   { value: "year", label: "Năm" },

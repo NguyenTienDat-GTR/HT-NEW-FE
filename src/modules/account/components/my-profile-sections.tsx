@@ -106,7 +106,7 @@ export function CertificatesSection({ certificates }: { certificates: Certificat
           <table className="w-full min-w-[640px] text-left text-sm">
             <thead className="bg-surface-2 text-xs uppercase tracking-wide text-muted">
               <tr>
-                {["Chứng nhận", "Khóa học", "Ngày cấp", "Trạng thái", "Xem"].map((column) => (
+                {["Chứng nhận", "Khóa huấn luyện", "Ngày cấp", "Trạng thái", "Xem"].map((column) => (
                   <th className="px-4 py-2.5 font-semibold" key={column} scope="col">
                     {column}
                   </th>
