@@ -186,6 +186,11 @@ export async function downloadFile(path: string, fallbackName: string) {
 // Một dòng lỗi khi import Excel: sheet, số dòng (theo Excel), cột và nội dung.
 export type ImportErrorRow = { sheet: string; row: number; column: string; message: string };
 
+// Cảnh báo riêng của ảnh khi import: dữ liệu vẫn được lưu, chỉ hồ sơ này không có ảnh.
+export type AvatarWarning = { row: number; fullName: string; fileName: string; reason: string };
+
+export type AvatarJobStatus = "PENDING" | "RUNNING" | "DONE";
+
 export type ExcelJobStatus = "QUEUED" | "RUNNING" | "SUCCEEDED" | "FAILED" | "CANCELLED";
 
 // Tác vụ Excel chạy nền (xuất / nhập) do backend quản lý.
@@ -198,6 +203,12 @@ export type ExcelJob = {
   status: ExcelJobStatus;
   processed: number;
   total: number;
+  // Ảnh đại diện được xử lý sau khi dữ liệu Excel đã lưu: job có thể SUCCEEDED trong khi ảnh còn đang gắn.
+  avatarStatus?: AvatarJobStatus | null;
+  avatarProcessed?: number | null;
+  avatarTotal?: number | null;
+  avatarSucceeded?: number | null;
+  avatarWarnings?: AvatarWarning[] | null;
   warning?: string | null;
   errorMessage?: string | null;
   errors?: ImportErrorRow[] | null;
@@ -224,10 +235,11 @@ export function createExcelExportJob(path: string, idempotencyKey: string) {
   return apiFetch<ExcelJob>(path, { method: "POST", headers: { "Idempotency-Key": idempotencyKey } });
 }
 
-// Tải file Excel lên và tạo tác vụ nhập nền (multipart).
-export function createExcelImportJob(path: string, file: File, idempotencyKey: string) {
+// Tải file Excel (kèm ZIP ảnh đại diện nếu có) lên và tạo tác vụ nhập nền (multipart).
+export function createExcelImportJob(path: string, file: File, idempotencyKey: string, images?: File | null) {
   const form = new FormData();
   form.append("file", file);
+  if (images) form.append("images", images);
   return apiFetch<ExcelJob>(path, { method: "POST", body: form, headers: { "Idempotency-Key": idempotencyKey } });
 }
 

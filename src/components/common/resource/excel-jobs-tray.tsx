@@ -6,8 +6,9 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { cancelExcelJob, downloadExcelJobFile, fetchExcelJob, getApiErrorMessage, type ExcelJob } from "@/lib/api/client";
-import { excelJobsStore, isActiveJob, restoreExcelJobs, useExcelJobs } from "@/lib/jobs/excel-jobs-store";
+import { excelJobsStore, isActiveJob, isAvatarPending, needsPolling, restoreExcelJobs, useExcelJobs } from "@/lib/jobs/excel-jobs-store";
 import { cn } from "@/lib/utils";
+import { AvatarWarningsList } from "./avatar-warnings-list";
 import { ImportErrorsTable } from "./import-errors-table";
 
 const POLL_MS = 2500;
@@ -26,6 +27,7 @@ export function ExcelJobsTray() {
   const queryClient = useQueryClient();
   const [collapsed, setCollapsed] = useState(false);
   const [openErrors, setOpenErrors] = useState<string | null>(null);
+  const [openAvatarWarnings, setOpenAvatarWarnings] = useState<string | null>(null);
   // Trạng thái đã thông báo cho từng job, để mỗi kết quả chỉ báo một lần dù poll nhiều lần hay tải lại trang.
   const notified = useRef<Map<string, string>>(new Map());
 
@@ -33,13 +35,13 @@ export function ExcelJobsTray() {
     restoreExcelJobs();
   }, []);
 
-  const anyActive = jobs.some(isActiveJob);
+  const anyActive = jobs.some(needsPolling);
 
   useEffect(() => {
     if (!anyActive) return;
     let stopped = false;
     const tick = async () => {
-      for (const job of excelJobsStore.getState().jobs.filter(isActiveJob)) {
+      for (const job of excelJobsStore.getState().jobs.filter(needsPolling)) {
         try {
           const next = await fetchExcelJob(job.id);
           if (stopped) return;
@@ -61,12 +63,16 @@ export function ExcelJobsTray() {
   }, [anyActive]);
 
   async function announce(job: ExcelJob) {
-    if (notified.current.get(job.id) === job.status) return;
+    // Khóa gồm cả trạng thái ảnh: import xong dữ liệu báo một lần, ảnh gắn xong báo thêm một lần.
+    const key = `${job.status}|${job.avatarStatus ?? ""}`;
+    const previous = notified.current.get(job.id);
+    if (previous === key) return;
     if (!["SUCCEEDED", "FAILED", "CANCELLED"].includes(job.status)) return;
-    notified.current.set(job.id, job.status);
+    notified.current.set(job.id, key);
     if (job.status === "SUCCEEDED") {
       if (job.importJob) {
-        toast.success(job.resultMessage ?? `${job.label} hoàn tất`);
+        if (previous === undefined) toast.success(job.resultMessage ?? `${job.label} hoàn tất`);
+        if (job.avatarStatus === "DONE") announceAvatars(job);
         // Dữ liệu đã đổi: làm mới các danh sách / chi tiết đang mở.
         await queryClient.invalidateQueries({ queryKey: ["resource"] });
         await queryClient.invalidateQueries({ queryKey: ["resource-detail"] });
@@ -79,6 +85,17 @@ export function ExcelJobsTray() {
     } else if (job.status === "FAILED") {
       toast.error(job.errorMessage ?? `${job.label} thất bại`, { duration: 12000 });
       if (job.importJob && job.errors?.length) setOpenErrors(job.id);
+    }
+  }
+
+  function announceAvatars(job: ExcelJob) {
+    const failed = job.avatarWarnings?.length ?? 0;
+    const succeeded = job.avatarSucceeded ?? 0;
+    if (failed > 0) {
+      toast.warning(`Đã gắn ${succeeded} ảnh, ${failed} hồ sơ không có ảnh. Xem chi tiết ở khay tác vụ.`, { duration: 15000 });
+      setOpenAvatarWarnings(job.id);
+    } else if (succeeded > 0) {
+      toast.success(`Đã gắn ${succeeded} ảnh đại diện`);
     }
   }
 
@@ -150,6 +167,16 @@ export function ExcelJobsTray() {
                 ) : null}
                 {job.status === "FAILED" && job.errorMessage ? <p className="text-xs text-danger">{job.errorMessage}</p> : null}
                 {job.status === "SUCCEEDED" && job.importJob && job.resultMessage ? <p className="text-xs text-success">{job.resultMessage}</p> : null}
+                {isAvatarPending(job) ? (
+                  <p className="text-xs text-muted">
+                    Đang gắn ảnh đại diện · {job.avatarProcessed ?? 0}/{job.avatarTotal ?? 0}
+                  </p>
+                ) : null}
+                {job.avatarStatus === "DONE" && (job.avatarTotal ?? 0) > 0 ? (
+                  <p className="text-xs text-success">
+                    Đã gắn ảnh đại diện cho {job.avatarSucceeded ?? 0}/{job.avatarTotal} hồ sơ
+                  </p>
+                ) : null}
                 <div className="flex flex-wrap items-center gap-2">
                   {job.status === "SUCCEEDED" && job.downloadable ? (
                     <Button onClick={() => void download(job)} size="sm" type="button" variant="outline">
@@ -162,6 +189,11 @@ export function ExcelJobsTray() {
                       {openErrors === job.id ? "Ẩn lỗi" : `Xem ${job.errors.length} lỗi`}
                     </Button>
                   ) : null}
+                  {job.avatarWarnings?.length ? (
+                    <Button onClick={() => setOpenAvatarWarnings(openAvatarWarnings === job.id ? null : job.id)} size="sm" type="button" variant="outline">
+                      {openAvatarWarnings === job.id ? "Ẩn lỗi ảnh" : `Xem ${job.avatarWarnings.length} hồ sơ lỗi ảnh`}
+                    </Button>
+                  ) : null}
                   {active && (!job.importJob || job.status === "QUEUED") ? (
                     <Button onClick={() => void cancel(job)} size="sm" type="button" variant="ghost">
                       Hủy
@@ -169,6 +201,7 @@ export function ExcelJobsTray() {
                   ) : null}
                 </div>
                 {openErrors === job.id && job.errors?.length ? <ImportErrorsTable errors={job.errors} /> : null}
+                {openAvatarWarnings === job.id && job.avatarWarnings?.length ? <AvatarWarningsList warnings={job.avatarWarnings} /> : null}
               </li>
             );
           })}

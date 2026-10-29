@@ -9,6 +9,11 @@ vi.mock("@/lib/media/compress-image", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/media/compress-image")>();
   return { ...actual, cropPortraitToFile: vi.fn() };
 });
+// Hộp thoại tự căn khuôn mặt: bài test này kiểm tra cách căn tay nên coi như chưa có bộ nhận diện.
+vi.mock("@/lib/media/face-frame", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/media/face-frame")>();
+  return { ...actual, suggestFaceFrame: vi.fn(async () => ({ status: "no-detector" as const, frame: null })) };
+});
 vi.mock("@/lib/media/upload-media", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/media/upload-media")>();
   return { ...actual, uploadPreparedMedia: vi.fn() };

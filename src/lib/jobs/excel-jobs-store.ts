@@ -70,3 +70,13 @@ export function useExcelJobs() {
 export function isActiveJob(job: ExcelJob) {
   return !EXCEL_JOB_TERMINAL.includes(job.status);
 }
+
+// Dữ liệu đã lưu nhưng ảnh đại diện còn đang được gắn vào hồ sơ.
+export function isAvatarPending(job: ExcelJob) {
+  return job.avatarStatus === "PENDING" || job.avatarStatus === "RUNNING";
+}
+
+// Cần tiếp tục poll: job còn chạy hoặc ảnh chưa gắn xong.
+export function needsPolling(job: ExcelJob) {
+  return isActiveJob(job) || isAvatarPending(job);
+}
