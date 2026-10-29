@@ -111,7 +111,7 @@ export function ResourceCardList({
               {badges.length > 0 ? (
                 <div className="flex flex-wrap items-center gap-1.5">
                   {badges.map((column) => (
-                    <ResourceCell column={column} displayMode="detail" key={column} row={row} value={row[column]} />
+                    <ResourceCell column={column} displayMode="detail" fullNames={leaders} key={column} row={row} value={row[column]} />
                   ))}
                 </div>
               ) : null}
@@ -123,7 +123,7 @@ export function ResourceCardList({
                       <div className="min-w-0" key={column}>
                         <dt className="text-[11px] font-semibold uppercase tracking-wide text-text-secondary">{columnLabels[column] ?? column}</dt>
                         <dd className="mt-0.5 min-w-0 text-foreground [overflow-wrap:anywhere]">
-                          {cellEditors?.[column] ? cellEditors[column](row) : <ResourceCell column={column} displayMode="detail" row={row} value={row[column]} />}
+                          {cellEditors?.[column] ? cellEditors[column](row) : <ResourceCell column={column} displayMode="detail" fullNames={leaders} row={row} value={row[column]} />}
                         </dd>
                       </div>
                     ))}

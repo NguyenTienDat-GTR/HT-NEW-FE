@@ -3,6 +3,7 @@
 import { ArrowCounterClockwise, Check, EnvelopeSimple, EnvelopeSimpleOpen, Warning } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Pill } from "@/modules/badges/components/form-controls";
+import { shortUnitName } from "@/lib/unit-name";
 import type { ParticipantRow } from "../types";
 
 export function formatTime(value?: string | null) {
@@ -105,8 +106,8 @@ export function ParticipantsTable({
                 </button>
               </td>
               <td className="px-3 py-2.5 text-text-secondary">
-                <span className="block">{row.parishName ?? "—"}</span>
-                <span className="block text-xs text-muted">{row.deaneryName ?? ""}</span>
+                <span className="block">{shortUnitName(row.parishName) || "—"}</span>
+                <span className="block text-xs text-muted">{shortUnitName(row.deaneryName)}</span>
               </td>
               <td className="px-3 py-2.5">{row.teamName ? <Pill>{row.teamName}</Pill> : <span className="text-muted">Chưa chia đội</span>}</td>
               <td className="max-w-[220px] px-3 py-2.5 text-text-secondary">
