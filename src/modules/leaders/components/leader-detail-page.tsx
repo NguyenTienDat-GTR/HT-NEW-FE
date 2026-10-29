@@ -1,5 +1,8 @@
 "use client";
 
+import {AvatarLightbox} from "@/components/common/avatar-lightbox";
+import {AvatarUploadDialog} from "@/components/common/avatar-upload-dialog";
+import {MediaImage} from "@/components/common/media-image";
 import {
     BookOpen,
     Certificate as CertificateIcon,
@@ -62,6 +65,8 @@ type LeaderEditValues = {
     email: string;
     phoneNumber: string;
     imageUrl: string;
+    // Id ảnh vừa tải lên (rỗng nếu không đổi ảnh); backend chỉ nhận id, không nhận URL ảnh.
+    imageAssetId: string;
     gender: string;
     parishId: string;
 };
@@ -123,7 +128,8 @@ export function LeaderDetailPage({id, route}: LeaderDetailPageProps) {
     if (!leader) return null;
     const headerLeader = editingProfile ? {
         ...leader,
-        imageUrl: editValues.imageUrl === "__CLEAR__" ? null : editValues.imageUrl
+        imageUrl: editValues.imageUrl,
+        imageThumbUrl: editValues.imageUrl
     } : leader;
 
     return (
@@ -150,7 +156,7 @@ export function LeaderDetailPage({id, route}: LeaderDetailPageProps) {
                         <EditableLeaderAvatar
                             editing={editingProfile && activeTab === "profile"}
                             leader={headerLeader}
-                            onChange={(value) => setEditValues((current) => ({...current, imageUrl: value}))}
+                            onChange={(url, assetId) => setEditValues((current) => ({...current, imageUrl: url, imageAssetId: assetId}))}
                         />
                         <div className="min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
@@ -354,6 +360,7 @@ const emptyLeaderEditValues: LeaderEditValues = {
     email: "",
     phoneNumber: "",
     imageUrl: "",
+    imageAssetId: "",
     gender: "",
     parishId: "",
 };
@@ -390,6 +397,7 @@ function valuesFromLeader(leader: LeaderDetail): LeaderEditValues {
         email: leader.email ?? "",
         phoneNumber: leader.phoneNumber ?? "",
         imageUrl: leader.imageUrl ?? "",
+        imageAssetId: leader.imageAssetId ?? "",
         gender: leader.gender ?? "",
         parishId: leader.parishId ?? "",
     };
@@ -416,8 +424,8 @@ function toLeaderUpdatePayload(values: LeaderEditValues) {
     if (values.phoneNumber.trim()) payload.phoneNumber = values.phoneNumber.trim();
     else clearFields.push("phoneNumber");
 
-    if (values.imageUrl === "__CLEAR__") clearFields.push("imageUrl");
-    else if (values.imageUrl.trim()) payload.imageUrl = values.imageUrl;
+    // Ảnh đại diện chỉ được thay bằng ảnh khác (không có thao tác xóa).
+    if (values.imageAssetId) payload.imageAssetId = values.imageAssetId;
 
     if (clearFields.length) payload.clearFields = clearFields;
     return payload;
@@ -737,60 +745,42 @@ function EditableLeaderAvatar({
                               }: {
     leader: LeaderDetail;
     editing: boolean;
-    onChange: (value: string) => void;
+    onChange: (url: string, assetId: string) => void;
 }) {
     const name = leader.fullName ?? leader.holyName ?? "HT";
     const initial = name.trim().charAt(0).toUpperCase() || "H";
-    const inputId = `leader-avatar-${leader.id ?? "current"}`;
+    const [dialogOpen, setDialogOpen] = useState(false);
     return (
         <div className="flex shrink-0 flex-col items-start gap-2">
-            {leader.imageUrl ? (
-                <span
-                    aria-label={name}
-                    className="block h-20 w-20 rounded-full border-2 border-white bg-cover bg-center shadow-sm ring-1 ring-border"
-                    role="img"
-                    style={{backgroundImage: `url(${leader.imageUrl})`}}
+            <AvatarLightbox name={name} src={leader.imageUrl}>
+                <MediaImage
+                    alt={name}
+                    className="block h-20 w-20 rounded-full border-2 border-white shadow-sm ring-1 ring-border"
+                    fallback={
+                        <span
+                            className="flex h-20 w-20 items-center justify-center rounded-full bg-primary text-2xl font-semibold text-white ring-1 ring-border">
+                            {editing ? <ImageSquare size={28} weight="duotone"/> : initial}
+                        </span>
+                    }
+                    src={leader.imageUrl}
                 />
-            ) : (
-                <span
-                    className="flex h-20 w-20 items-center justify-center rounded-full bg-primary text-2xl font-semibold text-white ring-1 ring-border">
-                    {editing ? <ImageSquare size={28} weight="duotone"/> : initial}
-                </span>
-            )}
+            </AvatarLightbox>
             {editing ? (
                 <div className="flex flex-wrap items-center gap-2">
-                    <input
-                        accept="image/*"
-                        className="sr-only"
-                        id={inputId}
-                        onChange={(event) => {
-                            const file = event.target.files?.[0];
-                            if (!file) return;
-                            const reader = new FileReader();
-                            reader.onload = () => {
-                                if (typeof reader.result === "string") onChange(reader.result);
-                            };
-                            reader.readAsDataURL(file);
-                            event.target.value = "";
-                        }}
-                        type="file"
-                    />
-                    <label
+                    <button
                         className="inline-flex min-h-9 cursor-pointer items-center gap-2 rounded-[8px] border border-border bg-white px-3 text-xs font-semibold text-foreground shadow-sm transition-colors hover:border-primary hover:text-primary"
-                        htmlFor={inputId}
+                        onClick={() => setDialogOpen(true)}
+                        type="button"
                     >
                         <ImageSquare size={15}/>
                         Thay đổi ảnh
-                    </label>
-                    {leader.imageUrl ? (
-                        <button
-                            className="inline-flex min-h-9 cursor-pointer items-center rounded-[8px] px-2 text-xs font-semibold text-muted transition-colors hover:bg-surface-1 hover:text-danger"
-                            onClick={() => onChange("__CLEAR__")}
-                            type="button"
-                        >
-                            Xóa ảnh
-                        </button>
-                    ) : null}
+                    </button>
+                    <AvatarUploadDialog
+                        currentUrl={leader.imageUrl}
+                        onOpenChange={setDialogOpen}
+                        onUploaded={(result) => onChange(result.url, result.assetId)}
+                        open={dialogOpen}
+                    />
                 </div>
             ) : null}
         </div>

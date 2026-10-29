@@ -71,7 +71,7 @@ export function ResourceFormPage({
   const visibleFields = (spec?.fields ?? [])
     .filter((field) => (mode === "create" ? !field.editOnly : !field.createOnly))
     .filter((field) => !(effectiveRoute.kind === "roles" && field.name === "roleCode"))
-    .filter((field) => field.visibleWhen?.(mergedValues, mode) ?? true)
+    .filter((field) => field.visibleWhen?.(mergedValues, mode, user) ?? true)
     .map((field) => ({
       ...field,
       optionsEndpoint: field.buildOptionsEndpoint?.(mergedValues) ?? field.optionsEndpointForUser?.(user) ?? field.optionsEndpoint,
@@ -88,7 +88,7 @@ export function ResourceFormPage({
       setErrors(nextErrors);
       if (Object.keys(nextErrors).length) throw new Error("Vui lòng kiểm tra các trường bắt buộc");
 
-      const submitValues = pickVisibleValues(visibleFields, mergedValues);
+      const submitValues = pickVisibleValues(visibleFields, mergedValues, spec.extraValueNames);
       const payload = spec.mapSubmit ? spec.mapSubmit(submitValues, mode) : submitValues;
       const path = spec.buildEndpoint
         ? spec.buildEndpoint({ ...submitValues, ...payload }, id)
@@ -274,8 +274,8 @@ function validateFields(fields: FormFieldSpec[], values: Record<string, unknown>
   return errors;
 }
 
-function pickVisibleValues(fields: FormFieldSpec[], values: Record<string, unknown>) {
-  const visibleNames = new Set(fields.map((field) => field.name));
+function pickVisibleValues(fields: FormFieldSpec[], values: Record<string, unknown>, extraNames: string[] = []) {
+  const visibleNames = new Set([...fields.map((field) => field.name), ...extraNames]);
   fields.forEach((field) => {
     if (field.primaryFieldName) visibleNames.add(field.primaryFieldName);
   });

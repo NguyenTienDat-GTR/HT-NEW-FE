@@ -1,3 +1,5 @@
+import { AvatarLightbox } from "@/components/common/avatar-lightbox";
+import { MediaImage } from "@/components/common/media-image";
 import { cn } from "@/lib/utils";
 import { initials } from "../account-display";
 
@@ -12,32 +14,55 @@ export function UserAvatar({
   imageUrl,
   size = "sm",
   showStatus = false,
+  zoomable = false,
   className,
 }: {
   name: string;
   imageUrl?: string | null;
   size?: keyof typeof sizes;
   showStatus?: boolean;
+  // Bấm vào khung avatar để xem ảnh lớn.
+  zoomable?: boolean;
   className?: string;
 }) {
   return (
     <span className={cn("relative inline-flex w-fit shrink-0", className)}>
-      {imageUrl ? (
-        <span
-          aria-hidden
-          className={cn("block rounded-full bg-cover bg-center ring-2 ring-white", sizes[size])}
-          style={{ backgroundImage: `url(${imageUrl})` }}
+      {zoomable ? (
+        <AvatarLightbox name={name} src={imageUrl}>
+        <MediaImage
+          alt=""
+          className={cn("block rounded-full ring-2 ring-white", sizes[size])}
+          fallback={
+            <span
+              aria-hidden
+              className={cn(
+                "grid place-items-center rounded-full bg-gradient-to-br from-primary to-[#2563eb] font-semibold tracking-wide text-white ring-2 ring-white",
+                sizes[size],
+              )}
+            >
+              {initials(name)}
+            </span>
+          }
+          src={imageUrl}
         />
+        </AvatarLightbox>
       ) : (
-        <span
-          aria-hidden
-          className={cn(
-            "grid place-items-center rounded-full bg-gradient-to-br from-primary to-[#2563eb] font-semibold tracking-wide text-white ring-2 ring-white",
-            sizes[size],
-          )}
-        >
-          {initials(name)}
-        </span>
+      <MediaImage
+        alt=""
+        className={cn("block rounded-full ring-2 ring-white", sizes[size])}
+        fallback={
+          <span
+            aria-hidden
+            className={cn(
+              "grid place-items-center rounded-full bg-gradient-to-br from-primary to-[#2563eb] font-semibold tracking-wide text-white ring-2 ring-white",
+              sizes[size],
+            )}
+          >
+            {initials(name)}
+          </span>
+        }
+        src={imageUrl}
+      />
       )}
       {showStatus ? (
         <span

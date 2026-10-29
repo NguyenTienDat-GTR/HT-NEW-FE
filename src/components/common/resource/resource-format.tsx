@@ -1,3 +1,4 @@
+import { MediaImage } from "@/components/common/media-image";
 import { auditOperationLabel, auditOperationTone, auditStatusText, auditStatusTone, auditTargetText } from "./audit-log-labels";
 import {
   organizingStateLabels,
@@ -7,7 +8,10 @@ import {
   resolveOrganizingState,
   resolveRegistrationState,
 } from "@/modules/training-courses/registration-state";
+import * as Tooltip from "@radix-ui/react-tooltip";
 import type React from "react";
+import { shortUnitName } from "@/lib/unit-name";
+import { useEmbeddedResource } from "./embedded-resource-context";
 import { formatVietnamDateValue } from "@/lib/date-format";
 import { cn, viNumber } from "@/lib/utils";
 import { leaderLevelName } from "@/modules/leader-levels/leader-level-store";
@@ -198,10 +202,27 @@ type ResourceCellProps = {
   row: Record<string, unknown>;
   value: unknown;
   displayMode?: "table" | "detail";
+  // Hiển thị đầy đủ tên và đơn vị (không cắt "..."): bảng nằm trong tab khóa huấn luyện hoặc danh sách huynh trưởng.
+  fullNames?: boolean;
 };
 
-export function ResourceCell({ column, row, value, displayMode = "table" }: ResourceCellProps) {
-  const full = displayMode === "detail";
+// Trong các tab của khóa huấn luyện: tên và đơn vị hiển thị đầy đủ (không cắt "..."), tên giáo xứ / giáo hạt bỏ tiền tố;
+// các cột ghi chú vẫn cắt "..." nhưng rê chuột vào thì hiện đủ nội dung.
+const COURSE_TAB_UNIT_COLUMNS = new Set(["parishName", "deaneryName", "leaderParishName", "leaderDeaneryName", "parishId", "deaneryId"]);
+const COURSE_TAB_NAME_COLUMNS = new Set(["leaderFullName", "leaderHolyName", "holyName", "fullName", "teamName"]);
+const NOTE_COLUMNS = new Set(["registrationNote", "scoreNote", "exceptionReason", "approvalReason", "offTargetReason", "crossDeaneryReason", "review"]);
+
+export function ResourceCell({ column, row, value, displayMode = "table", fullNames = false }: ResourceCellProps) {
+  const embedded = useEmbeddedResource() !== null || fullNames;
+  const full = displayMode === "detail" || (embedded && (COURSE_TAB_NAME_COLUMNS.has(column) || COURSE_TAB_UNIT_COLUMNS.has(column)));
+  if (embedded && COURSE_TAB_UNIT_COLUMNS.has(column)) {
+    // Cột mã đơn vị (parishId / deaneryId) hiển thị theo tên đi kèm trong dòng dữ liệu.
+    const unitName = column === "parishId" || column === "deaneryId" ? resolveRelatedDisplayValue(column, row) : value;
+    if (typeof unitName === "string" && unitName.trim()) return <TextValue full>{shortUnitName(unitName)}</TextValue>;
+  }
+  if (displayMode === "table" && NOTE_COLUMNS.has(column) && typeof value === "string" && value.trim()) {
+    return <NoteValue text={value} />;
+  }
   if (column === "leaderFullName" && typeof value === "string") {
     const holy = typeof row.leaderHolyName === "string" ? row.leaderHolyName.trim() : "";
     const name = holy ? `${holy} ${value}` : value;
@@ -225,7 +246,7 @@ export function ResourceCell({ column, row, value, displayMode = "table" }: Reso
   if (column === "operation" && typeof value === "string") return <Badge tone={auditOperationTone(value)}>{auditOperationLabel(value)}</Badge>;
   if (column === "statusCode" && typeof value === "number") return <Badge tone={auditStatusTone(value)}>{`${value} · ${auditStatusText(value)}`}</Badge>;
   if (column === "durationMs" && typeof value === "number") return <TextValue full={full}>{`${viNumber.format(value)} ms`}</TextValue>;
-  if (column === "imageUrl") return <Avatar name={String(row.fullName ?? row.leaderFullName ?? row.username ?? "")} src={value} />;
+  if (column === "imageUrl") return <Avatar name={String(row.fullName ?? row.leaderFullName ?? row.username ?? "")} src={row.imageThumbUrl ?? value} />;
   if (column === "status" && value === true && row.effectiveStatus === false) return <Badge tone="warning">Ngưng theo đơn vị cha</Badge>;
   if (column === "status" && typeof value === "boolean") return <StatusBadge active={value} />;
   if (column === "validity" && typeof value === "string") return <PermissionValidityBadge validity={value} />;
@@ -268,6 +289,28 @@ export function ResourceCell({ column, row, value, displayMode = "table" }: Reso
   return <TextValue full={full}>{String(value)}</TextValue>;
 }
 
+// Ghi chú dài: hiện một dòng có "..." và đầy đủ nội dung trong tooltip khi rê chuột / focus.
+export function NoteValue({ text }: { text: string }) {
+  return (
+    <Tooltip.Provider delayDuration={200}>
+      <Tooltip.Root>
+        <Tooltip.Trigger asChild>
+          <span className="line-clamp-1 max-w-65 cursor-default" tabIndex={0}>{text}</span>
+        </Tooltip.Trigger>
+        <Tooltip.Portal>
+          <Tooltip.Content
+            className="z-[60] max-w-sm whitespace-pre-wrap wrap-break-word rounded-md border border-border bg-white px-3 py-2 text-xs font-medium text-foreground shadow-[var(--shadow-card)]"
+            sideOffset={6}
+          >
+            {text}
+            <Tooltip.Arrow className="fill-white" />
+          </Tooltip.Content>
+        </Tooltip.Portal>
+      </Tooltip.Root>
+    </Tooltip.Provider>
+  );
+}
+
 function TextValue({ children, full }: { children: React.ReactNode; full: boolean }) {
   return <span className={full ? "whitespace-pre-wrap wrap-break-word" : "line-clamp-1 max-w-65"}>{children}</span>;
 }
@@ -298,20 +341,17 @@ function resolveRelatedDisplayValue(column: string, row: Record<string, unknown>
 
 export function Avatar({ name, src }: { name: string; src: unknown }) {
   const initial = name.trim().charAt(0).toUpperCase() || "H";
-  if (typeof src === "string" && src) {
-    return (
-      <span
-        aria-label={name || "Ảnh đại diện"}
-        className="inline-flex h-9 w-9 shrink-0 rounded-full border border-border bg-cover bg-center"
-        role="img"
-        style={{ backgroundImage: `url(${src})` }}
-      />
-    );
-  }
   return (
-    <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-soft text-sm font-semibold text-primary">
-      {initial}
-    </span>
+    <MediaImage
+      alt={name || "Ảnh đại diện"}
+      className="inline-flex h-9 w-9 rounded-full border border-border"
+      fallback={
+        <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-soft text-sm font-semibold text-primary">
+          {initial}
+        </span>
+      }
+      src={typeof src === "string" ? src : null}
+    />
   );
 }
 

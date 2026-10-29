@@ -1,5 +1,6 @@
 "use client";
 
+import { PhotoInspector } from "@/modules/certificates/components/photo-inspector";
 import { CursorClick, TextB, TextItalic, TextUnderline, Trash } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,7 +40,7 @@ export function BadgeLayoutInspector({
         <div className="min-w-0">
           <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">Phần tử đang chọn</p>
           <p className="truncate text-sm font-semibold text-foreground">
-            {item.type === "TEXT" ? "Văn bản tĩnh" : item.type === "QR" ? "Mã QR điểm danh" : fieldLabel(item.fieldKey)}
+            {item.type === "TEXT" ? "Văn bản tĩnh" : item.type === "QR" ? "Mã QR điểm danh" : item.type === "PHOTO" ? "Ảnh huynh trưởng" : fieldLabel(item.fieldKey)}
           </p>
         </div>
         <Button aria-label="Xóa phần tử" className="text-danger" disabled={disabled} onClick={onRemove} size="icon" title="Xóa phần tử" type="button" variant="ghost">
@@ -63,13 +64,15 @@ export function BadgeLayoutInspector({
         </Field>
       ) : null}
 
+      {item.type === "PHOTO" ? <PhotoInspector disabled={disabled} item={item} onChange={onChange} unit="thẻ" /> : null}
+
       {item.type === "TEXT" ? (
         <Field label="Nội dung">
           <Input disabled={disabled} maxLength={500} onChange={(event) => onChange({ text: event.target.value }, "text")} value={item.text ?? ""} />
         </Field>
       ) : null}
 
-      {item.type === "QR" ? null : (
+      {item.type === "QR" || item.type === "PHOTO" ? null : (
         <div className="space-y-3 border-t border-border pt-3">
           <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">Kiểu chữ</p>
           <Field label="Phông chữ">

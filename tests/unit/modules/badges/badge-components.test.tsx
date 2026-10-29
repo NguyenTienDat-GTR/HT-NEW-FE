@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { toast } from "sonner";
+import { albumApi, type Album } from "@/lib/media/album-api";
 import { useAuthStore } from "@/lib/auth/auth-store";
 import { blankBadgeForm, formFromBadgeConfig, type BadgeConfig, type BadgeForm } from "@/modules/badges/badge-design";
 import { BadgeCardSettings } from "@/modules/badges/components/badge-card-settings";
@@ -14,6 +15,11 @@ import { BadgeSheetPreview } from "@/modules/badges/components/badge-sheet-previ
 import type { FieldCatalogItem, LayoutItem } from "@/modules/certificates/components/certificate-design";
 
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn(), info: vi.fn(), message: vi.fn(), loading: vi.fn(() => "t"), dismiss: vi.fn() } }));
+// Album ảnh nền gọi backend nên giả lập.
+vi.mock("@/lib/media/album-api", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/media/album-api")>();
+  return { ...actual, albumApi: { list: vi.fn(), add: vi.fn(), remove: vi.fn() } };
+});
 
 const envelope = (data: unknown, status = 200) => new Response(JSON.stringify({ success: status < 400, data, message: status < 400 ? null : "Lỗi máy chủ" }), { status, headers: { "content-type": "application/json" } });
 const pageOf = (content: unknown[]) => envelope({ content, totalElements: content.length, totalPages: content.length ? 1 : 0, size: 6, number: 0, first: true, last: true });
@@ -263,37 +269,99 @@ describe("BadgeEditor", () => {
     expect(ctx.form.frontLayout).toHaveLength(1);
   });
 
-  it("read-only users get no editing toolbar and cannot upload", () => {
+  const albumItem = (n: number) => ({ id: `item-${n}`, assetId: `asset-${n}`, url: `/api/media/asset-${n}/preview?exp=1&sig=a`, createdAt: "2026-10-29T00:00:00Z" });
+  const album = (count: number): Album => ({ maxItems: 3, items: Array.from({ length: count }, (_, index) => albumItem(index + 1)) });
+
+  it("read-only users get no editing toolbar and cannot open the album", () => {
     setup(blankBadgeForm(), false);
     expect(screen.queryByRole("button", { name: /Văn bản/ })).toBeNull();
     expect(screen.queryByLabelText("Thêm phần tử")).toBeNull();
-    expect(screen.getByText("Tải ảnh nền").closest("label")?.querySelector("input")).toBeDisabled();
+    expect(screen.getByRole("button", { name: /Chọn ảnh nền \(album\)/ })).toBeDisabled();
   });
 
-  it("rejects a non-image background and an oversized one", () => {
-    const ctx = setup(blankBadgeForm());
-    const input = screen.getByText("Tải ảnh nền").closest("label")!.querySelector("input") as HTMLInputElement;
-    fireEvent.change(input, { target: { files: [new File(["x"], "a.txt", { type: "text/plain" })] } });
-    expect(toast.error).toHaveBeenCalledWith("Chỉ nhận tệp ảnh (PNG, JPG...)");
-    const huge = new File(["x"], "big.png", { type: "image/png" });
-    Object.defineProperty(huge, "size", { value: 9 * 1024 * 1024 });
-    fireEvent.change(input, { target: { files: [huge] } });
-    expect(toast.error).toHaveBeenCalledWith("Ảnh nền tối đa 8 MB, hãy chọn ảnh nhỏ hơn");
-    expect(ctx.onChange).not.toHaveBeenCalled();
-  });
-
-  it("stores an uploaded image as a data URL for the active side", async () => {
+  it("picks a background from the album for the active side", async () => {
+    vi.mocked(albumApi.list).mockResolvedValue(album(2));
     const ctx = setup({ ...blankBadgeForm(), hasBack: true });
     fireEvent.click(screen.getByRole("tab", { name: "Mặt sau" }));
-    const input = screen.getByText("Tải ảnh nền").closest("label")!.querySelector("input") as HTMLInputElement;
-    fireEvent.change(input, { target: { files: [new File(["abc"], "nen.png", { type: "image/png" })] } });
-    await waitFor(() => expect(ctx.form.backBackground).toMatch(/^data:image\/png;base64,/));
-    expect(ctx.form.frontBackground).toBe("");
+    fireEvent.click(screen.getByRole("button", { name: /Chọn ảnh nền \(album\)/ }));
+
+    expect(await screen.findByText("Album ảnh nền mặt sau thẻ")).toBeInTheDocument();
+    expect(screen.getByText("Album chỉ của đơn vị bạn, đơn vị khác không nhìn thấy.", { exact: false })).toBeInTheDocument();
+    const useButtons = await screen.findAllByRole("button", { name: "Dùng ảnh này" });
+    expect(useButtons).toHaveLength(2);
+    fireEvent.click(useButtons[1]);
+
+    expect(ctx.form.backBackgroundAssetId).toBe("asset-2");
+    expect(ctx.form.backBackground).toBe("/api/media/asset-2/preview?exp=1&sig=a");
+    expect(ctx.form.frontBackgroundAssetId).toBe("");
+    await waitFor(() => expect(screen.queryByText("Album ảnh nền mặt sau thẻ")).not.toBeInTheDocument());
+  });
+
+  it("uses a separate album for each side of the card", async () => {
+    vi.mocked(albumApi.list).mockResolvedValue(album(1));
+    setup({ ...blankBadgeForm(), hasBack: true });
+    fireEvent.click(screen.getByRole("button", { name: /Chọn ảnh nền \(album\)/ }));
+    expect(await screen.findByText("Album ảnh nền mặt trước thẻ")).toBeInTheDocument();
+    expect(albumApi.list).toHaveBeenCalledWith("BADGE_FRONT");
+    fireEvent.click(screen.getByRole("button", { name: "Đóng" }));
+
+    fireEvent.click(screen.getByRole("tab", { name: "Mặt sau" }));
+    fireEvent.click(screen.getByRole("button", { name: /Chọn ảnh nền \(album\)/ }));
+    expect(await screen.findByText("Album ảnh nền mặt sau thẻ")).toBeInTheDocument();
+    expect(albumApi.list).toHaveBeenCalledWith("BADGE_BACK");
+  });
+
+  it("previews a background in large size before using it", async () => {
+    vi.mocked(albumApi.list).mockResolvedValue(album(2));
+    const ctx = setup(blankBadgeForm());
+    fireEvent.click(screen.getByRole("button", { name: /Chọn ảnh nền \(album\)/ }));
+
+    fireEvent.click(await screen.findByRole("button", { name: "Xem trước ảnh nền 2" }));
+    const large = await screen.findByAltText("Xem trước ảnh nền 2");
+    expect(large).toHaveAttribute("src", "/backend/api/media/asset-2/preview?exp=1&sig=a");
+    expect(ctx.form.frontBackgroundAssetId).toBe("");
+
+    fireEvent.click(screen.getByRole("button", { name: "Dùng ảnh này", hidden: false }));
+    expect(ctx.form.frontBackgroundAssetId).toBe("asset-2");
+  });
+
+  it("blocks adding a new image while the album is full and asks to delete one first", async () => {
+    vi.mocked(albumApi.list).mockResolvedValue(album(3));
+    setup(blankBadgeForm());
+    fireEvent.click(screen.getByRole("button", { name: /Chọn ảnh nền \(album\)/ }));
+
+    expect(await screen.findByRole("note")).toHaveTextContent("xóa bớt một ảnh");
+    expect(screen.getByRole("button", { name: "Album đã đủ ảnh" })).toBeDisabled();
+    expect(screen.getByText("3/3 ảnh")).toBeInTheDocument();
+  });
+
+  it("deletes an album image after confirmation and allows adding again", async () => {
+    vi.mocked(albumApi.list).mockResolvedValueOnce(album(3)).mockResolvedValue(album(2));
+    vi.mocked(albumApi.remove).mockResolvedValue(null);
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    setup(blankBadgeForm());
+    fireEvent.click(screen.getByRole("button", { name: /Chọn ảnh nền \(album\)/ }));
+
+    fireEvent.click(await screen.findByRole("button", { name: "Xóa ảnh nền 1" }));
+    await waitFor(() => expect(albumApi.remove).toHaveBeenCalledWith("BADGE_FRONT", "item-1"));
+    expect(await screen.findByRole("button", { name: "Tải ảnh mới vào album" })).toBeEnabled();
+  });
+
+  it("uploads a new image into the album", async () => {
+    vi.mocked(albumApi.list).mockResolvedValue(album(1));
+    vi.mocked(albumApi.add).mockResolvedValue(albumItem(2));
+    setup(blankBadgeForm());
+    fireEvent.click(screen.getByRole("button", { name: /Chọn ảnh nền \(album\)/ }));
+    await screen.findByRole("button", { name: "Tải ảnh mới vào album" });
+
+    const file = new File(["abc"], "nen.png", { type: "image/png" });
+    fireEvent.change(screen.getByTestId("album-file-input"), { target: { files: [file] } });
+    await waitFor(() => expect(albumApi.add).toHaveBeenCalledWith("BADGE_FRONT", file));
   });
 
   it("can remove an existing background", () => {
     const ctx = setup({ ...blankBadgeForm(), frontBackground: "data:image/png;base64,AAAA" });
-    expect(screen.getByText("Đổi ảnh nền")).toBeInTheDocument();
+    expect(screen.getByText("Đổi ảnh nền (album)")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /Bỏ ảnh nền/ }));
     expect(ctx.form.frontBackground).toBe("");
   });
@@ -476,7 +544,7 @@ describe("BadgeConfigView", () => {
     await waitFor(() => expect(calls.some((call) => call.method === "PUT")).toBe(true));
     const put = calls.find((call) => call.method === "PUT")!;
     expect(put.url).toBe("/badges/config/cfg1");
-    expect(put.body).toMatchObject({ name: "Thẻ khóa Dự trưởng", paperSize: "A4", cardWidthMm: 90, cardHeightMm: 55, cardOrientation: "LANDSCAPE", hasBack: false, backLayout: [], backBackground: null });
+    expect(put.body).toMatchObject({ name: "Thẻ khóa Dự trưởng", paperSize: "A4", cardWidthMm: 90, cardHeightMm: 55, cardOrientation: "LANDSCAPE", hasBack: false, backLayout: [], backBackgroundAssetId: null });
     expect((put.body as { frontLayout: unknown[] }).frontLayout).toHaveLength(1);
     await waitFor(() => expect(toast.success).toHaveBeenCalledWith("Lưu cấu hình thẻ tham dự thành công"));
   });
@@ -588,5 +656,32 @@ describe("BadgeConfigView", () => {
     const form = formFromBadgeConfig(detail);
     expect(form.frontLayout).toHaveLength(1);
     expect(form.name).toBe("Thẻ chung");
+  });
+});
+
+describe("leader photo element", () => {
+  const fieldLabel = (key?: string) => key ?? "";
+
+  it("is added from the toolbar as a PHOTO element sized for a card", () => {
+    const ctx = (() => {
+      let current = blankBadgeForm();
+      const onChange = vi.fn((updater: (form: BadgeForm) => BadgeForm) => {
+        current = updater(current);
+      });
+      wrap(<BadgeEditor canEdit fields={FIELDS} form={current} onChange={onChange} />);
+      return { get form() { return current; } };
+    })();
+    fireEvent.click(screen.getByRole("button", { name: /Ảnh huynh trưởng/ }));
+    expect(ctx.form.frontLayout).toHaveLength(1);
+    expect(ctx.form.frontLayout[0]).toMatchObject({ type: "PHOTO", size: 0.5, photoRatio: "4x6" });
+  });
+
+  it("shows a size control (and no font controls) in the inspector", () => {
+    const onChange = vi.fn();
+    wrap(<BadgeLayoutInspector disabled={false} fieldLabel={fieldLabel} item={item({ type: "PHOTO", size: 0.5 })} onChange={onChange} onRemove={() => undefined} />);
+    expect(screen.getByText("Ảnh huynh trưởng", { selector: "p" })).toBeInTheDocument();
+    expect(screen.queryByLabelText("Cỡ chữ (% chiều cao thẻ)")).toBeNull();
+    fireEvent.change(screen.getByLabelText("Chiều cao ảnh (% chiều cao thẻ)"), { target: { value: "99" } });
+    expect(onChange).toHaveBeenLastCalledWith({ size: 0.9 }, "photoSize");
   });
 });

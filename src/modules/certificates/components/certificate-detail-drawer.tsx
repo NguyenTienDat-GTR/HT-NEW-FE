@@ -14,8 +14,10 @@ import { CertificateCanvas, paperAspect, useCertificateFonts, type LayoutItem } 
 type Detail = Record<string, unknown>;
 
 type PreviewItem = {
-  type?: "TEXT" | "QR";
+  type?: "TEXT" | "QR" | "PHOTO";
   size?: number;
+  // Tỉ lệ rộng/cao của ảnh huynh trưởng (backend tính theo khổ ảnh đã cấu hình).
+  aspect?: number;
   image?: string;
   text: string;
   x: number;
@@ -331,7 +333,7 @@ function PreviewPanel({ preview, loading, error, approved }: { preview?: Preview
               backgroundImage={preview.backgroundImage ?? ""}
               editable={false}
               fieldLabel={(key) => key ?? ""}
-              layout={preview.items.map<LayoutItem>((item) => ({ ...item, type: item.type === "QR" ? "QR" : "TEXT" }))}
+              layout={preview.items.map<LayoutItem>((item) => ({ ...item, type: item.type === "QR" ? "QR" : item.type === "PHOTO" ? "PHOTO" : "TEXT" }))}
               onMove={() => undefined}
               onSelect={() => undefined}
               preview

@@ -16,6 +16,8 @@ export type LeaderDetail = {
   email?: string | null;
   phoneNumber?: string | null;
   imageUrl?: string | null;
+  imageThumbUrl?: string | null;
+  imageAssetId?: string | null;
   gender?: string | null;
   leaderLevel?: string | null;
   deaneryId?: string | null;

@@ -1,8 +1,8 @@
 "use client";
 
-import { Eye, PencilSimple, Plus, QrCode, TextT, UploadSimple, X } from "@phosphor-icons/react";
+import { BackgroundAlbumDialog } from "@/components/common/background-album-dialog";
+import { Eye, Images, PencilSimple, Plus, QrCode, TextT, UserCircle, X } from "@phosphor-icons/react";
 import { useState } from "react";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Tip } from "@/components/ui/tip";
 import { cn } from "@/lib/utils";
@@ -16,8 +16,6 @@ import { cardAspect, sampleBadgeValue, type BadgeForm, type BadgeSide } from "..
 import { BadgeLayoutInspector } from "./badge-layout-inspector";
 import { Field, SELECT_CLASS } from "./form-controls";
 
-const MAX_BACKGROUND_BYTES = 8 * 1024 * 1024;
-
 const BASE_ITEM = { x: 0.5, y: 0.5, fontSize: 0.1, color: "#000000", align: "center", fontFamily: "sans", bold: false, italic: false, underline: false } as const;
 
 function layoutKey(side: BadgeSide) {
@@ -26,6 +24,10 @@ function layoutKey(side: BadgeSide) {
 
 function backgroundKey(side: BadgeSide) {
   return side === "front" ? "frontBackground" : "backBackground";
+}
+
+function backgroundAssetKey(side: BadgeSide) {
+  return side === "front" ? "frontBackgroundAssetId" : "backBackgroundAssetId";
 }
 
 // Vùng thiết kế thẻ: chọn mặt trước / sau, tải ảnh nền, thêm trường / văn bản / mã QR, kéo thả trên khung thẻ đúng tỉ lệ.
@@ -70,25 +72,7 @@ export function BadgeEditor({
     setSelectedIndex(null);
   }
 
-  function handleUpload(event: React.ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    event.target.value = "";
-    if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      toast.error("Chỉ nhận tệp ảnh (PNG, JPG...)");
-      return;
-    }
-    if (file.size > MAX_BACKGROUND_BYTES) {
-      toast.error("Ảnh nền tối đa 8 MB, hãy chọn ảnh nhỏ hơn");
-      return;
-    }
-    const property = backgroundKey(activeSide);
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === "string") onChange((current) => ({ ...current, [property]: reader.result as string }));
-    };
-    reader.readAsDataURL(file);
-  }
+  const [albumOpen, setAlbumOpen] = useState(false);
 
   return (
     <div>
@@ -115,18 +99,21 @@ export function BadgeEditor({
           ) : (
             <span className="text-sm font-semibold text-foreground">Mặt trước</span>
           )}
-          <label
-            className={cn(
-              "inline-flex h-10 cursor-pointer items-center gap-2 rounded-lg border border-input bg-white px-3 text-sm font-semibold text-foreground transition-colors hover:bg-slate-50 hover:text-primary focus-within:outline focus-within:outline-2 focus-within:outline-primary",
-              !canEdit && "pointer-events-none opacity-60",
-            )}
-          >
-            <UploadSimple size={16} />
-            {background ? "Đổi ảnh nền" : "Tải ảnh nền"}
-            <input accept="image/*" className="sr-only" disabled={!canEdit} onChange={handleUpload} type="file" />
-          </label>
+          <Button disabled={!canEdit} onClick={() => setAlbumOpen(true)} type="button" variant="outline">
+            <Images size={16} />
+            {background ? "Đổi ảnh nền (album)" : "Chọn ảnh nền (album)"}
+          </Button>
+          <BackgroundAlbumDialog
+            currentAssetId={form[backgroundAssetKey(activeSide)] || null}
+            kind={activeSide === "front" ? "BADGE_FRONT" : "BADGE_BACK"}
+            onOpenChange={setAlbumOpen}
+            onPick={(item) =>
+              onChange((current) => ({ ...current, [backgroundKey(activeSide)]: item.url, [backgroundAssetKey(activeSide)]: item.assetId }))
+            }
+            open={albumOpen}
+          />
           {background && canEdit ? (
-            <Button onClick={() => onChange((current) => ({ ...current, [backgroundKey(activeSide)]: "" }))} type="button" variant="ghost">
+            <Button onClick={() => onChange((current) => ({ ...current, [backgroundKey(activeSide)]: "", [backgroundAssetKey(activeSide)]: "" }))} type="button" variant="ghost">
               <X size={14} /> Bỏ ảnh nền
             </Button>
           ) : null}
@@ -177,6 +164,11 @@ export function BadgeEditor({
           <Button onClick={() => addItem({ ...BASE_ITEM, type: "TEXT", text: "Văn bản" })} type="button" variant="outline">
             <TextT size={16} /> Văn bản
           </Button>
+          <Tip label="Thêm ảnh đại diện của huynh trưởng trong hồ sơ tham dự. Ảnh lấy từ hồ sơ huynh trưởng khi xuất thẻ; huynh trưởng chưa có ảnh thì không in gì.">
+            <Button onClick={() => addItem({ ...BASE_ITEM, type: "PHOTO", photoRatio: "4x6", size: 0.5, x: 0.2, y: 0.5 })} type="button" variant="outline">
+              <UserCircle size={16} /> Ảnh huynh trưởng
+            </Button>
+          </Tip>
           <Tip label="Thêm mã QR điểm danh. Mã được tạo riêng cho từng hồ sơ trong khóa khi xuất thẻ (không lưu ảnh QR). Dùng được ở cả mặt trước và mặt sau; khóa không bật điểm danh vẫn in mã nhưng chưa quét được.">
             <Button onClick={() => addItem({ ...BASE_ITEM, type: "QR", size: DEFAULT_QR_SIZE * 2, x: 0.84, y: 0.5 })} type="button" variant="outline">
               <QrCode size={16} /> Mã QR
@@ -196,6 +188,7 @@ export function BadgeEditor({
               fieldLabel={fieldLabel}
               layout={layout}
               onMove={(index, x, y) => updateItem(index, { x, y }, "move")}
+              onResizePhoto={(index, patch) => updateItem(index, patch, "photoResize")}
               onSelect={setSelectedIndex}
               preview={preview}
               sampleValue={(key) => sampleBadgeValue(key, fieldLabel(key))}

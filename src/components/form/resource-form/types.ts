@@ -35,6 +35,8 @@ export type FormFieldSpec = {
   optionLabel?: string;
   optionLabelFields?: string[];
   optionSearchParam?: string;
+  // Server đã lọc kết quả theo từ khóa tìm (optionSearchParam), không lọc lại ở trình duyệt theo nhãn hiển thị.
+  serverFiltered?: boolean;
   excludeOptionValues?: string[];
   excludeOptionValuesWhen?: (user: AuthUser | null) => string[];
   searchable?: boolean;
@@ -44,7 +46,7 @@ export type FormFieldSpec = {
   primaryLabel?: string;
   createOnly?: boolean;
   editOnly?: boolean;
-  visibleWhen?: (values: Record<string, unknown>, mode: ResourceFormMode) => boolean;
+  visibleWhen?: (values: Record<string, unknown>, mode: ResourceFormMode, user?: AuthUser | null) => boolean;
   requiredWhen?: (values: Record<string, unknown>, mode: ResourceFormMode) => boolean;
   readOnlyWhen?: (values: Record<string, unknown>, mode: ResourceFormMode) => boolean;
   readOnlyOnCreate?: boolean;
@@ -77,6 +79,8 @@ export type ResourceFormSpec = {
   buildEndpoint?: (values: Record<string, unknown>, id?: string) => string;
   superAdminOnly?: boolean;
   getInitialValues?: (user: AuthUser | null) => Record<string, unknown>;
+  // Giá trị không gắn với trường nhìn thấy nhưng vẫn được gửi đi (ví dụ id ảnh vừa tải lên).
+  extraValueNames?: string[];
   method?: "POST" | "PUT" | "PATCH";
   submitLabel?: string;
   fields: FormFieldSpec[];

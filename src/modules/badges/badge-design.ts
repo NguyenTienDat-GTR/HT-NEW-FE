@@ -35,8 +35,11 @@ export type BadgeConfig = {
   columns?: number;
   rows?: number;
   cardsPerPage?: number;
+  // URL ảnh nền đã ký (hết hạn sau một thời gian) và id asset để gửi lại khi lưu.
   frontBackground?: string | null;
   backBackground?: string | null;
+  frontBackgroundAssetId?: string | null;
+  backBackgroundAssetId?: string | null;
   frontLayout?: LayoutItem[] | null;
   backLayout?: LayoutItem[] | null;
   updatedAt?: string | null;
@@ -57,6 +60,8 @@ export type BadgeForm = {
   hasBack: boolean;
   frontBackground: string;
   backBackground: string;
+  frontBackgroundAssetId: string;
+  backBackgroundAssetId: string;
   frontLayout: LayoutItem[];
   backLayout: LayoutItem[];
 };
@@ -75,6 +80,8 @@ export function blankBadgeForm(): BadgeForm {
     hasBack: false,
     frontBackground: "",
     backBackground: "",
+    frontBackgroundAssetId: "",
+    backBackgroundAssetId: "",
     frontLayout: [],
     backLayout: [],
   };
@@ -95,13 +102,24 @@ export function formFromBadgeConfig(config: BadgeConfig): BadgeForm {
     hasBack: Boolean(config.hasBack),
     frontBackground: config.frontBackground ?? "",
     backBackground: config.backBackground ?? "",
+    frontBackgroundAssetId: config.frontBackgroundAssetId ?? "",
+    backBackgroundAssetId: config.backBackgroundAssetId ?? "",
     frontLayout: (config.frontLayout ?? []).map(normalizeItem),
     backLayout: (config.backLayout ?? []).map(normalizeItem),
   };
 }
 
+// URL ảnh là link ký có hạn nên thay đổi theo thời gian: khi đã có id asset thì bỏ URL ra khỏi phép so sánh.
+function comparable(form: BadgeForm) {
+  return JSON.stringify({
+    ...form,
+    frontBackground: form.frontBackgroundAssetId ? "" : form.frontBackground,
+    backBackground: form.backBackgroundAssetId ? "" : form.backBackground,
+  });
+}
+
 export function isSameBadgeForm(a: BadgeForm, b: BadgeForm) {
-  return JSON.stringify(a) === JSON.stringify(b);
+  return comparable(a) === comparable(b);
 }
 
 // Nội dung gửi lên BE (khớp BadgeConfigUpsertRequest). Không có mặt sau thì không gửi nền / bố cục mặt sau.
@@ -117,8 +135,11 @@ export function badgePayload(form: BadgeForm) {
     gapMm: form.gapMm,
     cropMarks: form.cropMarks,
     hasBack: form.hasBack,
-    frontBackground: form.frontBackground || null,
-    backBackground: form.hasBack ? form.backBackground || null : null,
+    // Backend chỉ nhận id ảnh đã tải lên; chưa có ảnh nào (kể cả ảnh cũ) thì yêu cầu xóa nền.
+    frontBackgroundAssetId: form.frontBackgroundAssetId || null,
+    clearFrontBackground: !form.frontBackground,
+    backBackgroundAssetId: form.hasBack ? form.backBackgroundAssetId || null : null,
+    clearBackBackground: !form.hasBack || !form.backBackground,
     frontLayout: form.frontLayout,
     backLayout: form.hasBack ? form.backLayout : [],
   };

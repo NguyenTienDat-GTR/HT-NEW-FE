@@ -1,5 +1,6 @@
 "use client";
 
+import { PasswordInput } from "./password-input";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Key, LockKey } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
@@ -8,7 +9,6 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { BrandMark } from "@/components/brand/brand-mark";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { apiMutation, getApiErrorMessage } from "@/lib/api/client";
 import { useAuthStore } from "@/lib/auth/auth-store";
 
@@ -61,7 +61,7 @@ export function ChangePasswordView() {
             Mật khẩu hiện tại
             <span className="relative mt-2 block">
               <LockKey className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted" />
-              <Input className="h-13 rounded-xl pl-12" type="password" {...form.register("oldPassword")} />
+              <PasswordInput autoComplete="current-password" className="h-13 rounded-xl pl-12" {...form.register("oldPassword")} />
             </span>
             <span className="mt-1 block min-h-5 text-xs text-danger">{form.formState.errors.oldPassword?.message}</span>
           </label>
@@ -69,7 +69,7 @@ export function ChangePasswordView() {
             Mật khẩu mới
             <span className="relative mt-2 block">
               <LockKey className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted" />
-              <Input className="h-13 rounded-xl pl-12" type="password" {...form.register("newPassword")} />
+              <PasswordInput autoComplete="new-password" className="h-13 rounded-xl pl-12" {...form.register("newPassword")} />
             </span>
             <span className="mt-1 block min-h-5 text-xs text-danger">{form.formState.errors.newPassword?.message}</span>
           </label>

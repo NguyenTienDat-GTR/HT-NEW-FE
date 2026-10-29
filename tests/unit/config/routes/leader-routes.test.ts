@@ -18,7 +18,7 @@ describe("leader routes", () => {
     expect(matchRoute("/leaders/profiles")?.type).toBe("list");
   });
 
-  it("allows profile edit only for parish admins with leader update permission", () => {
+  it("allows profile edit for diocese, deanery and parish admins holding the matching leader update permission", () => {
     const route = findRoute("/leaders/profiles");
 
     expect(
@@ -26,7 +26,15 @@ describe("leader routes", () => {
         { username: "diocese-admin", roles: ["ADMIN_DIOCESE"], permissions: ["organization.leader.update.diocese"] },
         route?.actions?.edit,
       ),
-    ).toBe(false);
+    ).toBe(true);
+    expect(
+      canUseAction(
+        { username: "deanery-admin", roles: ["ADMIN_DEANERY"], permissions: ["organization.leader.update.deanery"] },
+        route?.actions?.edit,
+      ),
+    ).toBe(true);
+    // Có vai trò nhưng chưa được super admin cấp quyền cập nhật thì không sửa được.
+    expect(canUseAction({ username: "diocese-admin", roles: ["ADMIN_DIOCESE"], permissions: ["organization.leader.read.diocese"] }, route?.actions?.edit)).toBe(false);
     expect(
       canUseAction(
         { username: "parish-admin", roles: ["ADMIN_PARISH"], permissions: ["organization.leader.update.parish"] },

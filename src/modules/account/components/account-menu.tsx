@@ -21,7 +21,7 @@ export function AccountMenu({ onLogout, loggingOut }: { onLogout: () => void; lo
 
   const profile = profileQuery.data;
   const name = displayName(profile, user?.username);
-  const imageUrl = profile?.leader?.imageUrl;
+  const imageUrl = profile?.leader?.imageThumbUrl ?? profile?.leader?.imageUrl ?? profile?.imageThumbUrl ?? profile?.imageUrl;
   const primaryRole = primaryRoleName(profile?.roles, user?.roles);
   const roleChips = profile?.roles.length
     ? profile.roles

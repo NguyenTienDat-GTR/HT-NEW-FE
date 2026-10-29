@@ -3,7 +3,9 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
+import { NoteValue } from "@/components/common/resource/resource-format";
 import { apiMutation } from "@/lib/api/client";
+import { Tip } from "@/components/ui/tip";
 
 // Ghi chú của hồ sơ đăng ký: người có quyền sửa tại chỗ (lưu khi rời ô nhập), người khác chỉ xem.
 export function RegistrationNoteCell({ row, editable }: { row: Record<string, unknown>; editable: boolean }) {
@@ -22,16 +24,12 @@ export function RegistrationNoteCell({ row, editable }: { row: Record<string, un
   });
 
   if (!editable) {
-    return original ? (
-      <span className="block max-w-[260px] truncate text-sm text-foreground" title={original}>
-        {original}
-      </span>
-    ) : (
+    return original ? <NoteValue text={original} /> : (
       <span className="text-muted">—</span>
     );
   }
   const value = draft ?? original;
-  return (
+  const field = (
     <input
       aria-label={`Ghi chú của ${String(row.leaderFullName ?? "")}`}
       className="h-8 w-full min-w-[160px] max-w-[280px] rounded-[6px] border border-border bg-white px-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-[var(--primary-ring)] disabled:opacity-60"
@@ -50,4 +48,6 @@ export function RegistrationNoteCell({ row, editable }: { row: Record<string, un
       value={value}
     />
   );
+  // Ô nhập hẹp cắt nội dung dài: rê chuột vào để xem đủ ghi chú.
+  return original ? <Tip label={original}>{field}</Tip> : field;
 }

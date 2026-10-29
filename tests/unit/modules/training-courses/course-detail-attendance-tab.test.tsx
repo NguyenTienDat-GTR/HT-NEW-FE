@@ -21,9 +21,12 @@ vi.mock("jsqr", () => ({ default: vi.fn(() => null) }));
 const envelope = (data: unknown) => new Response(JSON.stringify({ success: true, data }), { headers: { "content-type": "application/json" } });
 const pageOf = (content: unknown[]) => envelope({ content, totalElements: content.length, totalPages: content.length ? 1 : 0, size: 10, number: 0, first: true, last: true });
 
+// Ngày theo giờ Việt Nam, lệch so với hôm nay (điểm danh chỉ mở trong thời gian diễn ra khóa).
+const dayOffset = (days: number) => new Date(Date.now() + 7 * 3600 * 1000 + days * 86400 * 1000).toISOString().slice(0, 10);
+
 const baseCourse = {
   courseCode: "KH-1", courseName: "Khóa Dự Trưởng", status: true, pastCourse: false, certificateRequired: true,
-  attendanceEnabled: true, autoSendInvitation: false, startDate: "2026-08-01", endDate: "2026-08-05",
+  attendanceEnabled: true, autoSendInvitation: false, startDate: dayOffset(-1), endDate: dayOffset(3),
   registrationStartAt: "2026-07-01T00:00:00+07:00", registrationEndAt: "2026-07-20T00:00:00+07:00",
 };
 
@@ -106,6 +109,25 @@ describe("course detail: Thẻ & điểm danh tab", () => {
     expect(await screen.findByText("Danh sách tham dự", { selector: "h2" })).toBeInTheDocument();
     expect(await screen.findByRole("button", { name: /Quét QR điểm danh/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Gửi email/ })).toBeInTheDocument();
+  });
+
+  it("hides the scan button and explains when the course has not started yet", async () => {
+    login(APPROVER);
+    currentTab = "attendance";
+    mockApi({ ...baseCourse, startDate: dayOffset(2), endDate: dayOffset(5) });
+    renderPage();
+    expect(await screen.findByText("Danh sách tham dự", { selector: "h2" })).toBeInTheDocument();
+    expect(await screen.findByText(/Khóa chưa diễn ra/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Quét QR điểm danh/ })).toBeNull();
+  });
+
+  it("hides the scan button while score editing is locked", async () => {
+    login(APPROVER);
+    currentTab = "attendance";
+    mockApi({ ...baseCourse, scoreLocked: true });
+    renderPage();
+    expect(await screen.findByText(/khóa chỉnh sửa điểm nên không điểm danh được/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Quét QR điểm danh/ })).toBeNull();
   });
 
   it("shows the two new flags in the course information", async () => {
