@@ -502,7 +502,7 @@ function LeaderIdentity({ row }: { row: Record<string, unknown> }) {
   const displayName = `${holyName} ${fullName}`.trim();
   return (
     <div className="flex min-w-0 items-center gap-3">
-      <Avatar name={fullName || holyName} src={row.imageUrl} />
+      <Avatar name={fullName || holyName} src={row.imageThumbUrl ?? row.imageUrl} />
       <div className="min-w-0">
         <p className="truncate text-sm font-semibold text-foreground">{displayName || "—"}</p>
         {code ? <p className="truncate text-xs text-muted">{code}</p> : null}

@@ -1,13 +1,20 @@
 "use client";
 
+import { useState } from "react";
 import { Camera, UploadSimple } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
+import { MediaImage } from "@/components/common/media-image";
 import { Panel } from "@/components/ui/panel";
+import { AvatarLightbox } from "@/components/common/avatar-lightbox";
+import { AvatarUploadDialog } from "@/components/common/avatar-upload-dialog";
 import type { AuthUser } from "@/lib/auth/auth-store";
 import { FormSections } from "./form-sections";
 import type { FormFieldSpec, ResourceFormMode } from "./types";
 
 type FormValue = string | string[] | number | boolean | null | undefined;
+
+// Giá trị ẩn trong form giữ id ảnh vừa tải lên; backend chỉ nhận id này, không nhận URL ảnh.
+const IMAGE_ASSET_FIELD = "imageAssetId";
 
 // Huynh trưởng: ảnh đại diện cố định bên trái, các nhóm thông tin xếp bên phải trong cùng một trang (không chia bước).
 export function LeaderFormLayout({
@@ -38,8 +45,10 @@ export function LeaderFormLayout({
             Ảnh đại diện
           </h2>
           <AvatarPicker
-            onChange={(value) => onChange(imageField, value)}
-            onClear={() => onChange(imageField, mode === "edit" ? "__CLEAR__" : "")}
+            onChange={(url, assetId) => {
+              onChange(imageField, url);
+              onFieldChange(IMAGE_ASSET_FIELD, assetId);
+            }}
             value={values[imageField.name] as string | null | undefined}
           />
         </Panel>
@@ -49,54 +58,36 @@ export function LeaderFormLayout({
   );
 }
 
-function AvatarPicker({ value, onChange, onClear }: { value?: string | null; onChange: (value: string) => void; onClear: () => void }) {
+function AvatarPicker({ value, onChange }: { value?: string | null; onChange: (url: string, assetId: string) => void }) {
   const imageSource = typeof value === "string" && value && value !== "__CLEAR__" ? value : "";
-  const inputId = "field-imageUrl";
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   return (
     <div className="flex flex-col items-center gap-3">
-      {imageSource ? (
-        <span
-          aria-label="Ảnh đại diện đã chọn"
-          className="block h-24 w-24 shrink-0 rounded-full border-2 border-white bg-cover bg-center ring-1 ring-border"
-          role="img"
-          style={{ backgroundImage: `url(${imageSource})` }}
+      <AvatarLightbox name="Ảnh đại diện" src={imageSource}>
+        <MediaImage
+          alt="Ảnh đại diện đã chọn"
+          className="block h-24 w-24 rounded-full border-2 border-white ring-1 ring-border"
+          fallback={
+            <span className="flex h-24 w-24 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <Camera size={30} weight="duotone" />
+            </span>
+          }
+          src={imageSource}
         />
-      ) : (
-        <span className="flex h-24 w-24 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-          <Camera size={30} weight="duotone" />
-        </span>
-      )}
-      <input
-        accept="image/*"
-        className="sr-only"
-        id={inputId}
-        onChange={(event) => {
-          const file = event.target.files?.[0];
-          if (!file) return;
-          const reader = new FileReader();
-          reader.onload = () => {
-            if (typeof reader.result === "string") onChange(reader.result);
-          };
-          reader.readAsDataURL(file);
-          event.target.value = "";
-        }}
-        type="file"
-      />
+      </AvatarLightbox>
       <div className="flex flex-wrap items-center justify-center gap-2">
-        <label
-          className="inline-flex min-h-9 cursor-pointer items-center gap-2 rounded-lg border border-input bg-white px-3 text-sm font-semibold text-foreground transition-colors hover:bg-slate-50 hover:text-primary"
-          htmlFor={inputId}
-        >
+        <Button onClick={() => setDialogOpen(true)} size="sm" type="button" variant="outline">
           <UploadSimple size={16} />
           {imageSource ? "Đổi ảnh" : "Chọn ảnh"}
-        </label>
-        {imageSource ? (
-          <Button onClick={onClear} size="sm" type="button" variant="ghost">
-            Xóa ảnh
-          </Button>
-        ) : null}
+        </Button>
       </div>
+      <AvatarUploadDialog
+        currentUrl={imageSource}
+        onOpenChange={setDialogOpen}
+        onUploaded={(result) => onChange(result.url, result.assetId)}
+        open={dialogOpen}
+      />
     </div>
   );
 }

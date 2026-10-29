@@ -11,6 +11,23 @@ function hasRole(user: AuthUser | null | undefined, roleCode: string) {
   return Boolean(user?.roles.some((role) => role === roleCode || role === `ROLE_${roleCode}`));
 }
 
+// Phạm vi của người đang tạo tài khoản: giáo phận chọn được giáo hạt + giáo xứ, giáo hạt chỉ chọn giáo xứ, giáo xứ không cần chọn.
+function canPickDeanery(user: AuthUser | null | undefined) {
+  return hasRole(user, "ADMIN_DIOCESE");
+}
+
+function canPickParish(user: AuthUser | null | undefined) {
+  return hasRole(user, "ADMIN_DIOCESE") || hasRole(user, "ADMIN_DEANERY");
+}
+
+function candidateEndpoint(values: Record<string, unknown>) {
+  const filters: Record<string, unknown> = {};
+  if (values.accountParishFilter) filters["parish.id"] = values.accountParishFilter;
+  else if (values.accountDeaneryFilter) filters["parish.deanery.id"] = values.accountDeaneryFilter;
+  const query = Object.keys(filters).length ? `?filters=${encodeURIComponent(JSON.stringify(filters))}` : "";
+  return `/leaders/account-candidates${query}`;
+}
+
 export function getAccountCreateExcludedRoleCodes(user: AuthUser | null) {
   if (isSuperAdmin(user)) return [];
   if (hasRole(user, "ADMIN_DIOCESE")) return ["SUPER_ADMIN", "ADMIN_DIOCESE"];
@@ -72,15 +89,48 @@ export const systemFormSpecs: ResourceFormSpec[] = [
     kind: "accounts",
     createTitle: "Tạo tài khoản",
     description: "Chọn huynh trưởng liên kết, các vai trò được gán và một vai trò chính.",
+    getInitialValues: (user) => ({
+      ...(user?.deaneryId && !canPickDeanery(user) ? { accountDeaneryFilter: user.deaneryId } : {}),
+    }),
     fields: [
+      {
+        name: "accountDeaneryFilter",
+        label: "Giáo hạt",
+        helper: "Chọn để thu hẹp danh sách huynh trưởng.",
+        type: "select",
+        optionsEndpoint: "/deaneries",
+        optionValue: "id",
+        optionLabel: "name",
+        clearable: true,
+        visibleWhen: (_values, _mode, user) => canPickDeanery(user),
+        section: "Thông tin tài khoản",
+      },
+      {
+        name: "accountParishFilter",
+        label: "Giáo xứ",
+        helper: "Chọn để thu hẹp danh sách huynh trưởng.",
+        type: "select",
+        optionsEndpoint: "/parishes",
+        buildOptionsEndpoint: (values) =>
+          values.accountDeaneryFilter ? `/parishes?filters=${encodeURIComponent(JSON.stringify({ "deanery.id": values.accountDeaneryFilter }))}` : undefined,
+        optionValue: "id",
+        optionLabel: "name",
+        clearable: true,
+        visibleWhen: (_values, _mode, user) => canPickParish(user),
+        section: "Thông tin tài khoản",
+      },
       {
         name: "leaderId",
         label: "Huynh trưởng liên kết",
+        helper: "Gõ tên thánh, họ tên, email hoặc số điện thoại để tìm.",
         type: "select",
         optionsEndpoint: "/leaders/account-candidates",
+        buildOptionsEndpoint: candidateEndpoint,
+        optionSearchParam: "search",
+        serverFiltered: true,
         optionValue: "id",
         optionLabel: "fullName",
-        optionLabelFields: ["fullName", "parishName"],
+        optionLabelFields: ["holyName", "fullName", "parishName"],
         searchable: true,
         required: true,
         section: "Thông tin tài khoản",
@@ -111,6 +161,9 @@ export const systemFormSpecs: ResourceFormSpec[] = [
       delete payload.roleCode;
       delete payload.dioceseId;
       delete payload.credentialEmail;
+      // Giáo hạt / giáo xứ chỉ để lọc danh sách huynh trưởng.
+      delete payload.accountDeaneryFilter;
+      delete payload.accountParishFilter;
       return payload;
     },
   },

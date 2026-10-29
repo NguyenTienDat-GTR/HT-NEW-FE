@@ -1,5 +1,8 @@
 "use client";
 
+import { MediaImage } from "@/components/common/media-image";
+import { AvatarLightbox } from "@/components/common/avatar-lightbox";
+import { AvatarUploadDialog } from "@/components/common/avatar-upload-dialog";
 import { ImageSquare, UploadSimple } from "@phosphor-icons/react";
 import { useQuery } from "@tanstack/react-query";
 import type React from "react";
@@ -190,45 +193,39 @@ export function ImagePickerControl({
   onChange: (value: FormValue) => void;
 }) {
   const imageSource = typeof value === "string" && value && value !== "__CLEAR__" ? value : "";
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   return (
     <div className="flex items-center gap-3 rounded-[8px] border border-border bg-white p-2.5">
-      <div
-        aria-hidden={!imageSource}
-        aria-label={imageSource ? "Ảnh đã chọn" : undefined}
-        className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-surface-1 bg-cover bg-center text-muted"
-        role={imageSource ? "img" : undefined}
-        style={imageSource ? { backgroundImage: `url(${imageSource})` } : undefined}
-      >
-        {!imageSource ? <ImageSquare size={26} weight="duotone" /> : null}
-      </div>
-      <input
-        accept="image/*"
-        className="sr-only"
-        disabled={readonly}
-        id={id}
-        onChange={(event) => {
-          const file = event.target.files?.[0];
-          if (!file) return;
-          const reader = new FileReader();
-          reader.onload = () => {
-            if (typeof reader.result === "string") onChange(reader.result);
-          };
-          reader.readAsDataURL(file);
-          event.target.value = "";
-        }}
-        type="file"
-      />
-      <label
+      <AvatarLightbox name="Ảnh đã chọn" src={imageSource}>
+        <MediaImage
+          alt="Ảnh đã chọn"
+          className="block h-16 w-16 rounded-full border border-border"
+          fallback={
+            <div
+              aria-hidden
+              className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-surface-1 text-muted"
+            >
+              <ImageSquare size={26} weight="duotone" />
+            </div>
+          }
+          src={imageSource}
+        />
+      </AvatarLightbox>
+      <button
         className={cn(
           "inline-flex min-h-9 cursor-pointer items-center gap-2 rounded-[8px] border border-border bg-white px-3 text-sm font-semibold text-foreground transition-colors hover:border-primary hover:text-primary",
           readonly && "cursor-not-allowed opacity-60 hover:border-border hover:text-foreground",
         )}
-        htmlFor={id}
+        disabled={readonly}
+        id={id}
+        onClick={() => setDialogOpen(true)}
+        type="button"
       >
         <UploadSimple size={16} />
         {imageSource ? "Đổi ảnh" : "Chọn ảnh"}
-      </label>
+      </button>
+      <AvatarUploadDialog currentUrl={imageSource} onOpenChange={setDialogOpen} onUploaded={(result) => onChange(result.url)} open={dialogOpen} />
     </div>
   );
 }
@@ -270,7 +267,20 @@ function OptionControl({
   const excludedValues = new Set([...(field.excludeOptionValues ?? []), ...(field.excludeOptionValuesWhen?.(user ?? null) ?? [])]);
   const filteredOptions = (field.options ?? apiOptions).filter((option) => !excludedValues.has(option.value));
   const currentValue = !multiple && !checkboxList ? String(value ?? "") : "";
-  const options = preserveCurrentOption(filteredOptions, currentValue, Boolean(field.optionsEndpoint && !field.options), field.currentLabel);
+  // Nhớ nhãn của lựa chọn vừa chọn: khi danh sách đổi (tìm kiếm, đổi bộ lọc) mà giá trị đang chọn không còn trong đó
+  // thì vẫn hiện đúng tên thay vì mã UUID.
+  const [pickedOption, setPickedOption] = useState<{ value: string; label: string } | null>(null);
+  const options = preserveCurrentOption(
+    filteredOptions,
+    currentValue,
+    Boolean(field.optionsEndpoint && !field.options),
+    field.currentLabel || (pickedOption?.value === currentValue ? pickedOption.label : undefined),
+  );
+  const handleSearchableChange = (next: FormValue) => {
+    const picked = options.find((option) => option.value === String(next ?? ""));
+    if (picked) setPickedOption({ value: picked.value, label: picked.label });
+    onChange(next);
+  };
 
   useEffect(() => {
     if (query.isLoading || field.options) return;
@@ -349,7 +359,8 @@ function OptionControl({
     return (
       <SearchableSelect
         id={id}
-        onChange={onChange}
+        onChange={handleSearchableChange}
+        localFilter={!field.serverFiltered}
         onSearchChange={field.optionSearchParam ? setRemoteSearch : undefined}
         options={options}
         placeholder={field.placeholder}
@@ -392,6 +403,7 @@ function SearchableSelect({
   id,
   onChange,
   onSearchChange,
+  localFilter = true,
   options,
   placeholder,
   readonly,
@@ -400,6 +412,8 @@ function SearchableSelect({
   id: string;
   onChange: (value: FormValue) => void;
   onSearchChange?: (value: string) => void;
+  // false: server đã lọc theo từ khóa (có thể khớp ở trường không nằm trong nhãn) nên không lọc lại theo nhãn.
+  localFilter?: boolean;
   options: Option[];
   placeholder?: string;
   readonly?: boolean;
@@ -410,9 +424,10 @@ function SearchableSelect({
   const selected = options.find((option) => option.value === value);
   const filteredOptions = useMemo(() => {
     const keyword = search.trim().toLowerCase();
-    if (!keyword) return options;
+    // Tìm trên server (onSearchChange): kết quả đã khớp từ khóa, lọc lại theo nhãn sẽ làm mất kết quả khớp ở trường khác.
+    if (!keyword || !localFilter) return options;
     return options.filter((option) => normalizeSearchText(`${option.label} ${option.value} ${option.group ?? ""} ${(option.details ?? []).join(" ")}`).includes(normalizeSearchText(keyword)));
-  }, [options, search]);
+  }, [localFilter, options, search]);
 
   return (
     <div className="relative">

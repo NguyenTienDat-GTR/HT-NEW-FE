@@ -57,3 +57,40 @@ describe("super admin account create form", () => {
     });
   });
 });
+
+describe("account create form (non super admin)", () => {
+  const spec = systemFormSpecs.find((item) => item.kind === "accounts" && !item.superAdminOnly && item.fields.some((f) => f.name === "leaderId"))!;
+  const field = (name: string) => spec.fields.find((item) => item.name === name)!;
+  const visible = (name: string, roles: string[]) => field(name).visibleWhen!({}, "create", user(roles));
+
+  it("shows deanery and parish dropdowns for diocese scope, only parish for deanery scope, none for parish scope", () => {
+    expect([visible("accountDeaneryFilter", ["ADMIN_DIOCESE"]), visible("accountParishFilter", ["ADMIN_DIOCESE"])]).toEqual([true, true]);
+    expect([visible("accountDeaneryFilter", ["ADMIN_DEANERY"]), visible("accountParishFilter", ["ADMIN_DEANERY"])]).toEqual([false, true]);
+    expect([visible("accountDeaneryFilter", ["ADMIN_PARISH"]), visible("accountParishFilter", ["ADMIN_PARISH"])]).toEqual([false, false]);
+  });
+
+  it("filters parishes by the chosen deanery", () => {
+    const build = field("accountParishFilter").buildOptionsEndpoint!;
+    expect(build({})).toBeUndefined();
+    expect(decodeURIComponent(build({ accountDeaneryFilter: "d1" })!)).toBe('/parishes?filters={"deanery.id":"d1"}');
+  });
+
+  it("narrows leader candidates by parish first, then deanery, and searches on the server", () => {
+    const leader = field("leaderId");
+    const build = (values: Record<string, unknown>) => decodeURIComponent(leader.buildOptionsEndpoint!(values)!);
+    expect(build({})).toBe("/leaders/account-candidates");
+    expect(build({ accountDeaneryFilter: "d1" })).toBe('/leaders/account-candidates?filters={"parish.deanery.id":"d1"}');
+    expect(build({ accountDeaneryFilter: "d1", accountParishFilter: "p1" })).toBe('/leaders/account-candidates?filters={"parish.id":"p1"}');
+    expect(leader.optionSearchParam).toBe("search");
+    expect(leader.serverFiltered).toBe(true);
+    // Tên hiển thị gồm tên thánh + họ tên + giáo xứ, không phải mã.
+    expect(leader.optionLabelFields).toEqual(["holyName", "fullName", "parishName"]);
+  });
+
+  it("does not send the filter dropdowns to the backend", () => {
+    const payload = spec.mapSubmit!({ leaderId: "l1", accountDeaneryFilter: "d1", accountParishFilter: "p1", roleCodes: ["ADMIN_PARISH"] }, "create");
+    expect(payload).not.toHaveProperty("accountDeaneryFilter");
+    expect(payload).not.toHaveProperty("accountParishFilter");
+    expect(payload).toMatchObject({ leaderId: "l1", roleCodes: ["ADMIN_PARISH"], primaryRoleCode: "ADMIN_PARISH" });
+  });
+});

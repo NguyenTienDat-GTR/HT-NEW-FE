@@ -1,3 +1,4 @@
+import { MediaImage } from "@/components/common/media-image";
 import { auditOperationLabel, auditOperationTone, auditStatusText, auditStatusTone, auditTargetText } from "./audit-log-labels";
 import {
   organizingStateLabels,
@@ -225,7 +226,7 @@ export function ResourceCell({ column, row, value, displayMode = "table" }: Reso
   if (column === "operation" && typeof value === "string") return <Badge tone={auditOperationTone(value)}>{auditOperationLabel(value)}</Badge>;
   if (column === "statusCode" && typeof value === "number") return <Badge tone={auditStatusTone(value)}>{`${value} · ${auditStatusText(value)}`}</Badge>;
   if (column === "durationMs" && typeof value === "number") return <TextValue full={full}>{`${viNumber.format(value)} ms`}</TextValue>;
-  if (column === "imageUrl") return <Avatar name={String(row.fullName ?? row.leaderFullName ?? row.username ?? "")} src={value} />;
+  if (column === "imageUrl") return <Avatar name={String(row.fullName ?? row.leaderFullName ?? row.username ?? "")} src={row.imageThumbUrl ?? value} />;
   if (column === "status" && value === true && row.effectiveStatus === false) return <Badge tone="warning">Ngưng theo đơn vị cha</Badge>;
   if (column === "status" && typeof value === "boolean") return <StatusBadge active={value} />;
   if (column === "validity" && typeof value === "string") return <PermissionValidityBadge validity={value} />;
@@ -298,20 +299,17 @@ function resolveRelatedDisplayValue(column: string, row: Record<string, unknown>
 
 export function Avatar({ name, src }: { name: string; src: unknown }) {
   const initial = name.trim().charAt(0).toUpperCase() || "H";
-  if (typeof src === "string" && src) {
-    return (
-      <span
-        aria-label={name || "Ảnh đại diện"}
-        className="inline-flex h-9 w-9 shrink-0 rounded-full border border-border bg-cover bg-center"
-        role="img"
-        style={{ backgroundImage: `url(${src})` }}
-      />
-    );
-  }
   return (
-    <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-soft text-sm font-semibold text-primary">
-      {initial}
-    </span>
+    <MediaImage
+      alt={name || "Ảnh đại diện"}
+      className="inline-flex h-9 w-9 rounded-full border border-border"
+      fallback={
+        <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-soft text-sm font-semibold text-primary">
+          {initial}
+        </span>
+      }
+      src={typeof src === "string" ? src : null}
+    />
   );
 }
 
