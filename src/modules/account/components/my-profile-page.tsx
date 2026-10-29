@@ -8,6 +8,7 @@ import {
   IdentificationBadge,
   Key,
   MapPin,
+  PencilSimple,
   Phone,
   ShieldCheck,
   UserCircle,
@@ -28,6 +29,7 @@ import { RoleChip } from "./account-menu";
 import { CertificatesSection, RankHistorySection, SectionTitle } from "./my-profile-sections";
 import { ChangeEmailDialog } from "./change-email-dialog";
 import { ChangePasswordDialog } from "./change-password-dialog";
+import { EditProfileDialog } from "./edit-profile-dialog";
 import { UserAvatar } from "./user-avatar";
 
 type IconType = React.ComponentType<{ className?: string; weight?: "regular" | "bold" | "fill" | "duotone" }>;
@@ -37,6 +39,7 @@ export function MyProfilePage() {
   const profileQuery = useMyProfile();
   const [passwordOpen, setPasswordOpen] = useState(false);
   const [emailOpen, setEmailOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
 
   if (profileQuery.isLoading || (!profileQuery.data && !profileQuery.isError)) return <ProfileSkeleton />;
   if (profileQuery.isError) {
@@ -67,7 +70,7 @@ export function MyProfilePage() {
         <div aria-hidden className="h-24 bg-gradient-to-r from-primary via-[#2563eb] to-accent sm:h-28" />
         <div className="flex flex-col gap-4 px-5 pb-5 sm:flex-row sm:items-start sm:justify-between sm:px-6">
           <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
-            <UserAvatar className="-mt-10 self-start rounded-full ring-4 ring-white" imageUrl={leader?.imageUrl} name={name} size="lg" />
+            <UserAvatar className="-mt-10 self-start rounded-full ring-4 ring-white" imageUrl={leader?.imageUrl} name={name} size="lg" zoomable />
             <div className="min-w-0 sm:pt-3">
               <h2 className="truncate text-xl font-semibold text-foreground">{name}</h2>
               <div className="mt-1.5 flex flex-wrap items-center gap-2">
@@ -91,7 +94,7 @@ export function MyProfilePage() {
       </Panel>
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        {leader ? <LeaderInfo leader={leader} /> : <NoLeaderState />}
+        {leader ? <LeaderInfo leader={leader} onEdit={() => setEditOpen(true)} /> : <NoLeaderState />}
         <AccountInfo onChangeEmail={() => setEmailOpen(true)} profile={profile} />
       </div>
 
@@ -103,12 +106,13 @@ export function MyProfilePage() {
       ) : null}
 
       <ChangePasswordDialog onOpenChange={setPasswordOpen} open={passwordOpen} />
+      {editOpen && leader ? <EditProfileDialog leader={leader} onClose={() => setEditOpen(false)} /> : null}
       {profile.hasLeader ? null : <ChangeEmailDialog currentEmail={profile.email} onOpenChange={setEmailOpen} open={emailOpen} />}
     </div>
   );
 }
 
-function LeaderInfo({ leader }: { leader: MyLeaderProfile }) {
+function LeaderInfo({ leader, onEdit }: { leader: MyLeaderProfile; onEdit: () => void }) {
   const facts: { icon: IconType; label: string; value: string }[] = [
     { icon: UserCircle, label: "Tên thánh", value: displayValue(leader.holyName) },
     { icon: IdentificationBadge, label: "Họ và tên", value: displayValue(leader.fullName) },
@@ -121,7 +125,16 @@ function LeaderInfo({ leader }: { leader: MyLeaderProfile }) {
   ];
   return (
     <Panel className="p-4 sm:p-5">
-      <SectionTitle icon={UserList} title="Thông tin Huynh Trưởng" />
+      <SectionTitle
+        action={
+          <Button onClick={onEdit} size="sm" variant="outline">
+            <PencilSimple aria-hidden className="h-4 w-4" />
+            Chỉnh sửa
+          </Button>
+        }
+        icon={UserList}
+        title="Thông tin Huynh Trưởng"
+      />
       <dl className="mt-4 grid gap-x-6 gap-y-4 sm:grid-cols-2">
         {facts.map((fact) => (
           <Fact key={fact.label} {...fact} />
