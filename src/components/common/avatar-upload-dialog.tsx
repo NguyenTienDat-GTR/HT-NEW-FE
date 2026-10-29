@@ -1,33 +1,17 @@
 "use client";
 
-import { Camera, MagnifyingGlassMinus, MagnifyingGlassPlus, UploadSimple, Warning, X } from "@phosphor-icons/react";
+import { Camera, MagnifyingGlassMinus, MagnifyingGlassPlus, UploadSimple, UserFocus, Warning, X } from "@phosphor-icons/react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { useEffect, useRef, useState } from "react";
 import { MediaImage } from "@/components/common/media-image";
 import { Button } from "@/components/ui/button";
 import { getApiErrorMessage } from "@/lib/api/client";
+import { clamp, clampOffset, coverScale, FRAME_HEIGHT, FRAME_WIDTH, MAX_ZOOM, type Natural, type Offset } from "@/lib/media/avatar-frame";
 import { cropPortraitToFile, ImageValidationError, validateImageFile } from "@/lib/media/compress-image";
+import { FACE_NOTES, suggestFaceFrame, type FaceSuggestion } from "@/lib/media/face-frame";
 import { uploadPreparedMedia, type MediaUploadResult } from "@/lib/media/upload-media";
 
-// Khung căn ảnh khổ 4x6 (dọc, rộng:cao = 2:3): đây chính là phần ảnh sẽ được lưu và in lên chứng nhận / thẻ.
-export const FRAME_WIDTH = 240;
-export const FRAME_HEIGHT = 360;
-const MAX_ZOOM = 4;
-
-type Natural = { width: number; height: number };
-type Offset = { x: number; y: number };
-
-const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
-
-// Vị trí hợp lệ: ảnh luôn phủ kín khung (không để hở mép).
-function clampOffset(offset: Offset, natural: Natural, scale: number): Offset {
-  return {
-    x: clamp(offset.x, FRAME_WIDTH - natural.width * scale, 0),
-    y: clamp(offset.y, FRAME_HEIGHT - natural.height * scale, 0),
-  };
-}
-
-const coverScale = (natural: Natural) => Math.max(FRAME_WIDTH / natural.width, FRAME_HEIGHT / natural.height);
+export { FRAME_HEIGHT, FRAME_WIDTH };
 
 // Hộp chọn ảnh đại diện: chọn ảnh, kéo / phóng to để căn vào khung 4x6, đọc lưu ý rồi mới tải lên.
 export function AvatarUploadDialog({
@@ -55,6 +39,10 @@ export function AvatarUploadDialog({
   const [offset, setOffset] = useState<Offset>({ x: 0, y: 0 });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Tự căn khuôn mặt vào giữa khung: detectRun đổi số mỗi lần dò / bị hủy để bỏ qua kết quả dò đã cũ.
+  const detectRun = useRef(0);
+  const [detecting, setDetecting] = useState(false);
+  const [faceStatus, setFaceStatus] = useState<FaceSuggestion["status"] | null>(null);
 
   // Giải phóng URL tạm của ảnh đang căn.
   useEffect(() => {
@@ -63,7 +51,31 @@ export function AvatarUploadDialog({
     };
   }, [sourceUrl]);
 
+  function cancelDetection() {
+    detectRun.current += 1;
+    setDetecting(false);
+  }
+
+  async function alignToFace(size: Natural) {
+    const image = imageRef.current;
+    if (!image) return;
+    detectRun.current += 1;
+    const run = detectRun.current;
+    setDetecting(true);
+    const suggestion = await suggestFaceFrame(image, size);
+    // Người dùng đã kéo / phóng to, đổi ảnh hoặc đóng hộp trong lúc dò: giữ nguyên lựa chọn của họ.
+    if (run !== detectRun.current) return;
+    setDetecting(false);
+    setFaceStatus(suggestion.status);
+    if (suggestion.frame) {
+      setZoom(suggestion.frame.zoom);
+      setOffset(suggestion.frame.offset);
+    }
+  }
+
   function reset() {
+    cancelDetection();
+    setFaceStatus(null);
     setFile(null);
     setSourceUrl(null);
     setNatural(null);
@@ -87,6 +99,8 @@ export function AvatarUploadDialog({
       setError(exception instanceof ImageValidationError ? exception.message : getApiErrorMessage(exception));
       return;
     }
+    cancelDetection();
+    setFaceStatus(null);
     setFile(chosen);
     setNatural(null);
     setZoom(1);
@@ -104,12 +118,14 @@ export function AvatarUploadDialog({
     setNatural(size);
     setZoom(1);
     setOffset({ x: (FRAME_WIDTH - width * scale) / 2, y: (FRAME_HEIGHT - height * scale) / 2 });
+    void alignToFace(size);
   }
 
   const scale = natural ? coverScale(natural) * zoom : 1;
 
   function changeZoom(nextZoom: number) {
     if (!natural) return;
+    cancelDetection();
     const next = clamp(nextZoom, 1, MAX_ZOOM);
     const nextScale = coverScale(natural) * next;
     // Giữ nguyên điểm đang ở tâm khung khi phóng to / thu nhỏ.
@@ -121,6 +137,7 @@ export function AvatarUploadDialog({
 
   function startDrag(event: React.PointerEvent<HTMLDivElement>) {
     if (!natural) return;
+    cancelDetection();
     drag.current = { startX: event.clientX, startY: event.clientY, origin: offset };
     event.currentTarget.setPointerCapture?.(event.pointerId);
   }
@@ -255,6 +272,21 @@ export function AvatarUploadDialog({
                   <MagnifyingGlassPlus aria-hidden className="h-4 w-4 text-muted" />
                 </div>
               </div>
+
+              {natural ? (
+                <div className="space-y-2" role="status">
+                  {detecting ? <p className="text-xs text-muted">Đang nhận diện khuôn mặt…</p> : null}
+                  {!detecting && faceStatus ? (
+                    <p className={FACE_NOTES[faceStatus].tone === "ok" ? "text-xs leading-5 text-success" : "text-xs leading-5 text-amber-700"} data-testid="avatar-face-note">
+                      {FACE_NOTES[faceStatus].text}
+                    </p>
+                  ) : null}
+                  <Button disabled={detecting || busy} onClick={() => void alignToFace(natural)} size="sm" type="button" variant="outline">
+                    <UserFocus aria-hidden className="h-4 w-4" />
+                    Căn theo khuôn mặt
+                  </Button>
+                </div>
+              ) : null}
 
               <div>
                 <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">Ảnh hiện tại</p>

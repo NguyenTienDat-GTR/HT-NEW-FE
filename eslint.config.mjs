@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Model và wasm nhận diện khuôn mặt (tệp đóng gói sẵn).
+    "public/mediapipe/**",
   ]),
 ]);
 
