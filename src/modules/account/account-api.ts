@@ -36,6 +36,10 @@ export type MyProfile = {
   roles: MyRole[];
   email: string | null;
   hasLeader: boolean;
+  // Ảnh đại diện của tài khoản không gắn huynh trưởng (tài khoản gắn huynh trưởng dùng ảnh trong hồ sơ huynh trưởng).
+  imageUrl?: string | null;
+  imageThumbUrl?: string | null;
+  imageAssetId?: string | null;
   leader: MyLeaderProfile | null;
   rankHistory: RankHistoryRow[];
   certificates: CertificateRow[];
@@ -86,6 +90,11 @@ export type MyProfileUpdate = Partial<{
 export const profileApi = {
   // Chỉ gửi các trường đổi. Giáo xứ / giáo hạt không sửa được ở đây.
   update: (changes: MyProfileUpdate) => apiFetch<MyProfile>("/auth/me/profile", { method: "PUT", body: JSON.stringify(changes) }),
+};
+
+export const avatarApi = {
+  // Đặt ảnh đại diện cho tài khoản không gắn huynh trưởng (ảnh đã tải lên qua /media, loại ACCOUNT_AVATAR). Chỉ thay, không xóa.
+  update: (imageAssetId: string) => apiFetch<MyProfile>("/auth/me/avatar", { method: "PUT", body: JSON.stringify({ imageAssetId }) }),
 };
 
 export const emailApi = {

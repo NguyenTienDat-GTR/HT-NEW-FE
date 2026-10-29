@@ -2,7 +2,7 @@ import { apiFetch } from "@/lib/api/client";
 import { compressImage, type ImagePreset } from "./compress-image";
 
 // Khớp enum MediaCategory của backend.
-export type MediaCategory = "LEADER_AVATAR" | "CERTIFICATE_BACKGROUND" | "BADGE_BACKGROUND";
+export type MediaCategory = "LEADER_AVATAR" | "ACCOUNT_AVATAR" | "CERTIFICATE_BACKGROUND" | "BADGE_BACKGROUND";
 
 export type MediaUploadResult = {
   assetId: string;
@@ -17,6 +17,7 @@ export type MediaUploadResult = {
 
 const PRESET_BY_CATEGORY: Record<MediaCategory, ImagePreset> = {
   LEADER_AVATAR: "avatar",
+  ACCOUNT_AVATAR: "avatar",
   CERTIFICATE_BACKGROUND: "background",
   BADGE_BACKGROUND: "background",
 };

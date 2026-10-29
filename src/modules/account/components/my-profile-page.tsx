@@ -2,6 +2,7 @@
 
 import {
   Cake,
+  Camera,
   Church,
   EnvelopeSimple,
   GenderIntersex,
@@ -16,14 +17,17 @@ import {
   WarningCircle,
 } from "@phosphor-icons/react";
 import type React from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { toast } from "sonner";
+import { AvatarUploadDialog } from "@/components/common/avatar-upload-dialog";
 import { Button } from "@/components/ui/button";
 import { Panel } from "@/components/ui/panel";
 import { formatLeaderLevel } from "@/components/common/resource/resource-format";
 import { getApiErrorMessage } from "@/lib/api/client";
 import { useAuthStore } from "@/lib/auth/auth-store";
 import { displayValue, formatDate, genderLabel } from "@/modules/leaders/components/leader-detail-utils";
-import { type MyLeaderProfile, type MyProfile, useMyProfile } from "../account-api";
+import { avatarApi, myProfileQueryKey, type MyLeaderProfile, type MyProfile, useMyProfile } from "../account-api";
 import { displayName } from "../account-display";
 import { RoleChip } from "./account-menu";
 import { CertificatesSection, RankHistorySection, SectionTitle } from "./my-profile-sections";
@@ -40,6 +44,8 @@ export function MyProfilePage() {
   const [passwordOpen, setPasswordOpen] = useState(false);
   const [emailOpen, setEmailOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [avatarOpen, setAvatarOpen] = useState(false);
+  const queryClient = useQueryClient();
 
   if (profileQuery.isLoading || (!profileQuery.data && !profileQuery.isError)) return <ProfileSkeleton />;
   if (profileQuery.isError) {
@@ -70,7 +76,7 @@ export function MyProfilePage() {
         <div aria-hidden className="h-24 bg-gradient-to-r from-primary via-[#2563eb] to-accent sm:h-28" />
         <div className="flex flex-col gap-4 px-5 pb-5 sm:flex-row sm:items-start sm:justify-between sm:px-6">
           <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
-            <UserAvatar className="-mt-10 self-start rounded-full ring-4 ring-white" imageUrl={leader?.imageUrl} name={name} size="lg" zoomable />
+            <UserAvatar className="-mt-10 self-start rounded-full ring-4 ring-white" imageUrl={leader ? leader.imageUrl : profile.imageUrl} name={name} size="lg" zoomable />
             <div className="min-w-0 sm:pt-3">
               <h2 className="truncate text-xl font-semibold text-foreground">{name}</h2>
               <div className="mt-1.5 flex flex-wrap items-center gap-2">
@@ -86,10 +92,18 @@ export function MyProfilePage() {
               </div>
             </div>
           </div>
-          <Button className="self-start sm:mt-4" onClick={() => setPasswordOpen(true)} variant="outline">
-            <Key aria-hidden className="h-4 w-4" />
-            Đổi mật khẩu
-          </Button>
+          <div className="flex flex-wrap items-center gap-2 self-start sm:mt-4">
+            {leader ? null : (
+              <Button onClick={() => setAvatarOpen(true)} variant="outline">
+                <Camera aria-hidden className="h-4 w-4" />
+                {profile.imageUrl ? "Đổi ảnh đại diện" : "Thêm ảnh đại diện"}
+              </Button>
+            )}
+            <Button onClick={() => setPasswordOpen(true)} variant="outline">
+              <Key aria-hidden className="h-4 w-4" />
+              Đổi mật khẩu
+            </Button>
+          </div>
         </div>
       </Panel>
 
@@ -105,6 +119,23 @@ export function MyProfilePage() {
         </>
       ) : null}
 
+      {leader ? null : (
+        <AvatarUploadDialog
+          category="ACCOUNT_AVATAR"
+          currentUrl={profile.imageUrl}
+          onOpenChange={setAvatarOpen}
+          onUploaded={async (uploaded) => {
+            try {
+              await avatarApi.update(uploaded.assetId);
+              await queryClient.invalidateQueries({ queryKey: myProfileQueryKey });
+              toast.success("Đã cập nhật ảnh đại diện");
+            } catch (error) {
+              toast.error(getApiErrorMessage(error));
+            }
+          }}
+          open={avatarOpen}
+        />
+      )}
       <ChangePasswordDialog onOpenChange={setPasswordOpen} open={passwordOpen} />
       {editOpen && leader ? <EditProfileDialog leader={leader} onClose={() => setEditOpen(false)} /> : null}
       {profile.hasLeader ? null : <ChangeEmailDialog currentEmail={profile.email} onOpenChange={setEmailOpen} open={emailOpen} />}

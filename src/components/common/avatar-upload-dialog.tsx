@@ -34,12 +34,15 @@ export function AvatarUploadDialog({
   open,
   onOpenChange,
   currentUrl,
+  category = "LEADER_AVATAR",
   onUploaded,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   // Ảnh đang dùng (nếu có) để so sánh với ảnh mới.
   currentUrl?: string | null;
+  // Loại ảnh gửi lên backend: ảnh huynh trưởng (mặc định) hoặc ảnh tài khoản không gắn huynh trưởng.
+  category?: "LEADER_AVATAR" | "ACCOUNT_AVATAR";
   onUploaded: (result: MediaUploadResult) => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -139,7 +142,7 @@ export function AvatarUploadDialog({
         { x: -offset.x / scale, y: -offset.y / scale, width: FRAME_WIDTH / scale, height: FRAME_HEIGHT / scale },
         file.name,
       );
-      const result = await uploadPreparedMedia(cropped, "LEADER_AVATAR");
+      const result = await uploadPreparedMedia(cropped, category);
       onUploaded(result);
       reset();
       onOpenChange(false);
