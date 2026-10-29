@@ -1,5 +1,6 @@
 "use client";
 
+import { BackgroundAlbumDialog } from "@/components/common/background-album-dialog";
 import * as Dialog from "@radix-ui/react-dialog";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
@@ -23,10 +24,12 @@ import {
   TextT,
   TextUnderline,
   Trash,
-  UploadSimple,
+  Images,
+  UserCircle,
   X,
 } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
+import { PhotoInspector } from "./photo-inspector";
 import { HelpTip } from "@/components/ui/help-tip";
 import { Input } from "@/components/ui/input";
 import { Panel } from "@/components/ui/panel";
@@ -44,6 +47,7 @@ import {
   SCOPE_LABELS,
   blankForm,
   clamp,
+  DEFAULT_PHOTO_SIZE,
   DEFAULT_QR_SIZE,
   MAX_QR_SIZE,
   MIN_QR_SIZE,
@@ -211,21 +215,21 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
     setSelectedIndex(form.layout.length);
   }
 
+  // Ảnh đại diện của huynh trưởng nhận chứng nhận, lấy từ hồ sơ huynh trưởng lúc xuất PDF / xem trước.
+  function addPhoto() {
+    history.set((current) => ({
+      ...current,
+      layout: [...current.layout, { type: "PHOTO", photoRatio: "4x6", size: DEFAULT_PHOTO_SIZE, x: 0.12, y: 0.3, fontSize: 0.04, color: "#000000", align: "center", fontFamily: "sans", bold: false, italic: false, underline: false }],
+    }));
+    setSelectedIndex(form.layout.length);
+  }
+
   function removeItem(index: number) {
     history.set((current) => ({ ...current, layout: current.layout.filter((_, idx) => idx !== index) }));
     setSelectedIndex(null);
   }
 
-  function handleUpload(event: React.ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === "string") updateForm({ backgroundImage: reader.result });
-    };
-    reader.readAsDataURL(file);
-    event.target.value = "";
-  }
+  const [albumOpen, setAlbumOpen] = useState(false);
 
   // Ctrl+Z hoàn tác, Ctrl+Y / Ctrl+Shift+Z làm lại. Không chặn hoàn tác gốc của ô nhập văn bản.
   const { undo, redo } = history;
@@ -281,7 +285,9 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
       name: form.name.trim(),
       paperSize: form.paperSize,
       orientation: form.orientation,
-      backgroundImage: form.backgroundImage || null,
+      // Backend chỉ nhận id ảnh đã tải lên; chưa có ảnh nào (kể cả ảnh cũ) thì yêu cầu xóa nền.
+      backgroundAssetId: form.backgroundAssetId || null,
+      clearBackground: !form.backgroundImage,
       fieldLayout: form.layout,
     };
   }
@@ -685,16 +691,17 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
                   <option value="PORTRAIT">Dọc</option>
                 </select>
               </Field>
-              <label
-                className={cn(
-                  "inline-flex h-10 cursor-pointer items-center gap-2 rounded-lg border border-input bg-white px-3 text-sm font-semibold text-foreground transition-colors hover:bg-slate-50 hover:text-primary focus-within:outline focus-within:outline-2 focus-within:outline-primary",
-                  !canEditCurrent && "pointer-events-none opacity-60",
-                )}
-              >
-                <UploadSimple size={16} />
-                {form.backgroundImage ? "Đổi ảnh nền" : "Tải ảnh nền"}
-                <input accept="image/*" className="sr-only" disabled={!canEditCurrent} onChange={handleUpload} type="file" />
-              </label>
+              <Button disabled={!canEditCurrent} onClick={() => setAlbumOpen(true)} type="button" variant="outline">
+                <Images size={16} />
+                {form.backgroundImage ? "Đổi ảnh nền (album)" : "Chọn ảnh nền (album)"}
+              </Button>
+              <BackgroundAlbumDialog
+                currentAssetId={form.backgroundAssetId || null}
+                kind="CERTIFICATE"
+                onOpenChange={setAlbumOpen}
+                onPick={(item) => updateForm({ backgroundImage: item.url, backgroundAssetId: item.assetId })}
+                open={albumOpen}
+              />
             </div>
 
             {canEditCurrent ? (
@@ -717,6 +724,11 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
                   <Button onClick={addText} type="button" variant="outline">
                     <TextT size={16} /> Văn bản
                   </Button>
+                  <Tip label="Thêm ảnh đại diện của huynh trưởng nhận chứng nhận. Ảnh lấy từ hồ sơ huynh trưởng khi xuất PDF; huynh trưởng chưa có ảnh thì không in gì.">
+                    <Button onClick={addPhoto} type="button" variant="outline">
+                      <UserCircle size={16} /> Ảnh huynh trưởng
+                    </Button>
+                  </Tip>
                   <Tip label="Thêm mã QR chứa mã chứng nhận. Chỉ khi bố cục có mã QR thì khi xuất PDF hệ thống mới tạo mã QR (không lưu lại).">
                     <Button onClick={addQr} type="button" variant="outline">
                       <QrCode size={16} /> Mã QR
@@ -740,6 +752,7 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
                 selectedIndex={selectedIndex}
                 onSelect={setSelectedIndex}
                 onMove={(index, x, y) => updateItem(index, { x, y }, "move")}
+                onResizePhoto={(index, patch) => updateItem(index, patch, "photoResize")}
                 editable={canEditCurrent && !preview}
               />
             </div>
@@ -751,7 +764,7 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
                     <div className="min-w-0">
                       <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">Phần tử đang chọn</p>
                       <p className="truncate text-sm font-semibold text-foreground">
-                        {selected.type === "TEXT" ? "Văn bản tĩnh" : selected.type === "QR" ? "Mã QR chứng nhận" : fieldLabel(selected.fieldKey)}
+                        {selected.type === "TEXT" ? "Văn bản tĩnh" : selected.type === "QR" ? "Mã QR chứng nhận" : selected.type === "PHOTO" ? "Ảnh huynh trưởng" : fieldLabel(selected.fieldKey)}
                       </p>
                     </div>
                     <Button aria-label="Xóa phần tử" className="text-danger" disabled={!canEditCurrent} onClick={() => removeItem(selectedIndex)} size="icon" title="Xóa phần tử" type="button" variant="ghost">
@@ -774,13 +787,17 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
                     </div>
                   ) : null}
 
+                  {selected.type === "PHOTO" ? (
+                    <PhotoInspector disabled={!canEditCurrent} item={selected} onChange={(patch, key) => updateItem(selectedIndex, patch, key)} unit="giấy" />
+                  ) : null}
+
                   {selected.type === "TEXT" ? (
                     <Field label="Nội dung">
                       <Input disabled={!canEditCurrent} onChange={(event) => updateItem(selectedIndex, { text: event.target.value }, "text")} value={selected.text ?? ""} />
                     </Field>
                   ) : null}
 
-                  {selected.type === "QR" ? null : (
+                  {selected.type === "QR" || selected.type === "PHOTO" ? null : (
                     <>
                       <div className="space-y-3 border-t border-border pt-3">
                         <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">Kiểu chữ</p>

@@ -45,7 +45,8 @@ describe("formFromBadgeConfig", () => {
     gapMm: 2,
     cropMarks: false,
     hasBack: true,
-    frontBackground: "data:image/png;base64,AA",
+    frontBackground: "/api/media/f1/preview?exp=1&sig=a",
+    frontBackgroundAssetId: "f1",
     backBackground: null,
     frontLayout: [{ type: "FIELD", fieldKey: "teamName" } as LayoutItem],
     backLayout: [],
@@ -69,8 +70,11 @@ describe("formFromBadgeConfig", () => {
     const loaded = formFromBadgeConfig(config);
     const payload = badgePayload(loaded);
     expect(payload).toMatchObject({ name: "Thẻ đội", paperSize: "A5", cardWidthMm: 60, cardHeightMm: 40, cardOrientation: "PORTRAIT", hasBack: true });
-    expect(payload.frontBackground).toBe("data:image/png;base64,AA");
-    expect(payload.backBackground).toBeNull();
+    // Backend chỉ nhận id ảnh đã tải lên, không nhận URL ảnh.
+    expect(payload.frontBackgroundAssetId).toBe("f1");
+    expect(payload.clearFrontBackground).toBe(false);
+    expect(payload.backBackgroundAssetId).toBeNull();
+    expect(payload).not.toHaveProperty("frontBackground");
   });
 });
 
@@ -82,25 +86,36 @@ describe("isSameBadgeForm", () => {
     expect(isSameBadgeForm(base, form({ frontLayout: [item()] }))).toBe(false);
     expect(isSameBadgeForm(form({ frontLayout: [item()] }), form({ frontLayout: [item({ x: 0.6 })] }))).toBe(false);
   });
+
+  it("ignores refreshed signed URLs but detects a different background asset", () => {
+    const a = form({ frontBackground: "/api/media/x/preview?exp=1&sig=a", frontBackgroundAssetId: "x" });
+    const sameAssetNewUrl = form({ frontBackground: "/api/media/x/preview?exp=2&sig=b", frontBackgroundAssetId: "x" });
+    const otherAsset = form({ frontBackground: "/api/media/y/preview?exp=1&sig=a", frontBackgroundAssetId: "y" });
+    expect(isSameBadgeForm(a, sameAssetNewUrl)).toBe(true);
+    expect(isSameBadgeForm(a, otherAsset)).toBe(false);
+  });
 });
 
 describe("badgePayload", () => {
   it("trims the name and nulls empty backgrounds", () => {
     const payload = badgePayload(form({ name: "  Thẻ  " }));
     expect(payload.name).toBe("Thẻ");
-    expect(payload.frontBackground).toBeNull();
+    expect(payload.frontBackgroundAssetId).toBeNull();
+    expect(payload.clearFrontBackground).toBe(true);
   });
 
   it("drops the back side when the card has no back", () => {
-    const payload = badgePayload(form({ hasBack: false, backBackground: "data:image/png;base64,BB", backLayout: [item()] }));
+    const payload = badgePayload(form({ hasBack: false, backBackground: "/api/media/b/preview?exp=1&sig=a", backBackgroundAssetId: "b", backLayout: [item()] }));
     expect(payload.hasBack).toBe(false);
-    expect(payload.backBackground).toBeNull();
+    expect(payload.backBackgroundAssetId).toBeNull();
+    expect(payload.clearBackBackground).toBe(true);
     expect(payload.backLayout).toEqual([]);
   });
 
   it("keeps the back side when the card has a back", () => {
-    const payload = badgePayload(form({ hasBack: true, backBackground: "data:image/png;base64,BB", backLayout: [item({ type: "QR", size: 0.3 })] }));
-    expect(payload.backBackground).toBe("data:image/png;base64,BB");
+    const payload = badgePayload(form({ hasBack: true, backBackground: "/api/media/b/preview?exp=1&sig=a", backBackgroundAssetId: "b", backLayout: [item({ type: "QR", size: 0.3 })] }));
+    expect(payload.backBackgroundAssetId).toBe("b");
+    expect(payload.clearBackBackground).toBe(false);
     expect(payload.backLayout).toHaveLength(1);
   });
 });
