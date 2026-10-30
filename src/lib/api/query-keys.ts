@@ -9,6 +9,6 @@ export function resourceKey(...parts: readonly unknown[]) {
 }
 
 /** Khóa của một trang danh sách: endpoint + query string đã chuẩn hóa. */
-export function resourceListKey(endpoint: string, queryString: string | undefined) {
+export function resourceListKey(endpoint: string | undefined, queryString: string | undefined) {
   return resourceKey(endpoint, queryString);
 }
