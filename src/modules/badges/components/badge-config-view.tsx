@@ -1,6 +1,6 @@
 "use client";
 
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ArrowClockwise, ArrowCounterClockwise, ClockCounterClockwise, Copy, Star, Trash } from "@phosphor-icons/react";
@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { HelpTip } from "@/components/ui/help-tip";
 import { Input } from "@/components/ui/input";
 import { Panel } from "@/components/ui/panel";
-import { apiFetch, apiMutation, getApiErrorMessage, type PageResponse } from "@/lib/api/client";
+import { getApiErrorMessage } from "@/lib/api/client";
+import { NEW_CONFIG, useConfigLibrary } from "@/modules/layout-config/use-config-library";
 import { useAuthStore } from "@/lib/auth/auth-store";
 import { hasPermissionPrefix } from "@/lib/auth/permissions";
 import { useSessionState } from "@/lib/use-session-state";
@@ -30,7 +31,6 @@ import { BadgeEditor } from "./badge-editor";
 import { BadgeLibrary, EMPTY_LIBRARY_FILTERS, buildLibraryParams, type LibraryFilters } from "./badge-library";
 import { Callout } from "./form-controls";
 
-const NEW_CONFIG = "__new__";
 const QUERY_KEY = "badge-config";
 
 // Cấu hình thẻ tham dự khóa huấn luyện: thư viện + trình thiết kế (khổ thẻ, mặt trước / sau, ảnh nền, trường mail merge, mã QR).
@@ -48,17 +48,6 @@ export function BadgeConfigView({ route }: { route?: RouteConfig }) {
 
   useCertificateFonts();
 
-  const optionsQuery = useQuery({
-    queryKey: [QUERY_KEY, "options"],
-    enabled: Boolean(user),
-    queryFn: () => apiFetch<BadgeConfig[]>("/badges/config/options"),
-  });
-  const fieldsQuery = useQuery({
-    queryKey: [QUERY_KEY, "fields"],
-    enabled: Boolean(user),
-    staleTime: 5 * 60_000,
-    queryFn: () => apiFetch<FieldCatalogItem[]>("/badges/config/fields"),
-  });
 
   const [searchInput, setSearchInput] = useSessionState("badge-library:searchInput", "");
   const [search, setSearch] = useSessionState("badge-library:search", "");
@@ -73,30 +62,15 @@ export function BadgeConfigView({ route }: { route?: RouteConfig }) {
   }, [searchInput, setSearch]);
 
   const libraryParams = useMemo(() => buildLibraryParams({ search, filters, page }), [search, filters, page]);
-  const libraryQuery = useQuery({
-    queryKey: [QUERY_KEY, "list", libraryParams],
-    enabled: Boolean(user),
-    placeholderData: keepPreviousData,
-    queryFn: () => apiFetch<PageResponse<BadgeConfig>>(`/badges/config?${libraryParams}`),
+  const { api, fieldsQuery, libraryQuery, resolvedId, isNew, selectedConfig } = useConfigLibrary<BadgeConfig, FieldCatalogItem>({
+    basePath: "/badges/config",
+    queryRoot: QUERY_KEY,
+    selectedId,
+    libraryParams,
+    fieldsStaleTime: 5 * 60_000,
   });
 
-  const configs = useMemo(() => optionsQuery.data ?? [], [optionsQuery.data]);
-  const defaultConfig = configs.find((config) => config.isDefault && config.editable) ?? configs.find((config) => config.isDefault) ?? null;
-  const resolvedId = !optionsQuery.data
-    ? null
-    : selectedId === NEW_CONFIG
-      ? NEW_CONFIG
-      : selectedId && configs.some((config) => config.id === selectedId)
-        ? selectedId
-        : (defaultConfig?.id ?? configs[0]?.id ?? NEW_CONFIG);
-  const isNew = resolvedId === NEW_CONFIG;
 
-  const detailQuery = useQuery({
-    queryKey: [QUERY_KEY, "detail", resolvedId],
-    enabled: Boolean(user) && Boolean(resolvedId) && !isNew,
-    queryFn: () => apiFetch<BadgeConfig>(`/badges/config/${resolvedId}`),
-  });
-  const selectedConfig = !isNew && detailQuery.data?.id === resolvedId ? detailQuery.data : null;
 
   const baseline = useMemo(() => (selectedConfig ? formFromBadgeConfig(selectedConfig) : blankBadgeForm()), [selectedConfig]);
   const dirty = !isSameBadgeForm(form, baseline);
@@ -169,7 +143,7 @@ export function BadgeConfigView({ route }: { route?: RouteConfig }) {
   }
 
   const saveMutation = useMutation({
-    mutationFn: () => (isNew ? apiMutation<BadgeConfig>("/badges/config", "POST", badgePayload(form)) : apiMutation<BadgeConfig>(`/badges/config/${resolvedId}`, "PUT", badgePayload(form))),
+    mutationFn: () => (isNew ? api.create(badgePayload(form)) : api.update(String(resolvedId), badgePayload(form))),
     onSuccess: async (saved) => {
       toast.success("Lưu cấu hình thẻ tham dự thành công");
       notifyRenamed(form.name.trim(), saved);
@@ -181,7 +155,7 @@ export function BadgeConfigView({ route }: { route?: RouteConfig }) {
   });
 
   const saveAsNewMutation = useMutation({
-    mutationFn: () => apiMutation<BadgeConfig>("/badges/config", "POST", { ...badgePayload(form), name: form.name.trim() || "Cấu hình thẻ tham dự" }),
+    mutationFn: () => api.create({ ...badgePayload(form), name: form.name.trim() || "Cấu hình thẻ tham dự" }),
     onSuccess: async (saved) => {
       toast.success(`Đã tạo cấu hình mới "${saved.name}"`);
       await refresh();
@@ -192,7 +166,7 @@ export function BadgeConfigView({ route }: { route?: RouteConfig }) {
   });
 
   const setDefaultMutation = useMutation({
-    mutationFn: () => apiMutation<BadgeConfig>(`/badges/config/${resolvedId}/default`, "PUT"),
+    mutationFn: () => api.setDefault(String(resolvedId)),
     onSuccess: async () => {
       toast.success("Đã đặt làm cấu hình chung");
       await refresh();
@@ -201,7 +175,7 @@ export function BadgeConfigView({ route }: { route?: RouteConfig }) {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: () => apiMutation<void>(`/badges/config/${resolvedId}`, "DELETE"),
+    mutationFn: () => api.remove(String(resolvedId)),
     onSuccess: async () => {
       toast.success("Đã xóa cấu hình thẻ tham dự");
       await refresh();

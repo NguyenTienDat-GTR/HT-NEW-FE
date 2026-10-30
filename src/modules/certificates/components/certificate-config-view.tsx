@@ -2,7 +2,7 @@
 
 import { BackgroundAlbumDialog } from "@/components/common/background-album-dialog";
 import * as Dialog from "@radix-ui/react-dialog";
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -34,7 +34,8 @@ import { HelpTip } from "@/components/ui/help-tip";
 import { Input } from "@/components/ui/input";
 import { Panel } from "@/components/ui/panel";
 import { Tip } from "@/components/ui/tip";
-import { apiFetch, apiMutation, getApiErrorMessage, type PageResponse } from "@/lib/api/client";
+import { apiFetch, getApiErrorMessage } from "@/lib/api/client";
+import { NEW_CONFIG, useConfigLibrary } from "@/modules/layout-config/use-config-library";
 import { useAuthStore } from "@/lib/auth/auth-store";
 import { hasPermissionPrefix } from "@/lib/auth/permissions";
 import type { RouteConfig } from "@/config/routes/routes";
@@ -67,7 +68,6 @@ import { ConfigPreviewTip } from "./certificate-config-preview";
 import { useSessionState } from "@/lib/use-session-state";
 
 // Giá trị selectedId khi đang soạn một cấu hình chưa lưu.
-const NEW_CONFIG = "__new__";
 
 const MAX_NAME_LENGTH = 200;
 
@@ -88,17 +88,6 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
 
   useCertificateFonts();
 
-  // Toàn bộ cấu hình ở dạng gọn (không phân trang): xác định cấu hình chung và cấu hình đang mở.
-  const optionsQuery = useQuery({
-    queryKey: ["certificate-config", "options"],
-    enabled: Boolean(user),
-    queryFn: () => apiFetch<ConfigResponse[]>("/certificates/config/options"),
-  });
-  const fieldsQuery = useQuery({
-    queryKey: ["certificate-config", "fields"],
-    enabled: Boolean(user),
-    queryFn: () => apiFetch<FieldCatalogItem[]>("/certificates/config/fields"),
-  });
   const courseTypesQuery = useQuery({
     queryKey: ["certificate-config", "course-types"],
     enabled: Boolean(user),
@@ -120,11 +109,11 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
   }, [searchInput, setSearch]);
 
   const libraryParams = useMemo(() => buildLibraryParams({ search, filters, sort, page }), [search, filters, sort, page]);
-  const libraryQuery = useQuery({
-    queryKey: ["certificate-config", "list", libraryParams],
-    enabled: Boolean(user),
-    placeholderData: keepPreviousData,
-    queryFn: () => apiFetch<PageResponse<ConfigResponse>>(`/certificates/config?${libraryParams}`),
+  const { api, fieldsQuery, libraryQuery, resolvedId, isNew, selectedConfig } = useConfigLibrary<ConfigResponse, FieldCatalogItem>({
+    basePath: "/certificates/config",
+    queryRoot: "certificate-config",
+    selectedId,
+    libraryParams,
   });
   const libraryItems = libraryQuery.data?.content ?? [];
   const totalPages = libraryQuery.data?.totalPages ?? 0;
@@ -132,26 +121,8 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
   // Số điều kiện đang lọc hiện trên nút Bộ lọc (không tính ô tìm kiếm).
   const activeFilterCount = Object.values(filters).filter(Boolean).length + (sort !== "default" ? 1 : 0);
 
-  const configs = useMemo(() => optionsQuery.data ?? [], [optionsQuery.data]);
-  const defaultConfig = configs.find((config) => config.isDefault && config.editable) ?? configs.find((config) => config.isDefault) ?? null;
 
-  // Cấu hình đang mở: người dùng chọn; chưa chọn / cấu hình đã bị xóa thì rơi về cấu hình chung.
-  const resolvedId = !optionsQuery.data
-    ? null
-    : selectedId === NEW_CONFIG
-      ? NEW_CONFIG
-      : selectedId && configs.some((config) => config.id === selectedId)
-        ? selectedId
-        : (defaultConfig?.id ?? configs[0]?.id ?? NEW_CONFIG);
-  const isNew = resolvedId === NEW_CONFIG;
 
-  // Chi tiết (ảnh nền + bố cục) của cấu hình đang mở; danh sách chỉ trả dạng gọn.
-  const detailQuery = useQuery({
-    queryKey: ["certificate-config", "detail", resolvedId],
-    enabled: Boolean(user) && Boolean(resolvedId) && !isNew,
-    queryFn: () => apiFetch<ConfigResponse>(`/certificates/config/${resolvedId}`),
-  });
-  const selectedConfig = !isNew && detailQuery.data?.id === resolvedId ? detailQuery.data : null;
 
   // Bản đã lưu của cấu hình đang mở: đích của nút Khôi phục và mốc để biết có thay đổi chưa lưu.
   const baseline = useMemo(() => (selectedConfig ? formFromConfig(selectedConfig) : blankForm()), [selectedConfig]);
@@ -305,8 +276,8 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
   const saveMutation = useMutation({
     mutationFn: () =>
       isNew
-        ? apiMutation<ConfigResponse>("/certificates/config", "POST", payload())
-        : apiMutation<ConfigResponse>(`/certificates/config/${resolvedId}`, "PUT", payload()),
+        ? api.create(payload())
+        : api.update(String(resolvedId), payload()),
     onSuccess: async (saved) => {
       toast.success("Lưu cấu hình chứng nhận thành công");
       notifyRenamed(form.name.trim(), saved);
@@ -322,7 +293,7 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
   const saveAsNewMutation = useMutation({
     mutationFn: () => {
       const body = payload();
-      return apiMutation<ConfigResponse>("/certificates/config", "POST", { ...body, name: body.name || "Cấu hình chứng nhận" });
+      return api.create({ ...body, name: body.name || "Cấu hình chứng nhận" });
     },
     onSuccess: async (saved) => {
       toast.success(`Đã tạo cấu hình mới "${saved.name}"`);
@@ -334,7 +305,7 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
   });
 
   const setDefaultMutation = useMutation({
-    mutationFn: () => apiMutation<ConfigResponse>(`/certificates/config/${resolvedId}/default`, "PUT"),
+    mutationFn: () => api.setDefault(String(resolvedId)),
     onSuccess: async () => {
       toast.success("Đã đặt làm cấu hình chung");
       await refresh();
@@ -342,7 +313,7 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: () => apiMutation<void>(`/certificates/config/${resolvedId}`, "DELETE"),
+    mutationFn: () => api.remove(String(resolvedId)),
     onSuccess: async () => {
       toast.success("Đã xóa cấu hình chứng nhận");
       await refresh();
