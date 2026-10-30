@@ -4,9 +4,8 @@ import dynamic from "next/dynamic";
 import { DashboardView } from "@/modules/dashboard/components/dashboard-view";
 import type React from "react";
 import { Panel } from "@/components/ui/panel";
-import type { AuthUser } from "@/lib/auth/auth-store";
 import { useAuthStore } from "@/lib/auth/auth-store";
-import { hasPermissionPrefix, isSuperAdmin } from "@/lib/auth/permissions";
+import { canReadRoute } from "@/lib/auth/permissions";
 import { findRoute, matchRoute } from "@/config/routes/routes";
 import { PROFILE_PATH } from "@/modules/account/account-display";
 
@@ -37,10 +36,7 @@ export function WorkspacePage({ segments }: { segments: string[] }) {
   // Đích khi quét mã QR: /certificates/{mã chứng nhận}. Cần đăng nhập (AuthGate) và quyền xem chứng nhận.
   if (!match && segments.length === 2 && segments[0] === "certificates") {
     const listRoute = findRoute("/certificates");
-    const allowed =
-      Boolean(listRoute) &&
-      !isHiddenForSuperAdmin(listRoute!, user) &&
-      listRoute!.permissionPrefixes.some((prefix) => hasPermissionPrefix(user, prefix));
+    const allowed = Boolean(listRoute) && listRoute!.permissionPrefixes.length > 0 && canReadRoute(listRoute!, user);
     if (user?.unitLocked) return null;
     if (!allowed) {
       return (
@@ -61,12 +57,10 @@ export function WorkspacePage({ segments }: { segments: string[] }) {
   if (user?.unitLocked && route.path !== "/notifications") {
     return null;
   }
-  const canReadRoute =
-    !isHiddenForSuperAdmin(route, user) &&
-    (!route.permissionPrefixes.length || route.permissionPrefixes.some((prefix) => hasPermissionPrefix(user, prefix)));
+  const routeReadable = canReadRoute(route, user);
 
   let content: React.ReactNode;
-  if (!canReadRoute && (match.type === "list" || match.type === "detail")) {
+  if (!routeReadable && (match.type === "list" || match.type === "detail")) {
     content = (
       <Panel className="p-6">
         <h1 className="text-2xl font-semibold text-foreground">403</h1>
@@ -91,15 +85,4 @@ export function WorkspacePage({ segments }: { segments: string[] }) {
   else content = <ModuleResourceRenderer route={route} />;
 
   return content;
-}
-
-function isHiddenForSuperAdmin(route: { moduleName: string }, user: AuthUser | null) {
-  if (!isSuperAdmin(user)) return false;
-  return (
-    route.moduleName.startsWith("leader.") ||
-    route.moduleName.startsWith("executive-board.") ||
-    route.moduleName.startsWith("training.") ||
-    route.moduleName.startsWith("training-workflow.") ||
-    route.moduleName.startsWith("certificate.")
-  );
 }

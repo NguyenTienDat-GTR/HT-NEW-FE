@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Tip } from "@/components/ui/tip";
 import type { RouteConfig } from "@/config/routes/routes";
 import { useAuthStore, type AuthUser } from "@/lib/auth/auth-store";
-import { canUseAction, hasPermission, hasPermissionPrefix, isSuperAdmin } from "@/lib/auth/permissions";
+import { canUseAction, hasPermission, hasPermissionPrefix, hasRole, isSuperAdmin } from "@/lib/auth/permissions";
 import { Avatar, columnLabels, ResourceCell } from "./resource-format";
 import { useEmbeddedResource, resourceActionHref, withReturnTo } from "./embedded-resource-context";
 import { fillRoute, getResourceId, isAwaitingApproval, isReapprovable } from "./resource-actions";
@@ -462,10 +462,6 @@ function isOwnAccount(row: Record<string, unknown>, user: AuthUser | null) {
 
 function rowHasPrimaryRole(row: Record<string, unknown>, roleCode: string) {
   return row.primaryRoleCode === roleCode;
-}
-
-function hasRole(user: AuthUser | null, roleCode: string) {
-  return Boolean(user?.roles.some((role) => role === roleCode || role === `ROLE_${roleCode}`));
 }
 
 function canShowToggleSwitch(route: RouteConfig, row: Record<string, unknown>, user: AuthUser | null) {

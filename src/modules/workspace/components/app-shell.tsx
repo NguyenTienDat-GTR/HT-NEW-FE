@@ -13,7 +13,7 @@ import { ExcelJobsTray } from "@/components/common/resource/excel-jobs-tray";
 import { TooltipIconButton } from "@/components/ui/tooltip-icon-button";
 import { apiFetch } from "@/lib/api/client";
 import { useAuthStore, type AuthUser } from "@/lib/auth/auth-store";
-import { hasPermissionPrefix, isSuperAdmin } from "@/lib/auth/permissions";
+import { canReadRoute } from "@/lib/auth/permissions";
 import { cn } from "@/lib/utils";
 import { routeGroups, type RouteConfig, type RouteGroup } from "@/config/routes/routes";
 import { NotificationPopover } from "@/modules/notifications/components/notification-popover";
@@ -287,18 +287,7 @@ function SidebarNav({
 export function canSeeRoute(route: RouteConfig, user: AuthUser | null) {
   if (route.path === "/notifications") return true;
   if (user?.unitLocked) return false;
-  if (isSuperAdmin(user) && isHiddenForSuperAdmin(route)) return false;
-  return route.permissionPrefixes.length === 0 || route.permissionPrefixes.some((prefix) => hasPermissionPrefix(user, prefix));
+  return canReadRoute(route, user);
 }
 
 export { notificationBadgeLabel } from "@/modules/notifications/notification-meta";
-
-function isHiddenForSuperAdmin(route: RouteConfig) {
-  return (
-    route.moduleName.startsWith("leader.") ||
-    route.moduleName.startsWith("executive-board.") ||
-    route.moduleName.startsWith("training.") ||
-    route.moduleName.startsWith("training-workflow.") ||
-    route.moduleName.startsWith("certificate.")
-  );
-}

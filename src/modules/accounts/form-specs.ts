@@ -1,15 +1,11 @@
 import { compactPayload, type ResourceFormSpec } from "@/components/form/resource-form/types";
-import { isSuperAdmin } from "@/lib/auth/permissions";
+import { hasRole, isSuperAdmin } from "@/lib/auth/permissions";
 import type { AuthUser } from "@/lib/auth/auth-store";
 
 const systemAdminRoleCodes = ["SUPER_ADMIN", "ADMIN_DIOCESE", "ADMIN_DEANERY", "ADMIN_PARISH"];
 // SUPER_ADMIN chỉ cấp tài khoản cho vai trò toàn hệ thống: không cấp cho admin giáo hạt / giáo xứ.
 // /system/roles của SUPER_ADMIN đã loại vai trò do các giáo phận tạo, nên chỉ cần loại thêm hai vai trò hệ thống này.
 const superAdminAccountExcludedRoleCodes = ["ADMIN_DEANERY", "ADMIN_PARISH"];
-
-function hasRole(user: AuthUser | null | undefined, roleCode: string) {
-  return Boolean(user?.roles.some((role) => role === roleCode || role === `ROLE_${roleCode}`));
-}
 
 // Phạm vi của người đang tạo tài khoản: giáo phận chọn được giáo hạt + giáo xứ, giáo hạt chỉ chọn giáo xứ, giáo xứ không cần chọn.
 function canPickDeanery(user: AuthUser | null | undefined) {
