@@ -75,17 +75,7 @@ export function FormField({ field, value, values, user, mode, onChange, onFieldC
   );
 }
 
-function renderControl({
-  field,
-  id,
-  type,
-  value,
-  values,
-  user,
-  readonly,
-  onChange,
-  onFieldChange,
-}: {
+type ControlProps = {
   field: FormFieldSpec;
   id: string;
   type: string;
@@ -95,101 +85,123 @@ function renderControl({
   readonly: boolean | undefined;
   onChange: (value: FormValue) => void;
   onFieldChange?: (fieldName: string, value: FormValue) => void;
-}) {
-  if (type === "textarea") {
-    return (
-      <textarea
-        className="min-h-[72px] w-full rounded-[8px] border border-input bg-white px-3 py-2 text-sm text-foreground transition-[border-color,box-shadow] placeholder:text-muted focus:border-primary focus:outline-none focus:ring-[3px] focus:ring-[var(--primary-ring)] disabled:cursor-not-allowed disabled:bg-surface-1 disabled:opacity-70"
-        disabled={readonly}
-        id={id}
-        onChange={(event) => onChange(event.target.value)}
-        placeholder={field.placeholder}
-        value={String(value ?? "")}
-      />
-    );
-  }
+};
 
-  if (type === "score-components") {
-    return <ScoreComponentsField
-        courseTypeCode={typeof values?.courseTypeCode === "string" ? values.courseTypeCode : undefined}
-        excludeCourseCode={typeof values?.courseCode === "string" ? values.courseCode : undefined}
-        onChange={(rows) => onChange(rows as unknown as FormValue)}
-        readonly={readonly}
-        value={value}
-      />;
-  }
+// Trả về undefined khi renderer không áp dụng được (vd. thiếu cấu hình) để rơi về ô nhập mặc định.
+type ControlRenderer = (props: ControlProps) => React.ReactNode | undefined;
 
-  if (type === "registration-list" && field.registrationList) {
-    const config = field.registrationList;
-    return (
-      <RegistrationListField
-        courseCode={String(values?.[config.courseField] ?? "")}
-        mode={config.mode}
-        onChange={(entries) => onChange(entries as unknown as FormValue)}
-        otherEntries={registrationEntries(values?.[config.otherField])}
-        readonly={readonly}
-        value={value}
-      />
-    );
-  }
-
-  if (type === "select" || type === "multiselect" || type === "checkbox-list" || type === "radio") {
-    return (
-      <OptionControl
-        checkboxList={type === "checkbox-list"}
-        field={field}
-        id={id}
-        multiple={type === "multiselect"}
-        onChange={onChange}
-        onFieldChange={onFieldChange}
-        readonly={readonly}
-        radio={type === "radio"}
-        user={user}
-        values={values}
-        value={value}
-      />
-    );
-  }
-
-  if (type === "switch") {
-    const checked = value === true || value === "true";
-    return (
-      <button
-        aria-checked={checked}
-        className={cn(
-          "flex min-h-10 w-full max-w-full cursor-pointer items-center justify-between gap-3 overflow-hidden rounded-[8px] border px-3 text-sm font-semibold transition-colors focus:outline-none focus:ring-[3px] focus:ring-[var(--primary-ring)] disabled:cursor-not-allowed disabled:opacity-60",
-          checked ? "border-primary bg-primary/8 text-primary" : "border-border bg-white text-foreground",
-        )}
-        disabled={readonly}
-        id={id}
-        onClick={() => onChange(!checked)}
-        role="switch"
-        type="button"
-      >
-        <span className="min-w-0 text-left leading-5">{checked ? (field.switchLabels?.[0] ?? "Vai trò chính") : (field.switchLabels?.[1] ?? "Vai trò phụ")}</span>
-        <span className={cn("relative h-6 w-11 shrink-0 rounded-full transition-colors", checked ? "bg-primary" : "bg-border")}>
-          <span className={cn("absolute left-1 top-1 h-4 w-4 rounded-full bg-white shadow-sm transition-transform", checked ? "translate-x-5" : "translate-x-0")} />
-        </span>
-      </button>
-    );
-  }
-
-  if (type === "image") {
-    return <ImagePickerControl id={id} onChange={onChange} readonly={readonly} value={value} />;
-  }
-
+const textareaControl: ControlRenderer = ({ field, id, value, readonly, onChange }) => {
   return (
-    <Input
-      className="h-10"
+    <textarea
+      className="min-h-[72px] w-full rounded-[8px] border border-input bg-white px-3 py-2 text-sm text-foreground transition-[border-color,box-shadow] placeholder:text-muted focus:border-primary focus:outline-none focus:ring-[3px] focus:ring-[var(--primary-ring)] disabled:cursor-not-allowed disabled:bg-surface-1 disabled:opacity-70"
       disabled={readonly}
       id={id}
-      onChange={(event) => onChange(type === "number" ? numericValue(event.target.value) : event.target.value)}
+      onChange={(event) => onChange(event.target.value)}
       placeholder={field.placeholder}
-      min={type === "number" ? field.min : undefined}
-      type={type === "datetime" ? "datetime-local" : type}
-      value={type === "datetime" ? toDatetimeLocalValue(value) : String(value ?? "")}
+      value={String(value ?? "")}
     />
   );
+};
+
+const scoreComponentsControl: ControlRenderer = ({ value, values, readonly, onChange }) => {
+  return <ScoreComponentsField
+      courseTypeCode={typeof values?.courseTypeCode === "string" ? values.courseTypeCode : undefined}
+      excludeCourseCode={typeof values?.courseCode === "string" ? values.courseCode : undefined}
+      onChange={(rows) => onChange(rows as unknown as FormValue)}
+      readonly={readonly}
+      value={value}
+    />;
+};
+
+const registrationListControl: ControlRenderer = ({ field, value, values, readonly, onChange }) => {
+  if (!field.registrationList) return undefined;
+  const config = field.registrationList;
+  return (
+    <RegistrationListField
+      courseCode={String(values?.[config.courseField] ?? "")}
+      mode={config.mode}
+      onChange={(entries) => onChange(entries as unknown as FormValue)}
+      otherEntries={registrationEntries(values?.[config.otherField])}
+      readonly={readonly}
+      value={value}
+    />
+  );
+};
+
+const optionControl: ControlRenderer = ({ field, id, type, value, values, user, readonly, onChange, onFieldChange }) => {
+  return (
+    <OptionControl
+      checkboxList={type === "checkbox-list"}
+      field={field}
+      id={id}
+      multiple={type === "multiselect"}
+      onChange={onChange}
+      onFieldChange={onFieldChange}
+      readonly={readonly}
+      radio={type === "radio"}
+      user={user}
+      values={values}
+      value={value}
+    />
+  );
+};
+
+const switchControl: ControlRenderer = ({ field, id, value, readonly, onChange }) => {
+  const checked = value === true || value === "true";
+  return (
+    <button
+      aria-checked={checked}
+      className={cn(
+        "flex min-h-10 w-full max-w-full cursor-pointer items-center justify-between gap-3 overflow-hidden rounded-[8px] border px-3 text-sm font-semibold transition-colors focus:outline-none focus:ring-[3px] focus:ring-[var(--primary-ring)] disabled:cursor-not-allowed disabled:opacity-60",
+        checked ? "border-primary bg-primary/8 text-primary" : "border-border bg-white text-foreground",
+      )}
+      disabled={readonly}
+      id={id}
+      onClick={() => onChange(!checked)}
+      role="switch"
+      type="button"
+    >
+      <span className="min-w-0 text-left leading-5">{checked ? (field.switchLabels?.[0] ?? "Vai trò chính") : (field.switchLabels?.[1] ?? "Vai trò phụ")}</span>
+      <span className={cn("relative h-6 w-11 shrink-0 rounded-full transition-colors", checked ? "bg-primary" : "bg-border")}>
+        <span className={cn("absolute left-1 top-1 h-4 w-4 rounded-full bg-white shadow-sm transition-transform", checked ? "translate-x-5" : "translate-x-0")} />
+      </span>
+    </button>
+  );
+};
+
+const imageControl: ControlRenderer = ({ id, value, readonly, onChange }) => {
+  return <ImagePickerControl id={id} onChange={onChange} readonly={readonly} value={value} />;
+};
+
+function defaultControl({ field, id, type, value, readonly, onChange }: ControlProps) {
+return (
+  <Input
+    className="h-10"
+    disabled={readonly}
+    id={id}
+    onChange={(event) => onChange(type === "number" ? numericValue(event.target.value) : event.target.value)}
+    placeholder={field.placeholder}
+    min={type === "number" ? field.min : undefined}
+    type={type === "datetime" ? "datetime-local" : type}
+    value={type === "datetime" ? toDatetimeLocalValue(value) : String(value ?? "")}
+  />
+);
+}
+
+const CONTROL_RENDERERS: Record<string, ControlRenderer> = {
+  textarea: textareaControl,
+  "score-components": scoreComponentsControl,
+  "registration-list": registrationListControl,
+  select: optionControl,
+  multiselect: optionControl,
+  "checkbox-list": optionControl,
+  radio: optionControl,
+  switch: switchControl,
+  image: imageControl,
+};
+
+function renderControl(props: ControlProps) {
+  return CONTROL_RENDERERS[props.type]?.(props) ?? defaultControl(props);
 }
 
 export function ImagePickerControl({
