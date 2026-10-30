@@ -577,4 +577,5 @@ BE tương ứng: `BE/project.md` mục "Training Course Registration Control an
 ## Ảnh đại diện kèm Excel danh sách tham dự khóa thường (2026-10-30)
 
 - `resource-list-runtime.tsx`: `ExcelImportDialog` của tab danh sách tham dự luôn bật `allowAvatarZip` (trước đây chỉ khóa quá khứ); mô tả và gợi ý của khóa thường nhắc ảnh tùy chọn và cột "Tên file ảnh". Ô chọn ZIP, tạo ZIP đã căn mặt và gửi `images` dùng lại luồng có sẵn của hồ sơ huynh trưởng / khóa quá khứ.
+- `course-teams-view.tsx`: `ExcelImportDialog` của chia đội bật `allowAvatarZip` (mô tả và gợi ý nhắc cột "Tên file ảnh").
 
