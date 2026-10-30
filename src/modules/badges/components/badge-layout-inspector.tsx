@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { FONT_OPTIONS, MAX_QR_SIZE, MIN_QR_SIZE, DEFAULT_QR_SIZE, clamp, type FontFamily, type LayoutItem } from "@/modules/certificates/components/certificate-design";
-import { Field, SELECT_CLASS, StyleToggle } from "./form-controls";
+import { Field, SELECT_CLASS, StyleToggle } from "@/modules/layout-config/form-controls";
 
 // Thuộc tính của phần tử đang chọn trên thẻ (giống trình soạn chứng nhận): nội dung, kích thước mã QR, kiểu chữ, canh lề.
 export function BadgeLayoutInspector({

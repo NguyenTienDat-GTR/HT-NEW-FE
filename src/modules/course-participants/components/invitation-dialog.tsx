@@ -4,7 +4,7 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { EnvelopeSimple, X } from "@phosphor-icons/react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Callout } from "@/modules/badges/components/form-controls";
+import { Callout } from "@/modules/layout-config/form-controls";
 import type { InvitationOptions } from "../types";
 
 type Props = {

@@ -12,7 +12,6 @@ import {
   Copy,
   CursorClick,
   Eye,
-  Info,
   MagnifyingGlass,
   PencilSimple,
   Plus,
@@ -66,6 +65,8 @@ import {
 } from "./certificate-design";
 import { ConfigPreviewTip } from "./certificate-config-preview";
 import { useSessionState } from "@/lib/use-session-state";
+import { Callout, Field, FilterSelect, Pill, SELECT_CLASS, StyleToggle } from "@/modules/layout-config/form-controls";
+import { EMPTY_FILTERS, SORT_OPTIONS, buildLibraryParams, type LibraryFilters } from "../certificate-library-params";
 
 // Giá trị selectedId khi đang soạn một cấu hình chưa lưu.
 
@@ -519,11 +520,11 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
                         {active ? <span className="shrink-0 rounded-full bg-primary px-2 py-0.5 text-[11px] font-semibold text-white">Đang mở</span> : null}
                       </span>
                       <span className="mt-2 flex flex-wrap items-center gap-1.5">
-                        {config.isDefault ? <Badge tone="primary">Cấu hình chung</Badge> : null}
-                        <Badge>
+                        {config.isDefault ? <Pill tone="primary">Cấu hình chung</Pill> : null}
+                        <Pill>
                           {SCOPE_LABELS[config.scopeLevel]}
                           {!config.editable ? " · chỉ xem" : ""}
-                        </Badge>
+                        </Pill>
                       </span>
                       <span className="mt-2 block text-xs text-text-secondary">
                         {config.usedByCount > 0 ? `Đang dùng cho ${config.usedByCount} loại khóa` : "Chưa có loại khóa nào dùng"}
@@ -914,133 +915,5 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
         {!canUpdate && !canCreate ? <span className="text-sm text-muted">Bạn chỉ có quyền xem thư viện cấu hình.</span> : null}
       </div>
     </div>
-  );
-}
-
-const SELECT_CLASS =
-  "h-10 cursor-pointer rounded-lg border border-input bg-white px-3 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-[3px] focus:ring-[var(--primary-ring)] disabled:cursor-not-allowed disabled:opacity-60";
-
-function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
-  return (
-    <label className="block">
-      <span className="mb-1 flex items-center gap-1 text-[13px] font-medium text-text-secondary">
-        {label}
-        {hint ? <HelpTip label={`Hướng dẫn: ${label}`}>{hint}</HelpTip> : null}
-      </span>
-      {children}
-    </label>
-  );
-}
-
-function StyleToggle({ active, disabled, label, onClick, children }: { active: boolean; disabled: boolean; label: string; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      aria-label={label}
-      aria-pressed={active}
-      className={cn(
-        "grid h-10 w-10 cursor-pointer place-items-center rounded-lg border transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-60",
-        active ? "border-primary bg-primary-soft text-primary" : "border-input bg-white text-text-secondary hover:bg-slate-50",
-      )}
-      disabled={disabled}
-      onClick={onClick}
-      title={label}
-      type="button"
-    >
-      {children}
-    </button>
-  );
-}
-
-function Callout({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex items-start gap-3 rounded-xl border border-border bg-white px-4 py-3 text-[13px] leading-5 text-text-secondary" role="note">
-      <Info className="mt-0.5 shrink-0 text-primary" size={18} weight="fill" />
-      <p>{children}</p>
-    </div>
-  );
-}
-
-const PAGE_SIZE = 6;
-
-type LibraryFilters = {
-  scope: string;
-  isDefault: string;
-  used: string;
-  courseTypeCode: string;
-  paperSize: string;
-  orientation: string;
-};
-
-const EMPTY_FILTERS: LibraryFilters = { scope: "", isDefault: "", used: "", courseTypeCode: "", paperSize: "", orientation: "" };
-
-const SORT_OPTIONS: [string, string][] = [
-  ["default", "Mặc định"],
-  ["name-asc", "Tên A → Z"],
-  ["name-desc", "Tên Z → A"],
-  ["used-desc", "Dùng nhiều nhất"],
-  ["updated-desc", "Mới cập nhật"],
-];
-
-// Giá trị sắp xếp trên giao diện -> sortBy / sortDirection gửi lên BE.
-const SORT_PARAMS: Record<string, { sortBy: string; sortDirection: string } | undefined> = {
-  "name-asc": { sortBy: "name", sortDirection: "ASC" },
-  "name-desc": { sortBy: "name", sortDirection: "DESC" },
-  "used-desc": { sortBy: "usedByCount", sortDirection: "DESC" },
-  "updated-desc": { sortBy: "updatedAt", sortDirection: "DESC" },
-};
-
-function buildLibraryParams({ search, filters, sort, page }: { search: string; filters: LibraryFilters; sort: string; page: number }) {
-  const params = new URLSearchParams({ page: String(page), size: String(PAGE_SIZE) });
-  if (search) params.set("search", search);
-  const active = Object.fromEntries(Object.entries(filters).filter(([, value]) => value));
-  if (Object.keys(active).length > 0) params.set("filters", JSON.stringify(active));
-  const sortParams = SORT_PARAMS[sort];
-  if (sortParams) {
-    params.set("sortBy", sortParams.sortBy);
-    params.set("sortDirection", sortParams.sortDirection);
-  }
-  return params.toString();
-}
-
-function FilterSelect({
-  label,
-  value,
-  options,
-  onChange,
-  allLabel = "Tất cả",
-}: {
-  label: string;
-  value: string;
-  options: [string, string][];
-  onChange: (value: string) => void;
-  allLabel?: string;
-}) {
-  return (
-    <label className="block">
-      <span className="mb-1.5 block text-[13px] font-medium text-text-secondary">{label}</span>
-      <select
-        className="h-10 w-full cursor-pointer rounded-lg border border-input bg-white px-3 text-sm text-foreground transition-[border-color,box-shadow] focus:border-primary focus:outline-none focus:ring-[3px] focus:ring-[var(--primary-ring)]"
-        onChange={(event) => onChange(event.target.value)}
-        value={value}
-      >
-        <option value="">{allLabel}</option>
-        {options.map(([optionValue, optionLabel]) => (
-          <option key={optionValue} value={optionValue}>{optionLabel}</option>
-        ))}
-      </select>
-    </label>
-  );
-}
-
-function Badge({ children, tone }: { children: React.ReactNode; tone?: "primary" }) {
-  return (
-    <span
-      className={cn(
-        "rounded-full px-2 py-0.5 text-[11px] font-semibold",
-        tone === "primary" ? "bg-primary-soft text-primary" : "bg-surface-2 text-text-secondary",
-      )}
-    >
-      {children}
-    </span>
   );
 }

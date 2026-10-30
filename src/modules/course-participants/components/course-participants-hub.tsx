@@ -10,7 +10,7 @@ import { Panel } from "@/components/ui/panel";
 import { Tip } from "@/components/ui/tip";
 import { apiFetch, getApiErrorMessage } from "@/lib/api/client";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
-import { Callout, SELECT_CLASS } from "@/modules/badges/components/form-controls";
+import { Callout, SELECT_CLASS } from "@/modules/layout-config/form-controls";
 import { exportBadges, fetchParticipants, fetchSummary, participantKeys, sendInvitations, setCheckedIn } from "../api";
 import { EMPTY_PARTICIPANT_QUERY, PARTICIPANT_PAGE_SIZES, activeFilterCount, type ParticipantQueryState } from "../participant-query";
 import type { BadgeExportOptions, InvitationOptions, InvitationResult, InvitationFilter, ParticipantRow } from "../types";

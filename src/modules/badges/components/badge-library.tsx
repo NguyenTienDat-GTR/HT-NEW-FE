@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import { SCOPE_LABELS } from "@/modules/certificates/components/certificate-design";
 import { formatMm, PAPER_SIZES } from "../badge-sheet";
 import type { BadgeConfig } from "../badge-design";
-import { Pill, SELECT_CLASS } from "./form-controls";
+import { Pill, SELECT_CLASS } from "@/modules/layout-config/form-controls";
 
 export type LibraryFilters = { scope: string; hasBack: string; paperSize: string };
 

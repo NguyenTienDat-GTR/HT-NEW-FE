@@ -2,7 +2,7 @@
 
 import { ArrowCounterClockwise, Check, EnvelopeSimple, EnvelopeSimpleOpen, Warning } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
-import { Pill } from "@/modules/badges/components/form-controls";
+import { Pill } from "@/modules/layout-config/form-controls";
 import { shortUnitName } from "@/lib/unit-name";
 import type { ParticipantRow } from "../types";
 

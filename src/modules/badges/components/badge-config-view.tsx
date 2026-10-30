@@ -29,7 +29,7 @@ import {
 import { BadgeCardSettings } from "./badge-card-settings";
 import { BadgeEditor } from "./badge-editor";
 import { BadgeLibrary, EMPTY_LIBRARY_FILTERS, buildLibraryParams, type LibraryFilters } from "./badge-library";
-import { Callout } from "./form-controls";
+import { Callout } from "@/modules/layout-config/form-controls";
 
 const QUERY_KEY = "badge-config";
 

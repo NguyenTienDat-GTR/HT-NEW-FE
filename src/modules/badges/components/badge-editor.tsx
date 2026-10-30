@@ -14,7 +14,7 @@ import {
 } from "@/modules/certificates/components/certificate-design";
 import { cardAspect, sampleBadgeValue, type BadgeForm, type BadgeSide } from "../badge-design";
 import { BadgeLayoutInspector } from "./badge-layout-inspector";
-import { Field, SELECT_CLASS } from "./form-controls";
+import { Field, SELECT_CLASS } from "@/modules/layout-config/form-controls";
 
 const BASE_ITEM = { x: 0.5, y: 0.5, fontSize: 0.1, color: "#000000", align: "center", fontFamily: "sans", bold: false, italic: false, underline: false } as const;
 

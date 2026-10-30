@@ -74,3 +74,33 @@ export function Pill({ children, tone }: { children: ReactNode; tone?: "primary"
     </span>
   );
 }
+
+export function FilterSelect({
+  label,
+  value,
+  options,
+  onChange,
+  allLabel = "Tất cả",
+}: {
+  label: string;
+  value: string;
+  options: [string, string][];
+  onChange: (value: string) => void;
+  allLabel?: string;
+}) {
+  return (
+    <label className="block">
+      <span className="mb-1.5 block text-[13px] font-medium text-text-secondary">{label}</span>
+      <select
+        className="h-10 w-full cursor-pointer rounded-lg border border-input bg-white px-3 text-sm text-foreground transition-[border-color,box-shadow] focus:border-primary focus:outline-none focus:ring-[3px] focus:ring-[var(--primary-ring)]"
+        onChange={(event) => onChange(event.target.value)}
+        value={value}
+      >
+        <option value="">{allLabel}</option>
+        {options.map(([optionValue, optionLabel]) => (
+          <option key={optionValue} value={optionValue}>{optionLabel}</option>
+        ))}
+      </select>
+    </label>
+  );
+}
