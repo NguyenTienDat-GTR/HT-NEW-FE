@@ -5,7 +5,8 @@ import { CaretDown, CaretUp, CheckCircle, DownloadSimple, FileXls, Warning, X, X
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { cancelExcelJob, downloadExcelJobFile, fetchExcelJob, getApiErrorMessage, type ExcelJob } from "@/lib/api/client";
+import { getApiErrorMessage } from "@/lib/api/client";
+import { cancelExcelJob, downloadExcelJobFile, fetchExcelJob, type ExcelJob } from "@/lib/jobs/excel-jobs-client";
 import { excelJobsStore, isActiveJob, isAvatarPending, needsPolling, restoreExcelJobs, useExcelJobs } from "@/lib/jobs/excel-jobs-store";
 import { cn } from "@/lib/utils";
 import { AvatarWarningsList } from "./avatar-warnings-list";

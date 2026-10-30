@@ -2,7 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 import { createStore } from "zustand/vanilla";
-import { EXCEL_JOB_TERMINAL, type ExcelJob } from "@/lib/api/client";
+import { EXCEL_JOB_TERMINAL, type ExcelJob } from "@/lib/jobs/excel-jobs-client";
 
 const STORAGE_KEY = "ht.excel-jobs";
 const MAX_TRACKED = 8;

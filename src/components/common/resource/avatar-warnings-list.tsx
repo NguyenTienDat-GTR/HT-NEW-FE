@@ -3,7 +3,7 @@
 import { Copy } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import type { AvatarWarning } from "@/lib/api/client";
+import type { AvatarWarning } from "@/lib/jobs/excel-jobs-client";
 
 // Hồ sơ không gắn được ảnh khi import (dữ liệu hồ sơ vẫn được lưu): dòng Excel, họ tên, tên file ảnh và lý do.
 export function AvatarWarningsList({ warnings }: { warnings: AvatarWarning[] }) {
