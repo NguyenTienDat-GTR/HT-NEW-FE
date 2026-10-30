@@ -573,3 +573,8 @@ BE tương ứng: `BE/project.md` mục "Training Course Registration Control an
 - `certificate-config-view.tsx` (1046 -> ~340 dòng) tách thành `certificate-library-panel.tsx`, `certificate-designer-panel.tsx`, `certificate-action-bar.tsx` cùng hook `use-certificate-library-state.ts` (tìm kiếm/lọc/sắp xếp/trang) và `layout-config/use-undo-redo-shortcuts.ts` (phím tắt hoàn tác dùng chung với `badge-config-view`).
 - `lib/api/client.ts`: `apiMutation` chỉ gọi API và ném lỗi, không toast nữa; `lib/api/mutation-cache.ts` (`createMutationCache`, gắn ở `AppProviders`) toast lỗi cho mọi mutation không tự khai báo `onError` — bỏ toast đôi ở các mutation đã có `onError`.
 - Đã thử trên ứng dụng chạy local (đăng nhập bằng tài khoản kiểm thử): tổng quan, giáo phận (danh sách + drawer), huynh trưởng (chi tiết + 4 tab), cấu hình chứng nhận (lọc, thêm văn bản, hoàn tác), cấu hình thẻ, khóa huấn luyện (chi tiết + đăng ký + drawer hồ sơ). Không lưu dữ liệu.
+
+## Ảnh đại diện kèm Excel danh sách tham dự khóa thường (2026-10-30)
+
+- `resource-list-runtime.tsx`: `ExcelImportDialog` của tab danh sách tham dự luôn bật `allowAvatarZip` (trước đây chỉ khóa quá khứ); mô tả và gợi ý của khóa thường nhắc ảnh tùy chọn và cột "Tên file ảnh". Ô chọn ZIP, tạo ZIP đã căn mặt và gửi `images` dùng lại luồng có sẵn của hồ sơ huynh trưởng / khóa quá khứ.
+

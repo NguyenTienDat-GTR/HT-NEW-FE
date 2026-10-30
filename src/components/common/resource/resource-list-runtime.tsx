@@ -479,11 +479,11 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
       />
     ) : embedded?.tab === "participations" && effectiveRoute.endpoint === "/training/participants" && scoreCourseCode && !courseDisabled && canImportParticipants ? (
       <ExcelImportDialog
-        allowAvatarZip={embedded.coursePast === true}
+        allowAvatarZip
         description={
           embedded.coursePast === true
             ? "Nhập danh sách tham dự của khóa quá khứ kèm điểm và kết quả. Huynh trưởng được tìm theo email hoặc số điện thoại; chưa có hồ sơ thì tạo mới ngay từ thông tin trong file."
-            : "Nhập danh sách tham dự của khóa từ file Excel mẫu. Huynh trưởng được tìm theo email hoặc số điện thoại; chưa có hồ sơ thì tạo mới ngay từ thông tin trong file."
+            : "Nhập danh sách tham dự của khóa từ file Excel mẫu, có thể kèm file ZIP ảnh đại diện. Huynh trưởng được tìm theo email hoặc số điện thoại; chưa có hồ sơ thì tạo mới ngay từ thông tin trong file."
         }
         endpoint={`/training/courses/${encodeURIComponent(scoreCourseCode)}/participants/import`}
         templateFileName={embedded.coursePast === true ? "mau-import-danh-sach-tham-du-khoa-qua-khu.xlsx" : "mau-import-danh-sach-tham-du.xlsx"}
@@ -491,7 +491,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
         hint={
           embedded.coursePast === true
             ? "Mọi dòng phải nhập đủ các cột, chỉ được bỏ trống Nhận xét và Cấp độ: Email, Số điện thoại, Tổng điểm, Kết quả (Đạt / Không đạt), Tên thánh, Họ và tên, Ngày sinh, Giới tính, Giáo hạt, Giáo xứ (giáo hạt, giáo xứ phải đã có trong hệ thống). Huynh trưởng đã có hồ sơ thì chỉ được thêm vào khóa (hồ sơ không bị sửa); chưa có thì được tạo mới từ chính dòng đó. Học viên Đạt của khóa có cấp độ đạt được sẽ chuyển sang tab Duyệt chứng nhận. Cột Tên file ảnh không bắt buộc; huynh trưởng đã có ảnh thì giữ ảnh cũ."
-            : "Sheet \"Danh sách tham dự\" cho huynh trưởng đủ điều kiện của khóa (vào thẳng danh sách tham dự), sheet \"Ngoại lệ\" cho huynh trưởng không đủ điều kiện (vào danh sách chờ duyệt đăng ký, gắn cờ ngoại lệ, thêm cột Lí do ngoại lệ). Mọi dòng phải nhập đủ các cột, chỉ được bỏ trống Cấp độ: Email, Số điện thoại, Tên thánh, Họ và tên, Ngày sinh, Giới tính, Giáo hạt, Giáo xứ (giáo hạt, giáo xứ phải đã có trong hệ thống). Huynh trưởng đã có hồ sơ thì chỉ được thêm vào khóa (hồ sơ không bị sửa); chưa có thì được tạo mới từ chính dòng đó. Không cần điểm: điểm được chấm ở tab Chấm điểm."
+            : "Sheet \"Danh sách tham dự\" cho huynh trưởng đủ điều kiện của khóa (vào thẳng danh sách tham dự), sheet \"Ngoại lệ\" cho huynh trưởng không đủ điều kiện (vào danh sách chờ duyệt đăng ký, gắn cờ ngoại lệ, thêm cột Lí do ngoại lệ). Mọi dòng phải nhập đủ các cột, chỉ được bỏ trống Cấp độ: Email, Số điện thoại, Tên thánh, Họ và tên, Ngày sinh, Giới tính, Giáo hạt, Giáo xứ (giáo hạt, giáo xứ phải đã có trong hệ thống). Huynh trưởng đã có hồ sơ thì chỉ được thêm vào khóa (hồ sơ không bị sửa); chưa có thì được tạo mới từ chính dòng đó. Không cần điểm: điểm được chấm ở tab Chấm điểm. Ảnh đại diện là tùy chọn: chọn file ZIP ảnh và ghi tên ảnh ở cột Tên file ảnh."
         }
         title="Nhập excel danh sách tham dự"
         triggerLabel="Nhập excel danh sách tham dự"
