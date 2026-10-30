@@ -1,5 +1,6 @@
 import { serializeBaseSearch } from "@/lib/api/search";
 import { formatVietnamDateValue } from "@/lib/date-format";
+import { formatLeaderLevel } from "@/components/common/resource/resource-format";
 
 export type LeaderDetail = {
   id?: string;
@@ -163,4 +164,11 @@ export function actorLabel(name?: string | null, raw?: string | null) {
   if (name && name.trim()) return name;
   if (!raw || !raw.trim()) return "—";
   return UUID_PATTERN.test(raw.trim()) ? "Không xác định" : raw;
+}
+
+/** Câu mô tả một lần thăng cấp, vd. "Huynh trưởng cấp 1 năm 2020". */
+export function rankHistorySentence(history: RankHistoryRow) {
+  const level = history.newLevel ? formatLeaderLevel(history.newLevel) : "Cấp bậc chưa rõ";
+  const year = yearFromDate(history.promotionDate);
+  return year ? `${level} năm ${year}` : `${level} chưa có năm ghi nhận`;
 }

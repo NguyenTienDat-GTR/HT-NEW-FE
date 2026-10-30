@@ -49,6 +49,7 @@ import {
     leaderRelatedQuery,
     workflowLabel,
     yearFromDate,
+    rankHistorySentence,
     type AccountRow,
     type CertificateRow,
     type CourseParticipationRow,
@@ -850,8 +851,3 @@ function scoreText(total: unknown, passing: unknown) {
     return `${total}/${passing}`;
 }
 
-function rankHistorySentence(history: RankHistoryRow) {
-    const level = history.newLevel ? formatLeaderLevel(history.newLevel) : "Cấp bậc chưa rõ";
-    const year = yearFromDate(history.promotionDate);
-    return year ? `${level} năm ${year}` : `${level} chưa có năm ghi nhận`;
-}

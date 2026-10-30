@@ -9,7 +9,8 @@ import type { RouteConfig } from "@/config/routes/routes";
 import { useEmbeddedResource } from "./embedded-resource-context";
 import { UnitDetail } from "@/modules/organizations/components/unit-detail";
 import { CertificateDetailDrawer } from "@/modules/certificates/components/certificate-detail-drawer";
-import { ResourceCell, formatLeaderLevel } from "./resource-format";
+import { ResourceCell } from "./resource-format";
+import { rankHistorySentence, yearFromDate, type RankHistoryRow } from "@/modules/leaders/components/leader-detail-utils";
 import type { DetailSection } from "./detail-section-types";
 import { DETAIL_SECTIONS_BY_KIND, ComponentScoreList } from "./detail-kind-sections";
 import { AUDIT_KEYS, detailLabel, shouldRenderKey } from "./detail-field-rules";
@@ -63,14 +64,6 @@ const PARTICIPATION_PRIMARY_KEYS = [
   "passed",
 ];
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-type RankHistoryRow = {
-  id?: number;
-  oldLevel?: string | null;
-  newLevel?: string | null;
-  promotionDate?: string | null;
-  note?: string | null;
-};
 
 export function DetailDrawer({ id, onClose, route }: { id?: string | null; onClose: () => void; route: RouteConfig }) {
   // Chứng nhận có drawer riêng: nhóm thông tin tiếng Việt, ảnh xem trước và chế độ mở rộng.
@@ -236,18 +229,6 @@ function LeaderRankHistory({
       ) : null}
     </section>
   );
-}
-
-function rankHistorySentence(history: RankHistoryRow) {
-  const level = history.newLevel ? formatLeaderLevel(history.newLevel) : "Cấp bậc chưa rõ";
-  const year = yearFromDate(history.promotionDate);
-  return year ? `${level} năm ${year}` : `${level} chưa có năm ghi nhận`;
-}
-
-function yearFromDate(value: string | null | undefined) {
-  if (!value) return 0;
-  const year = Number(value.slice(0, 4));
-  return Number.isInteger(year) ? year : 0;
 }
 
 function withAuditKeys(keys: string[]) {
