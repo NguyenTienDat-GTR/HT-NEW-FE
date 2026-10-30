@@ -1,6 +1,6 @@
 import { apiDownload, apiFetch, apiMutation, parseContentDispositionFilename, type PageResponse } from "@/lib/api/client";
 import { badgeExportBody, buildParticipantParams, invitationBody, type ParticipantQueryState } from "./participant-query";
-import { pollUntilDone } from "./job-runner";
+import { pollUntilDone } from "@/lib/jobs/job-runner";
 import type {
   AttendanceSummary,
   BadgeExportOptions,

@@ -11,7 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Tip } from "@/components/ui/tip";
 import { Panel } from "@/components/ui/panel";
 import { rowsFromResponse } from "@/components/form/resource-form/api-utils";
-import { apiDownload, apiFetch, apiMutationOnce, getApiErrorMessage, parseContentDispositionFilename, type PageResponse } from "@/lib/api/client";
+import { apiFetch, apiMutationOnce, getApiErrorMessage, type PageResponse } from "@/lib/api/client";
+import { runPdfExportJob } from "@/lib/jobs/pdf-export-job";
 import { useAuthStore } from "@/lib/auth/auth-store";
 import { canUseAction, hasPermissionPrefix } from "@/lib/auth/permissions";
 import { resolveRouteForUser } from "@/modules/workspace/super-admin-route-overrides";
@@ -397,36 +398,10 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
 
     // Xuất chạy nền: tạo job rồi hỏi trạng thái định kỳ, không khóa giao diện; tải về khi xong.
     // Nhờ vậy xuất vài trăm chứng nhận một lần cũng không treo request.
-    const base = config.pdfExportPath;
-    const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
     setExporting(true);
     const toastId = toast.loading(`Đang tạo PDF ${ids.length} chứng nhận...`);
     try {
-      const submit = await apiFetch<{ jobId: string; status: string; error?: string }>(`${base}/jobs`, {
-        method: "POST",
-        body: JSON.stringify({ certificateCodes: ids }),
-      });
-      let status = submit.status;
-      let error = submit.error;
-      for (let attempt = 0; attempt < 200 && status === "PENDING"; attempt += 1) {
-        await sleep(1500);
-        const next = await apiFetch<{ status: string; error?: string }>(`${base}/jobs/${encodeURIComponent(submit.jobId)}`);
-        status = next.status;
-        error = next.error;
-      }
-      if (status !== "DONE") throw new Error(error || "Quá thời gian tạo PDF, vui lòng thử lại");
-
-      const response = await apiDownload(`${base}/jobs/${encodeURIComponent(submit.jobId)}/file`);
-      const blob = await response.blob();
-      const filename = parseContentDispositionFilename(response.headers.get("content-disposition")) ?? "chung-nhan.pdf";
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(url);
+      await runPdfExportJob(config.pdfExportPath, ids);
       toast.success(`Đã xuất PDF ${ids.length} chứng nhận`, { id: toastId });
     } catch (error) {
       toast.error(getApiErrorMessage(error), { id: toastId, duration: 10000 });

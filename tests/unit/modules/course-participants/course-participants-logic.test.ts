@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { attendanceTokenFromScan, explainRejectedScan, isLegacyAttendanceToken } from "@/modules/course-participants/attendance-token";
 import { categorizeIssue, groupIssues, issuesToCsv, summarizeInvitation } from "@/modules/course-participants/invitation-summary";
-import { pollUntilDone } from "@/modules/course-participants/job-runner";
+import { pollUntilDone } from "@/lib/jobs/job-runner";
 import {
   EMPTY_PARTICIPANT_QUERY,
   activeFilterCount,
