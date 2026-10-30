@@ -40,6 +40,7 @@ import {CertificateCard} from "@/modules/certificates/components/certificate-car
 import {ViewModeToggle, type ViewMode} from "@/components/common/resource/view-mode-toggle";
 import {cn} from "@/lib/utils";
 import {formatLeaderLevel} from "@/components/common/resource/resource-format";
+import { resourceKey } from "@/lib/api/query-keys";
 import {
     actorLabel,
     displayValue,
@@ -109,7 +110,7 @@ export function LeaderDetailPage({id, route}: LeaderDetailPageProps) {
             setEditingProfile(false);
             setFieldErrors({});
             queryClient.setQueryData(["leader-detail-page", id], updatedLeader);
-            await queryClient.invalidateQueries({queryKey: ["resource", route.endpoint]});
+            await queryClient.invalidateQueries({queryKey: resourceKey(route.endpoint)});
             await queryClient.invalidateQueries({queryKey: ["leader-detail-page", id]});
         },
         onError: (error) => {

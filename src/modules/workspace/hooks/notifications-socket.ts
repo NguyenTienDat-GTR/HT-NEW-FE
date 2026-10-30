@@ -8,6 +8,7 @@ import { clientEnv } from "@/lib/env";
 import { apiFetch, refreshAccessToken } from "@/lib/api/client";
 import { useAuthStore, type AuthUser } from "@/lib/auth/auth-store";
 import { notificationKeys } from "@/modules/notifications/hooks";
+import { resourceKey } from "@/lib/api/query-keys";
 
 export function useNotificationsSocket() {
   const queryClient = useQueryClient();
@@ -28,16 +29,16 @@ export function useNotificationsSocket() {
         client.subscribe("/user/queue/notifications", (message) => {
           // Sự kiện đóng/mở đăng ký từ RabbitMQ: cập nhật luôn trạng thái trong danh sách khóa.
           if (isCourseRegistrationEvent(message.body)) {
-            void queryClient.invalidateQueries({ queryKey: ["resource", "/training/courses"] });
+            void queryClient.invalidateQueries({ queryKey: resourceKey("/training/courses") });
           }
-          void queryClient.invalidateQueries({ queryKey: ["resource", "/system/notifications"] });
+          void queryClient.invalidateQueries({ queryKey: resourceKey("/system/notifications") });
           void queryClient.invalidateQueries({ queryKey: ["system", "notifications"] });
           void queryClient.invalidateQueries({ queryKey: notificationKeys.unreadCount });
         });
         // Chứng nhận đổi (chấm điểm, tạo, sửa, duyệt): tải lại màn chứng nhận, tab duyệt chứng nhận và bảng chấm điểm của khóa.
         client.subscribe("/topic/certificate-events", () => {
-          void queryClient.invalidateQueries({ queryKey: ["resource", "/certificates"] });
-          void queryClient.invalidateQueries({ queryKey: ["resource", "/training/participants"] });
+          void queryClient.invalidateQueries({ queryKey: resourceKey("/certificates") });
+          void queryClient.invalidateQueries({ queryKey: resourceKey("/training/participants") });
           void queryClient.invalidateQueries({ queryKey: ["resource-detail", "/certificates"] });
         });
         client.subscribe("/user/queue/auth-events", () => {
@@ -49,11 +50,11 @@ export function useNotificationsSocket() {
             const user = await apiFetch<AuthUser>("/auth/me");
             useAuthStore.getState().setUser(user);
             await queryClient.invalidateQueries({ queryKey: ["auth", "me"] });
-            await queryClient.invalidateQueries({ queryKey: ["resource"] });
+            await queryClient.invalidateQueries({ queryKey: resourceKey() });
             router.refresh();
           });
         });
-        void queryClient.invalidateQueries({ queryKey: ["resource", "/system/notifications"] });
+        void queryClient.invalidateQueries({ queryKey: resourceKey("/system/notifications") });
         void queryClient.invalidateQueries({ queryKey: ["system", "notifications"] });
         void queryClient.invalidateQueries({ queryKey: notificationKeys.unreadCount });
       },

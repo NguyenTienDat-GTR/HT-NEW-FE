@@ -5,6 +5,7 @@ import { apiFetch, type PageResponse } from "@/lib/api/client";
 import { serializeBaseSearch } from "@/lib/api/search";
 import { cn } from "@/lib/utils";
 import { originalScore, type ScoreComponent, type ScoreDrafts } from "./score-entry";
+import { resourceKey } from "@/lib/api/query-keys";
 
 type Tone = "success" | "warning" | "danger";
 
@@ -45,7 +46,7 @@ export function ScoreStats({
 }) {
   const query = useQuery({
     // Bắt đầu bằng "resource" để được làm mới cùng danh sách sau khi lưu điểm.
-    queryKey: ["resource", endpoint, "score-stats", courseCode],
+    queryKey: resourceKey(endpoint, "score-stats", courseCode),
     queryFn: () => fetchAllParticipants(endpoint, courseCode),
   });
 

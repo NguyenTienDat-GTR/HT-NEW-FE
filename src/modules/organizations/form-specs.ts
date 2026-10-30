@@ -1,4 +1,5 @@
 import { compactPayload, type ResourceFormSpec } from "@/components/form/resource-form/types";
+import { withFilters } from "@/lib/api/filters";
 
 export const organizationFormSpecs: ResourceFormSpec[] = [
   {
@@ -89,7 +90,7 @@ export const organizationFormSpecs: ResourceFormSpec[] = [
         visibleWhen: (values) => values.unitType === "GIAO_HO" || values.unitType === "GIAO_DIEM",
         requiredWhen: (values) => values.unitType === "GIAO_HO" || values.unitType === "GIAO_DIEM",
         buildOptionsEndpoint: (values) =>
-          values.deaneryId ? `/parishes?filters=${encodeURIComponent(JSON.stringify({ "deanery.id": values.deaneryId, unitType: "PARISH" }))}` : undefined,
+          values.deaneryId ? withFilters("/parishes", { "deanery.id": values.deaneryId, unitType: "PARISH" }) : undefined,
         helper: "Chọn giáo hạt trước, rồi chọn giáo xứ cha trong giáo hạt đó.",
         section: "Phạm vi",
       },

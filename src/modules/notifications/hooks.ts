@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api/client";
 import type { PageResponse } from "@/lib/api/client";
 import { serializeBaseSearch, type BaseSearchParams } from "@/lib/api/search";
+import { resourceKey } from "@/lib/api/query-keys";
 
 export type NotificationItem = {
   id: string;
@@ -52,7 +53,7 @@ export function useMarkNotificationRead() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["system", "notifications"] });
       void queryClient.invalidateQueries({ queryKey: notificationKeys.unreadCount });
-      void queryClient.invalidateQueries({ queryKey: ["resource", "/system/notifications"] });
+      void queryClient.invalidateQueries({ queryKey: resourceKey("/system/notifications") });
     },
   });
 }
@@ -69,7 +70,7 @@ export function useMarkAllNotificationsRead() {
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: ["system", "notifications"] });
       void queryClient.invalidateQueries({ queryKey: notificationKeys.unreadCount });
-      void queryClient.invalidateQueries({ queryKey: ["resource", "/system/notifications"] });
+      void queryClient.invalidateQueries({ queryKey: resourceKey("/system/notifications") });
     },
   });
 }

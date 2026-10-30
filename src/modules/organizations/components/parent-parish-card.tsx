@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { apiFetch, apiMutation, getApiErrorMessage, type PageResponse } from "@/lib/api/client";
 import { hasPermissionPrefix } from "@/lib/auth/permissions";
 import { useAuthStore } from "@/lib/auth/auth-store";
+import { withFilters } from "@/lib/api/filters";
+import { resourceKey } from "@/lib/api/query-keys";
 
 type ParishOption = { id: string; name: string };
 
@@ -26,8 +28,8 @@ export function ParentParishCard({ id, row }: { id: string; row: Record<string, 
     queryKey: ["parent-parish-options", deaneryId],
     enabled: canChange && deaneryId !== "",
     queryFn: () => {
-      const filters = encodeURIComponent(JSON.stringify({ "deanery.id": deaneryId, unitType: "PARISH" }));
-      return apiFetch<PageResponse<ParishOption>>(`/parishes?filters=${filters}&page=0&size=100`);
+      const path = withFilters("/parishes", { "deanery.id": deaneryId, unitType: "PARISH" });
+      return apiFetch<PageResponse<ParishOption>>(`${path}&page=0&size=100`);
     },
   });
   const options = optionsQuery.data?.content ?? [];
@@ -36,7 +38,7 @@ export function ParentParishCard({ id, row }: { id: string; row: Record<string, 
     mutationFn: () => apiMutation(`/parishes/${encodeURIComponent(id)}/parent`, "PATCH", { parentParishId: selected }),
     onSuccess: async () => {
       toast.success("Đã đổi giáo xứ cha");
-      await queryClient.invalidateQueries({ queryKey: ["resource"] });
+      await queryClient.invalidateQueries({ queryKey: resourceKey() });
       await queryClient.invalidateQueries({ queryKey: ["resource-detail"] });
     },
     onError: (error) => toast.error(getApiErrorMessage(error)),
@@ -47,7 +49,7 @@ export function ParentParishCard({ id, row }: { id: string; row: Record<string, 
     onSuccess: async () => {
       toast.success("Đã chuyển thành giáo xứ");
       setConfirmPromote(false);
-      await queryClient.invalidateQueries({ queryKey: ["resource"] });
+      await queryClient.invalidateQueries({ queryKey: resourceKey() });
       await queryClient.invalidateQueries({ queryKey: ["resource-detail"] });
     },
     onError: (error) => toast.error(getApiErrorMessage(error)),

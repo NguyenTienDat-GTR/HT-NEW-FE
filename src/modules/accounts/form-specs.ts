@@ -1,6 +1,7 @@
 import { compactPayload, type ResourceFormSpec } from "@/components/form/resource-form/types";
 import { hasRole, isSuperAdmin } from "@/lib/auth/permissions";
 import type { AuthUser } from "@/lib/auth/auth-store";
+import { withFilters } from "@/lib/api/filters";
 
 const systemAdminRoleCodes = ["SUPER_ADMIN", "ADMIN_DIOCESE", "ADMIN_DEANERY", "ADMIN_PARISH"];
 // SUPER_ADMIN chỉ cấp tài khoản cho vai trò toàn hệ thống: không cấp cho admin giáo hạt / giáo xứ.
@@ -20,8 +21,8 @@ function candidateEndpoint(values: Record<string, unknown>) {
   const filters: Record<string, unknown> = {};
   if (values.accountParishFilter) filters["parish.id"] = values.accountParishFilter;
   else if (values.accountDeaneryFilter) filters["parish.deanery.id"] = values.accountDeaneryFilter;
-  const query = Object.keys(filters).length ? `?filters=${encodeURIComponent(JSON.stringify(filters))}` : "";
-  return `/leaders/account-candidates${query}`;
+  const path = "/leaders/account-candidates";
+  return Object.keys(filters).length ? withFilters(path, filters) : path;
 }
 
 export function getAccountCreateExcludedRoleCodes(user: AuthUser | null) {
@@ -108,7 +109,7 @@ export const systemFormSpecs: ResourceFormSpec[] = [
         type: "select",
         optionsEndpoint: "/parishes",
         buildOptionsEndpoint: (values) =>
-          values.accountDeaneryFilter ? `/parishes?filters=${encodeURIComponent(JSON.stringify({ "deanery.id": values.accountDeaneryFilter }))}` : undefined,
+          values.accountDeaneryFilter ? withFilters("/parishes", { "deanery.id": values.accountDeaneryFilter }) : undefined,
         optionValue: "id",
         optionLabel: "name",
         clearable: true,

@@ -10,6 +10,7 @@ import { excelJobsStore, isActiveJob, isAvatarPending, needsPolling, restoreExce
 import { cn } from "@/lib/utils";
 import { AvatarWarningsList } from "./avatar-warnings-list";
 import { ImportErrorsTable } from "./import-errors-table";
+import { resourceKey } from "@/lib/api/query-keys";
 
 const POLL_MS = 2500;
 
@@ -74,7 +75,7 @@ export function ExcelJobsTray() {
         if (previous === undefined) toast.success(job.resultMessage ?? `${job.label} hoàn tất`);
         if (job.avatarStatus === "DONE") announceAvatars(job);
         // Dữ liệu đã đổi: làm mới các danh sách / chi tiết đang mở.
-        await queryClient.invalidateQueries({ queryKey: ["resource"] });
+        await queryClient.invalidateQueries({ queryKey: resourceKey() });
         await queryClient.invalidateQueries({ queryKey: ["resource-detail"] });
       } else {
         toast.success(`${job.label} hoàn tất`, {

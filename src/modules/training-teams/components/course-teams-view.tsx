@@ -17,6 +17,7 @@ import type { TeamOverview } from "../types";
 import { TeamDivideDialog } from "./team-divide-dialog";
 import { TeamNameCell, teamSuggestions } from "./team-name-cell";
 import { TeamOverviewPanel } from "./team-overview-panel";
+import { resourceKey } from "@/lib/api/query-keys";
 
 // Tab "Chia đội" của khóa thường: tóm tắt đội, danh sách tham dự kèm đội (lọc theo đội), nút chia đội và import excel chia đội.
 export function CourseTeamsView({ route }: { route: RouteConfig }) {
@@ -28,9 +29,9 @@ export function CourseTeamsView({ route }: { route: RouteConfig }) {
 
   // Người duyệt đăng ký của đơn vị sở hữu khóa chia đội được khi khóa còn hoạt động và chưa kết thúc.
   const canManage = hasPermissionPrefix(user, "training.participation.approve.") && embedded?.courseFinished !== true && embedded?.courseDisabled !== true;
-  // Khóa `["resource", ...]` để nhận làm mới cùng danh sách sau khi import / chia đội.
+  // Khóa `resourceKey(...)` để nhận làm mới cùng danh sách sau khi import / chia đội.
   const overviewQuery = useQuery({
-    queryKey: ["resource", "team-overview", courseCode],
+    queryKey: resourceKey("team-overview", courseCode),
     enabled: Boolean(courseCode),
     queryFn: () => apiFetch<TeamOverview>(`/training/courses/${encodeURIComponent(courseCode)}/teams/overview`),
   });
@@ -61,7 +62,7 @@ export function CourseTeamsView({ route }: { route: RouteConfig }) {
     onSuccess: async () => {
       toast.success("Đã lưu đội cho hồ sơ");
       setDrafts({});
-      await queryClient.invalidateQueries({ queryKey: ["resource"] });
+      await queryClient.invalidateQueries({ queryKey: resourceKey() });
     },
   });
 
@@ -84,7 +85,7 @@ export function CourseTeamsView({ route }: { route: RouteConfig }) {
     onSuccess: async () => {
       toast.success("Đã xóa chia đội của khóa");
       setClearOpen(false);
-      await queryClient.invalidateQueries({ queryKey: ["resource"] });
+      await queryClient.invalidateQueries({ queryKey: resourceKey() });
     },
   });
 

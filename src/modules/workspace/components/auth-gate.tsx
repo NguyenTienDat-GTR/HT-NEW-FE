@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { apiFetch, refreshAccessToken } from "@/lib/api/client";
 import { ServerAuthContext, useAuthStore, type AuthUser } from "@/lib/auth/auth-store";
+import { resourceKey } from "@/lib/api/query-keys";
 
 // initialUser: người dùng server đã đọc từ cookie phiên khi render HTML (null nếu cookie hết hạn / không có).
 export function AuthGate({ children, initialUser }: { children: React.ReactNode; initialUser: AuthUser | null }) {
@@ -44,7 +45,7 @@ function AuthGateInner({ children, initialUser }: { children: React.ReactNode; i
   useEffect(() => {
     if (!query.data) return;
     setUser(query.data);
-    void queryClient.resetQueries({ queryKey: ["resource"] });
+    void queryClient.resetQueries({ queryKey: resourceKey() });
   }, [query.data, queryClient, setUser]);
 
   // Server đã cho dữ liệu từ cookie nên chưa cần access token; lấy token ở nền để mở websocket thông báo.

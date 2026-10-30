@@ -44,6 +44,7 @@ import { useSessionState } from "@/lib/use-session-state";
 import { useIsDesktop } from "@/lib/use-media-query";
 import { CourseConditionList, courseConditionItems } from "@/modules/training-courses/components/course-conditions";
 import { CourseScoreComponentsPanel } from "@/modules/training-courses/components/course-score-components";
+import { resourceKey } from "@/lib/api/query-keys";
 
 // Quy trình huấn luyện của một khóa: mỗi tab dùng lại đúng màn hình/logic của menu cũ, lọc theo khóa đang chọn.
 const workflowTabs = [
@@ -113,7 +114,7 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
       toast.success("Đã kết thúc khóa huấn luyện");
       setFinishOpen(false);
       await queryClient.invalidateQueries({ queryKey: ["resource-detail", route.endpoint, id] });
-      await queryClient.invalidateQueries({ queryKey: ["resource"] });
+      await queryClient.invalidateQueries({ queryKey: resourceKey() });
     },
     onError: (error) => toast.error(getApiErrorMessage(error)),
   });
@@ -146,7 +147,7 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
   // Số bản ghi của từng tab (tổng số dòng tab đó liệt kê, không tính ô tìm kiếm): dùng đúng endpoint và bộ lọc nền của tab.
   const tabCountQueries = useQueries({
     queries: tabs.map((tab) => ({
-      queryKey: ["resource", tab.route.endpoint, "tab-count", id, tab.route.baseFilters ?? null],
+      queryKey: resourceKey(tab.route.endpoint, "tab-count", id, tab.route.baseFilters ?? null),
       enabled: Boolean(tab.route.endpoint),
       queryFn: () =>
         apiFetch<PageResponse<Record<string, unknown>>>(

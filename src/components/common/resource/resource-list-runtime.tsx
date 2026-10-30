@@ -41,6 +41,7 @@ import { ResourceTable } from "./resource-table";
 import { ViewModeToggle } from "./view-mode-toggle";
 import { ResourceFilters } from "./resource-toolbar";
 import { useResourceQueryState } from "./use-resource-query-state";
+import { resourceKey, resourceListKey } from "@/lib/api/query-keys";
 
 export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps) {
   const router = useRouter();
@@ -61,7 +62,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
     : resolvedRoute;
   const queryState = useResourceQueryState(effectiveRoute, embedded?.fixedFilters, embedded?.search);
   const query = useQuery({
-    queryKey: ["resource", effectiveRoute.endpoint, queryState.queryString],
+    queryKey: resourceListKey(effectiveRoute.endpoint, queryState.queryString),
     enabled: Boolean(effectiveRoute.endpoint && user),
     queryFn: () => apiFetch<PageResponse<Record<string, unknown>> | Record<string, unknown>[]>(`${effectiveRoute.endpoint}?${queryState.queryString}`),
     refetchOnMount: "always",
@@ -222,7 +223,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
       toast.success(variables.action === "resetPassword" ? `Đã gửi mật khẩu tạm tới ${(data as { maskedEmail?: string } | undefined)?.maskedEmail ?? "email đã đăng ký"}, hiệu lực 10 phút` : variables.action === "toggle" ? "Đổi trạng thái thành công" : variables.action === "revokePermission" ? "Đã thu hồi quyền" : variables.action === "reject" ? "Đã từ chối duyệt" : variables.action === "revoke" ? "Đã thu hồi chứng nhận" : variables.action === "reissue" ? "Đã cấp lại chứng nhận" : variables.action === "withdraw" ? "Đã thu hồi đăng ký" : variables.action === "remove" ? "Đã chuyển hồ sơ về trạng thái từ chối duyệt" : "Duyệt thành công");
       closeQueryDialog();
       // Thao tác có thể đổi dữ liệu ở các danh sách khác (hồ sơ tham dự, chứng nhận, khóa) và ở drawer chi tiết đang mở.
-      await queryClient.invalidateQueries({ queryKey: ["resource"] });
+      await queryClient.invalidateQueries({ queryKey: resourceKey() });
       await queryClient.invalidateQueries({ queryKey: ["resource-detail"] });
       await queryClient.invalidateQueries({ queryKey: ["certificate-preview"] });
       await queryClient.invalidateQueries({ queryKey: ["executive-board-seats"] });
@@ -246,7 +247,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
       }
       setSelectedIds([]);
       setBulkMode(null);
-      await queryClient.invalidateQueries({ queryKey: ["resource", effectiveRoute.endpoint] });
+      await queryClient.invalidateQueries({ queryKey: resourceKey(effectiveRoute.endpoint) });
     },
   });
   const scoreComponents = scoreComponentsQuery.data ?? [];
@@ -375,7 +376,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
       else toast.success(`Đã lưu ${saved.length} hồ sơ`, { id: toastId });
       if (saved.length && failures.length) toast.success(`Đã lưu ${saved.length} hồ sơ`);
       if (saved.length) {
-        await queryClient.invalidateQueries({ queryKey: ["resource", effectiveRoute.endpoint] });
+        await queryClient.invalidateQueries({ queryKey: resourceKey(effectiveRoute.endpoint) });
         await queryClient.invalidateQueries({ queryKey: ["resource-detail"] });
       }
     })();

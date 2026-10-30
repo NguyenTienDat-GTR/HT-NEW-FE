@@ -12,6 +12,7 @@ import { formatVietnamDateValue } from "@/lib/date-format";
 import { cn } from "@/lib/utils";
 import { buildItems, candidateName, emptyDraft, missingReasons } from "../send-form";
 import type { Candidate, CrossRequest, ItemDraft, OpenCourse } from "../types";
+import { resourceKey } from "@/lib/api/query-keys";
 
 const fieldClass =
   "w-full rounded-[8px] border border-border bg-white px-3 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-[var(--primary-ring)]";
@@ -49,7 +50,7 @@ export function SendPanel({ onSent }: { onSent: () => void }) {
       setSelected({});
       setDrafts({});
       await queryClient.invalidateQueries({ queryKey: ["cross-deanery"] });
-      await queryClient.invalidateQueries({ queryKey: ["resource"] });
+      await queryClient.invalidateQueries({ queryKey: resourceKey() });
       onSent();
     },
   });

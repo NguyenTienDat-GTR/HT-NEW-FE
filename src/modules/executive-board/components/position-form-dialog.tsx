@@ -12,6 +12,7 @@ import { apiFetch, apiMutation, getApiErrorMessage } from "@/lib/api/client";
 import { useAuthStore } from "@/lib/auth/auth-store";
 import { hasPermission } from "@/lib/auth/permissions";
 import { cn } from "@/lib/utils";
+import { resourceKey } from "@/lib/api/query-keys";
 
 const POSITION_TYPES = [
   { value: "DIOCESE", label: "Giáo phận" },
@@ -69,7 +70,7 @@ function PositionForm({ target, onClose }: { target: PositionFormTarget; onClose
       toast.success(editing ? "Lưu cập nhật thành công" : "Tạo mới thành công");
       // Danh sách, chi tiết và các ô chọn chức vụ ở form khác đều phải lấy lại dữ liệu mới.
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["resource", "/positions"] }),
+        queryClient.invalidateQueries({ queryKey: resourceKey("/positions") }),
         queryClient.invalidateQueries({ queryKey: ["resource-detail", "/positions"] }),
         queryClient.invalidateQueries({ queryKey: ["field-options"] }),
         queryClient.invalidateQueries({ queryKey: ["executive-board-seats"] }),

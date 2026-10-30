@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { apiFetch, apiMutation, getApiErrorMessage } from "@/lib/api/client";
+import { resourceKey } from "@/lib/api/query-keys";
 
 type StatusImpact = { active: boolean; approvedCertificates: number; restorableCertificates: number };
 
@@ -53,7 +54,7 @@ function StatusForm({ courseCode, courseName, endpoint, onClose }: { courseCode:
     mutationFn: () => apiMutation(`${endpoint}/${encodeURIComponent(courseCode)}/toggle-status`, "PATCH", { confirmationText: text.trim(), targetStatus: !disabling }),
     onSuccess: async () => {
       toast.success(disabling ? "Đã vô hiệu hóa khóa huấn luyện" : "Đã bật lại khóa huấn luyện");
-      await queryClient.invalidateQueries({ queryKey: ["resource"] });
+      await queryClient.invalidateQueries({ queryKey: resourceKey() });
       await queryClient.invalidateQueries({ queryKey: ["resource-detail"] });
       onClose();
     },

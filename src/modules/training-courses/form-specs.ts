@@ -4,6 +4,7 @@ import type { AuthUser } from "@/lib/auth/auth-store";
 import { useAuthStore } from "@/lib/auth/auth-store";
 import { hasPermission } from "@/lib/auth/permissions";
 import { leaderLevelSelect } from "@/modules/organizations/form-specs";
+import { withFilters } from "@/lib/api/filters";
 
 const unitTypes = unitTypeSelectOptions(["DIOCESE", "DEANERY"]);
 
@@ -24,7 +25,7 @@ function courseTypesInScope(resource: ManagedResource) {
   return (user: AuthUser | null) => {
     const types = managedUnitTypes(user, resource);
     if (types.length !== 1) return undefined;
-    return `/training/course-types?filters=${encodeURIComponent(JSON.stringify({ managementUnitType: types[0] }))}`;
+    return withFilters("/training/course-types", { managementUnitType: types[0] });
   };
 }
 
