@@ -567,4 +567,5 @@ BE tương ứng: `BE/project.md` mục "Training Course Registration Control an
 - `components/form/resource-form/form-controls.tsx`: `CONTROL_RENDERERS` theo `type` thay chuỗi `if (type === ...)`.
 - `modules/layout-config/use-config-library.ts` (`useConfigLibrary`, `configLibraryApi`, `resolveConfigId`): dữ liệu dùng chung của `certificate-config-view` và `badge-config-view`.
 - Test thêm: `resource-row-permissions`, `detail-field-rules`, `form-controls-registry`, `layout-config/use-config-library`. `next build` chạy thành công.
-- Chưa làm: tách tiếp `certificate-config-view` (trình thiết kế, danh sách thư viện), `leader-detail-page` thành các tab, chuyển toast khỏi `apiMutation`.
+- `leader-detail-page.tsx` (853 -> 365 dòng) tách thành `leader-edit.ts` (giá trị sửa, kiểm tra, payload), `leader-detail-ui.tsx` (thẻ, trường, huy hiệu) và `leader-detail-tabs.tsx` (các tab khóa học, chứng nhận, tài khoản, lịch sử cấp bậc); test `tests/unit/modules/leaders/leader-edit.test.ts`.
+- Chưa làm: tách tiếp `certificate-config-view` (trình thiết kế, danh sách thư viện) và chuyển toast khỏi `apiMutation`.
