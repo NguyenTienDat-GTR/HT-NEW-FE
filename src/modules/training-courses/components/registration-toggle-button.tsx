@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Tip } from "@/components/ui/tip";
 import { apiMutation, getApiErrorMessage } from "@/lib/api/client";
-import { registrationStateLabels, resolveRegistrationState } from "../registration-state";
+import { registrationStateLabels, resolveOrganizingState, resolveRegistrationState } from "../registration-state";
 
 // Đóng/mở đăng ký thủ công khi khóa đang trong thời gian đăng ký (hết hạn/chưa đến giờ thì hệ thống tự xử lý).
 export function RegistrationToggleButton({ endpoint, id, row }: { endpoint: string; id: string; row: Record<string, unknown> }) {
@@ -25,7 +25,9 @@ export function RegistrationToggleButton({ endpoint, id, row }: { endpoint: stri
 
   const label = !toggleable
     ? state === "ENDED"
-      ? `${registrationStateLabels.ENDED}, hãy gia hạn thời gian đăng ký để mở lại`
+      ? resolveOrganizingState(row) === "ENDED"
+        ? "Khóa đã kết thúc nên đăng ký đã đóng và không thể mở lại"
+        : `${registrationStateLabels.ENDED}, hãy gia hạn thời gian đăng ký để mở lại`
       : "Chưa đến giờ đăng ký, hệ thống sẽ tự mở khi đến giờ"
     : closed
       ? "Mở đăng ký"
