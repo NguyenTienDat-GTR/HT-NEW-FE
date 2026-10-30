@@ -15,7 +15,7 @@ export type FormSectionPlan = {
   size: "compact" | "full";
 };
 
-const BULKY_TYPES = new Set(["image", "checkbox-list", "registration-list"]);
+const BULKY_TYPES = new Set(["image", "checkbox-list", "registration-list", "score-components"]);
 const COMPACT_MAX_FIELDS = 6;
 
 export function groupFields(fields: FormFieldSpec[]) {

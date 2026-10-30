@@ -14,7 +14,7 @@ export type Option = {
   taxonomy?: { module?: string; resource?: string; action?: string; scope?: string };
 };
 
-export type FieldType = "text" | "email" | "url" | "image" | "number" | "date" | "datetime" | "textarea" | "select" | "multiselect" | "checkbox-list" | "radio" | "switch" | "registration-list";
+export type FieldType = "text" | "email" | "url" | "image" | "number" | "date" | "datetime" | "textarea" | "select" | "multiselect" | "checkbox-list" | "radio" | "switch" | "registration-list" | "score-components";
 
 export type FormFieldSpec = {
   name: string;
@@ -59,8 +59,10 @@ export type FormFieldSpec = {
   switchLabels?: [string, string];
   // Gợi ý động lấy từ API theo giá trị các trường khác (ví dụ điểm đạt tối đa theo loại khóa).
   dynamicHelper?: {
-    buildEndpoint: (values: Record<string, unknown>) => string | undefined;
-    format: (data: unknown, values: Record<string, unknown>) => { text: string; invalid?: boolean } | undefined;
+    buildEndpoint?: (values: Record<string, unknown>) => string | undefined;
+    format?: (data: unknown, values: Record<string, unknown>) => { text: string; invalid?: boolean } | undefined;
+    // Gợi ý tính ngay trên trình duyệt từ giá trị các trường khác (không gọi API).
+    compute?: (values: Record<string, unknown>) => { text: string; invalid?: boolean } | undefined;
   };
   section?: string;
 };

@@ -43,6 +43,7 @@ import { PrerequisiteCopyDialog } from "@/modules/prerequisite-copy/components/p
 import { useSessionState } from "@/lib/use-session-state";
 import { useIsDesktop } from "@/lib/use-media-query";
 import { CourseConditionList, courseConditionItems } from "@/modules/training-courses/components/course-conditions";
+import { CourseScoreComponentsPanel } from "@/modules/training-courses/components/course-score-components";
 
 // Quy trình huấn luyện của một khóa: mỗi tab dùng lại đúng màn hình/logic của menu cũ, lọc theo khóa đang chọn.
 const workflowTabs = [
@@ -276,6 +277,12 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
                   <div className="border-t border-border pt-3">
                     <h3 className="mb-2 text-sm font-semibold text-foreground">Điều kiện của khóa</h3>
                     {conditionItems.length > 0 ? <CourseConditionList items={conditionItems} /> : <p className="text-[13px] text-muted">Khóa không đặt điều kiện tham dự.</p>}
+                  </div>
+                ) : null}
+                {!isPastCourse ? (
+                  <div className="border-t border-border pt-3">
+                    <h3 className="mb-2 text-sm font-semibold text-foreground">Thành phần điểm của khóa</h3>
+                    <CourseScoreComponentsPanel components={Array.isArray(course.scoreComponents) ? (course.scoreComponents as never[]) : []} />
                   </div>
                 ) : null}
               </div>

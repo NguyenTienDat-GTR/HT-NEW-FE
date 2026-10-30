@@ -1,3 +1,4 @@
+import { DEFAULT_SCORE_COMPONENT, maxFinalScore, scoreComponentRows, scoreComponentsPayload } from "@/components/form/resource-form/score-components-field";
 import { compactPayload, unitTypeSelectOptions, type ResourceFormSpec } from "@/components/form/resource-form/types";
 import type { AuthUser } from "@/lib/auth/auth-store";
 import { useAuthStore } from "@/lib/auth/auth-store";
@@ -146,7 +147,7 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
     createTitle: "Tạo khóa huấn luyện",
     editTitle: "Chỉnh sửa khóa huấn luyện",
     description: "Khóa huấn luyện, thời gian, cửa sổ đăng ký và điểm đạt. Sau khi khóa có hồ sơ tham gia, không đổi được loại khóa, năm tổ chức, số năm hoạt động và điểm đạt.",
-    getInitialValues: () => ({ yearsActive: 0, autoApproveEligible: false, scoreVisible: false, attendanceEnabled: false, autoSendInvitation: false, openToOtherDeaneries: false }),
+    getInitialValues: () => ({ scoreComponents: [{ ...DEFAULT_SCORE_COMPONENT }], yearsActive: 0, autoApproveEligible: false, scoreVisible: false, attendanceEnabled: false, autoSendInvitation: false, openToOtherDeaneries: false }),
     fields: [
       { name: "courseName", label: "Tên khóa", required: true, section: "Thông tin khóa" },
       {
@@ -184,23 +185,24 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
         readOnlyWhen: lockedByParticipations,
         helper: "Điểm tổng kết (trung bình có hệ số) tối thiểu để đạt khóa.",
         dynamicHelper: {
-          buildEndpoint: (values) => {
-            const typeCode = String(values.courseTypeCode ?? "");
-            return typeCode ? `/training/courses/passing-score-limit?courseTypeCode=${encodeURIComponent(typeCode)}` : undefined;
-          },
-          format: (data, values) => {
-            const limit = (data as { maxPassingScore?: number | string | null; componentCount?: number } | null)?.maxPassingScore;
-            if (limit === null || limit === undefined) {
-              return { text: "Loại khóa này chưa có thành phần điểm nào được tính vào điểm tổng kết nên chưa giới hạn điểm đạt." };
-            }
+          compute: (values) => {
+            const limit = maxFinalScore(scoreComponentRows(values.scoreComponents));
+            if (limit === null) return { text: "Chưa có thành phần điểm nào được tính vào điểm tổng kết nên chưa giới hạn điểm đạt." };
             const passing = Number(values.passingScore);
-            const invalid = Number.isFinite(passing) && values.passingScore !== "" && passing > Number(limit);
+            const invalid = Number.isFinite(passing) && values.passingScore !== "" && passing > limit;
             return {
-              text: `Điểm đạt không được lớn hơn ${Number(limit)} (điểm tối đa trung bình có hệ số của các thành phần điểm thuộc loại khóa đã chọn).`,
+              text: `Điểm đạt không được lớn hơn ${limit} (điểm tối đa trung bình có hệ số của các thành phần điểm của khóa).`,
               invalid,
             };
           },
         },
+        section: "Cấu hình chấm điểm",
+      },
+      {
+        name: "scoreComponents",
+        label: "Thành phần điểm của khóa",
+        type: "score-components",
+        helper: "Khai báo các thành phần điểm riêng của khóa này: tên, điểm tối đa, hệ số và có tính vào điểm tổng kết hay không. Điểm tổng kết = Σ(điểm × hệ số) / Σ hệ số của các thành phần được tính. Khóa đã có điểm nhập thì chỉ đổi được tên và thứ tự.",
         section: "Cấu hình chấm điểm",
       },
       {
@@ -283,6 +285,7 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
       payload.recipientUsernames = Array.isArray(values.recipientUsernames) ? values.recipientUsernames : [];
       // Khóa giáo phận: gửi cả danh sách rỗng khi sửa để bỏ chọn toàn bộ giáo hạt; khóa giáo hạt / chưa chọn thì không gửi.
       if (Array.isArray(values.targetDeaneryIds)) payload.targetDeaneryIds = values.targetDeaneryIds;
+      if (Array.isArray(values.scoreComponents)) payload.scoreComponents = scoreComponentsPayload(values.scoreComponents);
       return payload;
     },
   },
@@ -301,46 +304,4 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
       mapSubmit: (values) => compactPayload(values),
     }),
   ),
-  {
-    kind: "score-components",
-    createTitle: "Thêm thành phần điểm",
-    editTitle: "Chỉnh sửa thành phần điểm",
-    description: "Thành phần điểm thuộc một loại khóa, có hệ số để tính điểm tổng kết (trung bình có hệ số).",
-    getInitialValues: () => ({ includeInFinal: true, coefficient: 1 }),
-    fields: [
-      { name: "name", label: "Tên thành phần", required: true, section: "Thông tin thành phần" },
-      {
-        name: "courseTypeCode",
-        label: "Loại khóa",
-        type: "select",
-        required: true,
-        optionsEndpoint: "/training/course-types",
-        optionsEndpointForUser: courseTypesInScope("score_component"),
-        optionValue: "typeCode",
-        optionLabel: "typeName",
-        readOnlyOnEdit: true,
-        section: "Thông tin thành phần",
-      },
-      { name: "maxScore", label: "Điểm tối đa", type: "number", required: true, section: "Chấm điểm" },
-      { name: "coefficient", label: "Hệ số", type: "number", required: true, helper: "Điểm tổng kết = Σ(điểm × hệ số) / Σ hệ số của các thành phần được tính.", section: "Chấm điểm" },
-      {
-        name: "includeInFinal",
-        label: "Tính vào điểm tổng kết",
-        type: "switch",
-        switchLabels: ["Có tính vào điểm tổng kết", "Không tính vào điểm tổng kết"],
-        section: "Chấm điểm",
-      },
-      { name: "displayOrder", label: "Thứ tự", type: "number", section: "Hiển thị" },
-      { name: "description", label: "Mô tả", type: "textarea", clearable: true, section: "Hiển thị" },
-    ],
-    mapSubmit: (values, mode) => {
-      const payload = compactPayload(values);
-      if (mode === "edit") {
-        delete payload.code;
-        delete payload.unitType;
-        delete payload.courseTypeCode;
-      }
-      return payload;
-    },
-  },
 ];

@@ -1,5 +1,6 @@
 "use client";
 
+import { scoreComponentsError } from "./score-components-field";
 import { ArrowLeft, FloppyDisk, X } from "@phosphor-icons/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Route } from "next";
@@ -263,6 +264,11 @@ function validateFields(fields: FormFieldSpec[], values: Record<string, unknown>
     const raw = values[field.name];
     if (field.min !== undefined && raw !== undefined && raw !== null && raw !== "" && Number(raw) < field.min) {
       errors[field.name] = `Giá trị không được nhỏ hơn ${field.min}`;
+      return;
+    }
+    if (field.type === "score-components") {
+      const message = scoreComponentsError(raw);
+      if (message) errors[field.name] = message;
       return;
     }
     if (!field.required) return;

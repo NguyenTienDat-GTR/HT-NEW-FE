@@ -16,6 +16,7 @@ import type { AuthUser } from "@/lib/auth/auth-store";
 import { cn } from "@/lib/utils";
 import { optionFromRow, rowsFromResponse } from "./api-utils";
 import { RegistrationListField, registrationEntries } from "./registration-list-field";
+import { ScoreComponentsField } from "./score-components-field";
 import type { FormFieldSpec, Option } from "./types";
 
 type FormValue = string | string[] | number | boolean | null | undefined;
@@ -106,6 +107,16 @@ function renderControl({
         value={String(value ?? "")}
       />
     );
+  }
+
+  if (type === "score-components") {
+    return <ScoreComponentsField
+        courseTypeCode={typeof values?.courseTypeCode === "string" ? values.courseTypeCode : undefined}
+        excludeCourseCode={typeof values?.courseCode === "string" ? values.courseCode : undefined}
+        onChange={(rows) => onChange(rows as unknown as FormValue)}
+        readonly={readonly}
+        value={value}
+      />;
   }
 
   if (type === "registration-list" && field.registrationList) {
@@ -697,13 +708,14 @@ function toDatetimeLocalValue(value: unknown) {
 }
 
 function useDynamicHelper(field: FormFieldSpec, values?: Record<string, unknown>) {
-  const endpoint = field.dynamicHelper?.buildEndpoint(values ?? {});
+  const endpoint = field.dynamicHelper?.buildEndpoint?.(values ?? {});
   const query = useQuery({
     queryKey: ["field-helper", field.name, endpoint],
     enabled: Boolean(endpoint),
     queryFn: () => apiFetch<unknown>(String(endpoint)),
   });
-  if (!field.dynamicHelper || !endpoint || query.data === undefined) return undefined;
+  if (field.dynamicHelper?.compute) return field.dynamicHelper.compute(values ?? {});
+  if (!field.dynamicHelper?.format || !endpoint || query.data === undefined) return undefined;
   return field.dynamicHelper.format(query.data, values ?? {});
 }
 

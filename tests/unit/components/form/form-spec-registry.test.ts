@@ -29,7 +29,6 @@ describe("form spec registry", () => {
 
   it("các loại tài nguyên khác vẫn tìm đúng form theo loại", () => {
     expect(getFormSpec(findRoute("/training/course-types")!, "create", deaneryAdmin)?.kind).toBe("course-types");
-    expect(getFormSpec(findRoute("/training/score-components")!, "edit", deaneryAdmin)?.kind).toBe("score-components");
     expect(getFormSpec(findRoute("/training/registrations")!, "create", deaneryAdmin)?.moduleName).toBe("training.registration");
   });
 });

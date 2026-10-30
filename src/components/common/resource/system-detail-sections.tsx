@@ -161,29 +161,6 @@ const accountPermissionSections: DetailSection[] = [
   AUDIT_SECTION,
 ];
 
-const scoreComponentSections: DetailSection[] = [
-  {
-    title: "Thông tin thành phần điểm",
-    fields: [
-      { key: "name", label: "Tên thành phần", wide: true },
-      { key: "description", label: "Mô tả", wide: true, visible: (row) => hasText(row.description) },
-      { key: "courseTypeName", label: "Loại khóa", visible: (row) => hasText(row.courseTypeName) },
-      { key: "unitType", label: "Cấp áp dụng", value: (row) => mapped(UNIT_TYPE_LABELS, row.unitType) },
-      { key: "displayOrder", label: "Thứ tự hiển thị" },
-      { key: "status", label: "Trạng thái" },
-    ],
-  },
-  {
-    title: "Cách tính điểm",
-    fields: [
-      { key: "maxScore", label: "Điểm tối đa" },
-      { key: "coefficient", label: "Hệ số" },
-      { key: "includeInFinal", label: "Tính vào điểm tổng kết", value: (row) => yesNo(row.includeInFinal) },
-    ],
-  },
-  AUDIT_SECTION,
-];
-
 const auditLogSections: DetailSection[] = [
   {
     title: "Thông tin thao tác",
@@ -221,6 +198,5 @@ export const SYSTEM_DETAIL_SECTIONS: Record<string, DetailSection[]> = {
   "account-roles": accountRoleSections,
   "role-permissions": rolePermissionSections,
   "account-permissions": accountPermissionSections,
-  "score-components": scoreComponentSections,
   "audit-logs": auditLogSections,
 };
