@@ -568,4 +568,5 @@ BE tương ứng: `BE/project.md` mục "Training Course Registration Control an
 - `modules/layout-config/use-config-library.ts` (`useConfigLibrary`, `configLibraryApi`, `resolveConfigId`): dữ liệu dùng chung của `certificate-config-view` và `badge-config-view`.
 - Test thêm: `resource-row-permissions`, `detail-field-rules`, `form-controls-registry`, `layout-config/use-config-library`. `next build` chạy thành công.
 - `leader-detail-page.tsx` (853 -> 365 dòng) tách thành `leader-edit.ts` (giá trị sửa, kiểm tra, payload), `leader-detail-ui.tsx` (thẻ, trường, huy hiệu) và `leader-detail-tabs.tsx` (các tab khóa học, chứng nhận, tài khoản, lịch sử cấp bậc); test `tests/unit/modules/leaders/leader-edit.test.ts`.
-- Chưa làm: tách tiếp `certificate-config-view` (trình thiết kế, danh sách thư viện) và chuyển toast khỏi `apiMutation`.
+- `modules/layout-config/form-controls.tsx` (chuyển từ `badges/components`, thêm `FilterSelect`) dùng chung cho màn cấu hình thẻ và chứng nhận; `certificates/certificate-library-params.ts` giữ tham số lọc/sắp xếp thư viện (`certificate-config-view.tsx` 1046 → 920 dòng). Field của màn chứng nhận nay dùng bản có `htmlFor` (nhãn gắn đúng ô nhập).
+- Chưa làm: tách thân hàm `CertificateConfigView` (trình thiết kế) thành hook/component con và chuyển toast khỏi `apiMutation`.
