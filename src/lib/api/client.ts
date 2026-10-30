@@ -1,7 +1,6 @@
 "use client";
 
 import createClient from "openapi-fetch";
-import { toast } from "sonner";
 import { newIdempotencyKey } from "@/lib/api/idempotency";
 import type { paths } from "./schema";
 import { useAuthStore, type AuthUser } from "@/lib/auth/auth-store";
@@ -200,15 +199,11 @@ export async function apiMutationOnce<T>(path: string, method: "POST" | "PUT" | 
   return result;
 }
 
-export async function apiMutation<T>(path: string, method: "POST" | "PUT" | "PATCH" | "DELETE", body?: unknown, options?: { idempotencyKey?: string }) {
-  try {
-    return await apiFetch<T>(path, {
-      method,
-      body: body === undefined ? undefined : JSON.stringify(body),
-      headers: options?.idempotencyKey ? { "Idempotency-Key": options.idempotencyKey } : undefined,
-    });
-  } catch (error) {
-    toast.error(getApiErrorMessage(error));
-    throw error;
-  }
+// Chỉ gọi API và ném lỗi; thông báo lỗi do MutationCache chung (lib/api/mutation-cache.ts) hoặc onError của nơi gọi lo.
+export function apiMutation<T>(path: string, method: "POST" | "PUT" | "PATCH" | "DELETE", body?: unknown, options?: { idempotencyKey?: string }) {
+  return apiFetch<T>(path, {
+    method,
+    body: body === undefined ? undefined : JSON.stringify(body),
+    headers: options?.idempotencyKey ? { "Idempotency-Key": options.idempotencyKey } : undefined,
+  });
 }
