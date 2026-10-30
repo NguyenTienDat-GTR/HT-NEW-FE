@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Tip } from "@/components/ui/tip";
 import { Panel } from "@/components/ui/panel";
 import { rowsFromResponse } from "@/components/form/resource-form/api-utils";
-import { apiDownload, apiFetch, apiMutation, apiMutationOnce, getApiErrorMessage, parseContentDispositionFilename, type PageResponse } from "@/lib/api/client";
+import { apiDownload, apiFetch, apiMutationOnce, getApiErrorMessage, parseContentDispositionFilename, type PageResponse } from "@/lib/api/client";
 import { useAuthStore } from "@/lib/auth/auth-store";
 import { canUseAction, hasPermissionPrefix } from "@/lib/auth/permissions";
 import { resolveRouteForUser } from "@/modules/workspace/super-admin-route-overrides";
@@ -29,6 +29,7 @@ import { DetailDrawer } from "./detail-drawer";
 import { PositionFormDialog } from "@/modules/executive-board/components/position-form-dialog";
 import { AssignmentFormDialog } from "@/modules/executive-board/components/assignment-form-dialog";
 import { getResourceId, isAwaitingApproval, isReapprovable } from "./resource-actions";
+import { actionSuccessMessage, buildActionRequest, sendActionRequest, type ResourceRowActionInput } from "./resource-action-requests";
 import { isInvalidScore, originalNote, originalScore, runWithConcurrency, sameScore, type ScoreComponent, type ScoreDrafts, type ScoreEntry, type ScoreNoteDrafts } from "./score-entry";
 import { ScoreStats } from "./score-stats";
 import { ResourceListEmptyState } from "./resource-list-empty-state";
@@ -193,34 +194,12 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
   const bulkExceptionItems = bulkApprovableIds.map(exceptionItemFor).filter((item): item is ExceptionLevelItem => item !== null);
   const closeQueryDialog = () => router.push((embedded ? embeddedTabHref(embedded) : effectiveRoute.path) as Route);
   const actionMutation = useMutation({
-    mutationFn: ({ action, id, note, signer, achievedLevel }: { action: "toggle" | "approve" | "reject" | "revoke" | "reissue" | "withdraw" | "remove" | "revokePermission" | "resetPassword"; id: string; note?: string; signer?: CertificateSigner; achievedLevel?: string }) => {
-      // Đặt lại mật khẩu: mật khẩu tạm chỉ gửi qua email, API chỉ trả về email đã che và hạn dùng.
-      if (action === "resetPassword") return apiMutationOnce<{ maskedEmail?: string }>(`${effectiveRoute.endpoint}/${encodeURIComponent(id)}/reset-password`, "POST");
-      if (action === "revokePermission") {
-        const row = rowById(id);
-        const target = effectiveRoute.kind === "role-permissions" ? { roleCode: row?.roleCode } : { username: row?.username };
-        return apiMutation(`${effectiveRoute.endpoint}/revoke`, "POST", { ...target, permissionCodes: [row?.permissionCode] });
-      }
-      // Thu hồi / cấp lại / duyệt / từ chối dùng Idempotency-Key: bấm đúp hoặc gửi lại sau lỗi mạng chỉ thực hiện một lần.
-      if (action === "revoke") return apiMutationOnce(`${effectiveRoute.endpoint}/${encodeURIComponent(id)}/revoke`, "POST", { reason: note });
-      if (action === "reissue") return apiMutationOnce(`${effectiveRoute.endpoint}/${encodeURIComponent(id)}/reissue`, "POST", { reason: note });
-      if (action === "remove") {
-        // Khóa quá khứ có endpoint xóa học viên riêng (hồ sơ được xóa hẳn, không chuyển về trạng thái từ chối).
-        if (embedded?.coursePast === true && scoreCourseCode) return apiMutation(`/training/courses/${encodeURIComponent(scoreCourseCode)}/participants/${encodeURIComponent(id)}`, "DELETE");
-        return apiMutation(config.buildRemovePath?.(id) ?? `${effectiveRoute.endpoint}/${encodeURIComponent(id)}`, "DELETE");
-      }
-      if (action === "withdraw") return apiMutation(config.buildWithdrawPath?.(id) ?? `${effectiveRoute.endpoint}/${encodeURIComponent(id)}`, "DELETE");
-      if (action === "toggle") return apiMutation(`${effectiveRoute.endpoint}/${encodeURIComponent(id)}/toggle-status`, "PATCH", { confirmationText: "Xác nhận" });
-      if (action === "approve" || action === "reject") {
-        const approved = action === "approve";
-        const approvePath = config.buildApprovePath?.(effectiveRoute, rows, id, approved) ?? `${effectiveRoute.endpoint}/${encodeURIComponent(id)}/approve`;
-        const approveBody = config.buildApproveBody?.(effectiveRoute, note, approved, signer, achievedLevel) ?? { approved, review: note || undefined };
-        return apiMutationOnce(approvePath, "POST", approveBody);
-      }
-      throw new Error("Unsupported resource action");
-    },
+    mutationFn: (input: ResourceRowActionInput) =>
+      sendActionRequest(
+        buildActionRequest(input, { route: effectiveRoute, config, rows, rowById, coursePast: embedded?.coursePast, courseCode: scoreCourseCode }),
+      ),
     onSuccess: async (data, variables) => {
-      toast.success(variables.action === "resetPassword" ? `Đã gửi mật khẩu tạm tới ${(data as { maskedEmail?: string } | undefined)?.maskedEmail ?? "email đã đăng ký"}, hiệu lực 10 phút` : variables.action === "toggle" ? "Đổi trạng thái thành công" : variables.action === "revokePermission" ? "Đã thu hồi quyền" : variables.action === "reject" ? "Đã từ chối duyệt" : variables.action === "revoke" ? "Đã thu hồi chứng nhận" : variables.action === "reissue" ? "Đã cấp lại chứng nhận" : variables.action === "withdraw" ? "Đã thu hồi đăng ký" : variables.action === "remove" ? "Đã chuyển hồ sơ về trạng thái từ chối duyệt" : "Duyệt thành công");
+      toast.success(actionSuccessMessage(variables.action, data));
       closeQueryDialog();
       // Thao tác có thể đổi dữ liệu ở các danh sách khác (hồ sơ tham dự, chứng nhận, khóa) và ở drawer chi tiết đang mở.
       await queryClient.invalidateQueries({ queryKey: resourceKey() });
