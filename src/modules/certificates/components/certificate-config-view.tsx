@@ -40,6 +40,7 @@ import { hasPermissionPrefix } from "@/lib/auth/permissions";
 import type { RouteConfig } from "@/config/routes/routes";
 import { cn } from "@/lib/utils";
 import { useUndoHistory } from "../undo-history";
+import { fieldItem, photoItem, qrItem, textItem } from "../certificate-layout-items";
 import {
   CertificateCanvas,
   FONT_OPTIONS,
@@ -47,7 +48,6 @@ import {
   SCOPE_LABELS,
   blankForm,
   clamp,
-  DEFAULT_PHOTO_SIZE,
   DEFAULT_QR_SIZE,
   MAX_QR_SIZE,
   MIN_QR_SIZE,
@@ -164,7 +164,7 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
     if (!addFieldKey) return;
     history.set((current) => ({
       ...current,
-      layout: [...current.layout, { type: "FIELD", fieldKey: addFieldKey, x: 0.5, y: 0.5, fontSize: 0.04, color: "#000000", align: "center", fontFamily: "sans", bold: false, italic: false, underline: false }],
+      layout: [...current.layout, fieldItem(addFieldKey)],
     }));
     setSelectedIndex(form.layout.length);
     setAddFieldKey("");
@@ -173,7 +173,7 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
   function addText() {
     history.set((current) => ({
       ...current,
-      layout: [...current.layout, { type: "TEXT", text: "Văn bản", x: 0.5, y: 0.5, fontSize: 0.04, color: "#000000", align: "center", fontFamily: "sans", bold: false, italic: false, underline: false }],
+      layout: [...current.layout, textItem()],
     }));
     setSelectedIndex(form.layout.length);
   }
@@ -182,7 +182,7 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
   function addQr() {
     history.set((current) => ({
       ...current,
-      layout: [...current.layout, { type: "QR", size: DEFAULT_QR_SIZE, x: 0.88, y: 0.82, fontSize: 0.04, color: "#000000", align: "center", fontFamily: "sans", bold: false, italic: false, underline: false }],
+      layout: [...current.layout, qrItem()],
     }));
     setSelectedIndex(form.layout.length);
   }
@@ -191,7 +191,7 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
   function addPhoto() {
     history.set((current) => ({
       ...current,
-      layout: [...current.layout, { type: "PHOTO", photoRatio: "4x6", size: DEFAULT_PHOTO_SIZE, x: 0.12, y: 0.3, fontSize: 0.04, color: "#000000", align: "center", fontFamily: "sans", bold: false, italic: false, underline: false }],
+      layout: [...current.layout, photoItem()],
     }));
     setSelectedIndex(form.layout.length);
   }
