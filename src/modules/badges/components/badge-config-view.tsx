@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Panel } from "@/components/ui/panel";
 import { getApiErrorMessage } from "@/lib/api/client";
 import { NEW_CONFIG, useConfigLibrary } from "@/modules/layout-config/use-config-library";
+import { useUndoRedoShortcuts } from "@/modules/layout-config/use-undo-redo-shortcuts";
 import { useAuthStore } from "@/lib/auth/auth-store";
 import { hasPermissionPrefix } from "@/lib/auth/permissions";
 import { useSessionState } from "@/lib/use-session-state";
@@ -89,29 +90,9 @@ export function BadgeConfigView({ route }: { route?: RouteConfig }) {
     history.set((current) => ({ ...current, ...patch }), key);
   }
 
-  // Ctrl+Z hoàn tác, Ctrl+Y / Ctrl+Shift+Z làm lại; không chặn hoàn tác gốc của ô nhập văn bản.
+  // Ctrl+Z hoàn tác, Ctrl+Y / Ctrl+Shift+Z làm lại (ô số vẫn nhận phím tắt).
   const { undo, redo } = history;
-  useEffect(() => {
-    if (!canEditCurrent) return;
-    function onKeyDown(event: KeyboardEvent) {
-      if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
-      const key = event.key.toLowerCase();
-      const isUndo = key === "z" && !event.shiftKey;
-      const isRedo = key === "y" || (key === "z" && event.shiftKey);
-      if (!isUndo && !isRedo) return;
-      const target = event.target as HTMLElement | null;
-      if (target) {
-        const nonText = ["checkbox", "radio", "color", "range", "button", "file", "number"];
-        const isTextField = target.isContentEditable || target.tagName === "TEXTAREA" || (target.tagName === "INPUT" && !nonText.includes((target as HTMLInputElement).type));
-        if (isTextField) return;
-      }
-      event.preventDefault();
-      if (isUndo) undo();
-      else redo();
-    }
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [canEditCurrent, undo, redo]);
+  useUndoRedoShortcuts({ enabled: canEditCurrent, undo, redo, extraNonTextTypes: ["number"] });
 
   function confirmDiscard() {
     return !dirty || window.confirm("Bạn có thay đổi chưa lưu ở cấu hình đang mở. Bỏ thay đổi và tiếp tục?");
