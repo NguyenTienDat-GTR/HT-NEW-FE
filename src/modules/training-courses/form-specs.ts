@@ -103,7 +103,7 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
         helper: "Dùng để sinh mã chứng chỉ, ví dụ HTI. Bắt buộc với loại khóa có cấp độ đạt được.",
         section: "Thông tin loại khóa",
       },
-      { name: "requiredCurrentLevel", label: "Cấp đội yêu cầu", type: "select", ...leaderLevelSelect, section: "Điều kiện tham dự" },
+      { name: "requiredCurrentLevel", label: "Cấp độ yêu cầu", type: "select", ...leaderLevelSelect, section: "Điều kiện tham dự" },
       { name: "requiredMinAge", label: "Tuổi tối thiểu", type: "number", section: "Điều kiện tham dự" },
       { name: "requiredYearsActive", label: "Số năm sinh hoạt", type: "number", section: "Điều kiện tham dự" },
       {
