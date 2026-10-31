@@ -4,7 +4,7 @@ import { Client } from "@stomp/stompjs";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { clientEnv } from "@/lib/env";
+import { resolveWsUrl } from "@/lib/env";
 import { apiFetch, refreshAccessToken } from "@/lib/api/client";
 import { useAuthStore, type AuthUser } from "@/lib/auth/auth-store";
 import { notificationKeys } from "@/modules/notifications/hooks";
@@ -18,7 +18,7 @@ export function useNotificationsSocket() {
   useEffect(() => {
     if (!token) return;
     const client = new Client({
-      brokerURL: clientEnv.NEXT_PUBLIC_WS_URL,
+      brokerURL: resolveWsUrl(),
       reconnectDelay: 5000,
       heartbeatIncoming: 10000,
       heartbeatOutgoing: 10000,

@@ -42,7 +42,7 @@ jobs:
           push: true
           build-args: |
             BACKEND_ORIGIN=http://app:1007
-            NEXT_PUBLIC_WS_URL=wss://${{ vars.PUBLIC_HOST }}/ws/notifications
+            NEXT_PUBLIC_WS_URL=
           tags: |
             ${{ steps.vars.outputs.repo }}:${{ github.sha }}
             ${{ steps.vars.outputs.repo }}:latest
