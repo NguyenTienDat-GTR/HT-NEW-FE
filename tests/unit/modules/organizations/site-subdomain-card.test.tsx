@@ -31,6 +31,20 @@ describe("SiteSubdomainCard", () => {
     expect(screen.queryByRole("button", { name: /cấp subdomain/i })).toBeNull();
   });
 
+  it("điền sẵn gợi ý từ tên giáo phận nhưng không tự cấp", () => {
+    renderCard({ name: "Xuân Lộc", siteBaseDomain: "clead.io.vn", siteSubdomain: null });
+
+    expect((screen.getByLabelText("Subdomain") as HTMLInputElement).value).toBe("xuanloc");
+    expect(screen.getByText(/Gợi ý từ tên giáo phận/)).toBeTruthy();
+    expect(apiMutation).not.toHaveBeenCalled();
+  });
+
+  it("đã có subdomain thì giữ giá trị hiện tại, không ghi đè bằng gợi ý", () => {
+    renderCard({ name: "Xuân Lộc", siteBaseDomain: "clead.io.vn", siteSubdomain: "xl", siteUrl: "https://xl.clead.io.vn" });
+
+    expect((screen.getByLabelText("Subdomain") as HTMLInputElement).value).toBe("xl");
+  });
+
   it("cấp subdomain: chuẩn hóa chữ thường rồi gọi PUT", async () => {
     apiMutation.mockResolvedValue({});
     renderCard({ siteBaseDomain: "clead.io.vn", siteSubdomain: null });
