@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { strToU8, zipSync } from "fflate";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ExcelImportDialog } from "@/components/common/resource/excel-import-dialog";
-import type { ExcelJob } from "@/lib/api/client";
+import type { ExcelJob } from "@/lib/jobs/excel-jobs-client";
 import { isAvatarPending, needsPolling } from "@/lib/jobs/excel-jobs-store";
 
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn(), loading: vi.fn(), info: vi.fn(), warning: vi.fn() } }));

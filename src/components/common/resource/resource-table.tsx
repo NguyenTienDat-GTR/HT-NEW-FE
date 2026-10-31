@@ -7,10 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Tip } from "@/components/ui/tip";
 import type { RouteConfig } from "@/config/routes/routes";
 import { useAuthStore, type AuthUser } from "@/lib/auth/auth-store";
-import { canUseAction, hasPermission, hasPermissionPrefix, isSuperAdmin } from "@/lib/auth/permissions";
+import { canUseAction, hasPermissionPrefix } from "@/lib/auth/permissions";
 import { Avatar, columnLabels, ResourceCell } from "./resource-format";
 import { useEmbeddedResource, resourceActionHref, withReturnTo } from "./embedded-resource-context";
 import { fillRoute, getResourceId, isAwaitingApproval, isReapprovable } from "./resource-actions";
+import { canEditRow, canResetPasswordRow, canToggleRow, isPermanentlyRevokedAssignment } from "./resource-row-permissions";
 import type { ScoreEntry, ScoreNotes } from "./score-entry";
 import { ScoreNoteAction } from "./score-note-action";
 import { useIsDesktop } from "@/lib/use-media-query";
@@ -18,7 +19,6 @@ import { ResourceCardList } from "./resource-card-list";
 import { RegistrationToggleButton } from "@/modules/training-courses/components/registration-toggle-button";
 import type { ResourcePageSize } from "./use-resource-query-state";
 
-const systemRoleCodes = new Set(["SUPER_ADMIN", "ADMIN_DIOCESE", "ADMIN_DEANERY", "ADMIN_PARISH"]);
 
 export function ResourceTable({
   isLoading,
@@ -405,67 +405,8 @@ export function RowActions({ route, row, onExportRow, exportingRow, scoreNotes }
   );
 }
 
-// Phân quyền đã thu hồi / hết hạn là vĩnh viễn: không sửa, không bật/tắt, chỉ có thể phân quyền mới.
-function isPermanentlyRevokedAssignment(route: RouteConfig, row: Record<string, unknown>) {
-  return (route.kind === "role-permissions" || route.kind === "account-permissions") && (row.validity === "REVOKED" || row.validity === "EXPIRED");
-}
-
-function canEditRow(route: RouteConfig, row: Record<string, unknown>, user: AuthUser | null) {
-  if (isPermanentlyRevokedAssignment(route, row)) return false;
-  if (route.kind === "accounts") return false;
-  if (route.kind === "leaders") return false;
-  if (route.kind === "positions") return hasScopedRowPermission(route, user, "update", row);
-  if (!isSuperAdmin(user) && isSystemRoleRow(route, row)) return false;
-  if (!isSuperAdmin(user)) return true;
-  return route.kind !== "dioceses" && route.kind !== "deaneries" && route.kind !== "parishes";
-}
-
 export function canShowEditAction(route: RouteConfig, row: Record<string, unknown>, user: AuthUser | null) {
   return canUseAction(user, route.actions?.edit) && canEditRow(route, row, user);
-}
-
-// Chức vụ và phân công ban điều hành: chỉ thao tác trên dòng thuộc đúng cấp mình được cấp quyền.
-function hasScopedRowPermission(route: RouteConfig, user: AuthUser | null, action: "update" | "toggle", row: Record<string, unknown>) {
-  const level = route.kind === "positions" ? row.positionType : row.unitType;
-  if (typeof level !== "string") return false;
-  const resource = route.kind === "positions" ? "position" : "executive_board_assignment";
-  return hasPermission(user, `organization.${resource}.${action}.${level.toLowerCase()}`);
-}
-
-function canToggleRow(route: RouteConfig, row: Record<string, unknown>, user: AuthUser | null) {
-  if (route.kind === "positions") return hasScopedRowPermission(route, user, "toggle", row);
-  // Phân công là lịch sử nhiệm kì: chỉ vô hiệu hóa (kết thúc) được, phân công đã kết thúc không bật lại.
-  if (route.kind === "executive-board") return row.status === true && hasScopedRowPermission(route, user, "toggle", row);
-  if (!isSuperAdmin(user) && isSystemRoleRow(route, row)) return false;
-  if (route.kind === "accounts") return !isOwnAccount(row, user) && !rowHasPrimaryRole(row, "SUPER_ADMIN");
-  if (route.kind === "dioceses") return isSuperAdmin(user);
-  if (route.kind === "deaneries") return hasRole(user, "ADMIN_DIOCESE");
-  // Admin giáo hạt bật/tắt giáo xứ trong giáo hạt; admin giáo phận bật/tắt giáo xứ trong giáo phận khi có quyền toggle.diocese.
-  if (route.kind === "parishes") return hasRole(user, "ADMIN_DEANERY") || (hasRole(user, "ADMIN_DIOCESE") && hasPermission(user, "organization.parish.toggle.diocese"));
-  if (!isSuperAdmin(user)) return true;
-  return route.kind === "permissions" || route.kind === "account-roles";
-}
-
-function isSystemRoleRow(route: RouteConfig, row: Record<string, unknown>) {
-  if (route.kind === "roles") return row.isSystem === true;
-  if (route.kind !== "role-permissions") return false;
-  return row.roleIsSystem === true || (typeof row.roleCode === "string" && systemRoleCodes.has(row.roleCode));
-}
-
-function canResetPasswordRow(row: Record<string, unknown>, user: AuthUser | null) {
-  return row.status === true && !isOwnAccount(row, user) && !rowHasPrimaryRole(row, "SUPER_ADMIN");
-}
-
-function isOwnAccount(row: Record<string, unknown>, user: AuthUser | null) {
-  return typeof row.username === "string" && row.username === user?.username;
-}
-
-function rowHasPrimaryRole(row: Record<string, unknown>, roleCode: string) {
-  return row.primaryRoleCode === roleCode;
-}
-
-function hasRole(user: AuthUser | null, roleCode: string) {
-  return Boolean(user?.roles.some((role) => role === roleCode || role === `ROLE_${roleCode}`));
 }
 
 function canShowToggleSwitch(route: RouteConfig, row: Record<string, unknown>, user: AuthUser | null) {

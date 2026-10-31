@@ -1,6 +1,6 @@
 "use client";
 
-import type { ImportErrorRow } from "@/lib/api/client";
+import type { ImportErrorRow } from "@/lib/jobs/excel-jobs-client";
 
 // Bảng lỗi khi import Excel bị từ chối: sheet, dòng (theo Excel), cột và nội dung lỗi.
 export function ImportErrorsTable({ errors }: { errors: ImportErrorRow[] }) {

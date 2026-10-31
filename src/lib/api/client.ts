@@ -1,7 +1,7 @@
 "use client";
 
 import createClient from "openapi-fetch";
-import { toast } from "sonner";
+import { newIdempotencyKey } from "@/lib/api/idempotency";
 import type { paths } from "./schema";
 import { useAuthStore, type AuthUser } from "@/lib/auth/auth-store";
 
@@ -183,83 +183,6 @@ export async function downloadFile(path: string, fallbackName: string) {
   return filename;
 }
 
-// Một dòng lỗi khi import Excel: sheet, số dòng (theo Excel), cột và nội dung.
-export type ImportErrorRow = { sheet: string; row: number; column: string; message: string };
-
-// Cảnh báo riêng của ảnh khi import: dữ liệu vẫn được lưu, chỉ hồ sơ này không có ảnh.
-export type AvatarWarning = { row: number; fullName: string; fileName: string; reason: string };
-
-export type AvatarJobStatus = "PENDING" | "RUNNING" | "DONE";
-
-export type ExcelJobStatus = "QUEUED" | "RUNNING" | "SUCCEEDED" | "FAILED" | "CANCELLED";
-
-// Tác vụ Excel chạy nền (xuất / nhập) do backend quản lý.
-export type ExcelJob = {
-  id: string;
-  kind: string;
-  label: string;
-  importJob: boolean;
-  target?: string | null;
-  status: ExcelJobStatus;
-  processed: number;
-  total: number;
-  // Ảnh đại diện được xử lý sau khi dữ liệu Excel đã lưu: job có thể SUCCEEDED trong khi ảnh còn đang gắn.
-  avatarStatus?: AvatarJobStatus | null;
-  avatarProcessed?: number | null;
-  avatarTotal?: number | null;
-  avatarSucceeded?: number | null;
-  avatarWarnings?: AvatarWarning[] | null;
-  warning?: string | null;
-  errorMessage?: string | null;
-  errors?: ImportErrorRow[] | null;
-  created?: number | null;
-  resultMessage?: string | null;
-  downloadable: boolean;
-  fileName?: string | null;
-  createdAt?: string | null;
-  finishedAt?: string | null;
-  expiresAt?: string | null;
-  replayed: boolean;
-};
-
-export const EXCEL_JOB_TERMINAL: ExcelJobStatus[] = ["SUCCEEDED", "FAILED", "CANCELLED"];
-
-// Khóa idempotency: sinh một lần cho mỗi ý định của người dùng và dùng lại khi gửi lại, để bấm đúp / retry không thực hiện hai lần.
-export function newIdempotencyKey() {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") return crypto.randomUUID();
-  return `k-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
-}
-
-// Tạo tác vụ xuất Excel nền (POST, không có body); backend trả 202 kèm tác vụ.
-export function createExcelExportJob(path: string, idempotencyKey: string) {
-  return apiFetch<ExcelJob>(path, { method: "POST", headers: { "Idempotency-Key": idempotencyKey } });
-}
-
-// Tải file Excel (kèm ZIP ảnh đại diện nếu có) lên và tạo tác vụ nhập nền (multipart).
-export function createExcelImportJob(path: string, file: File, idempotencyKey: string, images?: File | null) {
-  const form = new FormData();
-  form.append("file", file);
-  if (images) form.append("images", images);
-  return apiFetch<ExcelJob>(path, { method: "POST", body: form, headers: { "Idempotency-Key": idempotencyKey } });
-}
-
-export function fetchExcelJob(id: string) {
-  return apiFetch<ExcelJob>(`/excel-jobs/${encodeURIComponent(id)}`);
-}
-
-export function cancelExcelJob(id: string) {
-  return apiFetch<ExcelJob>(`/excel-jobs/${encodeURIComponent(id)}/cancel`, { method: "POST" });
-}
-
-export function downloadExcelJobFile(id: string, fallbackName: string) {
-  return downloadFile(`/excel-jobs/${encodeURIComponent(id)}/file`, fallbackName);
-}
-
-export function importErrorRows(error: unknown): ImportErrorRow[] {
-  const details = (error as ApiError | undefined)?.details;
-  return Array.isArray(details) ? (details as ImportErrorRow[]) : [];
-}
-
 // Khóa idempotency theo "ý định" (đường dẫn + nội dung): gửi lại đúng yêu cầu đó (bấm đúp, retry sau lỗi mạng) dùng lại cùng khóa nên
 // backend chỉ thực hiện một lần; đổi nội dung thì sinh khóa mới. Khóa bị xóa khi thành công.
 const intentKeys = new Map<string, string>();
@@ -276,15 +199,11 @@ export async function apiMutationOnce<T>(path: string, method: "POST" | "PUT" | 
   return result;
 }
 
-export async function apiMutation<T>(path: string, method: "POST" | "PUT" | "PATCH" | "DELETE", body?: unknown, options?: { idempotencyKey?: string }) {
-  try {
-    return await apiFetch<T>(path, {
-      method,
-      body: body === undefined ? undefined : JSON.stringify(body),
-      headers: options?.idempotencyKey ? { "Idempotency-Key": options.idempotencyKey } : undefined,
-    });
-  } catch (error) {
-    toast.error(getApiErrorMessage(error));
-    throw error;
-  }
+// Chỉ gọi API và ném lỗi; thông báo lỗi do MutationCache chung (lib/api/mutation-cache.ts) hoặc onError của nơi gọi lo.
+export function apiMutation<T>(path: string, method: "POST" | "PUT" | "PATCH" | "DELETE", body?: unknown, options?: { idempotencyKey?: string }) {
+  return apiFetch<T>(path, {
+    method,
+    body: body === undefined ? undefined : JSON.stringify(body),
+    headers: options?.idempotencyKey ? { "Idempotency-Key": options.idempotencyKey } : undefined,
+  });
 }

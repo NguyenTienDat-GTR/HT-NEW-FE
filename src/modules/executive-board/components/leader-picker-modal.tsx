@@ -13,6 +13,7 @@ import { serializeBaseSearch } from "@/lib/api/search";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
 import { cn } from "@/lib/utils";
 import { formatDate } from "@/modules/leaders/components/leader-detail-utils";
+import { resourceKey } from "@/lib/api/query-keys";
 
 export type PickedLeader = {
   id: string;
@@ -90,7 +91,7 @@ function PickerContent({ selectedId, onClose, onSelect }: { selectedId?: string;
   const showParish = parishRows.length > 1;
 
   const leadersQuery = useQuery({
-    queryKey: ["resource", "/leaders", "picker", criteria, page],
+    queryKey: resourceKey("/leaders", "picker", criteria, page),
     queryFn: () =>
       apiFetch<PageResponse<PickedLeader>>(
         `/leaders?${serializeBaseSearch({

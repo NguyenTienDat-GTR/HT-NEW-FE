@@ -552,3 +552,30 @@ BE tương ứng: `BE/project.md` mục "Training Course Registration Control an
 - Hộp chọn ảnh đại diện (`AvatarUploadDialog`, dùng khi tạo và sửa huynh trưởng, hồ sơ cá nhân, tài khoản) tự nhận diện khuôn mặt: sau khi ảnh nạp, `lib/media/face-frame.ts` (`suggestFaceFrame` -> `frameFromCrop`) đổi vùng cắt quanh mặt của `computeFaceCrop` thành zoom / vị trí trong khung 4x6. Có thông báo kết quả (`FACE_NOTES`: đã căn / không thấy mặt / nhiều người / mặt nhỏ / chưa nhận diện được) và nút "Căn theo khuôn mặt" để căn lại. Kéo hoặc phóng to trong lúc đang dò sẽ hủy kết quả dò (`detectRun`). Dùng chung `lib/media/avatar-frame.ts`. Dòng log "INFO: Created TensorFlow Lite..." của MediaPipe (in bằng `console.error`) được lọc trong `face-crop.ts` để không hiện thành lỗi giả.
 - Lưới xem trước ZIP cao tối đa 26rem để không cắt hàng nút Chỉnh / Bỏ.
 - Test thêm: `tests/unit/lib/media/face-frame.test.ts`, `face-crop-log.test.ts`, `tests/unit/components/common/avatar-face-align.test.tsx`, `resource/excel-import-avatar-flow.test.tsx` (chọn Excel + ZIP, xem trước, bỏ ảnh, gửi ZIP đã xử lý, idempotency).
+
+## Refactor SOLID / design pattern (nhánh `refactor/solid-design-patterns`, 2026-10-30)
+
+- Không đổi giao diện hay hành vi; chỉ tách trách nhiệm và gom code lặp.
+- `lib/auth/permissions.ts`: thêm `hasRole`, `isHiddenForSuperAdmin`, `canReadRoute` (thay các bản sao ở `workspace-page`, `app-shell`, `resource-table`, `accounts/form-specs`).
+- `modules/workspace/view-resolution.ts`: bảng phân giải màn hình theo kiểu route + `kind` (`resolveWorkspaceView`) và theo tiền tố module (`resolveResourceModule`); `workspace-page.tsx` và `module-resource-renderer.tsx` chỉ còn tra bảng. Thêm màn mới = thêm khóa + một dòng render.
+- `lib/api/query-keys.ts` (`resourceKey`, `resourceListKey`) thay các chuỗi `["resource", ...]`; `lib/api/filters.ts` (`filtersParam`, `withFilters`) thay `encodeURIComponent(JSON.stringify(...))`.
+- `components/common/resource/resource-action-requests.ts`: bảng `REQUEST_BUILDERS` dựng request cho từng thao tác dòng (toggle, duyệt, từ chối, thu hồi, cấp lại, rút đăng ký, xóa, thu hồi quyền, đặt lại mật khẩu) và `actionSuccessMessage`; `resource-list-runtime.tsx` không còn chuỗi `if (action === ...)`.
+- `lib/jobs/job-runner.ts` (chuyển từ `modules/course-participants`), `lib/jobs/pdf-export-job.ts` (`runPdfExportJob`, dùng lại `downloadFile` + `pollUntilDone`), `lib/jobs/excel-jobs-client.ts` (kiểu và hàm Excel job tách khỏi `lib/api/client.ts`), `lib/api/idempotency.ts` (`newIdempotencyKey`).
+- Test thêm: `tests/unit/lib/auth/route-access.test.ts`, `modules/workspace/view-resolution.test.ts`, `lib/api/query-keys-and-filters.test.ts`, `lib/pdf-export-job.test.ts`, `components/common/resource-action-requests.test.ts`.
+- `components/common/resource/resource-row-permissions.ts`: bảng `ROW_RULES` theo `kind` cho quyền sửa/bật-tắt dòng (thay thang `route.kind ===` trong `resource-table.tsx`).
+- `components/common/resource/detail-kind-sections.tsx` (`DETAIL_SECTIONS_BY_KIND`) và `detail-field-rules.ts` (nhãn, quy tắc ẩn trường theo loại): `detail-drawer.tsx` chỉ còn dựng khung. `rankHistorySentence` dùng chung ở `modules/leaders/components/leader-detail-utils.ts`.
+- `components/form/resource-form/form-controls.tsx`: `CONTROL_RENDERERS` theo `type` thay chuỗi `if (type === ...)`.
+- `modules/layout-config/use-config-library.ts` (`useConfigLibrary`, `configLibraryApi`, `resolveConfigId`): dữ liệu dùng chung của `certificate-config-view` và `badge-config-view`.
+- Test thêm: `resource-row-permissions`, `detail-field-rules`, `form-controls-registry`, `layout-config/use-config-library`. `next build` chạy thành công.
+- `leader-detail-page.tsx` (853 -> 365 dòng) tách thành `leader-edit.ts` (giá trị sửa, kiểm tra, payload), `leader-detail-ui.tsx` (thẻ, trường, huy hiệu) và `leader-detail-tabs.tsx` (các tab khóa học, chứng nhận, tài khoản, lịch sử cấp bậc); test `tests/unit/modules/leaders/leader-edit.test.ts`.
+- `modules/layout-config/form-controls.tsx` (chuyển từ `badges/components`, thêm `FilterSelect`) dùng chung cho màn cấu hình thẻ và chứng nhận; `certificates/certificate-library-params.ts` giữ tham số lọc/sắp xếp thư viện (`certificate-config-view.tsx` 1046 → 920 dòng). Field của màn chứng nhận nay dùng bản có `htmlFor` (nhãn gắn đúng ô nhập).
+- `certificates/certificate-layout-items.ts` (`fieldItem`, `textItem`, `qrItem`, `photoItem`): phần tử bố cục mặc định, thay 4 literal trong `certificate-config-view.tsx`; test `certificate-layout-items.test.ts`. `next build` thành công.
+- `certificate-config-view.tsx` (1046 -> ~340 dòng) tách thành `certificate-library-panel.tsx`, `certificate-designer-panel.tsx`, `certificate-action-bar.tsx` cùng hook `use-certificate-library-state.ts` (tìm kiếm/lọc/sắp xếp/trang) và `layout-config/use-undo-redo-shortcuts.ts` (phím tắt hoàn tác dùng chung với `badge-config-view`).
+- `lib/api/client.ts`: `apiMutation` chỉ gọi API và ném lỗi, không toast nữa; `lib/api/mutation-cache.ts` (`createMutationCache`, gắn ở `AppProviders`) toast lỗi cho mọi mutation không tự khai báo `onError` — bỏ toast đôi ở các mutation đã có `onError`.
+- Đã thử trên ứng dụng chạy local (đăng nhập bằng tài khoản kiểm thử): tổng quan, giáo phận (danh sách + drawer), huynh trưởng (chi tiết + 4 tab), cấu hình chứng nhận (lọc, thêm văn bản, hoàn tác), cấu hình thẻ, khóa huấn luyện (chi tiết + đăng ký + drawer hồ sơ). Không lưu dữ liệu.
+
+## Ảnh đại diện kèm Excel danh sách tham dự khóa thường (2026-10-30)
+
+- `resource-list-runtime.tsx`: `ExcelImportDialog` của tab danh sách tham dự luôn bật `allowAvatarZip` (trước đây chỉ khóa quá khứ); mô tả và gợi ý của khóa thường nhắc ảnh tùy chọn và cột "Tên file ảnh". Ô chọn ZIP, tạo ZIP đã căn mặt và gửi `images` dùng lại luồng có sẵn của hồ sơ huynh trưởng / khóa quá khứ.
+- `course-teams-view.tsx`: `ExcelImportDialog` của chia đội bật `allowAvatarZip` (mô tả và gợi ý nhắc cột "Tên file ảnh").
+

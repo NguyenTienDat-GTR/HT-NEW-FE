@@ -5,7 +5,9 @@ import { DownloadSimple, FileArrowUp, FileXls, FileZip, X } from "@phosphor-icon
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { createExcelImportJob, downloadFile, getApiErrorMessage, newIdempotencyKey } from "@/lib/api/client";
+import { downloadFile, getApiErrorMessage } from "@/lib/api/client";
+import { createExcelImportJob } from "@/lib/jobs/excel-jobs-client";
+import { newIdempotencyKey } from "@/lib/api/idempotency";
 import { excelJobsStore } from "@/lib/jobs/excel-jobs-store";
 import {
   AvatarZipError,

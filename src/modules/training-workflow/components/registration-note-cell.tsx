@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { NoteValue } from "@/components/common/resource/resource-format";
 import { apiMutation } from "@/lib/api/client";
 import { Tip } from "@/components/ui/tip";
+import { resourceKey } from "@/lib/api/query-keys";
 
 // Ghi chú của hồ sơ đăng ký: người có quyền sửa tại chỗ (lưu khi rời ô nhập), người khác chỉ xem.
 export function RegistrationNoteCell({ row, editable }: { row: Record<string, unknown>; editable: boolean }) {
@@ -19,7 +20,7 @@ export function RegistrationNoteCell({ row, editable }: { row: Record<string, un
     onSuccess: async () => {
       toast.success("Đã lưu ghi chú");
       setDraft(null);
-      await queryClient.invalidateQueries({ queryKey: ["resource"] });
+      await queryClient.invalidateQueries({ queryKey: resourceKey() });
     },
   });
 

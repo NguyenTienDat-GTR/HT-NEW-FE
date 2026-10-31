@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { apiMutation } from "@/lib/api/client";
 import { buildBody, initialFormState, parsePositiveInt, sequentialNames, teamCountFor, teamSizeFor, validateForm, type TeamFormState } from "../team-form";
 import { unitLabel, type TeamOverview } from "../types";
+import { resourceKey } from "@/lib/api/query-keys";
 
 // Cấu hình chia đội: nhập số đội hoặc số hồ sơ mỗi đội (một ô đổi thì ô kia tự tính), cách đặt tên đội và cách chia hồ sơ vào đội.
 // Nam / nữ luôn được chia cân bằng; chia lại sẽ ghi đè đội đã chia trước đó.
@@ -27,7 +28,7 @@ export function TeamDivideDialog({ courseCode, overview }: { courseCode: string;
     onSuccess: async () => {
       toast.success("Chia đội thành công");
       setOpen(false);
-      await queryClient.invalidateQueries({ queryKey: ["resource"] });
+      await queryClient.invalidateQueries({ queryKey: resourceKey() });
     },
   });
 

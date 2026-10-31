@@ -4,10 +4,11 @@ import dynamic from "next/dynamic";
 import { DashboardView } from "@/modules/dashboard/components/dashboard-view";
 import type React from "react";
 import { Panel } from "@/components/ui/panel";
-import type { AuthUser } from "@/lib/auth/auth-store";
 import { useAuthStore } from "@/lib/auth/auth-store";
-import { hasPermissionPrefix, isSuperAdmin } from "@/lib/auth/permissions";
+import { canReadRoute } from "@/lib/auth/permissions";
 import { findRoute, matchRoute } from "@/config/routes/routes";
+import type { RouteConfig } from "@/config/routes/routes";
+import { resolveWorkspaceView, type WorkspaceViewKey } from "@/modules/workspace/view-resolution";
 import { PROFILE_PATH } from "@/modules/account/account-display";
 
 // Mỗi màn (trừ tổng quan) tải bằng chunk riêng và chỉ chạy ở trình duyệt: JS ban đầu nhẹ, không phải
@@ -37,10 +38,7 @@ export function WorkspacePage({ segments }: { segments: string[] }) {
   // Đích khi quét mã QR: /certificates/{mã chứng nhận}. Cần đăng nhập (AuthGate) và quyền xem chứng nhận.
   if (!match && segments.length === 2 && segments[0] === "certificates") {
     const listRoute = findRoute("/certificates");
-    const allowed =
-      Boolean(listRoute) &&
-      !isHiddenForSuperAdmin(listRoute!, user) &&
-      listRoute!.permissionPrefixes.some((prefix) => hasPermissionPrefix(user, prefix));
+    const allowed = Boolean(listRoute) && listRoute!.permissionPrefixes.length > 0 && canReadRoute(listRoute!, user);
     if (user?.unitLocked) return null;
     if (!allowed) {
       return (
@@ -61,45 +59,53 @@ export function WorkspacePage({ segments }: { segments: string[] }) {
   if (user?.unitLocked && route.path !== "/notifications") {
     return null;
   }
-  const canReadRoute =
-    !isHiddenForSuperAdmin(route, user) &&
-    (!route.permissionPrefixes.length || route.permissionPrefixes.some((prefix) => hasPermissionPrefix(user, prefix)));
+  const routeReadable = canReadRoute(route, user);
 
   let content: React.ReactNode;
-  if (!canReadRoute && (match.type === "list" || match.type === "detail")) {
+  if (!routeReadable && (match.type === "list" || match.type === "detail")) {
     content = (
       <Panel className="p-6">
         <h1 className="text-2xl font-semibold text-foreground">403</h1>
         <p className="mt-2 text-sm text-muted">Bạn không có quyền truy cập màn hình này.</p>
       </Panel>
     );
-  } else if (match.type === "detail" && route.kind === "leaders") {
-    content = <LeaderDetailPage id={match.params.id} route={route} />;
-  } else if (match.type === "detail" && route.kind === "courses") {
-    content = <CourseDetailPage id={match.params.id} route={route} />;
-  } else if (match.type === "create") content = <ResourceFormPage mode="create" route={route} />;
-  else if (match.type === "edit") content = <ResourceFormPage id={match.params.id} mode="edit" route={route} />;
-  else if (match.type === "revoke") content = <ResourceFormPage actionType="revoke" mode="create" route={route} />;
-  else if (match.type === "score") content = <ResourceFormPage actionType="score" id={match.params.id} mode="edit" route={route} />;
-  else if (route.kind === "dashboard") content = <DashboardView />;
-  else if (route.kind === "analytics") content = <AnalyticsView />;
-  else if (route.kind === "certificate-config") content = <CertificateConfigView route={route} />;
-  else if (route.kind === "cross-deanery") content = <CrossDeaneryView />;
-  else if (route.kind === "badge-config") content = <BadgeConfigView route={route} />;
-  else if (route.kind === "leader-levels") content = <LeaderLevelsView route={route} />;
-  else if (route.kind === "my-permissions") content = <MyPermissionsView />;
-  else content = <ModuleResourceRenderer route={route} />;
+  } else {
+    content = renderWorkspaceView(resolveWorkspaceView(match.type, route), route, match.params);
+  }
 
   return content;
 }
 
-function isHiddenForSuperAdmin(route: { moduleName: string }, user: AuthUser | null) {
-  if (!isSuperAdmin(user)) return false;
-  return (
-    route.moduleName.startsWith("leader.") ||
-    route.moduleName.startsWith("executive-board.") ||
-    route.moduleName.startsWith("training.") ||
-    route.moduleName.startsWith("training-workflow.") ||
-    route.moduleName.startsWith("certificate.")
-  );
+// Bảng tra "khóa view -> màn hình": thêm màn mới chỉ cần thêm khóa ở view-resolution và một dòng ở đây.
+function renderWorkspaceView(view: WorkspaceViewKey, route: RouteConfig, params: Record<string, string>): React.ReactNode {
+  switch (view) {
+    case "leader-detail":
+      return <LeaderDetailPage id={params.id} route={route} />;
+    case "course-detail":
+      return <CourseDetailPage id={params.id} route={route} />;
+    case "form-create":
+      return <ResourceFormPage mode="create" route={route} />;
+    case "form-edit":
+      return <ResourceFormPage id={params.id} mode="edit" route={route} />;
+    case "form-revoke":
+      return <ResourceFormPage actionType="revoke" mode="create" route={route} />;
+    case "form-score":
+      return <ResourceFormPage actionType="score" id={params.id} mode="edit" route={route} />;
+    case "dashboard":
+      return <DashboardView />;
+    case "analytics":
+      return <AnalyticsView />;
+    case "certificate-config":
+      return <CertificateConfigView route={route} />;
+    case "cross-deanery":
+      return <CrossDeaneryView />;
+    case "badge-config":
+      return <BadgeConfigView route={route} />;
+    case "leader-levels":
+      return <LeaderLevelsView route={route} />;
+    case "my-permissions":
+      return <MyPermissionsView />;
+    case "resource":
+      return <ModuleResourceRenderer route={route} />;
+  }
 }

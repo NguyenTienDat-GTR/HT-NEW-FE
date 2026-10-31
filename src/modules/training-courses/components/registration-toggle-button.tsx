@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Tip } from "@/components/ui/tip";
 import { apiMutation, getApiErrorMessage } from "@/lib/api/client";
 import { registrationStateLabels, resolveOrganizingState, resolveRegistrationState } from "../registration-state";
+import { resourceKey } from "@/lib/api/query-keys";
 
 // Đóng/mở đăng ký thủ công khi khóa đang trong thời gian đăng ký (hết hạn/chưa đến giờ thì hệ thống tự xử lý).
 export function RegistrationToggleButton({ endpoint, id, row }: { endpoint: string; id: string; row: Record<string, unknown> }) {
@@ -18,7 +19,7 @@ export function RegistrationToggleButton({ endpoint, id, row }: { endpoint: stri
     mutationFn: () => apiMutation(`${endpoint}/${encodeURIComponent(id)}/registration`, "PATCH", { open: closed }),
     onSuccess: async () => {
       toast.success(closed ? "Đã mở đăng ký" : "Đã đóng đăng ký");
-      await queryClient.invalidateQueries({ queryKey: ["resource", endpoint] });
+      await queryClient.invalidateQueries({ queryKey: resourceKey(endpoint) });
     },
     onError: (error) => toast.error(getApiErrorMessage(error)),
   });

@@ -12,6 +12,7 @@ import { apiFetch, apiMutation, getApiErrorMessage } from "@/lib/api/client";
 import { useAuthStore, type AuthUser } from "@/lib/auth/auth-store";
 import { hasPermission } from "@/lib/auth/permissions";
 import { LeaderPickerModal, leaderDisplayName, type PickedLeader } from "./leader-picker-modal";
+import { resourceKey } from "@/lib/api/query-keys";
 
 // Phân công không sửa được (giữ lịch sử nhiệm kì): chỉ có modal tạo mới.
 type AssignmentFormTarget = { mode: "create" };
@@ -87,7 +88,7 @@ function AssignmentForm({ onClose }: { onClose: () => void }) {
     onSuccess: async () => {
       toast.success("Phân công thành công");
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["resource", "/executive-board/assignments"] }),
+        queryClient.invalidateQueries({ queryKey: resourceKey("/executive-board/assignments") }),
         queryClient.invalidateQueries({ queryKey: ["resource-detail", "/executive-board/assignments"] }),
         queryClient.invalidateQueries({ queryKey: ["executive-board-seats"] }),
       ]);

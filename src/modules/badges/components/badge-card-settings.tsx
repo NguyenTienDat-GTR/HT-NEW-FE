@@ -2,7 +2,7 @@
 
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { Callout, Field, SELECT_CLASS } from "./form-controls";
+import { Callout, Field, SELECT_CLASS } from "@/modules/layout-config/form-controls";
 import type { BadgeForm } from "../badge-design";
 import { CARD_PRESETS, MAX_CARD_MM, MAX_GAP_MM, MAX_MARGIN_MM, MIN_CARD_MM, PAPER_SIZES, orientCard, type Orientation } from "../badge-sheet";
 import { BadgeSheetPreview } from "./badge-sheet-preview";

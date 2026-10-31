@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ExcelJobsTray } from "@/components/common/resource/excel-jobs-tray";
-import type { ExcelJob } from "@/lib/api/client";
+import type { ExcelJob } from "@/lib/jobs/excel-jobs-client";
 import { useAuthStore } from "@/lib/auth/auth-store";
 import { excelJobsStore } from "@/lib/jobs/excel-jobs-store";
 

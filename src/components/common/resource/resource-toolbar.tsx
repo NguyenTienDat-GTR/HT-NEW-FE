@@ -16,6 +16,7 @@ import type { RouteConfig } from "@/config/routes/routes";
 import type { RouteFilterConfig } from "@/config/routes/route-config";
 import { optionFromRow, rowsFromResponse } from "@/components/form/resource-form/api-utils";
 import { formatPermissionTaxonomyValue, permissionTaxonomyKindFromFilter } from "./permission-taxonomy-labels";
+import { withFilters } from "@/lib/api/filters";
 
 export function ResourceFilters({
   route,
@@ -261,7 +262,7 @@ async function fetchFilterOptions(filter: RouteFilterConfig, parentValue = "") {
     // Bộ lọc phụ thuộc chỉ lấy các đơn vị thuộc giá trị đang chọn của bộ lọc cha.
     const scoped =
       filter.dependsOn && parentValue
-        ? `${filter.optionsEndpoint}${filter.optionsEndpoint?.includes("?") ? "&" : "?"}filters=${encodeURIComponent(JSON.stringify({ [filter.dependsOn.optionFilterField]: parentValue }))}`
+        ? withFilters(filter.optionsEndpoint ?? "", { [filter.dependsOn.optionFilterField]: parentValue })
         : filter.optionsEndpoint;
     return await apiFetch<PageResponse<Record<string, unknown>> | Record<string, unknown>[] | Record<string, unknown>>(optionEndpointWithPaging(scoped));
   } catch (error) {

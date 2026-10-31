@@ -3,6 +3,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
 import { useState } from "react";
+import { createMutationCache } from "@/lib/api/mutation-cache";
 import { useSyncLeaderLevels } from "@/modules/leader-levels/leader-level-store";
 
 // Tải danh mục cấp độ huynh trưởng một lần để mọi nhãn / ô chọn dùng chung.
@@ -15,6 +16,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
     () =>
       new QueryClient({
+        mutationCache: createMutationCache(),
         defaultOptions: {
           queries: {
             retry: (failureCount, error) => {

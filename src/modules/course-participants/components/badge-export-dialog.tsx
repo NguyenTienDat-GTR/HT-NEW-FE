@@ -7,7 +7,7 @@ import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { SCOPE_LABELS } from "@/modules/certificates/components/certificate-design";
-import { Callout, Field, SELECT_CLASS } from "@/modules/badges/components/form-controls";
+import { Callout, Field, SELECT_CLASS } from "@/modules/layout-config/form-controls";
 import { formatMm, mirrorColumnsFor, paperMm, type FlipEdge } from "@/modules/badges/badge-sheet";
 import { fetchBadgeConfigs, participantKeys } from "../api";
 import type { BadgeExportOptions } from "../types";

@@ -202,6 +202,9 @@ export function normalizeItem(item: LayoutItem): LayoutItem {
 }
 
 export const DEFAULT_QR_SIZE = 0.15;
+
+// Tên cấu hình tối đa (BE cắt ở 200 ký tự).
+export const MAX_NAME_LENGTH = 200;
 export const MIN_QR_SIZE = 0.05;
 export const MAX_QR_SIZE = 0.5;
 

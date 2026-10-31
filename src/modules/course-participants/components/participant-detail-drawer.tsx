@@ -6,7 +6,7 @@ import { X } from "@phosphor-icons/react";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { getApiErrorMessage } from "@/lib/api/client";
-import { Pill } from "@/modules/badges/components/form-controls";
+import { Pill } from "@/modules/layout-config/form-controls";
 import { fetchParticipantDetail, participantKeys } from "../api";
 import { formatDateTime, genderLabel, invitationLabel } from "../participant-detail";
 import type { ParticipantDetail } from "../types";

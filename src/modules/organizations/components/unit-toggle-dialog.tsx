@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { apiFetch, apiMutation, getApiErrorMessage } from "@/lib/api/client";
 import type { UnitToggleImpact } from "../types";
+import { resourceKey } from "@/lib/api/query-keys";
 
 // Tắt / bật lại giáo phận, giáo hạt, giáo xứ: hiện bảng tác động trước, bắt buộc nhập lý do khi tắt và gõ "Xác nhận".
 // Tắt đơn vị không xóa hay đổi trạng thái dữ liệu con: tài khoản chỉ còn đọc thông báo, dữ liệu bị đóng băng, bật lại là khôi phục.
@@ -67,7 +68,7 @@ function ToggleForm({ endpoint, onClose, unitId, unitLabel, unitName }: { endpoi
       }),
     onSuccess: async () => {
       toast.success(disabling ? `Đã ngưng hoạt động ${unitLabel}` : `Đã bật lại ${unitLabel}`);
-      await queryClient.invalidateQueries({ queryKey: ["resource"] });
+      await queryClient.invalidateQueries({ queryKey: resourceKey() });
       await queryClient.invalidateQueries({ queryKey: ["resource-detail"] });
       await queryClient.invalidateQueries({ queryKey: ["unit-status-history"] });
       await queryClient.invalidateQueries({ queryKey: ["analytics"] });

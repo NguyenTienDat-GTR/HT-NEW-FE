@@ -1,5 +1,6 @@
 import { compactPayload, type ResourceFormSpec } from "@/components/form/resource-form/types";
 import { leaderLevelSelect } from "@/modules/organizations/form-specs";
+import { withFilters } from "@/lib/api/filters";
 
 const genderOptions = [
   { value: "NAM", label: "Nam" },
@@ -39,7 +40,7 @@ export const personnelFormSpecs: ResourceFormSpec[] = [
         required: true,
         optionsEndpoint: "/parishes",
         buildOptionsEndpoint: (values) =>
-          values.deaneryId ? `/parishes?filters=${encodeURIComponent(JSON.stringify({ "deanery.id": values.deaneryId }))}` : undefined,
+          values.deaneryId ? withFilters("/parishes", { "deanery.id": values.deaneryId }) : undefined,
         optionValue: "id",
         optionLabel: "name",
         optionLabelFields: ["name", "parentParishName"],

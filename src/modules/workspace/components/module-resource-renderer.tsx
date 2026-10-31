@@ -8,15 +8,23 @@ import { SystemResourceView } from "@/modules/workspace/components/system-resour
 import { TrainingResourceView } from "@/modules/training-courses/components/training-resource-view";
 import { TrainingWorkflowResourceView } from "@/modules/training-workflow/components/training-workflow-resource-view";
 import type { RouteConfig } from "@/config/routes/routes";
+import { resolveResourceModule } from "@/modules/workspace/view-resolution";
 
 export function ModuleResourceRenderer({ route }: { route: RouteConfig }) {
-  if (route.moduleName.startsWith("leader.")) return <LeaderResourceView route={route} />;
-  if (route.moduleName.startsWith("organization.")) return <OrganizationResourceView route={route} />;
-  if (route.moduleName.startsWith("executive-board.")) return <ExecutiveBoardResourceView route={route} />;
-  if (route.moduleName.startsWith("training-workflow.") || route.moduleName.startsWith("training.registration") || route.moduleName.startsWith("training.approval") || route.moduleName.startsWith("training.participation") || route.moduleName.startsWith("training.score")) {
-    return <TrainingWorkflowResourceView route={route} />;
+  switch (resolveResourceModule(route.moduleName)) {
+    case "leader":
+      return <LeaderResourceView route={route} />;
+    case "organization":
+      return <OrganizationResourceView route={route} />;
+    case "executive-board":
+      return <ExecutiveBoardResourceView route={route} />;
+    case "training-workflow":
+      return <TrainingWorkflowResourceView route={route} />;
+    case "training":
+      return <TrainingResourceView route={route} />;
+    case "certificate":
+      return <CertificateResourceView route={route} />;
+    case "system":
+      return <SystemResourceView route={route} />;
   }
-  if (route.moduleName.startsWith("training.")) return <TrainingResourceView route={route} />;
-  if (route.moduleName.startsWith("certificate.")) return <CertificateResourceView route={route} />;
-  return <SystemResourceView route={route} />;
 }

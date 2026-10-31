@@ -1,15 +1,12 @@
 import { compactPayload, type ResourceFormSpec } from "@/components/form/resource-form/types";
-import { isSuperAdmin } from "@/lib/auth/permissions";
+import { hasRole, isSuperAdmin } from "@/lib/auth/permissions";
 import type { AuthUser } from "@/lib/auth/auth-store";
+import { withFilters } from "@/lib/api/filters";
 
 const systemAdminRoleCodes = ["SUPER_ADMIN", "ADMIN_DIOCESE", "ADMIN_DEANERY", "ADMIN_PARISH"];
 // SUPER_ADMIN chỉ cấp tài khoản cho vai trò toàn hệ thống: không cấp cho admin giáo hạt / giáo xứ.
 // /system/roles của SUPER_ADMIN đã loại vai trò do các giáo phận tạo, nên chỉ cần loại thêm hai vai trò hệ thống này.
 const superAdminAccountExcludedRoleCodes = ["ADMIN_DEANERY", "ADMIN_PARISH"];
-
-function hasRole(user: AuthUser | null | undefined, roleCode: string) {
-  return Boolean(user?.roles.some((role) => role === roleCode || role === `ROLE_${roleCode}`));
-}
 
 // Phạm vi của người đang tạo tài khoản: giáo phận chọn được giáo hạt + giáo xứ, giáo hạt chỉ chọn giáo xứ, giáo xứ không cần chọn.
 function canPickDeanery(user: AuthUser | null | undefined) {
@@ -24,8 +21,8 @@ function candidateEndpoint(values: Record<string, unknown>) {
   const filters: Record<string, unknown> = {};
   if (values.accountParishFilter) filters["parish.id"] = values.accountParishFilter;
   else if (values.accountDeaneryFilter) filters["parish.deanery.id"] = values.accountDeaneryFilter;
-  const query = Object.keys(filters).length ? `?filters=${encodeURIComponent(JSON.stringify(filters))}` : "";
-  return `/leaders/account-candidates${query}`;
+  const path = "/leaders/account-candidates";
+  return Object.keys(filters).length ? withFilters(path, filters) : path;
 }
 
 export function getAccountCreateExcludedRoleCodes(user: AuthUser | null) {
@@ -112,7 +109,7 @@ export const systemFormSpecs: ResourceFormSpec[] = [
         type: "select",
         optionsEndpoint: "/parishes",
         buildOptionsEndpoint: (values) =>
-          values.accountDeaneryFilter ? `/parishes?filters=${encodeURIComponent(JSON.stringify({ "deanery.id": values.accountDeaneryFilter }))}` : undefined,
+          values.accountDeaneryFilter ? withFilters("/parishes", { "deanery.id": values.accountDeaneryFilter }) : undefined,
         optionValue: "id",
         optionLabel: "name",
         clearable: true,

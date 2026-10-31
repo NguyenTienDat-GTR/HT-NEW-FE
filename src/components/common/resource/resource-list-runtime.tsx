@@ -11,7 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Tip } from "@/components/ui/tip";
 import { Panel } from "@/components/ui/panel";
 import { rowsFromResponse } from "@/components/form/resource-form/api-utils";
-import { apiDownload, apiFetch, apiMutation, apiMutationOnce, getApiErrorMessage, parseContentDispositionFilename, type PageResponse } from "@/lib/api/client";
+import { apiFetch, apiMutationOnce, getApiErrorMessage, type PageResponse } from "@/lib/api/client";
+import { runPdfExportJob } from "@/lib/jobs/pdf-export-job";
 import { useAuthStore } from "@/lib/auth/auth-store";
 import { canUseAction, hasPermissionPrefix } from "@/lib/auth/permissions";
 import { resolveRouteForUser } from "@/modules/workspace/super-admin-route-overrides";
@@ -29,6 +30,7 @@ import { DetailDrawer } from "./detail-drawer";
 import { PositionFormDialog } from "@/modules/executive-board/components/position-form-dialog";
 import { AssignmentFormDialog } from "@/modules/executive-board/components/assignment-form-dialog";
 import { getResourceId, isAwaitingApproval, isReapprovable } from "./resource-actions";
+import { actionSuccessMessage, buildActionRequest, sendActionRequest, type ResourceRowActionInput } from "./resource-action-requests";
 import { isInvalidScore, originalNote, originalScore, runWithConcurrency, sameScore, type ScoreComponent, type ScoreDrafts, type ScoreEntry, type ScoreNoteDrafts } from "./score-entry";
 import { ScoreStats } from "./score-stats";
 import { ResourceListEmptyState } from "./resource-list-empty-state";
@@ -41,6 +43,7 @@ import { ResourceTable } from "./resource-table";
 import { ViewModeToggle } from "./view-mode-toggle";
 import { ResourceFilters } from "./resource-toolbar";
 import { useResourceQueryState } from "./use-resource-query-state";
+import { resourceKey, resourceListKey } from "@/lib/api/query-keys";
 
 export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps) {
   const router = useRouter();
@@ -61,7 +64,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
     : resolvedRoute;
   const queryState = useResourceQueryState(effectiveRoute, embedded?.fixedFilters, embedded?.search);
   const query = useQuery({
-    queryKey: ["resource", effectiveRoute.endpoint, queryState.queryString],
+    queryKey: resourceListKey(effectiveRoute.endpoint, queryState.queryString),
     enabled: Boolean(effectiveRoute.endpoint && user),
     queryFn: () => apiFetch<PageResponse<Record<string, unknown>> | Record<string, unknown>[]>(`${effectiveRoute.endpoint}?${queryState.queryString}`),
     refetchOnMount: "always",
@@ -192,37 +195,15 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
   const bulkExceptionItems = bulkApprovableIds.map(exceptionItemFor).filter((item): item is ExceptionLevelItem => item !== null);
   const closeQueryDialog = () => router.push((embedded ? embeddedTabHref(embedded) : effectiveRoute.path) as Route);
   const actionMutation = useMutation({
-    mutationFn: ({ action, id, note, signer, achievedLevel }: { action: "toggle" | "approve" | "reject" | "revoke" | "reissue" | "withdraw" | "remove" | "revokePermission" | "resetPassword"; id: string; note?: string; signer?: CertificateSigner; achievedLevel?: string }) => {
-      // Đặt lại mật khẩu: mật khẩu tạm chỉ gửi qua email, API chỉ trả về email đã che và hạn dùng.
-      if (action === "resetPassword") return apiMutationOnce<{ maskedEmail?: string }>(`${effectiveRoute.endpoint}/${encodeURIComponent(id)}/reset-password`, "POST");
-      if (action === "revokePermission") {
-        const row = rowById(id);
-        const target = effectiveRoute.kind === "role-permissions" ? { roleCode: row?.roleCode } : { username: row?.username };
-        return apiMutation(`${effectiveRoute.endpoint}/revoke`, "POST", { ...target, permissionCodes: [row?.permissionCode] });
-      }
-      // Thu hồi / cấp lại / duyệt / từ chối dùng Idempotency-Key: bấm đúp hoặc gửi lại sau lỗi mạng chỉ thực hiện một lần.
-      if (action === "revoke") return apiMutationOnce(`${effectiveRoute.endpoint}/${encodeURIComponent(id)}/revoke`, "POST", { reason: note });
-      if (action === "reissue") return apiMutationOnce(`${effectiveRoute.endpoint}/${encodeURIComponent(id)}/reissue`, "POST", { reason: note });
-      if (action === "remove") {
-        // Khóa quá khứ có endpoint xóa học viên riêng (hồ sơ được xóa hẳn, không chuyển về trạng thái từ chối).
-        if (embedded?.coursePast === true && scoreCourseCode) return apiMutation(`/training/courses/${encodeURIComponent(scoreCourseCode)}/participants/${encodeURIComponent(id)}`, "DELETE");
-        return apiMutation(config.buildRemovePath?.(id) ?? `${effectiveRoute.endpoint}/${encodeURIComponent(id)}`, "DELETE");
-      }
-      if (action === "withdraw") return apiMutation(config.buildWithdrawPath?.(id) ?? `${effectiveRoute.endpoint}/${encodeURIComponent(id)}`, "DELETE");
-      if (action === "toggle") return apiMutation(`${effectiveRoute.endpoint}/${encodeURIComponent(id)}/toggle-status`, "PATCH", { confirmationText: "Xác nhận" });
-      if (action === "approve" || action === "reject") {
-        const approved = action === "approve";
-        const approvePath = config.buildApprovePath?.(effectiveRoute, rows, id, approved) ?? `${effectiveRoute.endpoint}/${encodeURIComponent(id)}/approve`;
-        const approveBody = config.buildApproveBody?.(effectiveRoute, note, approved, signer, achievedLevel) ?? { approved, review: note || undefined };
-        return apiMutationOnce(approvePath, "POST", approveBody);
-      }
-      throw new Error("Unsupported resource action");
-    },
+    mutationFn: (input: ResourceRowActionInput) =>
+      sendActionRequest(
+        buildActionRequest(input, { route: effectiveRoute, config, rows, rowById, coursePast: embedded?.coursePast, courseCode: scoreCourseCode }),
+      ),
     onSuccess: async (data, variables) => {
-      toast.success(variables.action === "resetPassword" ? `Đã gửi mật khẩu tạm tới ${(data as { maskedEmail?: string } | undefined)?.maskedEmail ?? "email đã đăng ký"}, hiệu lực 10 phút` : variables.action === "toggle" ? "Đổi trạng thái thành công" : variables.action === "revokePermission" ? "Đã thu hồi quyền" : variables.action === "reject" ? "Đã từ chối duyệt" : variables.action === "revoke" ? "Đã thu hồi chứng nhận" : variables.action === "reissue" ? "Đã cấp lại chứng nhận" : variables.action === "withdraw" ? "Đã thu hồi đăng ký" : variables.action === "remove" ? "Đã chuyển hồ sơ về trạng thái từ chối duyệt" : "Duyệt thành công");
+      toast.success(actionSuccessMessage(variables.action, data));
       closeQueryDialog();
       // Thao tác có thể đổi dữ liệu ở các danh sách khác (hồ sơ tham dự, chứng nhận, khóa) và ở drawer chi tiết đang mở.
-      await queryClient.invalidateQueries({ queryKey: ["resource"] });
+      await queryClient.invalidateQueries({ queryKey: resourceKey() });
       await queryClient.invalidateQueries({ queryKey: ["resource-detail"] });
       await queryClient.invalidateQueries({ queryKey: ["certificate-preview"] });
       await queryClient.invalidateQueries({ queryKey: ["executive-board-seats"] });
@@ -246,7 +227,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
       }
       setSelectedIds([]);
       setBulkMode(null);
-      await queryClient.invalidateQueries({ queryKey: ["resource", effectiveRoute.endpoint] });
+      await queryClient.invalidateQueries({ queryKey: resourceKey(effectiveRoute.endpoint) });
     },
   });
   const scoreComponents = scoreComponentsQuery.data ?? [];
@@ -375,7 +356,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
       else toast.success(`Đã lưu ${saved.length} hồ sơ`, { id: toastId });
       if (saved.length && failures.length) toast.success(`Đã lưu ${saved.length} hồ sơ`);
       if (saved.length) {
-        await queryClient.invalidateQueries({ queryKey: ["resource", effectiveRoute.endpoint] });
+        await queryClient.invalidateQueries({ queryKey: resourceKey(effectiveRoute.endpoint) });
         await queryClient.invalidateQueries({ queryKey: ["resource-detail"] });
       }
     })();
@@ -417,36 +398,10 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
 
     // Xuất chạy nền: tạo job rồi hỏi trạng thái định kỳ, không khóa giao diện; tải về khi xong.
     // Nhờ vậy xuất vài trăm chứng nhận một lần cũng không treo request.
-    const base = config.pdfExportPath;
-    const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
     setExporting(true);
     const toastId = toast.loading(`Đang tạo PDF ${ids.length} chứng nhận...`);
     try {
-      const submit = await apiFetch<{ jobId: string; status: string; error?: string }>(`${base}/jobs`, {
-        method: "POST",
-        body: JSON.stringify({ certificateCodes: ids }),
-      });
-      let status = submit.status;
-      let error = submit.error;
-      for (let attempt = 0; attempt < 200 && status === "PENDING"; attempt += 1) {
-        await sleep(1500);
-        const next = await apiFetch<{ status: string; error?: string }>(`${base}/jobs/${encodeURIComponent(submit.jobId)}`);
-        status = next.status;
-        error = next.error;
-      }
-      if (status !== "DONE") throw new Error(error || "Quá thời gian tạo PDF, vui lòng thử lại");
-
-      const response = await apiDownload(`${base}/jobs/${encodeURIComponent(submit.jobId)}/file`);
-      const blob = await response.blob();
-      const filename = parseContentDispositionFilename(response.headers.get("content-disposition")) ?? "chung-nhan.pdf";
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(url);
+      await runPdfExportJob(config.pdfExportPath, ids);
       toast.success(`Đã xuất PDF ${ids.length} chứng nhận`, { id: toastId });
     } catch (error) {
       toast.error(getApiErrorMessage(error), { id: toastId, duration: 10000 });
@@ -524,11 +479,11 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
       />
     ) : embedded?.tab === "participations" && effectiveRoute.endpoint === "/training/participants" && scoreCourseCode && !courseDisabled && canImportParticipants ? (
       <ExcelImportDialog
-        allowAvatarZip={embedded.coursePast === true}
+        allowAvatarZip
         description={
           embedded.coursePast === true
             ? "Nhập danh sách tham dự của khóa quá khứ kèm điểm và kết quả. Huynh trưởng được tìm theo email hoặc số điện thoại; chưa có hồ sơ thì tạo mới ngay từ thông tin trong file."
-            : "Nhập danh sách tham dự của khóa từ file Excel mẫu. Huynh trưởng được tìm theo email hoặc số điện thoại; chưa có hồ sơ thì tạo mới ngay từ thông tin trong file."
+            : "Nhập danh sách tham dự của khóa từ file Excel mẫu, có thể kèm file ZIP ảnh đại diện. Huynh trưởng được tìm theo email hoặc số điện thoại; chưa có hồ sơ thì tạo mới ngay từ thông tin trong file."
         }
         endpoint={`/training/courses/${encodeURIComponent(scoreCourseCode)}/participants/import`}
         templateFileName={embedded.coursePast === true ? "mau-import-danh-sach-tham-du-khoa-qua-khu.xlsx" : "mau-import-danh-sach-tham-du.xlsx"}
@@ -536,7 +491,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
         hint={
           embedded.coursePast === true
             ? "Mọi dòng phải nhập đủ các cột, chỉ được bỏ trống Nhận xét và Cấp độ: Email, Số điện thoại, Tổng điểm, Kết quả (Đạt / Không đạt), Tên thánh, Họ và tên, Ngày sinh, Giới tính, Giáo hạt, Giáo xứ (giáo hạt, giáo xứ phải đã có trong hệ thống). Huynh trưởng đã có hồ sơ thì chỉ được thêm vào khóa (hồ sơ không bị sửa); chưa có thì được tạo mới từ chính dòng đó. Học viên Đạt của khóa có cấp độ đạt được sẽ chuyển sang tab Duyệt chứng nhận. Cột Tên file ảnh không bắt buộc; huynh trưởng đã có ảnh thì giữ ảnh cũ."
-            : "Sheet \"Danh sách tham dự\" cho huynh trưởng đủ điều kiện của khóa (vào thẳng danh sách tham dự), sheet \"Ngoại lệ\" cho huynh trưởng không đủ điều kiện (vào danh sách chờ duyệt đăng ký, gắn cờ ngoại lệ, thêm cột Lí do ngoại lệ). Mọi dòng phải nhập đủ các cột, chỉ được bỏ trống Cấp độ: Email, Số điện thoại, Tên thánh, Họ và tên, Ngày sinh, Giới tính, Giáo hạt, Giáo xứ (giáo hạt, giáo xứ phải đã có trong hệ thống). Huynh trưởng đã có hồ sơ thì chỉ được thêm vào khóa (hồ sơ không bị sửa); chưa có thì được tạo mới từ chính dòng đó. Không cần điểm: điểm được chấm ở tab Chấm điểm."
+            : "Sheet \"Danh sách tham dự\" cho huynh trưởng đủ điều kiện của khóa (vào thẳng danh sách tham dự), sheet \"Ngoại lệ\" cho huynh trưởng không đủ điều kiện (vào danh sách chờ duyệt đăng ký, gắn cờ ngoại lệ, thêm cột Lí do ngoại lệ). Mọi dòng phải nhập đủ các cột, chỉ được bỏ trống Cấp độ: Email, Số điện thoại, Tên thánh, Họ và tên, Ngày sinh, Giới tính, Giáo hạt, Giáo xứ (giáo hạt, giáo xứ phải đã có trong hệ thống). Huynh trưởng đã có hồ sơ thì chỉ được thêm vào khóa (hồ sơ không bị sửa); chưa có thì được tạo mới từ chính dòng đó. Không cần điểm: điểm được chấm ở tab Chấm điểm. Ảnh đại diện là tùy chọn: chọn file ZIP ảnh và ghi tên ảnh ở cột Tên file ảnh."
         }
         title="Nhập excel danh sách tham dự"
         triggerLabel="Nhập excel danh sách tham dự"

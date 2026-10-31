@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { buildExportPath, EXCEL_EXPORT_FILES } from "@/components/common/resource/excel-export-button";
-import { apiMutationOnce, createExcelExportJob, createExcelImportJob, downloadFile, importErrorRows } from "@/lib/api/client";
+import { apiMutationOnce, downloadFile } from "@/lib/api/client";
+import { createExcelExportJob, createExcelImportJob, importErrorRows } from "@/lib/jobs/excel-jobs-client";
 import { useAuthStore } from "@/lib/auth/auth-store";
 
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn(), loading: vi.fn(), info: vi.fn() } }));

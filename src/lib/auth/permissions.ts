@@ -20,6 +20,11 @@ export function isSuperAdmin(user: AuthUser | null | undefined) {
   return Boolean(user?.roles.some((role) => role === "SUPER_ADMIN" || role === "ROLE_SUPER_ADMIN"));
 }
 
+/** Có vai trò này (chấp nhận cả dạng có tiền tố ROLE_). */
+export function hasRole(user: AuthUser | null | undefined, roleCode: string) {
+  return Boolean(user?.roles.some((role) => role === roleCode || role === `ROLE_${roleCode}`));
+}
+
 export function hasAnyRole(user: AuthUser | null | undefined, roles: string[] | undefined) {
   if (!roles?.length) return true;
   if (!user) return false;
@@ -36,4 +41,18 @@ export function canUseAction(user: AuthUser | null | undefined, action: Resource
 
 export function canSeeAnalyticsDetail(user: AuthUser | null | undefined) {
   return !isSuperAdmin(user) && hasPermissionPrefix(user, "analytics.dashboard.read.");
+}
+
+/** Các module nghiệp vụ mà SUPER_ADMIN không dùng (chỉ quản trị hệ thống). */
+const SUPER_ADMIN_HIDDEN_MODULE_PREFIXES = ["leader.", "executive-board.", "training.", "training-workflow.", "certificate."];
+
+export function isHiddenForSuperAdmin(route: { moduleName: string }, user: AuthUser | null | undefined) {
+  if (!isSuperAdmin(user)) return false;
+  return SUPER_ADMIN_HIDDEN_MODULE_PREFIXES.some((prefix) => route.moduleName.startsWith(prefix));
+}
+
+/** Được xem màn hình: không bị ẩn theo vai trò và có ít nhất một quyền của màn hình (hoặc màn hình không đòi quyền). */
+export function canReadRoute(route: { moduleName: string; permissionPrefixes: string[] }, user: AuthUser | null | undefined) {
+  if (isHiddenForSuperAdmin(route, user)) return false;
+  return route.permissionPrefixes.length === 0 || route.permissionPrefixes.some((prefix) => hasPermissionPrefix(user, prefix));
 }
