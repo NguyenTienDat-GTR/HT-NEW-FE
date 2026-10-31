@@ -39,7 +39,8 @@ function AuthGateInner({ children, initialUser }: { children: React.ReactNode; i
       return apiFetch<AuthUser>("/auth/me");
     },
     initialData: initialUser ?? undefined,
-    retry: false,
+    // Chỉ lỗi 401 mới là hết phiên; 429/5xx/mạng chập chờn thì thử lại thay vì đá người dùng ra đăng nhập.
+    retry: (count, error) => (error as { status?: number }).status !== 401 && count < 3,
   });
 
   useEffect(() => {
@@ -58,8 +59,8 @@ function AuthGateInner({ children, initialUser }: { children: React.ReactNode; i
   }, []);
 
   useEffect(() => {
-    if (query.isError) router.replace(`/login?next=${encodeURIComponent(pathname)}`);
-  }, [pathname, query.isError, router]);
+    if (query.isError && (query.error as { status?: number }).status === 401) router.replace(`/login?next=${encodeURIComponent(pathname)}`);
+  }, [pathname, query.error, query.isError, router]);
 
   useEffect(() => {
     if (query.data?.unitLocked && pathname !== "/notifications") router.replace("/notifications");
@@ -68,6 +69,22 @@ function AuthGateInner({ children, initialUser }: { children: React.ReactNode; i
   useEffect(() => {
     if (!query.data?.unitLocked && query.data?.mustChangePassword && pathname !== "/change-password") router.replace("/change-password");
   }, [pathname, query.data?.mustChangePassword, query.data?.unitLocked, router]);
+
+  // Không kiểm tra được phiên vì lỗi tạm thời (máy chủ đang cập nhật, mạng chập chờn; 401 đã chuyển về đăng nhập ở trên):
+  // báo và cho thử lại, không hiện nội dung khi chưa biết người dùng là ai.
+  const sessionExpired = (query.error as { status?: number } | null)?.status === 401;
+  if (!user && query.isError && !sessionExpired) {
+    return (
+      <div className="grid min-h-[100dvh] place-items-center bg-surface-1 px-4 text-center text-sm text-muted">
+        <div className="space-y-3">
+          <p>Không kết nối được máy chủ. Hệ thống có thể đang được cập nhật, vui lòng thử lại sau ít phút.</p>
+          <button className="rounded-md border border-input bg-white px-4 py-2 font-semibold text-foreground" onClick={() => void query.refetch()} type="button">
+            Thử lại
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // Chưa biết người dùng (cookie hết hạn: server không render được nội dung): khung chờ thay vì nội dung có quyền sai.
   if (!user && !query.isError) {

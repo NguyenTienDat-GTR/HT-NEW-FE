@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { apiMutation, getApiErrorMessage } from "@/lib/api/client";
 import { resourceKey } from "@/lib/api/query-keys";
-import { normalizeSubdomain, validateSubdomain } from "../site-subdomain";
+import { normalizeSubdomain, suggestSubdomain, validateSubdomain } from "../site-subdomain";
 
 // Cấp / đổi / thu hồi subdomain (trang riêng) của giáo phận. Chỉ super-admin thấy (xem UnitDetail).
 export function SiteSubdomainCard({ dioceseId, row }: { dioceseId: string; row: Record<string, unknown> }) {
@@ -16,7 +16,9 @@ export function SiteSubdomainCard({ dioceseId, row }: { dioceseId: string; row: 
   const current = typeof row.siteSubdomain === "string" && row.siteSubdomain ? row.siteSubdomain : null;
   const siteUrl = typeof row.siteUrl === "string" ? row.siteUrl : null;
   const baseDomain = typeof row.siteBaseDomain === "string" && row.siteBaseDomain ? row.siteBaseDomain : null;
-  const [value, setValue] = useState(current ?? "");
+  // Giáo phận chưa có subdomain: điền sẵn tên gợi ý từ tên giáo phận, super-admin xem lại rồi tự bấm cấp.
+  const suggestion = typeof row.name === "string" ? suggestSubdomain(row.name) : "";
+  const [value, setValue] = useState(current ?? suggestion);
   const [touched, setTouched] = useState(false);
   const [confirmingRevoke, setConfirmingRevoke] = useState(false);
 
@@ -44,7 +46,7 @@ export function SiteSubdomainCard({ dioceseId, row }: { dioceseId: string; row: 
     onSuccess: async () => {
       toast.success("Đã thu hồi subdomain của giáo phận");
       setConfirmingRevoke(false);
-      setValue("");
+      setValue(suggestion);
       setTouched(false);
       await refresh();
     },
@@ -109,6 +111,9 @@ export function SiteSubdomainCard({ dioceseId, row }: { dioceseId: string; row: 
             <span className="shrink-0 text-sm text-muted">.{baseDomain}</span>
           </div>
           {error ? <p className="mt-1 text-xs text-danger">{error}</p> : null}
+          {!current && suggestion && value === suggestion ? (
+            <p className="mt-1 text-xs text-muted">Gợi ý từ tên giáo phận. Bạn có thể sửa trước khi cấp.</p>
+          ) : null}
         </div>
         <Button disabled={busy || unchanged || validateSubdomain(value) !== null} loading={grant.isPending} type="submit">
           {current ? "Đổi subdomain" : "Cấp subdomain"}
