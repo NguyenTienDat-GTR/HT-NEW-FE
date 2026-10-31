@@ -42,7 +42,7 @@ export function CertificateActionBar({
   setDefaultMutation: Action;
 }) {
   return (
-    <div className="sticky bottom-4 z-10 flex flex-wrap items-center gap-3 rounded-xl border border-border bg-white/95 p-3 shadow-[var(--shadow-elevated)] backdrop-blur-md">
+    <div className="flex flex-wrap items-center gap-3 border-b border-border px-4 py-3">
       <Button
         disabled={!canEditCurrent || busy || nameTooLong || (!isNew && !dirty)}
         loading={saveMutation.isPending}
