@@ -131,12 +131,13 @@ function PositionForm({ target, onClose }: { target: PositionFormTarget; onClose
             {allowedTypes.map((option) => (
               <label
                 className={cn(
-                  "flex min-h-10 cursor-pointer items-center gap-2 rounded-[8px] border px-2.5 py-1.5 text-sm font-semibold transition-colors",
+                  "flex min-h-10 items-center gap-2 rounded-[8px] border px-2.5 py-1.5 text-sm font-semibold transition-colors",
+                  editing ? "cursor-not-allowed opacity-70" : "cursor-pointer",
                   currentType === option.value ? "border-primary bg-primary/8 text-primary" : "border-border bg-white text-foreground",
                 )}
                 key={option.value}
               >
-                <input checked={currentType === option.value} className="h-4 w-4 accent-primary" name="positionType" onChange={() => setType(option.value)} type="radio" />
+                <input checked={currentType === option.value} className="h-4 w-4 accent-primary" disabled={editing} name="positionType" onChange={() => setType(option.value)} type="radio" />
                 {option.label}
               </label>
             ))}
