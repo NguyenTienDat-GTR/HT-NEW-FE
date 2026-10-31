@@ -15,6 +15,7 @@ import { CertificateCanvas, FONT_OPTIONS, PAPER_OPTIONS, clamp, DEFAULT_QR_SIZE,
 import { Field, SELECT_CLASS, StyleToggle } from "@/modules/layout-config/form-controls";
 
 export function CertificateDesignerPanel({
+  actions,
   addField,
   addFieldKey,
   addPhoto,
@@ -62,6 +63,7 @@ export function CertificateDesignerPanel({
   redo: () => void;
   removeItem: (index: number) => void;
   restoreSaved: () => void;
+  actions?: React.ReactNode;
   selected: LayoutItem | null;
   selectedConfig: ConfigResponse | null;
   selectedIndex: number | null;
@@ -137,6 +139,8 @@ export function CertificateDesignerPanel({
           </Button>
         </div>
       </div>
+
+      {actions}
 
       <div className="flex flex-wrap items-end gap-x-5 gap-y-3 border-b border-border bg-slate-50 px-4 py-2.5">
         <div className="flex flex-wrap items-end gap-3">
