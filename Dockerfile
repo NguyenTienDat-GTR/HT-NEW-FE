@@ -5,7 +5,8 @@ RUN npm ci
 COPY . .
 # Hai biến này được nhúng lúc build (rewrites / bundle phía client).
 ARG BACKEND_ORIGIN
-ARG NEXT_PUBLIC_WS_URL
+# Để trống: trình duyệt tự dùng cùng tên miền của trang cho WebSocket.
+ARG NEXT_PUBLIC_WS_URL=
 ENV BACKEND_ORIGIN=$BACKEND_ORIGIN \
     NEXT_PUBLIC_WS_URL=$NEXT_PUBLIC_WS_URL
 RUN npm run build
