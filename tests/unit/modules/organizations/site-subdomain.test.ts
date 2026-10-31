@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeSubdomain, validateSubdomain } from "@/modules/organizations/site-subdomain";
+import { normalizeSubdomain, suggestSubdomain, validateSubdomain } from "@/modules/organizations/site-subdomain";
 
 describe("site-subdomain", () => {
   it("chuẩn hóa chữ thường và bỏ khoảng trắng", () => {
@@ -22,5 +22,19 @@ describe("site-subdomain", () => {
     for (const reserved of ["test", "www", "staging", "api", "mail", "admin", "TEST"]) {
       expect(validateSubdomain(reserved), reserved).toContain("dành riêng");
     }
+  });
+
+  it("gợi ý subdomain từ tên giáo phận: bỏ dấu, khoảng trắng, đ -> d", () => {
+    expect(suggestSubdomain("Xuân Lộc")).toBe("xuanloc");
+    expect(suggestSubdomain("Xuân lộc")).toBe("xuanloc");
+    expect(suggestSubdomain("Phú Cường")).toBe("phucuong");
+    expect(suggestSubdomain("Giáo phận Đà Lạt")).toBe("dalat");
+    expect(suggestSubdomain("  Bà Rịa - Vũng Tàu ")).toBe("bariavungtau");
+  });
+
+  it("không gợi ý khi tên quá ngắn hoặc trùng nhãn dành riêng", () => {
+    expect(suggestSubdomain("")).toBe("");
+    expect(suggestSubdomain("An")).toBe("");
+    expect(suggestSubdomain("Test")).toBe("");
   });
 });

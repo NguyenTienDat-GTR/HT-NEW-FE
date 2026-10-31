@@ -22,3 +22,21 @@ export function validateSubdomain(value: string): string | null {
   }
   return null;
 }
+
+/**
+ * Gợi ý subdomain từ tên giáo phận: bỏ dấu tiếng Việt, bỏ khoảng trắng và ký tự đặc biệt, chữ thường.
+ * Vd: "Xuân Lộc" -> "xuanloc", "Giáo phận Phú Cường" -> "phucuong". Chỉ là gợi ý để super-admin xem và tự cấp;
+ * trả chuỗi rỗng nếu không tạo được tên hợp lệ.
+ */
+export function suggestSubdomain(name: string): string {
+  const plain = name
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D")
+    .toLowerCase()
+    .replace(/^giao\s*phan\s+/, "")
+    .replace(/[^a-z0-9]/g, "")
+    .slice(0, 63);
+  return validateSubdomain(plain) === null ? plain : "";
+}
