@@ -3,6 +3,10 @@
 import { Badge, ResourceCell } from "@/components/common/resource/resource-format";
 import { ExecutiveBoardSection } from "@/modules/executive-board/components/executive-board-section";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/lib/auth/auth-store";
+import { hasPermission } from "@/lib/auth/permissions";
+import { SITE_SUBDOMAIN_PERMISSION } from "../site-subdomain";
+import { SiteSubdomainCard } from "./site-subdomain-card";
 import { isLockedByParent } from "../types";
 import { ParentParishCard } from "./parent-parish-card";
 import { UnitStatusHistory } from "./unit-status-history";
@@ -71,6 +75,7 @@ const AUDIT_FIELDS: Field[] = [
 
 // Chi tiết giáo phận / giáo hạt / giáo xứ: thông tin nhóm theo mục, thống kê có màu, ban điều hành của đơn vị.
 export function UnitDetail({ kind, id, row }: { kind: UnitKind; id: string; row: Record<string, unknown> }) {
+  const user = useAuthStore((state) => state.user);
   const path = [kind !== "dioceses" ? row.dioceseName : null, kind === "parishes" ? row.deaneryName : null].filter(
     (part): part is string => typeof part === "string" && part.trim().length > 0,
   );
@@ -103,6 +108,8 @@ export function UnitDetail({ kind, id, row }: { kind: UnitKind; id: string; row:
         <FieldsCard columns={3} fields={GENERAL_FIELDS[kind]} row={row} title="Thông tin chung" />
         <FieldsCard columns={1} fields={CONTACT_FIELDS} row={row} title="Liên hệ" />
       </div>
+
+      {kind === "dioceses" && hasPermission(user, SITE_SUBDOMAIN_PERMISSION) ? <SiteSubdomainCard dioceseId={id} key={`${id}:${String(row.siteSubdomain ?? "")}`} row={row} /> : null}
 
       {kind === "parishes" && typeof row.unitType === "string" && row.unitType !== "PARISH" ? <ParentParishCard id={id} row={row} /> : null}
 
