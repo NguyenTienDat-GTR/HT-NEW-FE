@@ -33,4 +33,16 @@ describe("createMutationCache", () => {
     expect(onError).toHaveBeenCalled();
     expect(toastError).not.toHaveBeenCalled();
   });
+
+  it("skips the shared toast for mutations marked with meta.handlesError", async () => {
+    const queryClient = client();
+    const mutation = queryClient.getMutationCache().build(queryClient, {
+      mutationFn: async () => Promise.reject(new Error("x")),
+      meta: { handlesError: true },
+    });
+
+    await expect(mutation.execute(undefined)).rejects.toThrow("x");
+
+    expect(toastError).not.toHaveBeenCalled();
+  });
 });
