@@ -281,6 +281,25 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
       {/* Trình thiết kế */}
       {ready ? (
         <CertificateDesignerPanel
+          actions={
+            <CertificateActionBar
+              busy={busy}
+              canCreate={canCreate}
+              canDelete={canDelete}
+              canEditCurrent={canEditCurrent}
+              canUpdate={canUpdate}
+              deleteConfig={deleteConfig}
+              deleteMutation={deleteMutation}
+              dirty={dirty}
+              isNew={isNew}
+              nameTooLong={nameTooLong}
+              saveAsNewMutation={saveAsNewMutation}
+              saveMutation={saveMutation}
+              selectedConfig={selectedConfig}
+              setAsDefault={setAsDefault}
+              setDefaultMutation={setDefaultMutation}
+            />
+          }
           addField={addField}
           addFieldKey={addFieldKey}
           addPhoto={addPhoto}
@@ -311,25 +330,6 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
           updateItem={updateItem}
         />
       ) : null}
-
-      {/* Thanh thao tác cố định */}
-      <CertificateActionBar
-        busy={busy}
-        canCreate={canCreate}
-        canDelete={canDelete}
-        canEditCurrent={canEditCurrent}
-        canUpdate={canUpdate}
-        deleteConfig={deleteConfig}
-        deleteMutation={deleteMutation}
-        dirty={dirty}
-        isNew={isNew}
-        nameTooLong={nameTooLong}
-        saveAsNewMutation={saveAsNewMutation}
-        saveMutation={saveMutation}
-        selectedConfig={selectedConfig}
-        setAsDefault={setAsDefault}
-        setDefaultMutation={setDefaultMutation}
-      />
     </div>
   );
 }

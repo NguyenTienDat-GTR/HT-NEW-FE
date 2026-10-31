@@ -262,41 +262,41 @@ export function BadgeConfigView({ route }: { route?: RouteConfig }) {
             </div>
           </div>
 
+        <div className="flex flex-wrap items-center gap-3 border-b border-border px-4 py-3">
+          <Button disabled={!canEditCurrent || busy || nameTooLong || invalid || (!isNew && !dirty)} loading={saveMutation.isPending} onClick={() => saveMutation.mutate()} type="button">
+            {isNew ? "Tạo cấu hình" : "Lưu cấu hình"}
+          </Button>
+          {!isNew && canCreate ? (
+            <Button disabled={busy || nameTooLong || invalid} loading={saveAsNewMutation.isPending} onClick={() => saveAsNewMutation.mutate()} type="button" variant="outline">
+              <Copy size={16} /> Lưu thành cấu hình mới
+            </Button>
+          ) : null}
+          {!isNew && selectedConfig && canUpdate && selectedConfig.editable && !selectedConfig.isDefault ? (
+            <Button disabled={busy} loading={setDefaultMutation.isPending} onClick={setAsDefault} type="button" variant="outline">
+              <Star size={16} /> Đặt làm cấu hình chung
+            </Button>
+          ) : null}
+          {!isNew && selectedConfig && canDelete && selectedConfig.editable ? (
+            <Button
+              className="ml-auto text-danger"
+              disabled={busy || selectedConfig.isDefault}
+              loading={deleteMutation.isPending}
+              onClick={deleteConfig}
+              title={selectedConfig.isDefault ? "Không thể xóa cấu hình chung. Hãy chọn cấu hình khác làm cấu hình chung trước." : undefined}
+              type="button"
+              variant="outline"
+            >
+              <Trash size={16} /> Xóa cấu hình
+            </Button>
+          ) : null}
+          {invalid && canEditCurrent ? <span className="text-sm text-danger">Sửa các lỗi ở phần khổ thẻ trước khi lưu.</span> : null}
+          {!canUpdate && !canCreate ? <span className="text-sm text-muted">Bạn chỉ có quyền xem thư viện cấu hình.</span> : null}
+        </div>
+
           <BadgeCardSettings disabled={!canEditCurrent} errors={errors} form={form} onChange={updateForm} />
           <BadgeEditor canEdit={canEditCurrent} fields={fieldsQuery.data ?? []} form={form} onChange={(updater, key) => history.set(updater, key)} />
         </Panel>
       ) : null}
-
-      <div className="sticky bottom-4 z-10 flex flex-wrap items-center gap-3 rounded-xl border border-border bg-white/95 p-3 shadow-[var(--shadow-elevated)] backdrop-blur-md">
-        <Button disabled={!canEditCurrent || busy || nameTooLong || invalid || (!isNew && !dirty)} loading={saveMutation.isPending} onClick={() => saveMutation.mutate()} type="button">
-          {isNew ? "Tạo cấu hình" : "Lưu cấu hình"}
-        </Button>
-        {!isNew && canCreate ? (
-          <Button disabled={busy || nameTooLong || invalid} loading={saveAsNewMutation.isPending} onClick={() => saveAsNewMutation.mutate()} type="button" variant="outline">
-            <Copy size={16} /> Lưu thành cấu hình mới
-          </Button>
-        ) : null}
-        {!isNew && selectedConfig && canUpdate && selectedConfig.editable && !selectedConfig.isDefault ? (
-          <Button disabled={busy} loading={setDefaultMutation.isPending} onClick={setAsDefault} type="button" variant="outline">
-            <Star size={16} /> Đặt làm cấu hình chung
-          </Button>
-        ) : null}
-        {!isNew && selectedConfig && canDelete && selectedConfig.editable ? (
-          <Button
-            className="ml-auto text-danger"
-            disabled={busy || selectedConfig.isDefault}
-            loading={deleteMutation.isPending}
-            onClick={deleteConfig}
-            title={selectedConfig.isDefault ? "Không thể xóa cấu hình chung. Hãy chọn cấu hình khác làm cấu hình chung trước." : undefined}
-            type="button"
-            variant="outline"
-          >
-            <Trash size={16} /> Xóa cấu hình
-          </Button>
-        ) : null}
-        {invalid && canEditCurrent ? <span className="text-sm text-danger">Sửa các lỗi ở phần khổ thẻ trước khi lưu.</span> : null}
-        {!canUpdate && !canCreate ? <span className="text-sm text-muted">Bạn chỉ có quyền xem thư viện cấu hình.</span> : null}
-      </div>
     </div>
   );
 }
