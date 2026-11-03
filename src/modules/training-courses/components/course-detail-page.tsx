@@ -63,12 +63,15 @@ const workflowTabs = [
 type SummaryGroup = { title: string; columns: string[] };
 
 const pastSummaryGroups: SummaryGroup[] = [
-  { title: "Thông tin chung", columns: ["hostYear", "resultingLevelName", "passingScore", "location"] },
+  { title: "Thông tin chung", columns: ["managementUnitType", "hostYear", "resultingLevelName", "passingScore", "location"] },
   { title: "Thời gian", columns: ["startDate", "endDate"] },
 ];
 
+// Nhóm cấu hình của khóa (tự duyệt, điểm danh, gửi email...) chỉ dành cho đơn vị sở hữu khóa.
+const CONFIG_GROUP_TITLE = "Cấu hình";
+
 const summaryGroups: SummaryGroup[] = [
-  { title: "Thông tin chung", columns: ["courseTypeName", "hostYear", "passingScore", "location", "targetDeaneries"] },
+  { title: "Thông tin chung", columns: ["courseTypeName", "managementUnitType", "hostYear", "passingScore", "location", "targetDeaneries"] },
   { title: "Thời gian", columns: ["startDate", "endDate", "registrationPeriod"] },
   { title: "Trạng thái", columns: ["registrationStatus", "organizingStatus"] },
   { title: "Cấu hình", columns: ["autoApproveEligible", "scoreVisible", "attendanceEnabled", "autoSendInvitation", "openToOtherDeaneries"] },
@@ -129,6 +132,8 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
   const courseDisabled = course?.status === false;
   const isPastCourse = course?.pastCourse === true;
   const conditionItems = useMemo(() => courseConditionItems(course), [course]);
+  // Nhóm cấu hình chỉ hiện cho đơn vị sở hữu khóa; số cột của lưới theo số nhóm còn hiển thị để các cột dàn đều.
+  const visibleSummaryGroups = (isPastCourse ? pastSummaryGroups : summaryGroups).filter((group) => group.title !== CONFIG_GROUP_TITLE || course?.viewerOwnsCourse !== false);
   const tabs = useMemo(
     () =>
       workflowTabs.flatMap((tab) => {
@@ -260,12 +265,12 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
             </button>
             {infoOpen ? (
               <div className="mt-3 space-y-4" id="course-info">
-                <div className={cn("grid gap-x-8 gap-y-4", isPastCourse ? "md:grid-cols-2" : "md:grid-cols-2 lg:grid-cols-4")}>
-                  {(isPastCourse ? pastSummaryGroups : summaryGroups).map((group) => (
+                <div className={cn("grid gap-x-8 gap-y-4", summaryGridClass(visibleSummaryGroups.length))}>
+                  {visibleSummaryGroups.map((group) => (
                     <section className="min-w-0" key={group.title}>
                       <h3 className="mb-2 border-b border-border pb-1.5 text-xs font-semibold uppercase tracking-[0.02em] text-text-secondary">{group.title}</h3>
                       <dl className="space-y-1.5">
-                        {group.columns.filter((column) => column !== "targetDeaneries" || targetDeaneryNames(course).length > 0).map((column) => (
+                        {group.columns.filter((column) => (column !== "targetDeaneries" || targetDeaneryNames(course).length > 0) && (column !== "passingScore" || course.viewerOwnsCourse !== false)).map((column) => (
                           <div className="flex min-w-0 items-baseline justify-between gap-3 text-[13px]" key={column}>
                             <dt className="shrink-0 text-muted">{summaryLabels[column] ?? column}</dt>
                             <dd className="min-w-0 text-right font-medium text-foreground">
@@ -283,7 +288,7 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
                     {conditionItems.length > 0 ? <CourseConditionList items={conditionItems} /> : <p className="text-[13px] text-muted">Khóa không đặt điều kiện tham dự.</p>}
                   </div>
                 ) : null}
-                {!isPastCourse ? (
+                {!isPastCourse && course.viewerOwnsCourse !== false ? (
                   <div className="border-t border-border pt-3">
                     <h3 className="mb-2 text-sm font-semibold text-foreground">Thành phần điểm của khóa</h3>
                     <CourseScoreComponentsPanel components={Array.isArray(course.scoreComponents) ? (course.scoreComponents as never[]) : []} />
@@ -478,12 +483,31 @@ function SummaryValue({ column, course }: { column: string; course: Record<strin
   if (column === "targetDeaneries") {
     return <span>{targetDeaneryNames(course).join(", ")}</span>;
   }
+  if (column === "managementUnitType") {
+    return <span>{managementLevelLabel(course)}</span>;
+  }
   if (column === "registrationPeriod") {
     const start = formatVietnamDateValue(typeof course.registrationStartAt === "string" ? course.registrationStartAt : null);
     const end = formatVietnamDateValue(typeof course.registrationEndAt === "string" ? course.registrationEndAt : null);
     return <span>{start || end ? `${start ?? "…"} → ${end ?? "…"}` : "Chưa có"}</span>;
   }
-  return <ResourceCell column={column} row={course} value={course[column]} />;
+  // Chế độ chi tiết: giá trị dài (địa điểm...) xuống hàng thay vì cắt bằng dấu ba chấm.
+  return <ResourceCell column={column} displayMode="detail" row={course} value={course[column]} />;
+}
+
+// Cấp quản lý của khóa kèm tên đơn vị sở hữu: khóa giáo phận do giáo phận quản lý, khóa giáo hạt do giáo hạt quản lý.
+function managementLevelLabel(course: Record<string, unknown>) {
+  const deanery = course.managementUnitType === "DEANERY";
+  const name = deanery ? course.deaneryName : course.dioceseName;
+  const level = deanery ? "Giáo hạt" : "Giáo phận";
+  return typeof name === "string" && name.trim() ? `${level} · ${name}` : level;
+}
+
+// Lớp lưới tĩnh (Tailwind cần thấy đủ tên lớp): 4 nhóm chia 4 cột, 3 nhóm chia 3 cột, còn lại 2 cột.
+function summaryGridClass(groupCount: number) {
+  if (groupCount >= 4) return "md:grid-cols-2 lg:grid-cols-4";
+  if (groupCount === 3) return "md:grid-cols-3";
+  return "md:grid-cols-2";
 }
 
 // Giáo hạt mà khóa giáo phận (một đợt) dành cho; rỗng = mở cho tất cả.
@@ -512,6 +536,7 @@ function scoringWindowHint(course: Record<string, unknown>) {
 
 const summaryLabels: Record<string, string> = {
   courseTypeName: "Loại khóa",
+  managementUnitType: "Cấp quản lý",
   targetDeaneries: "Dành cho giáo hạt",
   resultingLevelName: "Cấp độ đạt được",
   hostYear: "Năm tổ chức",
