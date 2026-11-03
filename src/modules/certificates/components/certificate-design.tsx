@@ -265,12 +265,12 @@ export function sampleValue(key: string | undefined, fieldLabel: (key?: string) 
       return "20/07/2026";
     case "coursePeriod":
       return "từ 15/07/2026 đến 20/07/2026";
+    case "courseLocation":
+      return "Nhà thờ Chánh Tòa";
     case "resultingLevel":
       return "Huynh trưởng cấp I";
     case "certificateCode":
       return "GPPC-HTI-2026-1";
-    case "certificateName":
-      return "Chứng nhận hoàn thành khóa huấn luyện";
     case "result":
       return "Đạt";
     case "issueDate":
