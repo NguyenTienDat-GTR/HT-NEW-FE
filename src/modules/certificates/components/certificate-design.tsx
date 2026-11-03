@@ -271,8 +271,6 @@ export function sampleValue(key: string | undefined, fieldLabel: (key?: string) 
       return "Huynh trưởng cấp I";
     case "certificateCode":
       return "GPPC-HTI-2026-1";
-    case "certificateName":
-      return "Chứng nhận hoàn thành khóa huấn luyện";
     case "result":
       return "Đạt";
     case "issueDate":
