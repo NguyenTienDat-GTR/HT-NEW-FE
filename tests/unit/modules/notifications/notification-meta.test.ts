@@ -51,4 +51,10 @@ describe("notification meta", () => {
       expect(notificationGroupOf({ id: eventType, eventType })).toBe("training");
     }
   });
+
+  it("groups leader parish transfer notifications under units and opens the leader list", () => {
+    const item = { id: "6", eventType: "LEADER_PARISH_TRANSFERRED" };
+    expect(notificationGroupOf(item)).toBe("unit");
+    expect(notificationHref(item)).toBe("/leaders/profiles");
+  });
 });
