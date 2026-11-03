@@ -20,7 +20,7 @@ import { cn } from "@/lib/utils";
 import { formatLeaderLevel } from "@/components/common/resource/resource-format";
 import { resourceKey } from "@/lib/api/query-keys";
 import { actorLabel, formatDate, genderLabel, type LeaderDetail, type RankHistoryRow } from "./leader-detail-utils";
-import { emptyLeaderEditValues, leaderEditableFields, toLeaderUpdatePayload, validateLeaderEdit, valuesFromLeader, type LeaderEditValues } from "./leader-edit";
+import { canTransferLeader, emptyLeaderEditValues, leaderEditableFields, toLeaderUpdatePayload, validateLeaderEdit, valuesFromLeader, type LeaderEditValues } from "./leader-edit";
 import { SectionCard, ProfileField, MetaText, HeaderFact, LevelBadge, StatusBadge, LeaderDetailSkeleton } from "./leader-detail-ui";
 import { CourseTab, CertificateTab, AccountTab, RankHistoryPanel } from "./leader-detail-tabs";
 
@@ -184,6 +184,7 @@ export function LeaderDetailPage({id, route}: LeaderDetailPageProps) {
                     errors={fieldErrors}
                     id={id}
                     leader={leader}
+                    canTransfer={canTransferLeader(user)}
                     onChange={(fieldName, value) => setEditValues((current) => ({
                         ...current,
                         [fieldName]: String(value ?? "")
@@ -226,6 +227,7 @@ export function LeaderDetailPage({id, route}: LeaderDetailPageProps) {
 function ProfileTab({
                         id,
                         leader,
+                        canTransfer,
                         editing,
                         values,
                         errors,
@@ -233,6 +235,7 @@ function ProfileTab({
                     }: {
     id: string;
     leader: LeaderDetail;
+    canTransfer: boolean;
     editing: boolean;
     values: LeaderEditValues;
     errors: Record<string, string>;
@@ -286,7 +289,7 @@ function ProfileTab({
                         value={leader.email}
                     />
                     <ProfileField
-                        editing={editing}
+                        editing={editing && canTransfer}
                         error={errors.parishId}
                         editValue={values.parishId}
                         field={leaderEditableFields.parishId}
