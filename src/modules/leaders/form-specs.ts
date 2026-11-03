@@ -1,6 +1,7 @@
 import { compactPayload, type ResourceFormSpec } from "@/components/form/resource-form/types";
 import { leaderLevelSelect } from "@/modules/organizations/form-specs";
 import { withFilters } from "@/lib/api/filters";
+import { parishOptionLabel } from "./parish-option-label";
 
 const genderOptions = [
   { value: "NAM", label: "Nam" },
@@ -43,7 +44,7 @@ export const personnelFormSpecs: ResourceFormSpec[] = [
           values.deaneryId ? withFilters("/parishes", { "deanery.id": values.deaneryId }) : undefined,
         optionValue: "id",
         optionLabel: "name",
-        optionLabelFields: ["name", "parentParishName"],
+        optionLabelBuilder: parishOptionLabel,
         section: "Phạm vi",
       },
       { name: "leaderLevel", label: "Cấp huynh trưởng", type: "select", required: true, ...leaderLevelSelect, readOnlyOnEdit: true, section: "Phạm vi" },

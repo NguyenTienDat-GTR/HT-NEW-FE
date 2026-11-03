@@ -1,4 +1,5 @@
 import type {FormFieldSpec} from "@/components/form/resource-form/types";
+import {parishOptionLabel} from "../parish-option-label";
 import type {LeaderDetail} from "./leader-detail-utils";
 import type {AuthUser} from "@/lib/auth/auth-store";
 import {hasAnyPermission} from "@/lib/auth/permissions";
@@ -46,7 +47,7 @@ export const leaderEditableFields = {
         optionsEndpoint: "/parishes",
         optionValue: "id",
         optionLabel: "name",
-        optionLabelFields: ["name", "parentParishName"],
+        optionLabelBuilder: parishOptionLabel,
     },
 } satisfies Record<string, FormFieldSpec>;
 
