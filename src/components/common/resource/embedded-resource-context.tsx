@@ -20,6 +20,12 @@ export type EmbeddedResource = {
   courseFinished?: boolean;
   // Khóa đã bị vô hiệu hóa: chỉ xem, mọi thao tác trong khóa bị chặn (BE cũng chặn).
   courseDisabled?: boolean;
+  // Tài khoản có quyền duyệt / chấm điểm đúng cấp quản lý của khóa này không (false: ẩn nút duyệt, từ chối, xóa, nhập điểm).
+  // Khác courseDisabled: người gửi đăng ký vẫn thu hồi được hồ sơ của mình. Bỏ trống nghĩa là được.
+  canApproveCourse?: boolean;
+  canScoreCourse?: boolean;
+  // Tài khoản gửi đăng ký được cho khóa này (false: ẩn nút gửi đăng ký ở tab đăng ký tham dự).
+  canRegisterCourse?: boolean;
   // Khóa quá khứ: có nút import danh sách tham dự từ Excel, duyệt chứng nhận phải chọn ngày duyệt.
   coursePast?: boolean;
   // Tên khóa đang xem (để form mở từ tab hiện tên khóa thay vì mã).

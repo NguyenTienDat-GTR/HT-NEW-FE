@@ -23,6 +23,7 @@ import { HeaderScanButton } from "@/modules/qr-scan/components/header-scan-butto
 import { AccountMenu } from "@/modules/account/components/account-menu";
 import { PROFILE_PATH } from "@/modules/account/account-display";
 import { useNotificationsSocket } from "@/modules/workspace/hooks/notifications-socket";
+import { AppVersion } from "@/components/common/app-version";
 
 const defaultOpenGroups: Record<string, boolean> = {
   dashboard: true,
@@ -114,6 +115,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="border-t border-border px-2 py-2 text-center text-[10px] leading-4 text-muted">
             <p className="whitespace-nowrap font-medium text-foreground">© 2026 {BRAND_NAME}</p>
             <p className="whitespace-nowrap tracking-tight">{BRAND_TAGLINE_VI}</p>
+            <AppVersion className="mt-0.5" />
           </div>
         ) : null}
       </aside>
@@ -128,6 +130,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </TooltipIconButton>
             </div>
             {nav}
+            <div className="border-t border-border px-2 py-2 text-center text-[10px] leading-4 text-muted">
+              <AppVersion />
+            </div>
           </aside>
         </div>
       ) : null}
