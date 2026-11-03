@@ -11,7 +11,6 @@ export type LeaderEditValues = {
     // Id ảnh vừa tải lên (rỗng nếu không đổi ảnh); backend chỉ nhận id, không nhận URL ảnh.
     imageAssetId: string;
     gender: string;
-    parishId: string;
 };
 
 export const emptyLeaderEditValues: LeaderEditValues = {
@@ -21,7 +20,6 @@ export const emptyLeaderEditValues: LeaderEditValues = {
     imageUrl: "",
     imageAssetId: "",
     gender: "",
-    parishId: "",
 };
 
 export const leaderEditableFields = {
@@ -38,19 +36,9 @@ export const leaderEditableFields = {
             {value: "NU", label: "Nữ"},
         ],
     },
-    parishId: {
-        name: "parishId",
-        label: "Giáo xứ / giáo họ / giáo điểm",
-        type: "select",
-        required: true,
-        optionsEndpoint: "/parishes",
-        optionValue: "id",
-        optionLabel: "name",
-        optionLabelFields: ["name", "parentParishName"],
-    },
 } satisfies Record<string, FormFieldSpec>;
 
-// Đổi giáo xứ của huynh trưởng là quyền riêng, tách khỏi quyền chỉnh sửa hồ sơ.
+// Đổi giáo xứ của huynh trưởng là chức năng và quyền riêng (nút "Chuyển xứ"), tách khỏi sửa hồ sơ.
 export function canTransferLeader(user: AuthUser | null | undefined) {
     return hasAnyPermission(user, ["organization.leader.transfer.diocese", "organization.leader.transfer.deanery"]);
 }
@@ -63,7 +51,6 @@ export function valuesFromLeader(leader: LeaderDetail): LeaderEditValues {
         imageUrl: leader.imageUrl ?? "",
         imageAssetId: leader.imageAssetId ?? "",
         gender: leader.gender ?? "",
-        parishId: leader.parishId ?? "",
     };
 }
 
@@ -72,7 +59,6 @@ export function validateLeaderEdit(values: LeaderEditValues) {
     if (!values.holyName.trim()) errors.holyName = "Trường này là bắt buộc";
     if (!values.email.trim()) errors.email = "Trường này là bắt buộc";
     if (!values.gender.trim()) errors.gender = "Trường này là bắt buộc";
-    if (!values.parishId.trim()) errors.parishId = "Trường này là bắt buộc";
     return errors;
 }
 
@@ -81,7 +67,6 @@ export function toLeaderUpdatePayload(values: LeaderEditValues) {
         holyName: values.holyName.trim(),
         email: values.email.trim(),
         gender: values.gender,
-        parishId: values.parishId,
     };
     const clearFields: string[] = [];
 
