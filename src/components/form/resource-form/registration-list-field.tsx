@@ -46,6 +46,7 @@ export function RegistrationListField({
   mode,
   value,
   courseCode,
+  senderType,
   otherEntries,
   readonly,
   onChange,
@@ -53,6 +54,8 @@ export function RegistrationListField({
   mode: RegistrationListMode;
   value: unknown;
   courseCode: string;
+  // Tư cách gửi đăng ký (DIOCESE | DEANERY | PARISH); rỗng thì máy chủ chọn tư cách phù hợp với khóa.
+  senderType?: string;
   // Danh sách còn lại (đăng ký <-> ngoại lệ): hai danh sách không được trùng người.
   otherEntries: RegistrationEntry[];
   readonly?: boolean;
@@ -113,6 +116,7 @@ export function RegistrationListField({
       {open ? (
         <RegistrationCandidateModal
           courseCode={courseCode}
+          senderType={senderType}
           entries={entries}
           mode={mode}
           onChange={onChange}
@@ -136,6 +140,7 @@ function OffTargetBadge() {
 function RegistrationCandidateModal({
   mode,
   courseCode,
+  senderType,
   entries,
   otherEntries,
   onChange,
@@ -143,6 +148,7 @@ function RegistrationCandidateModal({
 }: {
   mode: RegistrationListMode;
   courseCode: string;
+  senderType?: string;
   entries: RegistrationEntry[];
   otherEntries: RegistrationEntry[];
   onChange: (entries: RegistrationEntry[]) => void;
@@ -196,10 +202,11 @@ function RegistrationCandidateModal({
   }, [added, exception, otherEntries]);
 
   const candidatesQuery = useQuery({
-    queryKey: ["registration-candidates", courseCode, mode, debouncedSearch, deaneryId, parishId, leaderLevel, page, excludeIds.join(",")],
+    queryKey: ["registration-candidates", courseCode, senderType, mode, debouncedSearch, deaneryId, parishId, leaderLevel, page, excludeIds.join(",")],
     queryFn: () => {
       const params = new URLSearchParams({ mode: exception ? "EXCEPTION" : "ELIGIBLE", page: String(page), size: String(PAGE_SIZE) });
       if (debouncedSearch) params.set("search", debouncedSearch);
+      if (senderType) params.set("senderType", senderType);
       if (deaneryId) params.set("deaneryId", deaneryId);
       if (parishId) params.set("parishId", parishId);
       if (leaderLevel) params.set("leaderLevel", leaderLevel);

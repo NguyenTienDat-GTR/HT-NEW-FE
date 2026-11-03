@@ -28,7 +28,7 @@ export function hasRole(user: AuthUser | null | undefined, roleCode: string) {
 export function hasAnyRole(user: AuthUser | null | undefined, roles: string[] | undefined) {
   if (!roles?.length) return true;
   if (!user) return false;
-  return roles.some((role) => user.roles.includes(role));
+  return roles.some((role) => hasRole(user, role));
 }
 
 export function canUseAction(user: AuthUser | null | undefined, action: ResourceActionConfig | undefined) {

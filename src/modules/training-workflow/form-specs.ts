@@ -13,12 +13,26 @@ export const workflowFormSpecs: ResourceFormSpec[] = [
     method: "POST",
     fields: [
       {
+        // Tài khoản nhiều role (giáo hạt + giáo xứ...) chọn gửi với tư cách nào; chỉ có một tư cách thì ẩn.
+        name: "senderType",
+        label: "Gửi với tư cách",
+        type: "select",
+        optionsEndpoint: "/training/courses/registration-senders",
+        optionValue: "code",
+        optionLabel: "label",
+        hideWhenSingleOption: true,
+        clearable: true,
+        helper: "Để trống để hệ thống chọn tư cách phù hợp với khóa.",
+        section: "Khóa",
+      },
+      {
         name: "courseCode",
         label: "Khóa huấn luyện",
         type: "select",
         required: true,
-        // Chỉ các khóa đang mở đăng ký trong phạm vi tài khoản.
+        // Chỉ các khóa đang mở đăng ký trong phạm vi tài khoản (và đúng tư cách gửi đã chọn).
         optionsEndpoint: "/training/courses/registrable",
+        buildOptionsEndpoint: (values) => (values.senderType ? `/training/courses/registrable?senderType=${encodeURIComponent(String(values.senderType))}` : "/training/courses/registrable"),
         optionValue: "courseCode",
         optionLabel: "courseName",
         // Mở từ tab "Đăng ký tham dự" của khóa thì luôn là khóa đang chọn và không đổi được; mở trực tiếp (chưa có khóa) vẫn chọn được.
@@ -29,7 +43,7 @@ export const workflowFormSpecs: ResourceFormSpec[] = [
         name: "leaderIds",
         label: "Danh sách đăng ký",
         type: "registration-list",
-        registrationList: { mode: "standard", courseField: "courseCode", otherField: "exceptionLeaders" },
+        registrationList: { mode: "standard", courseField: "courseCode", otherField: "exceptionLeaders", senderField: "senderType" },
         helper: "Huynh trưởng đủ điều kiện theo loại khóa và số năm hoạt động của khóa.",
         section: "Danh sách đăng ký",
       },
@@ -37,7 +51,7 @@ export const workflowFormSpecs: ResourceFormSpec[] = [
         name: "exceptionLeaders",
         label: "Danh sách ngoại lệ",
         type: "registration-list",
-        registrationList: { mode: "exception", courseField: "courseCode", otherField: "leaderIds" },
+        registrationList: { mode: "exception", courseField: "courseCode", otherField: "leaderIds", senderField: "senderType" },
         helper: "Huynh trưởng chưa đủ điều kiện, mỗi người kèm lí do. Không được trùng với danh sách đăng ký.",
         section: "Ngoại lệ",
       },
@@ -65,6 +79,7 @@ export const workflowFormSpecs: ResourceFormSpec[] = [
         throw new Error("Danh sách đăng ký và danh sách ngoại lệ không được trùng huynh trưởng");
       }
       const payload: Record<string, unknown> = {};
+      if (values.senderType) payload.senderType = values.senderType;
       if (standard.length) payload.leaderIds = standard.map((entry) => entry.id);
       if (exceptions.length) {
         payload.exceptionReasonsByLeaderId = Object.fromEntries(exceptions.map((entry) => [entry.id, entry.reason ?? ""]));

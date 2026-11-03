@@ -39,7 +39,7 @@ import type { ResourceListRuntimeProps } from "./resource-list-types";
 import { asPageResponse } from "./resource-list-utils";
 import { ResourcePagination } from "./resource-pagination";
 import { useIsDesktop } from "@/lib/use-media-query";
-import { ResourceTable } from "./resource-table";
+import { ownsRowCourse, ResourceTable } from "./resource-table";
 import { ViewModeToggle } from "./view-mode-toggle";
 import { ResourceFilters } from "./resource-toolbar";
 import { useResourceQueryState } from "./use-resource-query-state";
@@ -74,7 +74,8 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
 
   // Khóa bị vô hiệu hóa: không tạo / duyệt / chấm điểm gì trong khóa (BE cũng chặn).
   const courseDisabled = embedded?.courseDisabled === true;
-  const canCreate = canUseAction(user, effectiveRoute.actions?.create) && (config.canCreate?.(effectiveRoute, user) ?? true) && !courseDisabled;
+  const canCreate = canUseAction(user, effectiveRoute.actions?.create) && (config.canCreate?.(effectiveRoute, user) ?? true) && !courseDisabled &&
+    !(effectiveRoute.moduleName === "training.registration" && embedded?.canRegisterCourse === false);
   const pageData = asPageResponse(query.data, queryState.size);
   const rows = rowsFromResponse(query.data);
   const detailId = searchParams.get("detail");
@@ -110,7 +111,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
   // Nhận xét kết quả khóa của hồ sơ nhập ở tab chấm điểm: tạm lưu khi đóng hộp nhận xét, gửi server khi bấm nút lưu.
   const [noteDrafts, setNoteDrafts] = useState<ScoreNoteDrafts>({});
   const scoreCourseCode = embedded?.fixedFilters["course.courseCode"];
-  const scoreEntryEnabled = Boolean(config.scoreEntry && scoreCourseCode && canUseAction(user, effectiveRoute.actions?.score) && !courseDisabled);
+  const scoreEntryEnabled = Boolean(config.scoreEntry && scoreCourseCode && canUseAction(user, effectiveRoute.actions?.score) && embedded?.canScoreCourse !== false && !courseDisabled);
   const scoreComponentsQuery = useQuery({
     queryKey: ["score-components", scoreCourseCode],
     enabled: scoreEntryEnabled,
@@ -118,7 +119,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
     refetchOnMount: "always",
     queryFn: () => apiFetch<ScoreComponent[]>(`/training/courses/${encodeURIComponent(String(scoreCourseCode))}/score-components`),
   });
-  const canBulkApprove = Boolean(config.bulkApprovePath) && canUseAction(user, effectiveRoute.actions?.approve) && !courseDisabled;
+  const canBulkApprove = Boolean(config.bulkApprovePath) && canUseAction(user, effectiveRoute.actions?.approve) && embedded?.canApproveCourse !== false && !courseDisabled;
   const canExportPdf = Boolean(config.enablePdfExport && config.pdfExportPath);
   const [exporting, setExporting] = useState(false);
   // Khi bật xuất PDF: cho chọn mọi dòng (xuất kiểm tra "đã duyệt" ở BE). Ngược lại, duyệt hàng loạt chỉ chọn hồ sơ đang chờ.
@@ -128,7 +129,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
         return id ? [id] : [];
       })
     : canBulkApprove
-      ? rows.filter((row) => isAwaitingApproval(row)).flatMap((row) => {
+      ? rows.filter((row) => isAwaitingApproval(row) && ownsRowCourse(effectiveRoute, row, user, "approve")).flatMap((row) => {
           const id = getResourceId(effectiveRoute, row);
           return id ? [id] : [];
         })

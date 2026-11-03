@@ -119,6 +119,7 @@ const registrationListControl: ControlRenderer = ({ field, value, values, readon
   return (
     <RegistrationListField
       courseCode={String(values?.[config.courseField] ?? "")}
+      senderType={config.senderField ? String(values?.[config.senderField] ?? "") : ""}
       mode={config.mode}
       onChange={(entries) => onChange(entries as unknown as FormValue)}
       otherEntries={registrationEntries(values?.[config.otherField])}
@@ -325,6 +326,7 @@ function OptionControl({
       <CheckboxList
         fieldName={field.name}
         onChange={onChange}
+        maxSelect={field.maxSelect}
         onPrimaryChange={field.primaryFieldName && onFieldChange ? (nextValue) => onFieldChange(field.primaryFieldName!, nextValue) : undefined}
         options={options}
         primaryLabel={field.primaryLabel}
@@ -515,6 +517,7 @@ function SearchableSelect({
 
 function CheckboxList({
   fieldName,
+  maxSelect,
   onChange,
   onPrimaryChange,
   options,
@@ -524,6 +527,7 @@ function CheckboxList({
   value,
 }: {
   fieldName: string;
+  maxSelect?: number;
   onChange: (value: FormValue) => void;
   onPrimaryChange?: (value: string) => void;
   options: Option[];
@@ -565,18 +569,22 @@ function CheckboxList({
     onChange(Array.from(next));
   }
 
+  // Đã chạm giới hạn số lựa chọn: các mục chưa tick bị khóa cho tới khi bỏ bớt.
+  const limitReached = maxSelect !== undefined && selected.size >= maxSelect;
+
   function toggle(valueToToggle: string) {
     const next = new Set(selected);
     if (next.has(valueToToggle)) next.delete(valueToToggle);
-    else next.add(valueToToggle);
+    else if (!limitReached) next.add(valueToToggle);
     setSelected(next);
   }
 
   function selectGroup(groupOptions: typeof options, checked: boolean) {
     const next = new Set(selected);
     groupOptions.filter((option) => !option.disabled).forEach((option) => {
-      if (checked) next.add(option.value);
-      else next.delete(option.value);
+      if (checked) {
+        if (maxSelect === undefined || next.size < maxSelect) next.add(option.value);
+      } else next.delete(option.value);
     });
     setSelected(next);
   }
@@ -585,7 +593,7 @@ function CheckboxList({
     <div className="rounded-[8px] border border-border bg-white shadow-sm">
       <div className="flex flex-col gap-2 border-b border-border p-2 sm:flex-row sm:items-center sm:justify-between">
         <Input className="h-10" disabled={readonly} onChange={(event) => setSearch(event.target.value)} placeholder="Tìm theo mã hoặc tên" value={search} />
-        <span className="shrink-0 rounded-[8px] bg-primary/8 px-2.5 py-1.5 text-xs font-semibold text-primary">{selected.size} đã chọn</span>
+        <span className="shrink-0 rounded-[8px] bg-primary/8 px-2.5 py-1.5 text-xs font-semibold text-primary">{selected.size}{maxSelect !== undefined ? `/${maxSelect}` : ""} đã chọn</span>
       </div>
       {hasTaxonomy ? (
         <div className="flex flex-wrap items-center gap-2 border-b border-border p-2">
@@ -653,7 +661,7 @@ function CheckboxList({
                       <input
                         checked={selected.has(option.value)}
                         className="mt-1 h-4 w-4 accent-primary"
-                        disabled={readonly || option.disabled}
+                        disabled={readonly || option.disabled || (limitReached && !selected.has(option.value))}
                         name={fieldName}
                         onChange={() => toggle(option.value)}
                         type="checkbox"

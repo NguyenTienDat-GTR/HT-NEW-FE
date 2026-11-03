@@ -25,7 +25,7 @@ export type FormFieldSpec = {
   placeholder?: string;
   min?: number;
   // Trường lập danh sách huynh trưởng bằng modal: courseField = trường chứa mã khóa, otherField = danh sách còn lại (không được trùng người).
-  registrationList?: { mode: "standard" | "exception"; courseField: string; otherField: string };
+  registrationList?: { mode: "standard" | "exception"; courseField: string; otherField: string; senderField?: string };
   options?: Option[];
   optionsEndpoint?: string;
   buildOptionsEndpoint?: (values: Record<string, unknown>) => string | undefined;
@@ -42,10 +42,14 @@ export type FormFieldSpec = {
   searchable?: boolean;
   // Trường chiếm trọn chiều ngang của nhóm (và nhóm chứa nó chiếm trọn hàng) để hiển thị đủ nội dung.
   wide?: boolean;
+  // Số lựa chọn tối đa của danh sách tick (ví dụ một tài khoản tối đa 3 vai trò).
+  maxSelect?: number;
   primaryFieldName?: string;
   primaryLabel?: string;
   createOnly?: boolean;
   editOnly?: boolean;
+  // Chỉ hiện trường khi danh sách lựa chọn từ API có từ hai mục trở lên (ví dụ tư cách gửi của tài khoản nhiều role).
+  hideWhenSingleOption?: boolean;
   visibleWhen?: (values: Record<string, unknown>, mode: ResourceFormMode, user?: AuthUser | null) => boolean;
   requiredWhen?: (values: Record<string, unknown>, mode: ResourceFormMode) => boolean;
   readOnlyWhen?: (values: Record<string, unknown>, mode: ResourceFormMode) => boolean;

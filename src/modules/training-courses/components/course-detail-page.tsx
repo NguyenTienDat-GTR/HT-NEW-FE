@@ -22,6 +22,7 @@ import { apiFetch, apiMutation, getApiErrorMessage, type PageResponse } from "@/
 import { serializeBaseSearch } from "@/lib/api/search";
 import { useAuthStore } from "@/lib/auth/auth-store";
 import { canUseAction, hasPermissionPrefix } from "@/lib/auth/permissions";
+import { canActOnCourse, canRegisterCourse, canUseCourseTab } from "@/modules/training-courses/course-permissions";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
 import { cn } from "@/lib/utils";
 import {
@@ -96,7 +97,7 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
   });
 
   // Khóa/mở chỉnh sửa điểm của khóa: admin giáo phận/giáo hạt có quyền lock (khóa thuộc phạm vi của mình).
-  const canLockScore = hasPermissionPrefix(user, "training.participation.lock.");
+  const canLockScore = canActOnCourse(user, courseQuery.data, "lockScore");
   const lockScoreMutation = useMutation({
     mutationFn: (locked: boolean) => apiMutation(`${route.endpoint}/${encodeURIComponent(id)}/score-lock`, "PATCH", { locked }),
     onSuccess: async (_data, locked) => {
@@ -106,7 +107,7 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
   });
 
   // Kết thúc khóa thủ công: chốt kết quả chung, thăng cấp hồ sơ đạt, khóa điểm.
-  const canFinish = hasPermissionPrefix(user, "training.course.finish.");
+  const canFinish = canActOnCourse(user, courseQuery.data, "finish");
   const [finishOpen, setFinishOpen] = useState(false);
   const finishMutation = useMutation({
     mutationFn: () => apiMutation(`${route.endpoint}/${encodeURIComponent(id)}/finish`, "POST"),
@@ -121,9 +122,9 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
 
   const course = courseQuery.data;
   // Gửi email thông tin tham dự, quét và sửa điểm danh: người duyệt đăng ký đúng cấp quản lý khóa (BE kiểm tra lại theo đơn vị).
-  const canManage = hasPermissionPrefix(user, "training.participation.approve.");
+  const canManage = canActOnCourse(user, course, "approve");
   // Quét / xác nhận điểm danh là quyền riêng theo phạm vi, tách khỏi quyền duyệt đăng ký.
-  const canScan = hasPermissionPrefix(user, "training.attendance.scan.");
+  const canScan = canActOnCourse(user, course, "scanAttendance");
   // Khóa bị vô hiệu hóa: chỉ xem, mọi thao tác trong khóa bị chặn.
   const courseDisabled = course?.status === false;
   const isPastCourse = course?.pastCourse === true;
@@ -138,9 +139,11 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
         const tabRoute = findRoute(tab.path);
         if (!tabRoute) return [];
         if (tabRoute.permissionPrefixes.length && !tabRoute.permissionPrefixes.some((prefix) => hasPermissionPrefix(user, prefix))) return [];
+        // Quyền theo đúng cấp quản lý của khóa này: tài khoản nhiều vai trò thấy cả khóa giáo phận lẫn giáo hạt nhưng không dùng được mọi tab.
+        if (!canUseCourseTab(user, course, tab.key)) return [];
         return [{ ...tab, route: tabRoute }];
       }),
-    [user, course?.certificateRequired, course?.pastCourse],
+    [user, course],
   );
   const activeTab = tabs.find((tab) => tab.key === searchParams.get("tab")) ?? tabs[0];
 
@@ -223,7 +226,7 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
                   </Link>
                 </Button>
               ) : null
-            ) : editHref && canUseAction(user, route.actions?.edit) && !courseDisabled ? (
+            ) : editHref && canUseAction(user, route.actions?.edit) && canActOnCourse(user, course, "update") && !courseDisabled ? (
               <Button asChild variant="outline">
                 <Link href={editHref as Route}>
                   <PencilSimple size={16} />
@@ -406,6 +409,9 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
                 scoreLocked: course ? course.scoreLocked === true : undefined,
                 courseFinished: course ? Boolean(course.finishedAt) : undefined,
                 courseDisabled,
+                canApproveCourse: canActOnCourse(user, course, "approve"),
+                canScoreCourse: canActOnCourse(user, course, "score"),
+                canRegisterCourse: canRegisterCourse(user, course),
                 coursePast: course?.pastCourse === true,
                 courseName: course && typeof course.courseName === "string" ? course.courseName : undefined,
               }}
