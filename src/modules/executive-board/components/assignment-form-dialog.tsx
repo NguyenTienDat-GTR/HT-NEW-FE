@@ -27,12 +27,15 @@ function todayIso() {
 
 const LEVEL_LABELS: Record<UnitLevel, string> = { DIOCESE: "Giáo phận", DEANERY: "Giáo hạt", PARISH: "Giáo xứ" };
 
-// Tài khoản chỉ phân công đúng cấp mình được cấp quyền, trong đơn vị của chính mình.
-function ownCreateScope(user: AuthUser | null): { unitType: UnitLevel; unitId: string | null | undefined } | null {
-  if (hasPermission(user, "organization.executive_board_assignment.create.diocese")) return { unitType: "DIOCESE", unitId: user?.dioceseId };
-  if (hasPermission(user, "organization.executive_board_assignment.create.deanery")) return { unitType: "DEANERY", unitId: user?.deaneryId };
-  if (hasPermission(user, "organization.executive_board_assignment.create.parish")) return { unitType: "PARISH", unitId: user?.parishId };
-  return null;
+type CreateScope = { unitType: UnitLevel; unitId: string | null | undefined };
+
+// Tài khoản chỉ phân công đúng cấp mình được cấp quyền, trong đơn vị của chính mình; nhiều role thì có nhiều cấp để chọn.
+function ownCreateScopes(user: AuthUser | null): CreateScope[] {
+  const scopes: CreateScope[] = [];
+  if (hasPermission(user, "organization.executive_board_assignment.create.diocese")) scopes.push({ unitType: "DIOCESE", unitId: user?.dioceseId });
+  if (hasPermission(user, "organization.executive_board_assignment.create.deanery")) scopes.push({ unitType: "DEANERY", unitId: user?.deaneryId });
+  if (hasPermission(user, "organization.executive_board_assignment.create.parish")) scopes.push({ unitType: "PARISH", unitId: user?.parishId });
+  return scopes;
 }
 
 export function AssignmentFormDialog({ target, onClose }: { target: AssignmentFormTarget | null; onClose: () => void }) {
@@ -49,7 +52,9 @@ export function AssignmentFormDialog({ target, onClose }: { target: AssignmentFo
 function AssignmentForm({ onClose }: { onClose: () => void }) {
   const queryClient = useQueryClient();
   const user = useAuthStore((state) => state.user);
-  const scope = ownCreateScope(user);
+  const scopes = ownCreateScopes(user);
+  const [chosenType, setChosenType] = useState<UnitLevel | undefined>();
+  const scope = scopes.find((item) => item.unitType === chosenType) ?? scopes[0] ?? null;
   const unitType = scope?.unitType;
 
   // Ban điều hành hiện tại của đơn vị: chỉ cho chọn chức vụ đang hoạt động và chưa có người được phân công (bỏ mục tuyên úy).
@@ -119,6 +124,25 @@ function AssignmentForm({ onClose }: { onClose: () => void }) {
         </Dialog.Close>
       </div>
       {!scope ? <p className="mt-4 text-sm text-danger">Bạn không có quyền phân công ở cấp nào.</p> : null}
+      {scopes.length > 1 ? (
+        <label className="mt-4 block">
+          <span className="mb-1 block text-xs font-semibold text-foreground">Cấp phân công</span>
+          <select
+            className="h-10 w-full rounded-[8px] border border-border bg-white px-3 text-sm"
+            onChange={(event) => {
+              setChosenType(event.target.value as UnitLevel);
+              setPositionCode(undefined);
+            }}
+            value={unitType ?? ""}
+          >
+            {scopes.map((item) => (
+              <option key={item.unitType} value={item.unitType}>
+                {LEVEL_LABELS[item.unitType]}
+              </option>
+            ))}
+          </select>
+        </label>
+      ) : null}
       {missingUnit && scope ? <p className="mt-4 text-sm text-danger">Tài khoản chưa gắn với đơn vị nào để phân công.</p> : null}
 
       <div className="mt-4 space-y-4">

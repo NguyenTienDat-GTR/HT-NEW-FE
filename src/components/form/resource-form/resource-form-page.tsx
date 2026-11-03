@@ -70,7 +70,17 @@ export function ResourceFormPage({
       : {};
   const mergedValues = mode === "edit" ? { ...initialValues, ...values } : { ...createDefaults, ...values };
 
+  // Trường chỉ hiện khi có từ hai lựa chọn (tư cách gửi của tài khoản nhiều role): đếm số lựa chọn từ API.
+  const singleOptionGate = spec?.fields.find((field) => field.hideWhenSingleOption && field.optionsEndpoint);
+  const gateQuery = useQuery({
+    queryKey: ["field-option-count", singleOptionGate?.optionsEndpoint],
+    enabled: Boolean(singleOptionGate),
+    queryFn: () => apiFetch<unknown[]>(singleOptionGate!.optionsEndpoint!),
+  });
+  const gateOptionCount = Array.isArray(gateQuery.data) ? gateQuery.data.length : 0;
+
   const visibleFields = (spec?.fields ?? [])
+    .filter((field) => !field.hideWhenSingleOption || gateOptionCount > 1)
     .filter((field) => (mode === "create" ? !field.editOnly : !field.createOnly))
     .filter((field) => !(effectiveRoute.kind === "roles" && field.name === "roleCode"))
     .filter((field) => field.visibleWhen?.(mergedValues, mode, user) ?? true)
@@ -243,6 +253,10 @@ function nextValuesForField(current: Record<string, unknown>, fieldName: string,
   if (fieldName === "courseCode") {
     // Đổi khóa thì điều kiện tham dự đổi theo, phải lập lại cả hai danh sách.
     return { ...current, courseCode: value, leaderIds: [], exceptionLeaders: [] };
+  }
+  if (fieldName === "senderType") {
+    // Đổi tư cách gửi thì phạm vi huynh trưởng đổi theo: lập lại cả hai danh sách (khóa không còn hợp lệ sẽ tự bỏ chọn).
+    return { ...current, senderType: value, leaderIds: [], exceptionLeaders: [] };
   }
   if (fieldName !== "roleCodes") {
     return { ...current, [fieldName]: value };

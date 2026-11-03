@@ -22,6 +22,7 @@ import { apiFetch, apiMutation, getApiErrorMessage, type PageResponse } from "@/
 import { serializeBaseSearch } from "@/lib/api/search";
 import { useAuthStore } from "@/lib/auth/auth-store";
 import { canUseAction, hasPermissionPrefix } from "@/lib/auth/permissions";
+import { canActOnCourse, canRegisterCourse, canUseCourseTab } from "@/modules/training-courses/course-permissions";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
 import { cn } from "@/lib/utils";
 import {
@@ -62,12 +63,15 @@ const workflowTabs = [
 type SummaryGroup = { title: string; columns: string[] };
 
 const pastSummaryGroups: SummaryGroup[] = [
-  { title: "Thông tin chung", columns: ["hostYear", "resultingLevelName", "passingScore", "location"] },
+  { title: "Thông tin chung", columns: ["managementUnitType", "hostYear", "resultingLevelName", "passingScore", "location"] },
   { title: "Thời gian", columns: ["startDate", "endDate"] },
 ];
 
+// Nhóm cấu hình của khóa (tự duyệt, điểm danh, gửi email...) chỉ dành cho đơn vị sở hữu khóa.
+const CONFIG_GROUP_TITLE = "Cấu hình";
+
 const summaryGroups: SummaryGroup[] = [
-  { title: "Thông tin chung", columns: ["courseTypeName", "hostYear", "passingScore", "location", "targetDeaneries"] },
+  { title: "Thông tin chung", columns: ["courseTypeName", "managementUnitType", "hostYear", "passingScore", "location", "targetDeaneries"] },
   { title: "Thời gian", columns: ["startDate", "endDate", "registrationPeriod"] },
   { title: "Trạng thái", columns: ["registrationStatus", "organizingStatus"] },
   { title: "Cấu hình", columns: ["autoApproveEligible", "scoreVisible", "attendanceEnabled", "autoSendInvitation", "openToOtherDeaneries"] },
@@ -96,7 +100,7 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
   });
 
   // Khóa/mở chỉnh sửa điểm của khóa: admin giáo phận/giáo hạt có quyền lock (khóa thuộc phạm vi của mình).
-  const canLockScore = hasPermissionPrefix(user, "training.participation.lock.");
+  const canLockScore = canActOnCourse(user, courseQuery.data, "lockScore");
   const lockScoreMutation = useMutation({
     mutationFn: (locked: boolean) => apiMutation(`${route.endpoint}/${encodeURIComponent(id)}/score-lock`, "PATCH", { locked }),
     onSuccess: async (_data, locked) => {
@@ -106,7 +110,7 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
   });
 
   // Kết thúc khóa thủ công: chốt kết quả chung, thăng cấp hồ sơ đạt, khóa điểm.
-  const canFinish = hasPermissionPrefix(user, "training.course.finish.");
+  const canFinish = canActOnCourse(user, courseQuery.data, "finish");
   const [finishOpen, setFinishOpen] = useState(false);
   const finishMutation = useMutation({
     mutationFn: () => apiMutation(`${route.endpoint}/${encodeURIComponent(id)}/finish`, "POST"),
@@ -121,13 +125,15 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
 
   const course = courseQuery.data;
   // Gửi email thông tin tham dự, quét và sửa điểm danh: người duyệt đăng ký đúng cấp quản lý khóa (BE kiểm tra lại theo đơn vị).
-  const canManage = hasPermissionPrefix(user, "training.participation.approve.");
+  const canManage = canActOnCourse(user, course, "approve");
   // Quét / xác nhận điểm danh là quyền riêng theo phạm vi, tách khỏi quyền duyệt đăng ký.
-  const canScan = hasPermissionPrefix(user, "training.attendance.scan.");
+  const canScan = canActOnCourse(user, course, "scanAttendance");
   // Khóa bị vô hiệu hóa: chỉ xem, mọi thao tác trong khóa bị chặn.
   const courseDisabled = course?.status === false;
   const isPastCourse = course?.pastCourse === true;
   const conditionItems = useMemo(() => courseConditionItems(course), [course]);
+  // Nhóm cấu hình chỉ hiện cho đơn vị sở hữu khóa; số cột của lưới theo số nhóm còn hiển thị để các cột dàn đều.
+  const visibleSummaryGroups = (isPastCourse ? pastSummaryGroups : summaryGroups).filter((group) => group.title !== CONFIG_GROUP_TITLE || course?.viewerOwnsCourse !== false);
   const tabs = useMemo(
     () =>
       workflowTabs.flatMap((tab) => {
@@ -138,9 +144,11 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
         const tabRoute = findRoute(tab.path);
         if (!tabRoute) return [];
         if (tabRoute.permissionPrefixes.length && !tabRoute.permissionPrefixes.some((prefix) => hasPermissionPrefix(user, prefix))) return [];
+        // Quyền theo đúng cấp quản lý của khóa này: tài khoản nhiều vai trò thấy cả khóa giáo phận lẫn giáo hạt nhưng không dùng được mọi tab.
+        if (!canUseCourseTab(user, course, tab.key)) return [];
         return [{ ...tab, route: tabRoute }];
       }),
-    [user, course?.certificateRequired, course?.pastCourse],
+    [user, course],
   );
   const activeTab = tabs.find((tab) => tab.key === searchParams.get("tab")) ?? tabs[0];
 
@@ -223,7 +231,7 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
                   </Link>
                 </Button>
               ) : null
-            ) : editHref && canUseAction(user, route.actions?.edit) && !courseDisabled ? (
+            ) : editHref && canUseAction(user, route.actions?.edit) && canActOnCourse(user, course, "update") && !courseDisabled ? (
               <Button asChild variant="outline">
                 <Link href={editHref as Route}>
                   <PencilSimple size={16} />
@@ -257,12 +265,12 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
             </button>
             {infoOpen ? (
               <div className="mt-3 space-y-4" id="course-info">
-                <div className={cn("grid gap-x-8 gap-y-4", isPastCourse ? "md:grid-cols-2" : "md:grid-cols-2 lg:grid-cols-4")}>
-                  {(isPastCourse ? pastSummaryGroups : summaryGroups).map((group) => (
+                <div className={cn("grid gap-x-8 gap-y-4", summaryGridClass(visibleSummaryGroups.length))}>
+                  {visibleSummaryGroups.map((group) => (
                     <section className="min-w-0" key={group.title}>
                       <h3 className="mb-2 border-b border-border pb-1.5 text-xs font-semibold uppercase tracking-[0.02em] text-text-secondary">{group.title}</h3>
                       <dl className="space-y-1.5">
-                        {group.columns.filter((column) => column !== "targetDeaneries" || targetDeaneryNames(course).length > 0).map((column) => (
+                        {group.columns.filter((column) => (column !== "targetDeaneries" || targetDeaneryNames(course).length > 0) && (column !== "passingScore" || course.viewerOwnsCourse !== false)).map((column) => (
                           <div className="flex min-w-0 items-baseline justify-between gap-3 text-[13px]" key={column}>
                             <dt className="shrink-0 text-muted">{summaryLabels[column] ?? column}</dt>
                             <dd className="min-w-0 text-right font-medium text-foreground">
@@ -280,7 +288,7 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
                     {conditionItems.length > 0 ? <CourseConditionList items={conditionItems} /> : <p className="text-[13px] text-muted">Khóa không đặt điều kiện tham dự.</p>}
                   </div>
                 ) : null}
-                {!isPastCourse ? (
+                {!isPastCourse && course.viewerOwnsCourse !== false ? (
                   <div className="border-t border-border pt-3">
                     <h3 className="mb-2 text-sm font-semibold text-foreground">Thành phần điểm của khóa</h3>
                     <CourseScoreComponentsPanel components={Array.isArray(course.scoreComponents) ? (course.scoreComponents as never[]) : []} />
@@ -406,6 +414,9 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
                 scoreLocked: course ? course.scoreLocked === true : undefined,
                 courseFinished: course ? Boolean(course.finishedAt) : undefined,
                 courseDisabled,
+                canApproveCourse: canActOnCourse(user, course, "approve"),
+                canScoreCourse: canActOnCourse(user, course, "score"),
+                canRegisterCourse: canRegisterCourse(user, course),
                 coursePast: course?.pastCourse === true,
                 courseName: course && typeof course.courseName === "string" ? course.courseName : undefined,
               }}
@@ -472,12 +483,31 @@ function SummaryValue({ column, course }: { column: string; course: Record<strin
   if (column === "targetDeaneries") {
     return <span>{targetDeaneryNames(course).join(", ")}</span>;
   }
+  if (column === "managementUnitType") {
+    return <span>{managementLevelLabel(course)}</span>;
+  }
   if (column === "registrationPeriod") {
     const start = formatVietnamDateValue(typeof course.registrationStartAt === "string" ? course.registrationStartAt : null);
     const end = formatVietnamDateValue(typeof course.registrationEndAt === "string" ? course.registrationEndAt : null);
     return <span>{start || end ? `${start ?? "…"} → ${end ?? "…"}` : "Chưa có"}</span>;
   }
-  return <ResourceCell column={column} row={course} value={course[column]} />;
+  // Chế độ chi tiết: giá trị dài (địa điểm...) xuống hàng thay vì cắt bằng dấu ba chấm.
+  return <ResourceCell column={column} displayMode="detail" row={course} value={course[column]} />;
+}
+
+// Cấp quản lý của khóa kèm tên đơn vị sở hữu: khóa giáo phận do giáo phận quản lý, khóa giáo hạt do giáo hạt quản lý.
+function managementLevelLabel(course: Record<string, unknown>) {
+  const deanery = course.managementUnitType === "DEANERY";
+  const name = deanery ? course.deaneryName : course.dioceseName;
+  const level = deanery ? "Giáo hạt" : "Giáo phận";
+  return typeof name === "string" && name.trim() ? `${level} · ${name}` : level;
+}
+
+// Lớp lưới tĩnh (Tailwind cần thấy đủ tên lớp): 4 nhóm chia 4 cột, 3 nhóm chia 3 cột, còn lại 2 cột.
+function summaryGridClass(groupCount: number) {
+  if (groupCount >= 4) return "md:grid-cols-2 lg:grid-cols-4";
+  if (groupCount === 3) return "md:grid-cols-3";
+  return "md:grid-cols-2";
 }
 
 // Giáo hạt mà khóa giáo phận (một đợt) dành cho; rỗng = mở cho tất cả.
@@ -506,6 +536,7 @@ function scoringWindowHint(course: Record<string, unknown>) {
 
 const summaryLabels: Record<string, string> = {
   courseTypeName: "Loại khóa",
+  managementUnitType: "Cấp quản lý",
   targetDeaneries: "Dành cho giáo hạt",
   resultingLevelName: "Cấp độ đạt được",
   hostYear: "Năm tổ chức",

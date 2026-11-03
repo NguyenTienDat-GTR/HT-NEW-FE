@@ -1,6 +1,7 @@
 import type { ResourceKind, RouteConfig } from "@/config/routes/routes";
 import type { AuthUser } from "@/lib/auth/auth-store";
 import { hasPermission, hasRole, isSuperAdmin } from "@/lib/auth/permissions";
+import { canActOnCourse } from "@/modules/training-courses/course-permissions";
 
 type Row = Record<string, unknown>;
 type RowCheck = (route: RouteConfig, row: Row, user: AuthUser | null) => boolean;
@@ -26,8 +27,13 @@ export function rowHasPrimaryRole(row: Row, roleCode: string) {
   return row.primaryRoleCode === roleCode;
 }
 
+// Tài khoản nhiều vai trò: có vai trò này là vai trò chính hoặc một trong các vai trò khác.
+export function rowHasRole(row: Row, roleCode: string) {
+  return rowHasPrimaryRole(row, roleCode) || (Array.isArray(row.roleCodes) && row.roleCodes.includes(roleCode));
+}
+
 export function canResetPasswordRow(row: Row, user: AuthUser | null) {
-  return row.status === true && !isOwnAccount(row, user) && !rowHasPrimaryRole(row, "SUPER_ADMIN");
+  return row.status === true && !isOwnAccount(row, user) && !rowHasRole(row, "SUPER_ADMIN");
 }
 
 // Chức vụ và phân công ban điều hành: chỉ thao tác trên dòng thuộc đúng cấp mình được cấp quyền.
@@ -42,8 +48,13 @@ function hasScopedRowPermission(route: RouteConfig, user: AuthUser | null, actio
 type RowRules = { edit?: RowCheck; toggle?: RowCheck };
 
 const ROW_RULES: Partial<Record<ResourceKind, RowRules>> = {
-  accounts: { edit: () => false, toggle: (_route, row, user) => !isOwnAccount(row, user) && !rowHasPrimaryRole(row, "SUPER_ADMIN") },
+  accounts: { edit: () => false, toggle: (_route, row, user) => !isOwnAccount(row, user) && !rowHasRole(row, "SUPER_ADMIN") },
   leaders: { edit: () => false },
+  // Khóa giáo phận và khóa giáo hạt cùng hiện trong danh sách của tài khoản nhiều vai trò: chỉ sửa/bật tắt khóa thuộc đúng cấp mình.
+  courses: {
+    edit: (_route, row, user) => canActOnCourse(user, row, "update"),
+    toggle: (_route, row, user) => canActOnCourse(user, row, "toggle"),
+  },
   positions: {
     edit: (route, row, user) => hasScopedRowPermission(route, user, "update", row),
     toggle: (route, row, user) => hasScopedRowPermission(route, user, "toggle", row),

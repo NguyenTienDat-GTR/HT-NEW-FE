@@ -11,6 +11,7 @@ import { canUseAction, hasPermissionPrefix } from "@/lib/auth/permissions";
 import { Avatar, columnLabels, ResourceCell } from "./resource-format";
 import { useEmbeddedResource, resourceActionHref, withReturnTo } from "./embedded-resource-context";
 import { fillRoute, getResourceId, isAwaitingApproval, isReapprovable } from "./resource-actions";
+import { canActOnCourse, type CourseAction } from "@/modules/training-courses/course-permissions";
 import { canEditRow, canResetPasswordRow, canToggleRow, isPermanentlyRevokedAssignment } from "./resource-row-permissions";
 import type { ScoreEntry, ScoreNotes } from "./score-entry";
 import { ScoreNoteAction } from "./score-note-action";
@@ -265,7 +266,7 @@ export function RowActions({ route, row, onExportRow, exportingRow, scoreNotes }
     // BE tính theo phân cấp: quyền do super-admin/hệ thống cấp, vai trò/tài khoản của chính mình hoặc cấp cao hơn thì không thu hồi được.
     row.revocable === true;
   // Tab chấm điểm nhập điểm trực tiếp trên bảng nên không cần nút chấm điểm ở từng hàng.
-  const canScore = canUseAction(user, route.actions?.score) && route.moduleName !== "training.score" && !courseDisabled;
+  const canScore = canUseAction(user, route.actions?.score) && embedded?.canScoreCourse !== false && ownsRowCourse(route, row, user, "score") && route.moduleName !== "training.score" && !courseDisabled;
   // Hồ sơ tham dự chỉ duyệt/từ chối khi đang chờ duyệt.
   const awaitingApproval = (route.kind !== "participations" && route.kind !== "certificates") || isAwaitingApproval(row);
   // Chỉ người gửi đăng ký mới thu hồi được, và chỉ khi hồ sơ còn chờ duyệt (chưa duyệt hoặc từ chối).
@@ -274,12 +275,12 @@ export function RowActions({ route, row, onExportRow, exportingRow, scoreNotes }
   // Khóa đã kết thúc thì không duyệt/từ chối chứng nhận được, chỉ xuất PDF.
   const courseFinished = (route.kind === "certificates" || route.kind === "participations") && row.courseFinished === true && row.coursePast !== true;
   const reapprovable = route.kind === "participations" && isReapprovable(row);
-  const canApprove = canUseAction(user, route.actions?.approve) && (awaitingApproval || reapprovable) && !courseFinished && !courseDisabled;
+  const canApprove = canUseAction(user, route.actions?.approve) && embedded?.canApproveCourse !== false && ownsRowCourse(route, row, user, "approve") && (awaitingApproval || reapprovable) && !courseFinished && !courseDisabled;
   // Hồ sơ đã có chứng nhận được duyệt thì không xóa được.
   // Khóa quá khứ: xóa học viên nhập nhầm bằng quyền create_past (endpoint riêng của khóa quá khứ).
   const canRemovePast = route.kind === "participations" && row.coursePast === true && hasPermissionPrefix(user, "training.course.create_past.");
-  const canRemove = (canRemovePast || canUseAction(user, route.actions?.remove)) && row.certificateApprovalStatus !== "APPROVED" && row.approvalStatus !== "REJECTED" && !courseFinished && !courseDisabled;
-  const canReject = canUseAction(user, route.actions?.reject) && awaitingApproval && !courseFinished && !courseDisabled;
+  const canRemove = (canRemovePast || (canUseAction(user, route.actions?.remove) && embedded?.canApproveCourse !== false && ownsRowCourse(route, row, user, "approve"))) && row.certificateApprovalStatus !== "APPROVED" && row.approvalStatus !== "REJECTED" && !courseFinished && !courseDisabled;
+  const canReject = canUseAction(user, route.actions?.reject) && embedded?.canApproveCourse !== false && ownsRowCourse(route, row, user, "approve") && awaitingApproval && !courseFinished && !courseDisabled;
   // Chỉ thu hồi được chứng nhận đã duyệt (kể cả khi khóa đã kết thúc).
   const canRevoke = canUseAction(user, route.actions?.revoke) && route.kind === "certificates" && row.approvalStatus === "APPROVED" && !courseDisabled;
   // Cấp lại chứng nhận bị thu hồi vì lý do khác; chứng nhận thu hồi do khóa bị vô hiệu hóa chỉ mở lại khi bật lại khóa.
@@ -448,4 +449,12 @@ function LeaderIdentity({ row }: { row: Record<string, unknown> }) {
       </div>
     </div>
   );
+}
+
+// Danh sách hồ sơ của tài khoản nhiều vai trò gồm cả hồ sơ của giáo xứ mình trong khóa thuộc cấp khác: chỉ duyệt/chấm điểm
+// hồ sơ của khóa thuộc đúng cấp quản lý của tài khoản (BE cũng kiểm tra). Dòng không mang thông tin chủ khóa thì theo quyền chung.
+export function ownsRowCourse(route: RouteConfig, row: Record<string, unknown>, user: AuthUser | null, action: CourseAction) {
+  if (route.kind !== "participations") return true;
+  if (!row.managementUnitType && !row.courseDioceseId && !row.courseDeaneryId) return true;
+  return canActOnCourse(user, { managementUnitType: row.managementUnitType, dioceseId: row.courseDioceseId, deaneryId: row.courseDeaneryId }, action);
 }
