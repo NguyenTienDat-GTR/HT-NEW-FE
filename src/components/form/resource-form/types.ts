@@ -34,6 +34,8 @@ export type FormFieldSpec = {
   optionValue?: string;
   optionLabel?: string;
   optionLabelFields?: string[];
+  // Tự dựng nhãn từ cả dòng dữ liệu (ví dụ ghép loại đơn vị + tên + giáo hạt); ưu tiên hơn optionLabelFields.
+  optionLabelBuilder?: (row: Record<string, unknown>) => string;
   optionSearchParam?: string;
   // Server đã lọc kết quả theo từ khóa tìm (optionSearchParam), không lọc lại ở trình duyệt theo nhãn hiển thị.
   serverFiltered?: boolean;

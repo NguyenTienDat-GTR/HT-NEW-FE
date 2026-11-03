@@ -14,7 +14,7 @@ export function resolveRouteForUser(route: RouteConfig, user: AuthUser | null): 
     if (route.kind !== "accounts") return route;
     return {
       ...route,
-      filterLabels: ["Vai trò", "Scope", "Trạng thái"],
+      filterLabels: ["Vai trò", "Phạm vi", "Trạng thái"],
       filters: accountFiltersForUser(user),
     };
   }

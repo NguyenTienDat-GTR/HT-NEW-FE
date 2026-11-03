@@ -23,6 +23,9 @@ const accessEvents = new Set([
   "ACCOUNT_PERMISSION_EXPIRED",
 ]);
 
+/** Huynh trưởng được chuyển sang giáo xứ khác (báo cho tài khoản xem hồ sơ của giáo xứ nguồn / đích). */
+const LEADER_TRANSFERRED_EVENT = "LEADER_PARISH_TRANSFERRED";
+
 /** Trang xem quyền hiện có của chính tài khoản. */
 export const MY_PERMISSIONS_PATH = "/my-permissions";
 
@@ -56,7 +59,7 @@ export function notificationGroupOf(item: NotificationItem): NotificationGroupKe
   if (type.startsWith("training.certificate.")) return "certificate";
   if (type.startsWith("training.")) return "training";
   if (accessEvents.has(type)) return "access";
-  if (type === "UNIT_STATUS_TOGGLED") return "unit";
+  if (type === "UNIT_STATUS_TOGGLED" || type === LEADER_TRANSFERRED_EVENT) return "unit";
   return "other";
 }
 
@@ -92,6 +95,7 @@ export function notificationHref(item: NotificationItem): string {
   if (type.startsWith("training.cross_deanery.")) return "/training/cross-deanery";
   if (type.startsWith("training.")) return item.courseCode ? `/training/courses/${encodeURIComponent(item.courseCode)}` : "/training/courses";
   if (accessRoutes[type]) return accessRoutes[type];
+  if (type === LEADER_TRANSFERRED_EVENT) return "/leaders/profiles";
   if (type === "UNIT_STATUS_TOGGLED" && item.senderUnitType) {
     const base = unitRoutes[item.senderUnitType];
     return item.senderUnitId ? `${base}?detail=${encodeURIComponent(item.senderUnitId)}` : base;

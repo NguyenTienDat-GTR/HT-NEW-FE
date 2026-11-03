@@ -286,7 +286,7 @@ function OptionControl({
     enabled: Boolean(field.optionsEndpoint),
     queryFn: () => apiFetch<PageResponse<Record<string, unknown>> | Record<string, unknown>[]>(optionEndpointWithPaging(field.optionsEndpoint, field.optionSearchParam, remoteSearch)),
   });
-  const apiOptions = rowsFromResponse(query.data).map((row) => optionFromRow(row, field.optionValue, field.optionLabel, field.optionLabelFields));
+  const apiOptions = rowsFromResponse(query.data).map((row) => optionFromRow(row, field.optionValue, field.optionLabel, field.optionLabelFields, field.optionLabelBuilder));
   const excludedValues = new Set([...(field.excludeOptionValues ?? []), ...(field.excludeOptionValuesWhen?.(user ?? null) ?? [])]);
   const filteredOptions = (field.options ?? apiOptions).filter((option) => !excludedValues.has(option.value));
   const currentValue = !multiple && !checkboxList ? String(value ?? "") : "";

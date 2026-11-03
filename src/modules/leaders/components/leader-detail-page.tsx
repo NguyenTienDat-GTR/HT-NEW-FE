@@ -20,8 +20,9 @@ import { cn } from "@/lib/utils";
 import { formatLeaderLevel } from "@/components/common/resource/resource-format";
 import { resourceKey } from "@/lib/api/query-keys";
 import { actorLabel, formatDate, genderLabel, type LeaderDetail, type RankHistoryRow } from "./leader-detail-utils";
-import { emptyLeaderEditValues, leaderEditableFields, toLeaderUpdatePayload, validateLeaderEdit, valuesFromLeader, type LeaderEditValues } from "./leader-edit";
+import { canTransferLeader, emptyLeaderEditValues, leaderEditableFields, toLeaderUpdatePayload, validateLeaderEdit, valuesFromLeader, type LeaderEditValues } from "./leader-edit";
 import { SectionCard, ProfileField, MetaText, HeaderFact, LevelBadge, StatusBadge, LeaderDetailSkeleton } from "./leader-detail-ui";
+import { LeaderTransferDialog } from "./leader-transfer-dialog";
 import { CourseTab, CertificateTab, AccountTab, RankHistoryPanel } from "./leader-detail-tabs";
 
 type LeaderDetailPageProps = {
@@ -133,6 +134,19 @@ export function LeaderDetailPage({id, route}: LeaderDetailPageProps) {
                         </div>
                     </div>
 
+                    <div className="flex flex-wrap gap-2 self-start lg:self-center">
+                    {canTransferLeader(user) && activeTab === "profile" ? (
+                        <LeaderTransferDialog
+                            endpoint={route.endpoint ?? "/leaders"}
+                            leader={leader}
+                            leaderId={id}
+                            onTransferred={(updated) => {
+                                queryClient.setQueryData(["leader-detail-page", id], updated);
+                                setEditValues(valuesFromLeader(updated));
+                            }}
+                        />
+                    ) : null}
+
                     {canEdit && activeTab === "profile" && !editingProfile ? (
                         <Button
                             className="self-start lg:self-center"
@@ -148,6 +162,7 @@ export function LeaderDetailPage({id, route}: LeaderDetailPageProps) {
                             Sửa thông tin hồ sơ
                         </Button>
                     ) : null}
+                    </div>
                 </div>
 
                 <div className="flex max-w-full gap-1 overflow-x-auto border-t border-border px-3 lg:px-4">
@@ -285,15 +300,7 @@ function ProfileTab({
                         onChange={(value) => onChange("email", value)}
                         value={leader.email}
                     />
-                    <ProfileField
-                        editing={editing}
-                        error={errors.parishId}
-                        editValue={values.parishId}
-                        field={leaderEditableFields.parishId}
-                        label="Giáo xứ / giáo họ / giáo điểm"
-                        onChange={(value) => onChange("parishId", value)}
-                        value={leader.parishName}
-                    />
+                    <ProfileField label="Giáo xứ / giáo họ / giáo điểm" value={leader.parishName}/>
                     <ProfileField label="Giáo hạt" value={leader.deaneryName}/>
                     <ProfileField label="Cấp huynh trưởng"
                                   value={leader.leaderLevel ? formatLeaderLevel(leader.leaderLevel) : undefined}/>
