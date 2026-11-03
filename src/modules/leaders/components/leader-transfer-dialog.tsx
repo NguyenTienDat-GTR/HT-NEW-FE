@@ -13,6 +13,7 @@ import { resourceKey } from "@/lib/api/query-keys";
 import { serializeBaseSearch } from "@/lib/api/search";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
 import { cn } from "@/lib/utils";
+import { withUnitLabel } from "../parish-option-label";
 import type { LeaderDetail } from "./leader-detail-utils";
 
 type ParishRow = {
@@ -195,8 +196,7 @@ function TransferContent({ leader, leaderId, endpoint, onTransferred, onClose }:
                   </td>
                   <td className="py-2">{page * PAGE_SIZE + index + 1}</td>
                   <td className="py-2 font-semibold text-foreground">
-                    {row.unitTypeLabel ? `${row.unitTypeLabel} ` : ""}
-                    {row.name ?? "—"}
+                    {withUnitLabel(row.unitTypeLabel, row.name) || "—"}
                     {isCurrent ? <span className="ml-2 text-xs font-normal text-muted">(đơn vị hiện tại)</span> : null}
                   </td>
                   <td className="py-2">{row.parentParishName ?? "—"}</td>
@@ -221,7 +221,7 @@ function TransferContent({ leader, leaderId, endpoint, onTransferred, onClose }:
           </Button>
         </div>
         <div className="flex items-center gap-3">
-          {chosen ? <span className="hidden text-sm text-muted sm:inline">Đã chọn: {chosen.unitTypeLabel ? `${chosen.unitTypeLabel} ` : ""}{chosen.name}</span> : null}
+          {chosen ? <span className="hidden text-sm text-muted sm:inline">Đã chọn: {withUnitLabel(chosen.unitTypeLabel, chosen.name)}</span> : null}
           <Button onClick={onClose} type="button" variant="outline">
             Hủy
           </Button>
