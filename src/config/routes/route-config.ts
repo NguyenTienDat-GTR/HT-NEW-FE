@@ -349,10 +349,10 @@ function inferRouteFilters(config: RouteConfig): RouteFilterConfig[] {
       filters.push({ key: "roleCode", label: "Mã vai trò", type: "text", placeholder: "Lọc theo mã vai trò" });
       break;
     case "permissions":
-      filters.push({ key: "module.moduleCode", label: "Module", type: "text", placeholder: "Lọc theo module" });
-      filters.push({ key: "resource.resourceCode", label: "Resource", type: "text", placeholder: "Lọc theo resource" });
-      filters.push({ key: "action.actionCode", label: "Action", type: "text", placeholder: "Lọc theo action" });
-      filters.push({ key: "scope.scopeCode", label: "Scope", type: "text", placeholder: "Lọc theo scope" });
+      filters.push({ key: "module.moduleCode", label: "Phân hệ", type: "text", placeholder: "Lọc theo phân hệ" });
+      filters.push({ key: "resource.resourceCode", label: "Đối tượng", type: "text", placeholder: "Lọc theo đối tượng" });
+      filters.push({ key: "action.actionCode", label: "Thao tác", type: "text", placeholder: "Lọc theo thao tác" });
+      filters.push({ key: "scope.scopeCode", label: "Phạm vi", type: "text", placeholder: "Lọc theo phạm vi" });
       break;
     case "account-roles":
       filters.push({ key: "role.roleCode", label: "Vai trò", type: "text", placeholder: "Lọc theo mã vai trò" });

@@ -110,7 +110,7 @@ export const columnLabels: Record<string, string> = {
   registrationStatus: "Trạng thái đăng ký",
   organizingStatus: "Trạng thái tổ chức",
   includeInFinal: "Tính điểm tổng kết",
-  moduleCode: "Module",
+  moduleCode: "Phân hệ",
   name: "Tên",
   parishId: "Giáo xứ / giáo họ / giáo điểm",
   parishCount: "Số giáo xứ",

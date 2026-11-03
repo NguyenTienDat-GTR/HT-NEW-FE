@@ -20,12 +20,15 @@ function managedUnitTypes(user: AuthUser | null, resource: ManagedResource): ("D
   return result;
 }
 
+// Dropdown loại khóa khi tạo/sửa khóa chỉ liệt kê loại đang hoạt động (BE từ chối loại đã tắt).
+const ACTIVE_COURSE_TYPES = "/training/course-types?status=true";
+
 // Endpoint danh sách loại khóa chỉ gồm các loại thuộc cấp quản lý của tài khoản (không lẫn loại khóa của cấp khác).
 function courseTypesInScope(resource: ManagedResource) {
   return (user: AuthUser | null) => {
     const types = managedUnitTypes(user, resource);
     if (types.length !== 1) return undefined;
-    return withFilters("/training/course-types", { managementUnitType: types[0] });
+    return withFilters(ACTIVE_COURSE_TYPES, { managementUnitType: types[0] });
   };
 }
 
@@ -156,7 +159,7 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
         label: "Loại khóa",
         type: "select",
         required: true,
-        optionsEndpoint: "/training/course-types",
+        optionsEndpoint: ACTIVE_COURSE_TYPES,
         optionsEndpointForUser: courseTypesInScope("course"),
         optionValue: "typeCode",
         optionLabel: "typeName",

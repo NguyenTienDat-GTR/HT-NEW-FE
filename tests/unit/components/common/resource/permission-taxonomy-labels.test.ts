@@ -21,4 +21,18 @@ describe("permission taxonomy labels", () => {
     expect(permissionTaxonomyKindFromFilter("action.actionCode", "actions")).toBe("action");
     expect(permissionTaxonomyKindFromFilter("scope.scopeCode", "scopes")).toBe("scope");
   });
+
+  it("labels every taxonomy code seeded by the backend in Vietnamese", () => {
+    const seeded = {
+      module: ["analytics", "auth", "organization", "system", "training"],
+      resource: ["account", "account_permission", "account_role", "attendance", "audit_log", "badge_config", "certificate", "certificate_config", "course", "course_type", "dashboard", "deanery", "diocese", "executive_board_assignment", "leader", "leader_certificate", "leader_level", "parish", "participation", "permission", "position", "requirement", "role", "role_permission", "score_formula", "session"],
+      action: ["approve", "assign", "create", "create_past", "cross_approve", "delete", "finish", "lock", "manage", "manage_site_subdomain", "read", "reissue", "reset_password", "revoke", "scan", "score", "submit", "toggle", "transfer", "update"],
+      scope: ["all", "deanery", "diocese", "parish"],
+    } as const;
+    for (const [kind, codes] of Object.entries(seeded)) {
+      for (const code of codes) {
+        expect(formatPermissionTaxonomyValue(kind as "module", code), `${kind}:${code}`).not.toBe(code);
+      }
+    }
+  });
 });

@@ -1,5 +1,7 @@
 import type {FormFieldSpec} from "@/components/form/resource-form/types";
 import type {LeaderDetail} from "./leader-detail-utils";
+import type {AuthUser} from "@/lib/auth/auth-store";
+import {hasAnyPermission} from "@/lib/auth/permissions";
 
 export type LeaderEditValues = {
     holyName: string;
@@ -47,6 +49,11 @@ export const leaderEditableFields = {
         optionLabelFields: ["name", "parentParishName"],
     },
 } satisfies Record<string, FormFieldSpec>;
+
+// Đổi giáo xứ của huynh trưởng là quyền riêng, tách khỏi quyền chỉnh sửa hồ sơ.
+export function canTransferLeader(user: AuthUser | null | undefined) {
+    return hasAnyPermission(user, ["organization.leader.transfer.diocese", "organization.leader.transfer.deanery"]);
+}
 
 export function valuesFromLeader(leader: LeaderDetail): LeaderEditValues {
     return {
