@@ -8,19 +8,18 @@ describe("leader edit mappers", () => {
     expect(values).toEqual({ ...emptyLeaderEditValues, holyName: "Giuse", email: "a@b.c", gender: "NAM" });
   });
 
-  it("requires holy name, email, gender and parish", () => {
-    expect(Object.keys(validateLeaderEdit(emptyLeaderEditValues)).sort()).toEqual(["email", "gender", "holyName", "parishId"]);
-    expect(validateLeaderEdit({ ...emptyLeaderEditValues, holyName: "G", email: "e", gender: "NU", parishId: "p" })).toEqual({});
+  it("requires holy name, email and gender (parish is changed via the separate transfer action)", () => {
+    expect(Object.keys(validateLeaderEdit(emptyLeaderEditValues)).sort()).toEqual(["email", "gender", "holyName"]);
+    expect(validateLeaderEdit({ ...emptyLeaderEditValues, holyName: "G", email: "e", gender: "NU" })).toEqual({});
   });
 
   it("clears the phone number when blank and only sends a new avatar asset id", () => {
-    const base = { ...emptyLeaderEditValues, holyName: " Giuse ", email: " a@b.c ", gender: "NAM", parishId: "p1" };
-    expect(toLeaderUpdatePayload(base)).toEqual({ holyName: "Giuse", email: "a@b.c", gender: "NAM", parishId: "p1", clearFields: ["phoneNumber"] });
+    const base = { ...emptyLeaderEditValues, holyName: " Giuse ", email: " a@b.c ", gender: "NAM" };
+    expect(toLeaderUpdatePayload(base)).toEqual({ holyName: "Giuse", email: "a@b.c", gender: "NAM", clearFields: ["phoneNumber"] });
     expect(toLeaderUpdatePayload({ ...base, phoneNumber: " 090 ", imageAssetId: "img-1", imageUrl: "http://x" })).toEqual({
       holyName: "Giuse",
       email: "a@b.c",
       gender: "NAM",
-      parishId: "p1",
       phoneNumber: "090",
       imageAssetId: "img-1",
     });

@@ -1,12 +1,11 @@
-// Nhãn trong dropdown chọn đơn vị cơ sở: luôn ghi rõ loại đơn vị và giáo hạt, ví dụ
-// "Giáo xứ A - Giáo hạt X" hoặc "Giáo họ B (thuộc Giáo xứ A) - Giáo hạt X".
+// Nhãn trong dropdown chọn đơn vị cơ sở: giáo xứ chỉ hiện tên; giáo họ / giáo điểm thêm nhãn loại đứng trước
+// và giáo xứ cha đứng sau, ví dụ "Giáo họ Bà Lụa - Phú Cường".
 export function parishOptionLabel(row: Record<string, unknown>): string {
   const text = (value: unknown) => (typeof value === "string" ? value.trim() : "");
   const name = text(row.name);
-  const unitLabel = text(row.unitTypeLabel) || "Giáo xứ";
   const parent = text(row.parentParishName);
-  const deanery = text(row.deaneryName);
-  const unit = `${unitLabel} ${name}`.trim();
-  const withParent = parent ? `${unit} (thuộc Giáo xứ ${parent})` : unit;
-  return deanery ? `${withParent} - Giáo hạt ${deanery}` : withParent;
+  const unitLabel = text(row.unitTypeLabel);
+  const isSubUnit = Boolean(parent) || (unitLabel !== "" && unitLabel !== "Giáo xứ");
+  if (!isSubUnit) return name;
+  return [`${unitLabel || "Giáo họ"} ${name}`.trim(), parent].filter(Boolean).join(" - ");
 }
