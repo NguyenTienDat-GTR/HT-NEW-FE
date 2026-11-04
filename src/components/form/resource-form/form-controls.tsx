@@ -113,6 +113,50 @@ const scoreComponentsControl: ControlRenderer = ({ value, values, readonly, onCh
     />;
 };
 
+type AccountLeaderInfo = { leaderHolyName?: string | null; leaderFullName?: string | null; parishName?: string | null; deaneryName?: string | null };
+
+// Thông tin huynh trưởng gắn với tài khoản đang chọn: tên thánh, họ tên, giáo xứ, giáo hạt (xuống dòng, không cắt chữ).
+const accountLeaderInfoControl: ControlRenderer = ({ values }) => {
+  const username = typeof values?.username === "string" ? values.username.trim() : "";
+  return <AccountLeaderInfoCard username={username} />;
+};
+
+function AccountLeaderInfoCard({ username }: { username: string }) {
+  const query = useQuery({
+    queryKey: ["account-leader-info", username],
+    enabled: Boolean(username),
+    queryFn: async () => {
+      const response = await apiFetch<AccountLeaderInfo>(`/system/accounts/${encodeURIComponent(username)}`);
+      return response;
+    },
+  });
+  const clean = (item?: string | null) => (item && item.trim() ? item.trim() : "");
+  const data = query.data;
+  const rows: Array<[string, string]> = [
+    ["Tên thánh", clean(data?.leaderHolyName)],
+    ["Họ và tên", clean(data?.leaderFullName)],
+    ["Giáo xứ", clean(data?.parishName)],
+    ["Giáo hạt", clean(data?.deaneryName)],
+  ];
+  return (
+    <div className="rounded-[8px] border border-border bg-surface-1 p-3 text-sm">
+      {!username ? <p className="text-muted">Chọn tài khoản để xem huynh trưởng gắn với tài khoản.</p> : null}
+      {username && query.isLoading ? <p className="text-muted">Đang tải thông tin...</p> : null}
+      {username && !query.isLoading && !rows.some(([, item]) => item) ? <p className="text-muted">Tài khoản này chưa gắn với huynh trưởng.</p> : null}
+      {username && data && rows.some(([, item]) => item) ? (
+        <dl className="grid gap-x-4 gap-y-2 sm:grid-cols-2">
+          {rows.map(([label, item]) => (
+            <div className="min-w-0" key={label}>
+              <dt className="text-xs font-medium text-muted">{label}</dt>
+              <dd className="break-words font-semibold text-foreground">{item || "—"}</dd>
+            </div>
+          ))}
+        </dl>
+      ) : null}
+    </div>
+  );
+}
+
 const registrationListControl: ControlRenderer = ({ field, value, values, readonly, onChange }) => {
   if (!field.registrationList) return undefined;
   const config = field.registrationList;
@@ -193,6 +237,7 @@ const CONTROL_RENDERERS: Record<string, ControlRenderer> = {
   textarea: textareaControl,
   "score-components": scoreComponentsControl,
   "registration-list": registrationListControl,
+  "account-leader-info": accountLeaderInfoControl,
   select: optionControl,
   multiselect: optionControl,
   "checkbox-list": optionControl,
@@ -455,7 +500,7 @@ function SearchableSelect({
   }, [localFilter, options, search]);
 
   return (
-    <div className="relative">
+    <div className={cn("relative", open && "z-40")}>
       <Input
         className="h-10 w-full min-w-0"
         title={selected?.label}
@@ -477,7 +522,7 @@ function SearchableSelect({
         value={open ? search : selected?.label ?? ""}
       />
       {open && !readonly ? (
-        <div className="absolute z-30 mt-1 max-h-80 w-full overflow-y-auto rounded-[8px] border border-border bg-white p-1 shadow-lg">
+        <div className="absolute z-50 mt-1 max-h-80 w-full overflow-y-auto rounded-[8px] border border-border bg-white p-1 shadow-lg">
           {filteredOptions.length === 0 ? <p className="px-3 py-2 text-sm text-muted">Không có dữ liệu phù hợp</p> : null}
           {filteredOptions.map((option) => (
             <button
@@ -570,7 +615,8 @@ function CheckboxList({
   }
 
   // Đã chạm giới hạn số lựa chọn: các mục chưa tick bị khóa cho tới khi bỏ bớt.
-  const limitReached = maxSelect !== undefined && selected.size >= maxSelect;
+  const assignedCount = options.filter((option) => option.assigned).length;
+  const limitReached = maxSelect !== undefined && selected.size + assignedCount >= maxSelect;
 
   function toggle(valueToToggle: string) {
     const next = new Set(selected);
@@ -583,7 +629,7 @@ function CheckboxList({
     const next = new Set(selected);
     groupOptions.filter((option) => !option.disabled).forEach((option) => {
       if (checked) {
-        if (maxSelect === undefined || next.size < maxSelect) next.add(option.value);
+        if (maxSelect === undefined || next.size + assignedCount < maxSelect) next.add(option.value);
       } else next.delete(option.value);
     });
     setSelected(next);
@@ -593,7 +639,7 @@ function CheckboxList({
     <div className="rounded-[8px] border border-border bg-white shadow-sm">
       <div className="flex flex-col gap-2 border-b border-border p-2 sm:flex-row sm:items-center sm:justify-between">
         <Input className="h-10" disabled={readonly} onChange={(event) => setSearch(event.target.value)} placeholder="Tìm theo mã hoặc tên" value={search} />
-        <span className="shrink-0 rounded-[8px] bg-primary/8 px-2.5 py-1.5 text-xs font-semibold text-primary">{selected.size}{maxSelect !== undefined ? `/${maxSelect}` : ""} đã chọn</span>
+        <span className="shrink-0 rounded-[8px] bg-primary/8 px-2.5 py-1.5 text-xs font-semibold text-primary">{selected.size + assignedCount}{maxSelect !== undefined ? `/${maxSelect}` : ""} {assignedCount > 0 ? "đã gán / chọn" : "đã chọn"}</span>
       </div>
       {hasTaxonomy ? (
         <div className="flex flex-wrap items-center gap-2 border-b border-border p-2">
@@ -652,14 +698,14 @@ function CheckboxList({
                   <div
                     className={cn(
                       "flex min-h-11 items-start gap-2.5 rounded-[8px] border px-2.5 py-1.5 text-xs transition-colors",
-                      selected.has(option.value) ? "border-primary bg-primary/8 text-primary" : "border-border bg-white text-foreground",
+                      selected.has(option.value) || option.assigned ? "border-primary bg-primary/8 text-primary" : "border-border bg-white text-foreground",
                       (readonly || option.disabled) && "cursor-not-allowed opacity-60",
                     )}
                     key={option.value}
                   >
                     <label className="flex min-w-0 flex-1 cursor-pointer items-start gap-2.5">
                       <input
-                        checked={selected.has(option.value)}
+                        checked={selected.has(option.value) || Boolean(option.assigned)}
                         className="mt-1 h-4 w-4 accent-primary"
                         disabled={readonly || option.disabled || (limitReached && !selected.has(option.value))}
                         name={fieldName}

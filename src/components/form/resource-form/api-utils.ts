@@ -29,8 +29,9 @@ export function optionFromRow(row: Record<string, unknown>, valueKey = "id", lab
       : moduleCode
         ? formatPermissionTaxonomyValue("module", moduleCode)
         : undefined,
-    disabled: row.disabled === true,
-    disabledReason: typeof row.disabledReason === "string" ? row.disabledReason : undefined,
+    disabled: row.disabled === true || row.assigned === true,
+    disabledReason: row.assigned === true ? "Đã gán cho tài khoản" : typeof row.disabledReason === "string" ? row.disabledReason : undefined,
+    assigned: row.assigned === true ? true : undefined,
     details: accountDetails(row),
     taxonomy: moduleCode || resourceCode || actionCode || scopeCode ? { module: moduleCode, resource: resourceCode, action: actionCode, scope: scopeCode } : undefined,
   };

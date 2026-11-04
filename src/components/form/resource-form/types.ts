@@ -8,13 +8,15 @@ export type Option = {
   group?: string;
   disabled?: boolean;
   disabledReason?: string;
+  // Mục đã được gán sẵn (vd. vai trò tài khoản đã có): hiển thị đã tick, không đổi được và vẫn tính vào giới hạn chọn.
+  assigned?: boolean;
   // Các dòng thông tin phụ hiển thị dưới nhãn (ví dụ vai trò, huynh trưởng, giáo xứ, giáo hạt của tài khoản).
   details?: string[];
   // Phân loại quyền để lọc trong danh sách tick quyền.
   taxonomy?: { module?: string; resource?: string; action?: string; scope?: string };
 };
 
-export type FieldType = "text" | "email" | "url" | "image" | "number" | "date" | "datetime" | "textarea" | "select" | "multiselect" | "checkbox-list" | "radio" | "switch" | "registration-list" | "score-components";
+export type FieldType = "text" | "email" | "url" | "image" | "number" | "date" | "datetime" | "textarea" | "select" | "multiselect" | "checkbox-list" | "radio" | "switch" | "registration-list" | "score-components" | "account-leader-info";
 
 export type FormFieldSpec = {
   name: string;
