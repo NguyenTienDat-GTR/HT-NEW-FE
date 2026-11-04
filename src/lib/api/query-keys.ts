@@ -60,7 +60,13 @@ function isMyProfileQuery(queryKey: readonly unknown[]) {
  * thu hồi / cấp lại chứng nhận...). Một thao tác thường đổi nhiều màn cùng lúc (khóa, hồ sơ tham dự, chứng nhận, cấp độ
  * huynh trưởng, thống kê) nên làm mới theo nhóm thay vì từng key: query đang hiển thị tải lại ngay, query khác bị đánh dấu cũ
  * và tải lại khi mở, không còn hiện dữ liệu cũ trong `staleTime`.
+ *
+ * Không chờ tải lại xong: thao tác báo xong ngay (toast, đóng hộp thoại), dữ liệu cập nhật ở nền. Không hủy lượt tải đang chạy
+ * (`cancelRefetch: false`): nhiều lần làm mới liền nhau dùng chung một lượt tải thay vì hủy rồi gửi lại từ đầu.
  */
-export function invalidateDataQueries(queryClient: QueryClient) {
-  return queryClient.invalidateQueries({ predicate: (query) => DATA_QUERY_ROOTS.has(query.queryKey[0]) || isMyProfileQuery(query.queryKey) });
+export function invalidateDataQueries(queryClient: QueryClient): Promise<void> {
+  void queryClient
+    .invalidateQueries({ predicate: (query) => DATA_QUERY_ROOTS.has(query.queryKey[0]) || isMyProfileQuery(query.queryKey) }, { cancelRefetch: false })
+    .catch(() => undefined);
+  return Promise.resolve();
 }
