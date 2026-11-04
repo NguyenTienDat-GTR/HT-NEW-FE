@@ -143,6 +143,9 @@ export type LayoutItem = {
   bold: boolean;
   italic: boolean;
   underline: boolean;
+  // Khóa: không kéo / đổi cỡ được trong trình soạn (vẫn in bình thường). Ẩn: không hiện trong trình soạn xem trước và không in.
+  locked?: boolean;
+  hidden?: boolean;
 };
 
 export type CourseTypeRef = { typeCode: string; typeName: string };
@@ -161,6 +164,9 @@ export type ConfigResponse = {
   // URL ảnh nền đã ký (hết hạn sau một thời gian) và id asset để gửi lại khi lưu.
   backgroundImage?: string;
   backgroundAssetId?: string | null;
+  // Kích thước (px) của ảnh nền gốc dùng để in (không phải ảnh xem trước); null với ảnh cũ chưa chuyển lên cloud.
+  backgroundWidthPx?: number | null;
+  backgroundHeightPx?: number | null;
   fieldLayout?: LayoutItem[];
   usedByCourseTypes: CourseTypeRef[];
   usedByCount: number;
@@ -240,6 +246,8 @@ export function normalizeItem(item: LayoutItem): LayoutItem {
     bold: Boolean(item.bold),
     italic: Boolean(item.italic),
     underline: Boolean(item.underline),
+    ...(item.locked ? { locked: true } : {}),
+    ...(item.hidden ? { hidden: true } : {}),
   };
 }
 
@@ -275,8 +283,10 @@ export function clamp(value: number, min: number, max: number) {
 }
 
 // Giá trị mẫu để xem trước.
-export function sampleValue(key: string | undefined, fieldLabel: (key?: string) => string) {
-  return (key && CERTIFICATE_SAMPLE_VALUES[key]) || fieldLabel(key);
+export function sampleValue(key: string | undefined, fieldLabel: (key?: string) => string, values: Record<string, string> = CERTIFICATE_SAMPLE_VALUES) {
+  // Giá trị mẫu rỗng có chủ ý (ví dụ giáo họ của huynh trưởng thuộc giáo xứ) thì để trống, không hiện nhãn trường.
+  if (key && Object.prototype.hasOwnProperty.call(values, key)) return values[key];
+  return fieldLabel(key);
 }
 
 
@@ -284,4 +294,10 @@ export function sampleValue(key: string | undefined, fieldLabel: (key?: string) 
 export function paperHeightMm(paperSize: string, orientation: string): number {
   const mm = PAPER_MM[paperSize] ?? PAPER_MM.A4;
   return orientation === "PORTRAIT" ? mm.h : mm.w;
+}
+
+/** Chiều rộng trang (mm) theo khổ giấy và hướng in. */
+export function paperWidthMm(paperSize: string, orientation: string): number {
+  const mm = PAPER_MM[paperSize] ?? PAPER_MM.A4;
+  return orientation === "PORTRAIT" ? mm.w : mm.h;
 }

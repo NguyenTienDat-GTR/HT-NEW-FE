@@ -41,6 +41,11 @@ export type BadgeConfig = {
   backBackground?: string | null;
   frontBackgroundAssetId?: string | null;
   backBackgroundAssetId?: string | null;
+  // Kích thước (px) của ảnh nền gốc dùng để in (không phải ảnh xem trước).
+  frontBackgroundWidthPx?: number | null;
+  frontBackgroundHeightPx?: number | null;
+  backBackgroundWidthPx?: number | null;
+  backBackgroundHeightPx?: number | null;
   frontLayout?: LayoutItem[] | null;
   backLayout?: LayoutItem[] | null;
   updatedAt?: string | null;
@@ -183,6 +188,7 @@ export function validateBadgeForm(form: BadgeForm): string[] {
 }
 
 // Giá trị mẫu của trường thẻ để xem trước.
-export function sampleBadgeValue(key: string | undefined, fallback: string): string {
-  return (key && BADGE_SAMPLE_VALUES[key]) || fallback;
+export function sampleBadgeValue(key: string | undefined, fallback: string, values: Record<string, string> = BADGE_SAMPLE_VALUES): string {
+  if (key && Object.prototype.hasOwnProperty.call(values, key)) return values[key];
+  return fallback;
 }

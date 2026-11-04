@@ -181,20 +181,42 @@ describe("BadgeEditor", () => {
     const ctx = setup(blankBadgeForm());
     // Thêm trường: nhấp đúp vào trường trong danh sách (hoặc kéo thả lên thẻ).
     fireEvent.doubleClick(screen.getByText("Tên đội"));
-    fireEvent.click(screen.getByRole("button", { name: /Văn bản/ }));
-    fireEvent.click(screen.getByRole("button", { name: /Mã QR/ }));
+    fireEvent.click(screen.getByRole("button", { name: /văn bản/i }));
+    fireEvent.click(screen.getByRole("button", { name: /mã QR/i }));
     expect(ctx.form.frontLayout.map((layoutItem) => layoutItem.type)).toEqual(["FIELD", "TEXT", "QR"]);
     expect(ctx.form.frontLayout[0].fieldKey).toBe("teamName");
     expect(ctx.form.frontLayout[2].size).toBeGreaterThanOrEqual(0.05);
     expect(ctx.form.backLayout).toEqual([]);
   });
 
+  it("copies the front layout onto the back, mirrored left-to-right", () => {
+    vi.stubGlobal("ResizeObserver", class { observe() {} unobserve() {} disconnect() {} });
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    const ctx = setup({ ...blankBadgeForm(), hasBack: true, frontLayout: [item({ type: "TEXT", text: "Trái", x: 0.2, align: "left" })] });
+    const trigger = screen.getByRole("button", { name: /Sao chép mặt/ });
+    fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false });
+    fireEvent.click(trigger);
+    fireEvent.click(screen.getByText(/Chép lật gương mặt trước sang mặt sau/));
+    expect(ctx.form.backLayout).toHaveLength(1);
+    expect(ctx.form.backLayout[0]).toMatchObject({ text: "Trái", x: 0.8, align: "right" });
+    expect(ctx.form.frontLayout[0].x).toBe(0.2);
+  });
+
+  it("applies a layout template to the active side", () => {
+    vi.stubGlobal("ResizeObserver", class { observe() {} unobserve() {} disconnect() {} });
+    const ctx = setup(blankBadgeForm());
+    fireEvent.click(screen.getByRole("button", { name: /Mẫu bố cục/ }));
+    fireEvent.click(screen.getAllByRole("button", { name: "Dùng mẫu" })[0]);
+    expect(ctx.form.frontLayout.length).toBeGreaterThan(3);
+    expect(ctx.form.frontLayout.some((layoutItem) => layoutItem.type === "QR")).toBe(true);
+  });
+
   it("edits the back side separately, including text and QR", () => {
     const ctx = setup({ ...blankBadgeForm(), hasBack: true, frontLayout: [item()] });
     fireEvent.click(screen.getByRole("tab", { name: "Mặt sau" }));
     expect(screen.getByText(/Mặt sau chưa có phần tử nào/)).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: /Văn bản/ }));
-    fireEvent.click(screen.getByRole("button", { name: /Mã QR/ }));
+    fireEvent.click(screen.getByRole("button", { name: /văn bản/i }));
+    fireEvent.click(screen.getByRole("button", { name: /mã QR/i }));
     expect(ctx.form.backLayout.map((layoutItem) => layoutItem.type)).toEqual(["TEXT", "QR"]);
     expect(ctx.form.frontLayout).toHaveLength(1);
   });
@@ -213,7 +235,7 @@ describe("BadgeEditor", () => {
 
   it("read-only users get no editing toolbar and cannot open the album", () => {
     setup(blankBadgeForm(), false);
-    expect(screen.queryByRole("button", { name: /Văn bản/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /văn bản/i })).toBeNull();
     expect(screen.queryByLabelText("Thêm phần tử")).toBeNull();
     expect(screen.getByRole("button", { name: /Chọn ảnh nền \(album\)/ })).toBeDisabled();
   });
@@ -613,7 +635,7 @@ describe("leader photo element", () => {
       wrap(<BadgeEditor canEdit fields={FIELDS} form={current} onChange={onChange} />);
       return { get form() { return current; } };
     })();
-    fireEvent.click(screen.getByRole("button", { name: /Ảnh huynh trưởng/ }));
+    fireEvent.click(screen.getByRole("button", { name: /ảnh huynh trưởng/i }));
     expect(ctx.form.frontLayout).toHaveLength(1);
     expect(ctx.form.frontLayout[0]).toMatchObject({ type: "PHOTO", size: 0.5, photoRatio: "4x6" });
   });

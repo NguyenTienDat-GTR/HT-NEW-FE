@@ -17,3 +17,25 @@ export const BADGE_SAMPLE_VALUES: Record<string, string> = {
   coursePeriod: "từ 26/10/2026 đến 31/10/2026",
   courseLocation: "Trung tâm mục vụ Phú Cường, Thủ Dầu Một",
 };
+
+export type BadgeSampleSet = { id: string; label: string; values: Record<string, string> };
+
+// Bộ dữ liệu mẫu để thử bố cục thẻ với giáo họ, giáo xứ và tên rất dài.
+export const BADGE_SAMPLE_SETS: BadgeSampleSet[] = [
+  { id: "giaoho", label: "Giáo họ", values: BADGE_SAMPLE_VALUES },
+  { id: "giaoxu", label: "Giáo xứ", values: { ...BADGE_SAMPLE_VALUES, leaderSubUnitName: "", leaderUnitFullName: "Giáo xứ Chánh Tòa" } },
+  {
+    id: "long",
+    label: "Tên dài (thử tràn chữ)",
+    values: {
+      ...BADGE_SAMPLE_VALUES,
+      holyName: "Phêrô Phaolô",
+      leaderName: "Nguyễn Trần Lê Hoàng Thiên Ân",
+      leaderFullName: "Phêrô Phaolô Nguyễn Trần Lê Hoàng Thiên Ân",
+      leaderParishName: "Giáo xứ Thánh Giuse Thợ Thuyền Phú Cường",
+      leaderSubUnitName: "Giáo điểm Thánh Tâm Chúa Giêsu An Phú Đông",
+      teamName: "Đội Thánh Giuse Thợ Thuyền số 12",
+      courseName: "Khóa huấn luyện Dự trưởng Thiếu nhi Thánh Thể giáo phận Phú Cường năm 2026 - Đợt 3",
+    },
+  },
+];

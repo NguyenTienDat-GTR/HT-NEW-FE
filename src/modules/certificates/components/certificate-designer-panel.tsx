@@ -1,24 +1,31 @@
 "use client";
 
 import { BackgroundAlbumDialog } from "@/components/common/background-album-dialog";
-import { ArrowClockwise, ArrowCounterClockwise, ClockCounterClockwise, Eye, PencilSimple, QrCode, TextT, Images, UserCircle } from "@phosphor-icons/react";
+import { ArrowClockwise, ArrowCounterClockwise, ClockCounterClockwise, Eye, PencilSimple, Images } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { HelpTip } from "@/components/ui/help-tip";
 import { Input } from "@/components/ui/input";
 import { Panel } from "@/components/ui/panel";
-import { Tip } from "@/components/ui/tip";
 import type {  } from "@/config/routes/routes";
 import { cn } from "@/lib/utils";
 import { useUndoHistory } from "../undo-history";
 import { CertificateCanvas, type LayoutUpdater } from "./certificate-canvas";
-import { PAPER_OPTIONS, MAX_NAME_LENGTH, paperAspect, paperHeightMm, sampleValue, type DesignForm, type FieldCatalogItem } from "./certificate-design";
+import { PAPER_OPTIONS, MAX_NAME_LENGTH, normalizeItem, paperAspect, paperHeightMm, paperWidthMm, sampleValue, type DesignForm, type FieldCatalogItem, type LayoutItem } from "./certificate-design";
 import { LayoutToolbar } from "@/modules/layout-config/wysiwyg/layout-toolbar";
+import { FULLSCREEN_CLASS, FullscreenButton, useDesignerFullscreen } from "@/modules/layout-config/wysiwyg/use-fullscreen";
 import { PreviewPdfButton } from "@/modules/layout-config/wysiwyg/preview-pdf-button";
-import { CERTIFICATE_SAMPLE_VALUES } from "../certificate-sample-values";
-import { FieldPalette } from "@/modules/layout-config/wysiwyg/field-palette";
+import { VersionHistoryButton, type ConfigVersion } from "@/modules/layout-config/wysiwyg/version-history";
+import { CERTIFICATE_SAMPLE_SETS } from "../certificate-sample-values";
+import { LayoutSidebar } from "@/modules/layout-config/wysiwyg/layout-sidebar";
+import { AddElementBar } from "@/modules/layout-config/wysiwyg/add-element-bar";
+import { DesignStage } from "@/modules/layout-config/wysiwyg/design-stage";
+import { ShortcutsHelp, WarningsButton } from "@/modules/layout-config/wysiwyg/warnings-button";
+import { useStageView } from "@/modules/layout-config/wysiwyg/stage-view";
+import { useLayoutWarnings, useSampleSet } from "@/modules/layout-config/wysiwyg/use-designer-support";
+import { CERTIFICATE_TEMPLATES } from "@/modules/layout-config/wysiwyg/layout-templates";
 import type { BoxOf } from "@/modules/layout-config/wysiwyg/layout-ops";
 import { SELECT_CLASS } from "@/modules/layout-config/form-controls";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 
 export function CertificateDesignerPanel({
   actions,
@@ -35,6 +42,8 @@ export function CertificateDesignerPanel({
   form,
   history,
   isNew,
+  configId,
+  savedBackground,
   nameTooLong,
   preview,
   redo,
@@ -63,6 +72,10 @@ export function CertificateDesignerPanel({
   form: DesignForm;
   history: ReturnType<typeof useUndoHistory<DesignForm>>;
   isNew: boolean;
+  /** Mã cấu hình đã lưu (null khi đang soạn cấu hình mới) để xem lịch sử phiên bản. */
+  configId: string | null;
+  /** Kích thước ảnh nền gốc của cấu hình đã lưu (để kiểm tra độ phân giải). */
+  savedBackground?: { assetId: string; widthPx: number; heightPx: number } | null;
   nameTooLong: boolean;
   preview: boolean;
   redo: () => void;
@@ -75,10 +88,45 @@ export function CertificateDesignerPanel({
 }) {
   const measureRef = useRef<BoxOf | null>(null);
   const canDesign = canEditCurrent && !preview;
+  const screen = useDesignerFullscreen();
   const pageAspect = paperAspect(form.paperSize, form.orientation);
+
+  // Khôi phục một bản cũ: nạp nội dung (không đổi tên) vào trình soạn thành một bước hoàn tác, chưa lưu.
+  function restoreVersion(version: ConfigVersion) {
+    const s = version.snapshot as { paperSize?: string; orientation?: string; backgroundImage?: string | null; backgroundAssetId?: string | null; fieldLayout?: LayoutItem[] };
+    updateForm({
+      paperSize: s.paperSize ?? form.paperSize,
+      orientation: s.orientation ?? form.orientation,
+      backgroundImage: s.backgroundImage ?? "",
+      backgroundAssetId: s.backgroundImage ? (s.backgroundAssetId ?? "") : "",
+      layout: (s.fieldLayout ?? []).map(normalizeItem),
+    });
+    setSelection([]);
+  }
+  const pageMm = { w: paperWidthMm(form.paperSize, form.orientation), h: paperHeightMm(form.paperSize, form.orientation) };
+  const { view, setView } = useStageView("layout-view:certificate");
+  const sample = useSampleSet("layout-sample:certificate", CERTIFICATE_SAMPLE_SETS);
+  // Kích thước ảnh nền gốc (ảnh được in), không phải ảnh xem trước 1600px: vừa chọn từ album hoặc đã lưu trong cấu hình.
+  const [pickedSize, setPickedSize] = useState<{ assetId: string; width: number; height: number } | null>(null);
+  const backgroundSize = form.backgroundAssetId
+    ? pickedSize?.assetId === form.backgroundAssetId
+      ? { naturalWidth: pickedSize.width, naturalHeight: pickedSize.height }
+      : savedBackground?.assetId === form.backgroundAssetId
+        ? { naturalWidth: savedBackground.widthPx, naturalHeight: savedBackground.heightPx }
+        : null
+    : null;
+  const warnings = useLayoutWarnings({
+    layout: form.layout,
+    pageWidthMm: pageMm.w,
+    pageHeightMm: pageMm.h,
+    sampleValues: sample.values,
+    safeMm: view.safeMm,
+    background: backgroundSize,
+    hasBackground: Boolean(form.backgroundImage),
+  });
   return (
     // Bàn làm việc: toàn bộ chức năng nằm trong một màn hình; chỉ cột trường và cột thuộc tính tự cuộn.
-    <Panel className="flex flex-col overflow-hidden lg:h-[calc(100dvh-10.5rem)] lg:min-h-[520px]">
+    <Panel className={cn("flex flex-col overflow-hidden", screen.fullscreen ? FULLSCREEN_CLASS : "lg:h-[calc(100dvh-10.5rem)] lg:min-h-[520px]")}>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-border px-3 py-2">
         <div className="flex min-w-[220px] max-w-sm flex-1 items-center gap-1.5">
           <label className="sr-only" htmlFor="certificate-config-name">
@@ -127,11 +175,30 @@ export function CertificateDesignerPanel({
           currentAssetId={form.backgroundAssetId || null}
           kind="CERTIFICATE"
           onOpenChange={setAlbumOpen}
-          onPick={(item) => updateForm({ backgroundImage: item.url, backgroundAssetId: item.assetId })}
+          onPick={(item) => {
+              setPickedSize(item.widthPx && item.heightPx ? { assetId: item.assetId, width: item.widthPx, height: item.heightPx } : null);
+              updateForm({ backgroundImage: item.url, backgroundAssetId: item.assetId });
+            }}
           open={albumOpen}
         />
 
         <div className="ml-auto flex flex-wrap items-center gap-2">
+          <label className="sr-only" htmlFor="certificate-sample-set">
+            Dữ liệu mẫu
+          </label>
+          <select
+            className={cn(SELECT_CLASS, "h-9 max-w-[190px]")}
+            id="certificate-sample-set"
+            onChange={(event) => sample.setSampleId(event.target.value)}
+            title="Dữ liệu mẫu để xem trước, thử tràn chữ và xuất PDF xem trước"
+            value={sample.sampleId}
+          >
+            {sample.sets.map((set) => (
+              <option key={set.id} value={set.id}>
+                Mẫu: {set.label}
+              </option>
+            ))}
+          </select>
           <div aria-label="Chế độ hiển thị" className="inline-flex rounded-lg bg-surface-2 p-0.5" role="group">
             <button
               aria-pressed={!preview}
@@ -150,6 +217,7 @@ export function CertificateDesignerPanel({
               <Eye size={15} /> Xem trước
             </button>
           </div>
+          <FullscreenButton fullscreen={screen.fullscreen} onToggle={screen.toggle} />
           <Button aria-label="Hoàn tác" className="h-9 w-9" disabled={!canEditCurrent || !history.canUndo} onClick={undo} size="icon" title="Hoàn tác (Ctrl+Z)" type="button" variant="icon">
             <ArrowCounterClockwise size={17} />
           </Button>
@@ -159,13 +227,14 @@ export function CertificateDesignerPanel({
           <Button disabled={!canEditCurrent || !dirty} onClick={restoreSaved} size="sm" title={isNew ? "Xóa toàn bộ nội dung đang soạn" : "Khôi phục về bản đã lưu"} type="button" variant="outline">
             <ClockCounterClockwise size={16} /> {isNew ? "Làm mới" : "Khôi phục"}
           </Button>
+          <VersionHistoryButton onRestore={restoreVersion} path={configId ? `/certificates/config/${configId}/versions` : null} queryKey="certificate" />
           <PreviewPdfButton
             buildBody={() => ({
               paperSize: form.paperSize,
               orientation: form.orientation,
               backgroundAssetId: form.backgroundAssetId || null,
               fieldLayout: form.layout,
-              values: CERTIFICATE_SAMPLE_VALUES,
+              values: sample.values,
             })}
             fallbackName="xem-truoc-chung-nhan.pdf"
             path="/certificates/config/preview-pdf"
@@ -177,6 +246,18 @@ export function CertificateDesignerPanel({
 
       {canDesign ? (
         <LayoutToolbar
+          leading={
+            <AddElementBar
+              hasContent={form.layout.length > 0}
+              onAddPhoto={addPhoto}
+              onAddQr={addQr}
+              onAddText={addText}
+              onApplyTemplate={(items) => updateLayout(() => items)}
+              photoHint="Thêm ảnh đại diện của huynh trưởng nhận chứng nhận. Ảnh lấy từ hồ sơ huynh trưởng khi xuất PDF; huynh trưởng chưa có ảnh thì không in gì."
+              qrHint="Thêm mã QR chứa mã chứng nhận. Chỉ khi bố cục có mã QR thì khi xuất PDF hệ thống mới tạo mã QR (không lưu lại)."
+              templates={CERTIFICATE_TEMPLATES}
+            />
+          }
           layout={form.layout}
           measureRef={measureRef}
           onLayoutChange={updateLayout}
@@ -188,47 +269,57 @@ export function CertificateDesignerPanel({
 
       <div className={cn("grid min-h-0 flex-1", canDesign ? "lg:grid-cols-[232px_minmax(0,1fr)]" : "")}>
         {canDesign ? (
-          <aside aria-label="Trường dữ liệu" className="hidden overflow-y-auto border-r border-border bg-white p-3 lg:block">
-            <div className="mb-3 flex flex-wrap gap-1.5 border-b border-border pb-3">
-        <Button onClick={addText} size="sm" title="Thêm văn bản tĩnh (hoặc nhấp đúp vào chỗ trống trên ảnh)" type="button" variant="outline">
-          <TextT size={16} /> Văn bản
-        </Button>
-        <Tip label="Thêm ảnh đại diện của huynh trưởng nhận chứng nhận. Ảnh lấy từ hồ sơ huynh trưởng khi xuất PDF; huynh trưởng chưa có ảnh thì không in gì.">
-          <Button onClick={addPhoto} size="sm" type="button" variant="outline">
-            <UserCircle size={16} /> Ảnh HT
-          </Button>
-        </Tip>
-        <Tip label="Thêm mã QR chứa mã chứng nhận. Chỉ khi bố cục có mã QR thì khi xuất PDF hệ thống mới tạo mã QR (không lưu lại).">
-          <Button onClick={addQr} size="sm" type="button" variant="outline">
-            <QrCode size={16} /> Mã QR
-          </Button>
-        </Tip>
-            </div>
-            <FieldPalette fields={fieldsQuery.data ?? []} onPick={(key) => dropField(key, 0.5, 0.5)} />
+          <aside aria-label="Trường dữ liệu và lớp" className="hidden min-h-0 border-r border-border bg-white lg:block">
+            <LayoutSidebar
+              fields={fieldsQuery.data ?? []}
+              layout={form.layout}
+              onLayoutChange={updateLayout}
+              onPickField={(key) => dropField(key, 0.5, 0.5)}
+              onSelectionChange={setSelection}
+              selection={selection}
+            />
           </aside>
         ) : null}
 
-        {/* Khung giấy tự co vừa chiều cao còn lại nên không phải cuộn trang để thao tác. */}
-        <div className="flex min-h-[320px] min-w-0 items-center justify-center bg-slate-100 p-3" style={{ containerType: "size" }}>
-          <div style={{ width: `min(100cqw, calc(100cqh * ${pageAspect}))` }}>
-            <CertificateCanvas
-              backgroundImage={form.backgroundImage}
-              layout={form.layout}
-              fieldLabel={fieldLabel}
-              sampleValue={(key) => sampleValue(key, fieldLabel)}
-              preview={preview}
-              aspect={pageAspect}
-              selection={selection}
-              onSelectionChange={setSelection}
-              onLayoutChange={updateLayout}
-              onDropField={dropField}
-              onAddTextAt={addTextAt}
-              measureRef={measureRef}
-              editable={canDesign}
-            />
-          </div>
+        {/* Khung giấy tự co vừa chiều cao còn lại; phóng to bằng Ctrl + lăn chuột hoặc nút thu phóng. */}
+        <div className="min-h-[320px] min-w-0">
+          <DesignStage
+            aspect={pageAspect}
+            controls={
+              <>
+                <WarningsButton onSelect={setSelection} warnings={warnings} />
+                <ShortcutsHelp />
+              </>
+            }
+            onViewChange={setView}
+            pageMm={pageMm}
+            view={view}
+          >
+            {(extras) => (
+              <CertificateCanvas
+                aspect={pageAspect}
+                backgroundImage={form.backgroundImage}
+                bgOpacity={extras.bgOpacity}
+                editable={canDesign}
+                fieldLabel={fieldLabel}
+                gridStep={extras.gridStep}
+                guides={extras.guides}
+                layout={form.layout}
+                measureRef={measureRef}
+                onAddTextAt={addTextAt}
+                onDropField={dropField}
+                onLayoutChange={updateLayout}
+                onSelectionChange={setSelection}
+                pageMm={extras.pageMm}
+                preview={preview}
+                safeMm={extras.safeMm}
+                sampleValue={(key) => sampleValue(key, fieldLabel, sample.values)}
+                selection={selection}
+                snapToGrid={extras.snapToGrid}
+              />
+            )}
+          </DesignStage>
         </div>
-
       </div>
     </Panel>
   );

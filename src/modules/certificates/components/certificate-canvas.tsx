@@ -2,7 +2,7 @@
 
 import { mediaSrc } from "@/lib/media/media-url";
 import { cn } from "@/lib/utils";
-import { duplicateItems, nudgeItems, removeItems, type BoxOf } from "@/modules/layout-config/wysiwyg/layout-ops";
+import { copyToClipboard, duplicateItems, nudgeItems, readClipboard, removeItems, reorderItems, selectAllIndexes, type BoxOf } from "@/modules/layout-config/wysiwyg/layout-ops";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type DragEvent, type KeyboardEvent, type MutableRefObject } from "react";
 import Moveable from "react-moveable";
 import Selecto from "react-selecto";
@@ -46,6 +46,17 @@ type Props = {
   onAddTextAt?: (x: number, y: number) => void;
   /** Khung gán hàm đo hộp bao thật của phần tử (dùng cho căn lề). */
   measureRef?: MutableRefObject<BoxOf | null>;
+  /** Độ mờ ảnh nền chỉ khi thiết kế (0..1), giúp nhìn rõ chữ khi nền rối; không ảnh hưởng bản in. */
+  bgOpacity?: number;
+  /** Đường gióng do người dùng kéo ra từ thước (tỉ lệ 0..1 của trang). */
+  guides?: { x: number[]; y: number[] };
+  /** Bước lưới (tỉ lệ 0..1): vẽ lưới mờ và, khi snapToGrid, hút phần tử vào lưới. */
+  gridStep?: { x: number; y: number } | null;
+  snapToGrid?: boolean;
+  /** Kích thước trang (mm) để hiện tọa độ và vùng an toàn. */
+  pageMm?: { w: number; h: number };
+  /** Vùng an toàn (mm) vẽ viền nét đứt. */
+  safeMm?: number;
 };
 
 type Start = { x: number; y: number; fontSize: number; size?: number; photoWidth?: number; free: boolean };
@@ -65,6 +76,12 @@ export function CertificateCanvas({
   onDropField,
   onAddTextAt,
   measureRef,
+  bgOpacity = 1,
+  guides,
+  gridStep,
+  snapToGrid,
+  pageMm,
+  safeMm,
 }: Props) {
   const [container, setContainer] = useState<HTMLDivElement | null>(null);
   const stageRef = useRef<HTMLDivElement>(null);
@@ -76,6 +93,8 @@ export function CertificateCanvas({
   const [stageDims, setStageDims] = useState({ width: 1, height: 1 });
   const [editing, setEditing] = useState<number | null>(null);
   const [dropOver, setDropOver] = useState(false);
+  const pointerRef = useRef<{ x: number; y: number } | null>(null);
+  const pendingEdit = useRef<number | null>(null);
 
   const active = editable && !preview && Boolean(onLayoutChange);
   const selectionKey = selection.join(",");
@@ -93,6 +112,33 @@ export function CertificateCanvas({
   useLayoutEffect(() => {
     moveableRef.current?.updateRect();
   }, [layout, aspect]);
+
+  // Phím T: thêm văn bản tại con trỏ (hoặc giữa trang) rồi vào chế độ gõ ngay. Nghe ở cửa sổ để dùng được kể cả khi chưa nhấp vào khung,
+  // trừ khi đang gõ trong ô nhập, đang mở hộp thoại hoặc có phím bổ trợ.
+  useEffect(() => {
+    if (!active || !onAddTextAt) return;
+    function onKeyDown(event: globalThis.KeyboardEvent) {
+      if (event.key.toLowerCase() !== "t" || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey || event.repeat) return;
+      const target = event.target as HTMLElement | null;
+      if (target && (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName))) return;
+      if (document.querySelector('[role="dialog"]')) return;
+      event.preventDefault();
+      const point = pointerRef.current ?? { x: 0.5, y: 0.5 };
+      pendingEdit.current = layout.length;
+      onAddTextAt?.(point.x, point.y);
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [active, onAddTextAt, layout.length]);
+
+  // Văn bản vừa thêm bằng phím T: mở chế độ gõ ngay khi nó xuất hiện trong bố cục.
+  useEffect(() => {
+    const index = pendingEdit.current;
+    if (index != null && layout[index]?.type === "TEXT") {
+      pendingEdit.current = null;
+      setEditing(index);
+    }
+  }, [layout]);
 
   // Theo dõi kích thước khung để đặt đường hút giữa trang.
   useEffect(() => {
@@ -203,7 +249,40 @@ export function CertificateCanvas({
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
-    if (!active || editing != null || selection.length === 0) return;
+    if (!active || editing != null) return;
+    const mod = event.ctrlKey || event.metaKey;
+    const key = event.key.toLowerCase();
+    if (mod && key === "a") {
+      event.preventDefault();
+      onSelectionChange?.(selectAllIndexes(layout));
+      return;
+    }
+    if (mod && key === "c" && selection.length > 0) {
+      event.preventDefault();
+      copyToClipboard(selection.map((i) => layout[i]).filter(Boolean));
+      return;
+    }
+    if (mod && key === "v") {
+      const pasted = readClipboard();
+      if (pasted.length === 0) return;
+      event.preventDefault();
+      const start = layout.length;
+      onLayoutChange?.((items) => [...items, ...pasted]);
+      onSelectionChange?.(pasted.map((_, n) => start + n));
+      return;
+    }
+    if (selection.length === 0) return;
+    if (mod && (event.key === "]" || event.key === "[")) {
+      event.preventDefault();
+      const result = reorderItems(layout, selection, event.key === "]" ? "forward" : "backward");
+      onLayoutChange?.(() => result.layout);
+      onSelectionChange?.(result.selection);
+      return;
+    }
+    if (selection.some((i) => layout[i]?.locked) && (event.key.startsWith("Arrow") || event.key === "Delete" || event.key === "Backspace")) {
+      event.preventDefault();
+      return;
+    }
     const step = event.shiftKey ? 0.01 : 0.002;
     const arrows: Record<string, [number, number]> = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] };
     const arrow = arrows[event.key];
@@ -256,6 +335,16 @@ export function CertificateCanvas({
   const singleItem = single != null ? layout[single] : null;
   const keepRatio = !(singleItem?.type === "PHOTO" && singleItem.photoRatio === "free");
   const selectedSet = new Set(selection);
+  const lockedSelected = selection.some((i) => layout[i]?.locked);
+  const selectedForReadout = selection.length === 1 ? layout[selection[0]] : null;
+
+  // Đường hút: mép / tâm trang, đường gióng người dùng kéo ra, và (nếu bật) các điểm của lưới.
+  const verticalLines = [0, stageDims.width / 2, stageDims.width, ...(guides?.x ?? []).map((r) => r * stageDims.width)];
+  const horizontalLines = [0, stageDims.height / 2, stageDims.height, ...(guides?.y ?? []).map((r) => r * stageDims.height)];
+  if (gridStep && snapToGrid && gridStep.x > 0 && gridStep.y > 0) {
+    for (let x = gridStep.x; x < 1; x += gridStep.x) verticalLines.push(x * stageDims.width);
+    for (let y = gridStep.y; y < 1; y += gridStep.y) horizontalLines.push(y * stageDims.height);
+  }
 
   return (
     <div
@@ -272,16 +361,54 @@ export function CertificateCanvas({
         ref={stageRef}
         className="absolute inset-0 overflow-hidden rounded-lg border border-border bg-surface-2"
         onDoubleClick={handleDoubleClickStage}
+        onPointerLeave={() => (pointerRef.current = null)}
+        onPointerMove={(event) => {
+          const rect = event.currentTarget.getBoundingClientRect();
+          pointerRef.current = { x: clamp((event.clientX - rect.left) / rect.width, 0, 1), y: clamp((event.clientY - rect.top) / rect.height, 0, 1) };
+        }}
         style={{ containerType: "size" }}
       >
         {backgroundImage ? (
           // Stretch đầy khung để khớp PDF (ảnh nền được vẽ full trang). Nên dùng ảnh đúng tỉ lệ khổ giấy.
           // eslint-disable-next-line @next/next/no-img-element
-          <img alt="Ảnh nền chứng nhận" decoding="async" draggable={false} loading="lazy" className="absolute inset-0 h-full w-full object-fill" src={mediaSrc(backgroundImage)} />
+          <img
+            alt="Ảnh nền chứng nhận"
+            className="absolute inset-0 h-full w-full object-fill"
+            decoding="async"
+            draggable={false}
+            loading="lazy"
+            src={mediaSrc(backgroundImage)}
+            style={{ opacity: preview ? 1 : bgOpacity }}
+          />
         ) : (
           <div className="flex h-full items-center justify-center text-sm text-muted">Chưa có ảnh nền</div>
         )}
+        {active && gridStep && gridStep.x > 0 && gridStep.y > 0 ? (
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0"
+            style={{
+              backgroundImage:
+                "linear-gradient(to right, rgba(59,130,246,0.22) 1px, transparent 1px), linear-gradient(to bottom, rgba(59,130,246,0.22) 1px, transparent 1px)",
+              backgroundSize: `${gridStep.x * 100}% ${gridStep.y * 100}%`,
+            }}
+          />
+        ) : null}
+        {guides?.x.map((ratio, i) => (
+          <div aria-hidden className="pointer-events-none absolute top-0 bottom-0 w-px bg-fuchsia-500/80" key={`gx-${i}`} style={{ left: `${ratio * 100}%` }} />
+        ))}
+        {guides?.y.map((ratio, i) => (
+          <div aria-hidden className="pointer-events-none absolute right-0 left-0 h-px bg-fuchsia-500/80" key={`gy-${i}`} style={{ top: `${ratio * 100}%` }} />
+        ))}
+        {active && safeMm && safeMm > 0 && pageMm ? (
+          <div
+            aria-hidden
+            className="pointer-events-none absolute border border-dashed border-emerald-500/80"
+            style={{ left: `${(safeMm / pageMm.w) * 100}%`, right: `${(safeMm / pageMm.w) * 100}%`, top: `${(safeMm / pageMm.h) * 100}%`, bottom: `${(safeMm / pageMm.h) * 100}%` }}
+          />
+        ) : null}
         {layout.map((item, index) => {
+          if (item.hidden && (preview || !editable)) return null;
           const setRef = (el: HTMLDivElement | null) => {
             itemRefs.current[index] = el;
           };
@@ -294,7 +421,7 @@ export function CertificateCanvas({
                 ref={setRef}
                 onClick={(event) => pick(event, index)}
                 key={index}
-                className={cn("wysiwyg-item", "absolute flex items-center justify-center bg-slate-100 text-[10px] font-semibold text-slate-500", active ? "cursor-move" : "cursor-default")}
+                className={cn(item.hidden ? "pointer-events-none opacity-30" : "wysiwyg-item", "absolute flex items-center justify-center bg-slate-100 text-[10px] font-semibold text-slate-500", active ? "cursor-move" : "cursor-default")}
                 style={{ left: `${item.x * 100}%`, top: `${item.y * 100}%`, width: `${photoHeight * photoAspect(item) * 100}cqh`, height: `${photoHeight * 100}cqh`, transform: "translate(-50%, -50%)" }}
               >
                 <div className="pointer-events-none h-full w-full overflow-hidden">
@@ -317,7 +444,7 @@ export function CertificateCanvas({
                 ref={setRef}
                 onClick={(event) => pick(event, index)}
                 key={index}
-                className={cn("wysiwyg-item", "absolute flex items-center justify-center bg-white text-[10px] font-semibold text-slate-700", active ? "cursor-move" : "cursor-default")}
+                className={cn(item.hidden ? "pointer-events-none opacity-30" : "wysiwyg-item", "absolute flex items-center justify-center bg-white text-[10px] font-semibold text-slate-700", active ? "cursor-move" : "cursor-default")}
                 style={{ left: `${item.x * 100}%`, top: `${item.y * 100}%`, width: side, height: side, transform: "translate(-50%, -50%)" }}
               >
                 <div className="pointer-events-none h-full w-full">
@@ -338,7 +465,7 @@ export function CertificateCanvas({
             <div
               data-idx={index}
               key={index}
-              className={cn("wysiwyg-item", "absolute max-w-[90%] whitespace-nowrap px-1 leading-tight", active ? (isEditing ? "cursor-text" : "cursor-move") : "cursor-default", isEditing ? "outline-dashed outline-2 outline-primary" : "")}
+              className={cn(item.hidden ? "pointer-events-none opacity-30" : "wysiwyg-item", "absolute max-w-[90%] whitespace-nowrap px-1 leading-tight", active ? (isEditing ? "cursor-text" : "cursor-move") : "cursor-default", isEditing ? "outline-dashed outline-2 outline-primary" : "")}
               contentEditable={isEditing}
               onClick={(event) => pick(event, index)}
               onBlur={isEditing ? (event) => commitText(index, event.currentTarget.innerText.replace(/\n/g, " ")) : undefined}
@@ -397,14 +524,14 @@ export function CertificateCanvas({
             target={editing != null ? [] : targets}
             origin={false}
             // Kéo
-            draggable
+            draggable={!lockedSelected}
             throttleDrag={0}
             onDragStart={() => beginChange(selection)}
             onDrag={(event) => applyDrag(event.dist[0], event.dist[1])}
             onDragGroupStart={() => beginChange(selection)}
             onDragGroup={(event) => applyDrag(event.dist[0], event.dist[1])}
             // Đổi cỡ (chỉ khi chọn một phần tử): chữ đổi cỡ chữ, QR / ảnh đổi kích thước
-            scalable={single != null}
+            scalable={single != null && !lockedSelected}
             keepRatio={keepRatio}
             renderDirections={single != null ? ["nw", "ne", "sw", "se"] : []}
             throttleScale={0.01}
@@ -419,8 +546,8 @@ export function CertificateCanvas({
             snappable
             snapContainer={stageRef}
             elementGuidelines={snapEls}
-            verticalGuidelines={[0, stageDims.width / 2, stageDims.width]}
-            horizontalGuidelines={[0, stageDims.height / 2, stageDims.height]}
+            verticalGuidelines={verticalLines}
+            horizontalGuidelines={horizontalLines}
             snapDirections={{ left: true, top: true, right: true, bottom: true, center: true, middle: true }}
             elementSnapDirections={{ left: true, top: true, right: true, bottom: true, center: true, middle: true }}
             snapThreshold={6}
@@ -454,6 +581,14 @@ export function CertificateCanvas({
             }}
           />
         </>
+      ) : null}
+      {active && selectedForReadout && pageMm ? (
+        <div
+          aria-live="off"
+          className="pointer-events-none absolute bottom-1.5 left-1.5 z-10 rounded bg-slate-900/80 px-1.5 py-0.5 text-[11px] tabular-nums text-white"
+        >
+          X {(selectedForReadout.x * pageMm.w).toFixed(1)} · Y {(selectedForReadout.y * pageMm.h).toFixed(1)} mm
+        </div>
       ) : null}
     </div>
   );
