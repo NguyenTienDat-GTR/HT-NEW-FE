@@ -57,8 +57,6 @@ type Props = {
   pageMm?: { w: number; h: number };
   /** Vùng an toàn (mm) vẽ viền nét đứt. */
   safeMm?: number;
-  /** Báo kích thước thật của ảnh nền (kiểm tra độ phân giải). */
-  onBackgroundInfo?: (info: { naturalWidth: number; naturalHeight: number } | null) => void;
 };
 
 type Start = { x: number; y: number; fontSize: number; size?: number; photoWidth?: number; free: boolean };
@@ -84,7 +82,6 @@ export function CertificateCanvas({
   snapToGrid,
   pageMm,
   safeMm,
-  onBackgroundInfo,
 }: Props) {
   const [container, setContainer] = useState<HTMLDivElement | null>(null);
   const stageRef = useRef<HTMLDivElement>(null);
@@ -346,7 +343,6 @@ export function CertificateCanvas({
             decoding="async"
             draggable={false}
             loading="lazy"
-            onLoad={(event) => onBackgroundInfo?.({ naturalWidth: event.currentTarget.naturalWidth, naturalHeight: event.currentTarget.naturalHeight })}
             src={mediaSrc(backgroundImage)}
             style={{ opacity: preview ? 1 : bgOpacity }}
           />

@@ -164,6 +164,9 @@ export type ConfigResponse = {
   // URL ảnh nền đã ký (hết hạn sau một thời gian) và id asset để gửi lại khi lưu.
   backgroundImage?: string;
   backgroundAssetId?: string | null;
+  // Kích thước (px) của ảnh nền gốc dùng để in (không phải ảnh xem trước); null với ảnh cũ chưa chuyển lên cloud.
+  backgroundWidthPx?: number | null;
+  backgroundHeightPx?: number | null;
   fieldLayout?: LayoutItem[];
   usedByCourseTypes: CourseTypeRef[];
   usedByCount: number;
@@ -281,7 +284,9 @@ export function clamp(value: number, min: number, max: number) {
 
 // Giá trị mẫu để xem trước.
 export function sampleValue(key: string | undefined, fieldLabel: (key?: string) => string, values: Record<string, string> = CERTIFICATE_SAMPLE_VALUES) {
-  return (key && values[key]) || fieldLabel(key);
+  // Giá trị mẫu rỗng có chủ ý (ví dụ giáo họ của huynh trưởng thuộc giáo xứ) thì để trống, không hiện nhãn trường.
+  if (key && Object.prototype.hasOwnProperty.call(values, key)) return values[key];
+  return fieldLabel(key);
 }
 
 

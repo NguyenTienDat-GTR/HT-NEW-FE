@@ -72,7 +72,8 @@ export function analyzeLayout(ctx: AnalysisContext): LayoutWarning[] {
       if (pt < MIN_FONT_PT) {
         warnings.push({ id: `small-${index}`, level: "warn", indexes: [index], message: `Chữ ${pt.toFixed(1)}pt nhỏ hơn ${MIN_FONT_PT}pt, khó đọc khi in` });
       }
-      if (!ctx.textOf(item).trim()) {
+      // Trường có thể rỗng có chủ ý (giáo họ của người thuộc giáo xứ) nên chỉ báo với văn bản tĩnh.
+      if (item.type === "TEXT" && !ctx.textOf(item).trim()) {
         warnings.push({ id: `empty-${index}`, level: "info", indexes: [index], message: "Phần tử chữ chưa có nội dung" });
       }
     }
@@ -120,7 +121,7 @@ export function analyzeLayout(ctx: AnalysisContext): LayoutWarning[] {
   if (ctx.background && ctx.background.naturalWidth > 0) {
     const dpi = ctx.background.naturalWidth / (ctx.pageWidthMm / 25.4);
     if (dpi < MIN_DPI) {
-      warnings.push({ id: "bg-dpi", level: "warn", indexes: [], message: `Ảnh nền chỉ khoảng ${Math.round(dpi)} dpi (nên từ ${MIN_DPI} dpi), in ra có thể bị mờ` });
+      warnings.push({ id: "bg-dpi", level: "warn", indexes: [], message: `Ảnh nền gốc chỉ khoảng ${Math.round(dpi)} dpi (nên từ ${MIN_DPI} dpi) nên in có thể bị mờ; hãy chọn ảnh có độ phân giải cao hơn` });
     }
   }
 

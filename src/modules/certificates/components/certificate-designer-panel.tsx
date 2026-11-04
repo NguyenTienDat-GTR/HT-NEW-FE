@@ -13,6 +13,7 @@ import { useUndoHistory } from "../undo-history";
 import { CertificateCanvas, type LayoutUpdater } from "./certificate-canvas";
 import { PAPER_OPTIONS, MAX_NAME_LENGTH, normalizeItem, paperAspect, paperHeightMm, paperWidthMm, sampleValue, type DesignForm, type FieldCatalogItem, type LayoutItem } from "./certificate-design";
 import { LayoutToolbar } from "@/modules/layout-config/wysiwyg/layout-toolbar";
+import { FULLSCREEN_CLASS, FullscreenButton, useDesignerFullscreen } from "@/modules/layout-config/wysiwyg/use-fullscreen";
 import { PreviewPdfButton } from "@/modules/layout-config/wysiwyg/preview-pdf-button";
 import { VersionHistoryButton, type ConfigVersion } from "@/modules/layout-config/wysiwyg/version-history";
 import { CERTIFICATE_SAMPLE_SETS } from "../certificate-sample-values";
@@ -42,6 +43,7 @@ export function CertificateDesignerPanel({
   history,
   isNew,
   configId,
+  savedBackground,
   nameTooLong,
   preview,
   redo,
@@ -72,6 +74,8 @@ export function CertificateDesignerPanel({
   isNew: boolean;
   /** Mã cấu hình đã lưu (null khi đang soạn cấu hình mới) để xem lịch sử phiên bản. */
   configId: string | null;
+  /** Kích thước ảnh nền gốc của cấu hình đã lưu (để kiểm tra độ phân giải). */
+  savedBackground?: { assetId: string; widthPx: number; heightPx: number } | null;
   nameTooLong: boolean;
   preview: boolean;
   redo: () => void;
@@ -84,6 +88,7 @@ export function CertificateDesignerPanel({
 }) {
   const measureRef = useRef<BoxOf | null>(null);
   const canDesign = canEditCurrent && !preview;
+  const screen = useDesignerFullscreen();
   const pageAspect = paperAspect(form.paperSize, form.orientation);
 
   // Khôi phục một bản cũ: nạp nội dung (không đổi tên) vào trình soạn thành một bước hoàn tác, chưa lưu.
@@ -101,19 +106,27 @@ export function CertificateDesignerPanel({
   const pageMm = { w: paperWidthMm(form.paperSize, form.orientation), h: paperHeightMm(form.paperSize, form.orientation) };
   const { view, setView } = useStageView("layout-view:certificate");
   const sample = useSampleSet("layout-sample:certificate", CERTIFICATE_SAMPLE_SETS);
-  const [backgroundInfo, setBackgroundInfo] = useState<{ naturalWidth: number; naturalHeight: number } | null>(null);
+  // Kích thước ảnh nền gốc (ảnh được in), không phải ảnh xem trước 1600px: vừa chọn từ album hoặc đã lưu trong cấu hình.
+  const [pickedSize, setPickedSize] = useState<{ assetId: string; width: number; height: number } | null>(null);
+  const backgroundSize = form.backgroundAssetId
+    ? pickedSize?.assetId === form.backgroundAssetId
+      ? { naturalWidth: pickedSize.width, naturalHeight: pickedSize.height }
+      : savedBackground?.assetId === form.backgroundAssetId
+        ? { naturalWidth: savedBackground.widthPx, naturalHeight: savedBackground.heightPx }
+        : null
+    : null;
   const warnings = useLayoutWarnings({
     layout: form.layout,
     pageWidthMm: pageMm.w,
     pageHeightMm: pageMm.h,
     sampleValues: sample.values,
     safeMm: view.safeMm,
-    background: backgroundInfo,
+    background: backgroundSize,
     hasBackground: Boolean(form.backgroundImage),
   });
   return (
     // Bàn làm việc: toàn bộ chức năng nằm trong một màn hình; chỉ cột trường và cột thuộc tính tự cuộn.
-    <Panel className="flex flex-col overflow-hidden lg:h-[calc(100dvh-10.5rem)] lg:min-h-[520px]">
+    <Panel className={cn("flex flex-col overflow-hidden", screen.fullscreen ? FULLSCREEN_CLASS : "lg:h-[calc(100dvh-10.5rem)] lg:min-h-[520px]")}>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-border px-3 py-2">
         <div className="flex min-w-[220px] max-w-sm flex-1 items-center gap-1.5">
           <label className="sr-only" htmlFor="certificate-config-name">
@@ -162,7 +175,10 @@ export function CertificateDesignerPanel({
           currentAssetId={form.backgroundAssetId || null}
           kind="CERTIFICATE"
           onOpenChange={setAlbumOpen}
-          onPick={(item) => updateForm({ backgroundImage: item.url, backgroundAssetId: item.assetId })}
+          onPick={(item) => {
+              setPickedSize(item.widthPx && item.heightPx ? { assetId: item.assetId, width: item.widthPx, height: item.heightPx } : null);
+              updateForm({ backgroundImage: item.url, backgroundAssetId: item.assetId });
+            }}
           open={albumOpen}
         />
 
@@ -201,6 +217,7 @@ export function CertificateDesignerPanel({
               <Eye size={15} /> Xem trước
             </button>
           </div>
+          <FullscreenButton fullscreen={screen.fullscreen} onToggle={screen.toggle} />
           <Button aria-label="Hoàn tác" className="h-9 w-9" disabled={!canEditCurrent || !history.canUndo} onClick={undo} size="icon" title="Hoàn tác (Ctrl+Z)" type="button" variant="icon">
             <ArrowCounterClockwise size={17} />
           </Button>
@@ -297,7 +314,6 @@ export function CertificateDesignerPanel({
                 layout={form.layout}
                 measureRef={measureRef}
                 onAddTextAt={addTextAt}
-                onBackgroundInfo={setBackgroundInfo}
                 onDropField={dropField}
                 onLayoutChange={updateLayout}
                 onSelectionChange={setSelection}

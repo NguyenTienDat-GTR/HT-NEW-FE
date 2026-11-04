@@ -325,6 +325,11 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
           history={history}
           isNew={isNew}
           configId={isNew ? null : resolvedId}
+          savedBackground={
+            selectedConfig?.backgroundAssetId && selectedConfig.backgroundWidthPx && selectedConfig.backgroundHeightPx
+              ? { assetId: selectedConfig.backgroundAssetId, widthPx: selectedConfig.backgroundWidthPx, heightPx: selectedConfig.backgroundHeightPx }
+              : null
+          }
           nameTooLong={nameTooLong}
           preview={preview}
           redo={redo}

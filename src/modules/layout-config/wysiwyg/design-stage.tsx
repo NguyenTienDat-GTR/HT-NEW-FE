@@ -1,7 +1,7 @@
 "use client";
 
 import * as Popover from "@radix-ui/react-popover";
-import { ArrowsOutSimple, CaretDown, Eye, MagnifyingGlassMinus, MagnifyingGlassPlus } from "@phosphor-icons/react";
+import { ArrowsOutSimple, Eye, MagnifyingGlassMinus, MagnifyingGlassPlus } from "@phosphor-icons/react";
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { clampZoom, stepZoom, type StageView } from "./stage-view";
@@ -164,9 +164,9 @@ export function DesignStage({ aspect, pageMm, view, onViewChange, children, cont
   } as CSSProperties;
 
   return (
-    <div className="relative flex h-full min-h-0 flex-col" onKeyDown={handleKeyDown} onKeyUp={(event) => event.key === " " && setSpace(false)}>
+    <div className="relative flex h-full min-h-0 flex-row" onKeyDown={handleKeyDown} onKeyUp={(event) => event.key === " " && setSpace(false)}>
       <div
-        className={cn("min-h-0 flex-1 overflow-auto bg-slate-100 p-3", space ? "cursor-grab" : "")}
+        className={cn("min-h-0 min-w-0 flex-1 overflow-auto bg-slate-100 p-3", space ? "cursor-grab" : "")}
         onPointerDown={(event) => event.button === 1 && startPan(event)}
         onPointerMove={movePan}
         onPointerUp={() => (panRef.current = null)}
@@ -188,27 +188,28 @@ export function DesignStage({ aspect, pageMm, view, onViewChange, children, cont
         {space ? <div aria-hidden className="absolute inset-0 z-40 cursor-grab" onPointerDown={startPan} onPointerMove={movePan} onPointerUp={() => (panRef.current = null)} /> : null}
       </div>
 
-      <div className="pointer-events-none absolute right-3 bottom-3 z-30 flex items-center gap-1.5">
+      {/* Thanh công cụ dọc bên phải khung: nằm ngoài vùng giấy nên không che phần đang sửa. */}
+      <div aria-label="Công cụ khung thiết kế" className="flex w-12 shrink-0 flex-col items-center gap-1 border-l border-border bg-white py-2" role="toolbar">
         {controls}
-        <div className="pointer-events-auto flex items-center gap-0.5 rounded-lg border border-border bg-white p-0.5 shadow-md" role="group" aria-label="Thu phóng">
-          <ViewButton label="Thu nhỏ (Ctrl + −)" onClick={() => onViewChange({ zoom: stepZoom(view.zoom, -1) })}>
-            <MagnifyingGlassMinus size={16} />
-          </ViewButton>
-          <button
-            className="h-8 min-w-[52px] cursor-pointer rounded-md px-1 text-xs font-semibold tabular-nums text-foreground hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
-            onClick={() => onViewChange({ zoom: 1 })}
-            title="Về mức vừa khung (Ctrl + 0)"
-            type="button"
-          >
-            {Math.round(view.zoom * 100)}%
-          </button>
-          <ViewButton label="Phóng to (Ctrl + +)" onClick={() => onViewChange({ zoom: stepZoom(view.zoom, 1) })}>
-            <MagnifyingGlassPlus size={16} />
-          </ViewButton>
-          <ViewButton label="Vừa khung" onClick={() => onViewChange({ zoom: 1 })}>
-            <ArrowsOutSimple size={16} />
-          </ViewButton>
-        </div>
+        <span aria-hidden className="my-1 h-px w-7 bg-border" />
+        <ViewButton label="Phóng to (Ctrl + +)" onClick={() => onViewChange({ zoom: stepZoom(view.zoom, 1) })}>
+          <MagnifyingGlassPlus size={17} />
+        </ViewButton>
+        <button
+          className="h-7 w-10 cursor-pointer rounded-md text-[11px] font-semibold tabular-nums text-foreground hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+          onClick={() => onViewChange({ zoom: 1 })}
+          title="Về mức vừa khung (Ctrl + 0)"
+          type="button"
+        >
+          {Math.round(view.zoom * 100)}%
+        </button>
+        <ViewButton label="Thu nhỏ (Ctrl + −)" onClick={() => onViewChange({ zoom: stepZoom(view.zoom, -1) })}>
+          <MagnifyingGlassMinus size={17} />
+        </ViewButton>
+        <ViewButton label="Vừa khung" onClick={() => onViewChange({ zoom: 1 })}>
+          <ArrowsOutSimple size={17} />
+        </ViewButton>
+        <span aria-hidden className="my-1 h-px w-7 bg-border" />
         <ViewPopover guideCount={guides.x.length + guides.y.length} onClearGuides={() => setGuides({ x: [], y: [] })} onViewChange={onViewChange} view={view} />
       </div>
     </div>
@@ -219,7 +220,7 @@ function ViewButton({ label, onClick, children }: { label: string; onClick: () =
   return (
     <button
       aria-label={label}
-      className="grid h-8 w-8 cursor-pointer place-items-center rounded-md text-text-secondary hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+      className="grid h-9 w-9 cursor-pointer place-items-center rounded-lg text-text-secondary hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
       onClick={onClick}
       title={label}
       type="button"
@@ -235,14 +236,14 @@ function ViewPopover({ view, onViewChange, guideCount, onClearGuides }: { view: 
       <Popover.Trigger asChild>
         <button
           aria-label="Tùy chọn hiển thị"
-          className="pointer-events-auto inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-white px-2.5 text-xs font-semibold text-foreground shadow-md hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+          className="grid h-9 w-9 cursor-pointer place-items-center rounded-lg text-text-secondary hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
           type="button"
         >
-          <Eye size={16} /> Hiển thị <CaretDown size={12} />
+          <Eye size={17} />
         </button>
       </Popover.Trigger>
       <Popover.Portal>
-        <Popover.Content align="end" className="z-50 w-[280px] space-y-3 rounded-xl border border-border bg-white p-3 text-sm shadow-[var(--shadow-card)]" collisionPadding={12} side="top" sideOffset={8}>
+        <Popover.Content align="start" className="z-50 w-[280px] space-y-3 rounded-xl border border-border bg-white p-3 text-sm shadow-[var(--shadow-card)]" collisionPadding={12} side="left" sideOffset={8}>
           <Check checked={view.rulers} label="Thước (mm) và đường gióng" onChange={(rulers) => onViewChange({ rulers })} />
           <div className="space-y-1.5">
             <Check checked={view.grid} label="Hiện lưới" onChange={(grid) => onViewChange({ grid })} />

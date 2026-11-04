@@ -47,6 +47,7 @@ export function BadgeEditor({
   canEdit,
   onChange,
   sample: sharedSample,
+  savedSizes,
 }: {
   form: BadgeForm;
   fields: FieldCatalogItem[];
@@ -54,6 +55,8 @@ export function BadgeEditor({
   onChange: (updater: (current: BadgeForm) => BadgeForm, key?: string) => void;
   /** Bộ dữ liệu mẫu dùng chung với nút xuất PDF xem trước (không truyền thì tự quản lý). */
   sample?: ReturnType<typeof useSampleSet<BadgeSampleSet>>;
+  /** Kích thước ảnh nền gốc (px) của cấu hình đã lưu, theo mã ảnh. */
+  savedSizes?: Record<string, { width: number; height: number }>;
 }) {
   const [side, setSide] = useState<BadgeSide>("front");
   const [selection, setSelection] = useState<number[]>([]);
@@ -63,11 +66,15 @@ export function BadgeEditor({
   const { view, setView } = useStageView("layout-view:badge");
   const ownSample = useSampleSet("layout-sample:badge", BADGE_SAMPLE_SETS);
   const sample = sharedSample ?? ownSample;
-  const [backgroundInfo, setBackgroundInfo] = useState<{ naturalWidth: number; naturalHeight: number } | null>(null);
+  // Kích thước ảnh nền gốc theo mã ảnh (đã lưu trong cấu hình hoặc vừa chọn từ album); không đo ảnh xem trước 1600px.
+  const [pickedSizes, setPickedSizes] = useState<Record<string, { width: number; height: number }>>({});
 
   const activeSide: BadgeSide = form.hasBack ? side : "front";
   const layout = form[layoutKey(activeSide)];
   const background = form[backgroundKey(activeSide)];
+  const activeAssetId = form[backgroundAssetKey(activeSide)];
+  const known = activeAssetId ? (pickedSizes[activeAssetId] ?? savedSizes?.[activeAssetId]) : undefined;
+  const backgroundSize = known ? { naturalWidth: known.width, naturalHeight: known.height } : null;
   const fieldLabel = (key?: string) => fields.find((item) => item.key === key)?.label ?? key ?? "";
   const cardMm = (() => {
     const card = orientCard(form.cardWidthMm, form.cardHeightMm, form.cardOrientation);
@@ -79,7 +86,7 @@ export function BadgeEditor({
     pageHeightMm: cardMm.h,
     sampleValues: sample.values,
     safeMm: view.safeMm,
-    background: backgroundInfo,
+    background: backgroundSize,
     hasBackground: Boolean(background),
   });
 
@@ -144,9 +151,11 @@ export function BadgeEditor({
             currentAssetId={form[backgroundAssetKey(activeSide)] || null}
             kind={activeSide === "front" ? "BADGE_FRONT" : "BADGE_BACK"}
             onOpenChange={setAlbumOpen}
-            onPick={(item) =>
-              onChange((current) => ({ ...current, [backgroundKey(activeSide)]: item.url, [backgroundAssetKey(activeSide)]: item.assetId }))
-            }
+            onPick={(item) => {
+              const picked = item.widthPx && item.heightPx ? { width: item.widthPx, height: item.heightPx } : null;
+              if (picked) setPickedSizes((current) => ({ ...current, [item.assetId]: picked }));
+              onChange((current) => ({ ...current, [backgroundKey(activeSide)]: item.url, [backgroundAssetKey(activeSide)]: item.assetId }));
+            }}
             open={albumOpen}
           />
           {background && canEdit ? (
@@ -267,7 +276,6 @@ export function BadgeEditor({
                 layout={layout}
                 measureRef={measureRef}
                 onAddTextAt={(x, y) => addItem({ ...BASE_ITEM, type: "TEXT", text: "Văn bản", x, y })}
-                onBackgroundInfo={setBackgroundInfo}
                 onDropField={(fieldKey, x, y) => addItem({ ...BASE_ITEM, type: "FIELD", fieldKey, x, y })}
                 onLayoutChange={(updater, key) => setLayout(updater, key ? `${activeSide}:${key}` : undefined)}
                 onSelectionChange={setSelection}

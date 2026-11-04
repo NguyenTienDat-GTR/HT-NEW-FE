@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ArrowClockwise, ArrowCounterClockwise, Books, CaretDown, ClockCounterClockwise, Copy, Plus, Star, Trash } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { HelpTip } from "@/components/ui/help-tip";
 import { Input } from "@/components/ui/input";
 import { Panel } from "@/components/ui/panel";
@@ -28,6 +29,7 @@ import {
   type BadgeForm,
 } from "../badge-design";
 import { BadgeSheetSettings } from "./badge-card-settings";
+import { FULLSCREEN_CLASS, FullscreenButton, useDesignerFullscreen } from "@/modules/layout-config/wysiwyg/use-fullscreen";
 import { PreviewPdfButton } from "@/modules/layout-config/wysiwyg/preview-pdf-button";
 import { VersionHistoryButton, type ConfigVersion } from "@/modules/layout-config/wysiwyg/version-history";
 import { BADGE_SAMPLE_SETS } from "../badge-sample-values";
@@ -49,6 +51,7 @@ export function BadgeConfigView({ route }: { route?: RouteConfig }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loadedKey, setLoadedKey] = useState<string | null>(null);
   const [libraryOpen, setLibraryOpen] = useState(false);
+  const screen = useDesignerFullscreen();
   const sample = useSampleSet("layout-sample:badge", BADGE_SAMPLE_SETS);
   const history = useUndoHistory<BadgeForm>(blankBadgeForm());
   const form = history.value;
@@ -198,6 +201,15 @@ export function BadgeConfigView({ route }: { route?: RouteConfig }) {
     deleteMutation.mutate();
   }
 
+  // Kích thước ảnh nền gốc của cấu hình đã lưu, theo mã ảnh (kiểm tra độ phân giải bằng ảnh in thật, không dùng ảnh xem trước).
+  const savedSizes: Record<string, { width: number; height: number }> = {};
+  if (selectedConfig?.frontBackgroundAssetId && selectedConfig.frontBackgroundWidthPx && selectedConfig.frontBackgroundHeightPx) {
+    savedSizes[selectedConfig.frontBackgroundAssetId] = { width: selectedConfig.frontBackgroundWidthPx, height: selectedConfig.frontBackgroundHeightPx };
+  }
+  if (selectedConfig?.backBackgroundAssetId && selectedConfig.backBackgroundWidthPx && selectedConfig.backBackgroundHeightPx) {
+    savedSizes[selectedConfig.backBackgroundAssetId] = { width: selectedConfig.backBackgroundWidthPx, height: selectedConfig.backBackgroundHeightPx };
+  }
+
   const busy = saveMutation.isPending || saveAsNewMutation.isPending || setDefaultMutation.isPending || deleteMutation.isPending;
   const nameTooLong = form.name.length > MAX_NAME_LENGTH;
   const invalid = errors.length > 0;
@@ -259,7 +271,7 @@ export function BadgeConfigView({ route }: { route?: RouteConfig }) {
 
       {ready ? (
         // Bàn làm việc: toàn bộ chức năng nằm trong một màn hình; chỉ cột trường và cột thuộc tính tự cuộn.
-        <Panel className="flex flex-col overflow-hidden lg:h-[calc(100dvh-10.5rem)] lg:min-h-[520px]">
+        <Panel className={cn("flex flex-col overflow-hidden", screen.fullscreen ? FULLSCREEN_CLASS : "lg:h-[calc(100dvh-10.5rem)] lg:min-h-[520px]")}>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-border px-3 py-2">
             <div className="flex min-w-[220px] max-w-sm flex-1 items-center gap-1.5">
               <label className="sr-only" htmlFor="badge-config-name">
@@ -291,6 +303,7 @@ export function BadgeConfigView({ route }: { route?: RouteConfig }) {
             <BadgeSheetSettings disabled={!canEditCurrent} errors={errors} form={form} onChange={updateForm} />
 
             <div className="ml-auto flex flex-wrap items-center gap-2">
+              <FullscreenButton fullscreen={screen.fullscreen} onToggle={screen.toggle} />
               <Button aria-label="Hoàn tác" className="h-9 w-9" disabled={!canEditCurrent || !history.canUndo} onClick={undo} size="icon" title="Hoàn tác (Ctrl+Z)" type="button" variant="icon">
                 <ArrowCounterClockwise size={17} />
               </Button>
@@ -341,7 +354,7 @@ export function BadgeConfigView({ route }: { route?: RouteConfig }) {
           </div>
           {invalid && canEditCurrent ? <p className="border-b border-border bg-danger/5 px-3 py-1.5 text-xs text-danger">Sửa các lỗi ở phần khổ thẻ trước khi lưu.</p> : null}
 
-          <BadgeEditor sample={sample} canEdit={canEditCurrent} fields={fieldsQuery.data ?? []} form={form} onChange={(updater, key) => history.set(updater, key)} />
+          <BadgeEditor savedSizes={savedSizes} sample={sample} canEdit={canEditCurrent} fields={fieldsQuery.data ?? []} form={form} onChange={(updater, key) => history.set(updater, key)} />
         </Panel>
       ) : null}
     </div>

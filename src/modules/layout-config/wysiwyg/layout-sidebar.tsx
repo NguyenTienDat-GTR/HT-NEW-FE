@@ -92,19 +92,20 @@ function LayersList({ layout, fields, selection, onSelectionChange, onLayoutChan
         const selected = selection.includes(index);
         return (
           <li
-            className={cn("flex items-center gap-1 rounded-lg border px-1.5 py-1 text-xs", selected ? "border-primary bg-primary-soft" : "border-border bg-white", item.hidden ? "opacity-60" : "")}
+            className={cn("flex flex-col gap-0.5 rounded-lg border px-1.5 py-1 text-xs", selected ? "border-primary bg-primary-soft" : "border-border bg-white", item.hidden ? "opacity-60" : "")}
             key={index}
           >
             <button
-              className="flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 rounded-md px-1 py-1 text-left hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+              className="flex w-full min-w-0 cursor-pointer items-center gap-1.5 rounded-md px-1 py-1 text-left hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
               onClick={(event) => onSelectionChange(event.shiftKey ? (selected ? selection.filter((i) => i !== index) : [...selection, index]) : [index])}
               type="button"
             >
               <span className="shrink-0 text-text-secondary">
                 <ItemIcon item={item} />
               </span>
-              <span className="truncate font-medium text-foreground">{itemName(item, fields)}</span>
+              <span className="min-w-0 flex-1 break-words font-medium leading-4 text-foreground" title={itemName(item, fields)}>{itemName(item, fields)}</span>
             </button>
+            <div className="flex items-center justify-end gap-0.5">
             <IconButton
               disabled={disabled}
               label={item.hidden ? "Hiện phần tử" : "Ẩn phần tử (không in)"}
@@ -141,6 +142,7 @@ function LayersList({ layout, fields, selection, onSelectionChange, onLayoutChan
             >
               <ArrowDown size={15} />
             </IconButton>
+            </div>
           </li>
         );
       })}

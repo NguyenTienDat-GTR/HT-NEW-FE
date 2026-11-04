@@ -122,3 +122,23 @@ describe("templates", () => {
     }
   });
 });
+
+describe("sample values", () => {
+  it("leaves an intentionally empty sample value blank instead of showing the field label", async () => {
+    const { sampleValue } = await import("@/modules/certificates/components/certificate-design");
+    const { sampleBadgeValue } = await import("@/modules/badges/badge-design");
+    const label = (key?: string) => `[${key}]`;
+    expect(sampleValue("leaderSubUnitName", label, { leaderSubUnitName: "" })).toBe("");
+    expect(sampleValue("leaderParishName", label, { leaderParishName: "Giáo xứ A" })).toBe("Giáo xứ A");
+    expect(sampleValue("unknownKey", label, {})).toBe("[unknownKey]");
+    expect(sampleBadgeValue("leaderSubUnitName", "Nhãn", { leaderSubUnitName: "" })).toBe("");
+    expect(sampleBadgeValue("unknownKey", "Nhãn", {})).toBe("Nhãn");
+  });
+
+  it("does not warn about an empty field value, only about empty static text", () => {
+    const empty = analyzeLayout(ctx([at({ type: "FIELD", fieldKey: "leaderSubUnitName" })], { textOf: () => "" }));
+    expect(empty.some((w) => w.id.startsWith("empty"))).toBe(false);
+    const text = analyzeLayout(ctx([at({ type: "TEXT", text: "" })], { textOf: () => "" }));
+    expect(text.some((w) => w.id.startsWith("empty"))).toBe(true);
+  });
+});

@@ -21,17 +21,17 @@ export function WarningsButton({ warnings, onSelect }: { warnings: LayoutWarning
         <button
           aria-label={warnings.length === 0 ? "Bố cục không có cảnh báo" : `Có ${warnings.length} cảnh báo bố cục`}
           className={cn(
-            "pointer-events-auto inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-white px-2.5 text-xs font-semibold shadow-md hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary",
+            "relative grid h-9 w-9 cursor-pointer place-items-center rounded-lg hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary",
             tone,
           )}
           type="button"
         >
-          {warnings.length === 0 ? <CheckCircle size={16} weight="fill" /> : errors > 0 ? <WarningCircle size={16} weight="fill" /> : <Warning size={16} weight="fill" />}
-          {warnings.length === 0 ? "Ổn" : `${warnings.length} cảnh báo`}
+          {warnings.length === 0 ? <CheckCircle size={18} weight="fill" /> : errors > 0 ? <WarningCircle size={18} weight="fill" /> : <Warning size={18} weight="fill" />}
+          {warnings.length > 0 ? <span className="absolute -top-0.5 -right-0.5 grid min-w-4 place-items-center rounded-full bg-current px-1 text-[10px] font-bold leading-4"><span className="text-white">{warnings.length}</span></span> : null}
         </button>
       </Popover.Trigger>
       <Popover.Portal>
-        <Popover.Content align="end" className="z-50 w-[340px] rounded-xl border border-border bg-white p-2 shadow-[var(--shadow-card)]" collisionPadding={12} side="top" sideOffset={8}>
+        <Popover.Content align="start" className="z-50 w-[340px] rounded-xl border border-border bg-white p-2 shadow-[var(--shadow-card)]" collisionPadding={12} side="left" sideOffset={8}>
           <p className="px-1.5 pb-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted">Kiểm tra bố cục</p>
           {warnings.length === 0 ? (
             <p className="px-1.5 py-2 text-sm text-text-secondary">Không phát hiện vấn đề: chữ đủ lớn, không tràn trang, không chồng nhau.</p>
@@ -81,7 +81,7 @@ export function ShortcutsHelp() {
       <Popover.Trigger asChild>
         <button
           aria-label="Phím tắt"
-          className="pointer-events-auto grid h-9 w-9 cursor-pointer place-items-center rounded-lg border border-border bg-white text-text-secondary shadow-md hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+          className="grid h-9 w-9 cursor-pointer place-items-center rounded-lg text-text-secondary hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
           title="Phím tắt"
           type="button"
         >
@@ -89,7 +89,7 @@ export function ShortcutsHelp() {
         </button>
       </Popover.Trigger>
       <Popover.Portal>
-        <Popover.Content align="end" className="z-50 w-[360px] rounded-xl border border-border bg-white p-3 shadow-[var(--shadow-card)]" collisionPadding={12} side="top" sideOffset={8}>
+        <Popover.Content align="start" className="z-50 w-[360px] rounded-xl border border-border bg-white p-3 shadow-[var(--shadow-card)]" collisionPadding={12} side="left" sideOffset={8}>
           <p className="pb-2 text-sm font-semibold text-foreground">Phím tắt trong trình thiết kế</p>
           <dl className="space-y-1.5 text-[13px]">
             {SHORTCUTS.map(([keys, action]) => (
