@@ -3,7 +3,7 @@
 import createClient from "openapi-fetch";
 import { newIdempotencyKey } from "@/lib/api/idempotency";
 import type { paths } from "./schema";
-import { useAuthStore, type AuthUser } from "@/lib/auth/auth-store";
+import { bearerTokenOf, COOKIE_SESSION, useAuthStore, type AuthUser } from "@/lib/auth/auth-store";
 
 export type ApiEnvelope<T> = {
   success: boolean;
@@ -47,8 +47,8 @@ export async function refreshAccessToken() {
     })
       .then(async (response) => {
         if (!response.ok) return null;
-        const envelope = (await response.json()) as ApiEnvelope<{ accessToken: string; user?: AuthUser }>;
-        const token = envelope.data?.accessToken ?? null;
+        const envelope = (await response.json()) as ApiEnvelope<{ accessToken?: string; user?: AuthUser }>;
+        const token = envelope.data?.accessToken ?? (envelope.data?.user ? COOKIE_SESSION : null);
         useAuthStore.getState().setAccessToken(token);
         if (envelope.data?.user) useAuthStore.getState().setUser(envelope.data.user);
         return token;
@@ -98,7 +98,8 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}, retry = 
   if (!(init.body instanceof FormData) && init.body !== undefined) {
     headers.set("content-type", "application/json");
   }
-  if (token) headers.set("authorization", `Bearer ${token}`);
+  const bearer = bearerTokenOf(token);
+  if (bearer) headers.set("authorization", `Bearer ${bearer}`);
 
   const response = await fetch(`/backend/api${path}`, {
     ...init,
@@ -125,7 +126,8 @@ export async function apiDownload(path: string, init: RequestInit = {}, retry = 
   if (!(init.body instanceof FormData) && init.body !== undefined) {
     headers.set("content-type", "application/json");
   }
-  if (token) headers.set("authorization", `Bearer ${token}`);
+  const bearer = bearerTokenOf(token);
+  if (bearer) headers.set("authorization", `Bearer ${bearer}`);
 
   const response = await fetch(`/backend/api${path}`, {
     ...init,
