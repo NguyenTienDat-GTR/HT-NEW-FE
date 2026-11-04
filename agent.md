@@ -579,3 +579,13 @@ BE tương ứng: `BE/project.md` mục "Training Course Registration Control an
 - `resource-list-runtime.tsx`: `ExcelImportDialog` của tab danh sách tham dự luôn bật `allowAvatarZip` (trước đây chỉ khóa quá khứ); mô tả và gợi ý của khóa thường nhắc ảnh tùy chọn và cột "Tên file ảnh". Ô chọn ZIP, tạo ZIP đã căn mặt và gửi `images` dùng lại luồng có sẵn của hồ sơ huynh trưởng / khóa quá khứ.
 - `course-teams-view.tsx`: `ExcelImportDialog` của chia đội bật `allowAvatarZip` (mô tả và gợi ý nhắc cột "Tên file ảnh").
 
+## Chính sách bảo vệ dữ liệu cá nhân và ô đồng ý (2026-11-04, nhánh `feature/privacy-policy-consent`)
+
+- Kết quả rà soát bằng công cụ `mhfed/vn-law-check` (Luật 91/2025/QH15, NĐ 356/2025/NĐ-CP): hệ thống chưa có chính sách và chưa xin đồng ý ở đâu.
+- Trang công khai `/chinh-sach-bao-mat` (`src/app/chinh-sach-bao-mat/page.tsx`, nội dung ở `modules/privacy/components/policy-sections.tsx`); `proxy.ts` loại đường dẫn này khỏi kiểm tra cookie phiên. Link ở `auth-shell.tsx` và menu tài khoản.
+- Thông tin pháp nhân và phiên bản chính sách nằm ở `modules/privacy/constants.ts` (các mục `[ĐIỀN: ...]`). `PRIVACY_POLICY_VERSION` phải khớp `app.privacy.policy-version` của BE.
+- `components/common/consent-checkbox.tsx`: ô đồng ý không tích sẵn, hai biến thể `self` (người dùng tự đồng ý) và `attestation` (quản trị viên xác nhận người có dữ liệu đã đồng ý khi nhập hộ).
+- Cổng đồng ý sau đăng nhập `PrivacyConsentGate` gắn trong `AuthGate`: chưa đồng ý bản chính sách hiện hành thì chặn bằng hộp thoại (nút Đăng xuất). Mục "Quyền riêng tư" trong hồ sơ cá nhân xem trạng thái và rút đồng ý (rút xong đăng xuất).
+- Ô đồng ý (self): sửa hồ sơ, đổi email, ảnh đại diện tài khoản (`AvatarUploadDialog requireConsent`); gửi `privacyConsent: true`.
+- Ô xác nhận (attestation): engine form có cờ `consentAttestation` ở `ResourceFormSpec` (bật cho huynh trưởng, tài khoản, giáo phận, giáo hạt, giáo xứ; gửi `subjectConsentConfirmed: true`); `ExcelImportDialog` luôn có ô này và gửi multipart `subjectConsentConfirmed` (huynh trưởng, người tham dự khóa, chia đội).
+- Test: `consent-checkbox.test.tsx`, `privacy-consent-gate.test.tsx`; cập nhật test hộp thoại import, sửa hồ sơ, `excel-jobs-client`, `proxy`.

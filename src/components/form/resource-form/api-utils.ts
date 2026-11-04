@@ -8,7 +8,7 @@ export function rowsFromResponse<T extends Record<string, unknown>>(data: PageRe
   return data.content ?? [];
 }
 
-export function optionFromRow(row: Record<string, unknown>, valueKey = "id", labelKey = "name", labelFields?: string[], labelBuilder?: (row: Record<string, unknown>) => string): Option {
+export function optionFromRow(row: Record<string, unknown>, valueKey = "id", labelKey = "name", labelFields?: string[], labelBuilder?: (row: Record<string, unknown>) => string, detailsBuilder?: (row: Record<string, unknown>) => string[]): Option {
   const value = row[valueKey] ?? row.id ?? row.code ?? row.username ?? row.roleCode ?? row.permissionCode;
   const joinedLabel = labelFields
     ?.map((field) => row[field])
@@ -29,9 +29,10 @@ export function optionFromRow(row: Record<string, unknown>, valueKey = "id", lab
       : moduleCode
         ? formatPermissionTaxonomyValue("module", moduleCode)
         : undefined,
-    disabled: row.disabled === true,
-    disabledReason: typeof row.disabledReason === "string" ? row.disabledReason : undefined,
-    details: accountDetails(row),
+    disabled: row.disabled === true || row.assigned === true,
+    disabledReason: row.assigned === true ? "Đã gán cho tài khoản" : typeof row.disabledReason === "string" ? row.disabledReason : undefined,
+    assigned: row.assigned === true ? true : undefined,
+    details: detailsBuilder ? detailsBuilder(row) : accountDetails(row),
     taxonomy: moduleCode || resourceCode || actionCode || scopeCode ? { module: moduleCode, resource: resourceCode, action: actionCode, scope: scopeCode } : undefined,
   };
 }

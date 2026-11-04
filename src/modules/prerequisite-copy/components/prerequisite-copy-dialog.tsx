@@ -12,7 +12,7 @@ import { emptyFilters, type CandidateFilters, type CopyCandidate, type CopyResul
 import { CandidateFilterBar } from "./candidate-filter-bar";
 import { CandidateTable } from "./candidate-table";
 import { SourceCoursePicker } from "./source-course-picker";
-import { resourceKey } from "@/lib/api/query-keys";
+import { resourceKey, invalidateDataQueries } from "@/lib/api/query-keys";
 
 // Sao chép danh sách tham dự của khóa tiên quyết đã kết thúc vào danh sách tham dự của khóa (không cần duyệt đăng ký lại).
 // Nút chỉ hiện khi khóa còn sao chép được và có ít nhất một khóa tiên quyết đã kết thúc trong phạm vi khóa.
@@ -58,8 +58,7 @@ export function PrerequisiteCopyDialog({ courseCode }: { courseCode: string }) {
         toast.warning(`${result.skipped.length} hồ sơ không được sao chép: ${result.skipped[0].reason}${result.skipped.length > 1 ? "…" : ""}`);
       }
       setOpen(false);
-      await queryClient.invalidateQueries({ queryKey: resourceKey() });
-      await queryClient.invalidateQueries({ queryKey: ["prerequisite-copy-candidates", courseCode] });
+      await invalidateDataQueries(queryClient);
     },
   });
 

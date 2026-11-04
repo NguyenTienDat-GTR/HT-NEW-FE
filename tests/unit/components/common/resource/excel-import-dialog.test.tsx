@@ -25,6 +25,13 @@ function pickFile(name: string) {
   fireEvent.change(input, { target: { files: [new File(["x"], name)] } });
 }
 
+// Hộp thoại import bắt buộc tích xác nhận người có dữ liệu đã đồng ý (không tích sẵn) trước khi bấm Import.
+function clickImport() {
+  const consent = screen.getByRole("checkbox", { name: /Tôi xác nhận người có thông tin/ }) as HTMLInputElement;
+  if (!consent.checked) fireEvent.click(consent);
+  fireEvent.click(screen.getByRole("button", { name: "Import" }));
+}
+
 describe("ExcelImportDialog (tác vụ nền)", () => {
   beforeEach(() => {
     useAuthStore.getState().setAccessToken("token");
@@ -48,6 +55,10 @@ describe("ExcelImportDialog (tác vụ nền)", () => {
 
     pickFile("mau.xlsx");
     expect(screen.queryByRole("alert")).toBeNull();
+    // Chưa xác nhận đồng ý của người có dữ liệu thì vẫn chưa import được.
+    expect(submit).toBeDisabled();
+    expect(screen.getByRole("checkbox", { name: /Tôi xác nhận người có thông tin/ })).not.toBeChecked();
+    fireEvent.click(screen.getByRole("checkbox", { name: /Tôi xác nhận người có thông tin/ }));
     expect(submit).toBeEnabled();
   });
 
@@ -57,7 +68,7 @@ describe("ExcelImportDialog (tác vụ nền)", () => {
       .mockResolvedValueOnce(new Response(JSON.stringify({ success: true, data: { ...job, warning: "File này đã được import thành công lúc 10:00 01/01/2026." } }), { status: 202 }));
     renderImport();
     pickFile("mau.xlsx");
-    fireEvent.click(screen.getByRole("button", { name: "Import" }));
+    clickImport();
 
     await waitFor(() => expect(excelJobsStore.getState().jobs.map((item) => item.id)).toEqual(["job-9"]));
     const [url, init] = fetchMock.mock.calls[0] ?? [];
@@ -74,11 +85,11 @@ describe("ExcelImportDialog (tác vụ nền)", () => {
       .mockResolvedValueOnce(new Response(JSON.stringify({ success: true, data: job }), { status: 202 }));
     renderImport();
     pickFile("mau.xlsx");
-    fireEvent.click(screen.getByRole("button", { name: "Import" }));
+    clickImport();
 
     await screen.findByText("Đang có một tác vụ cùng loại đang chạy");
     expect(excelJobsStore.getState().jobs).toHaveLength(0);
-    fireEvent.click(screen.getByRole("button", { name: "Import" }));
+    clickImport();
     await waitFor(() => expect(excelJobsStore.getState().jobs).toHaveLength(1));
 
     const keys = fetchMock.mock.calls.map((call) => new Headers((call[1] as RequestInit).headers).get("idempotency-key"));

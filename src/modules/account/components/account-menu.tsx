@@ -1,12 +1,13 @@
 "use client";
 
-import { CaretDown, EnvelopeSimple, IdentificationCard, Key, SignOut } from "@phosphor-icons/react";
+import { CaretDown, EnvelopeSimple, IdentificationCard, Key, ShieldCheck, SignOut } from "@phosphor-icons/react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { useRouter } from "next/navigation";
 import type React from "react";
 import { useState } from "react";
 import { useAuthStore } from "@/lib/auth/auth-store";
 import { cn } from "@/lib/utils";
+import { PRIVACY_POLICY_PATH } from "@/modules/privacy/constants";
 import { useMyProfile } from "../account-api";
 import { displayName, primaryRoleName, roleLabel } from "../account-display";
 import { ChangePasswordDialog } from "./change-password-dialog";
@@ -91,6 +92,12 @@ export function AccountMenu({ onLogout, loggingOut }: { onLogout: () => void; lo
               icon={Key}
               label="Đổi mật khẩu"
               onSelect={() => setPasswordOpen(true)}
+            />
+            <MenuItem
+              description="Cách hệ thống xử lý dữ liệu cá nhân"
+              icon={ShieldCheck}
+              label="Chính sách bảo mật"
+              onSelect={() => router.push(PRIVACY_POLICY_PATH)}
             />
 
             <DropdownMenu.Separator className="my-1 h-px bg-border" />

@@ -4,6 +4,7 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { DownloadSimple, FileArrowUp, FileXls, FileZip, X } from "@phosphor-icons/react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
+import { ConsentCheckbox } from "@/components/common/consent-checkbox";
 import { Button } from "@/components/ui/button";
 import { downloadFile, getApiErrorMessage } from "@/lib/api/client";
 import { createExcelImportJob } from "@/lib/jobs/excel-jobs-client";
@@ -48,6 +49,8 @@ export function ExcelImportDialog({ endpoint, title, description, hint, triggerL
   const [open, setOpen] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
+  // Xác nhận người có dữ liệu trong file đã đồng ý: luôn chưa tích mỗi lần mở.
+  const [consent, setConsent] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   // ZIP ảnh: các ảnh đã tự cắt quanh khuôn mặt, đang chờ người dùng xem lại trước khi gửi.
   const zipInputRef = useRef<HTMLInputElement>(null);
@@ -70,6 +73,7 @@ export function ExcelImportDialog({ endpoint, title, description, hint, triggerL
 
   function reset() {
     setFile(null);
+    setConsent(false);
     setErrorMessage(null);
     keyRef.current = null;
     if (inputRef.current) inputRef.current.value = "";
@@ -166,7 +170,7 @@ export function ExcelImportDialog({ endpoint, title, description, hint, triggerL
   }
 
   async function submit() {
-    if (!file) return;
+    if (!file || !consent) return;
     setLoading(true);
     setErrorMessage(null);
     const images = allowAvatarZip && prepared ? buildAvatarZip(prepared.items) : null;
@@ -177,7 +181,7 @@ export function ExcelImportDialog({ endpoint, title, description, hint, triggerL
     }
     if (!keyRef.current) keyRef.current = newIdempotencyKey();
     try {
-      const job = await createExcelImportJob(endpoint, file, keyRef.current, images);
+      const job = await createExcelImportJob(endpoint, file, keyRef.current, images, true);
       excelJobsStore.getState().track(job);
       if (job.warning) toast.warning(job.warning, { duration: 12000 });
       toast.info(job.replayed ? "File này đã được gửi trước đó, xem tiến độ ở khay tác vụ" : "Đã nhận file, đang import nền. Bạn có thể tiếp tục làm việc.");
@@ -301,11 +305,13 @@ export function ExcelImportDialog({ endpoint, title, description, hint, triggerL
             ) : null}
             </div>
 
+            <ConsentCheckbox checked={consent} className="mt-4" disabled={loading} onChange={setConsent} variant="attestation" />
+
             <div className="mt-5 flex justify-end gap-3">
               <Button onClick={() => setOpen(false)} type="button" variant="outline">
                 Hủy
               </Button>
-              <Button disabled={!file || progress !== null} loading={loading} onClick={submit} type="button">
+              <Button disabled={!file || !consent || progress !== null} loading={loading} onClick={submit} type="button">
                 Import
               </Button>
             </div>

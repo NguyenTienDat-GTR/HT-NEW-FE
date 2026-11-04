@@ -165,6 +165,8 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
 
   async function refresh() {
     await queryClient.invalidateQueries({ queryKey: ["certificate-config"] });
+    // Bản xem trước chứng nhận dựng từ mẫu: đổi mẫu thì ảnh xem trước cũ không còn đúng.
+    await queryClient.invalidateQueries({ queryKey: ["certificate-preview"] });
   }
 
   function notifyRenamed(requested: string, saved: ConfigResponse) {

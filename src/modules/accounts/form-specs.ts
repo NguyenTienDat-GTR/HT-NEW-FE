@@ -1,6 +1,7 @@
 import { compactPayload, type ResourceFormSpec } from "@/components/form/resource-form/types";
 import { hasRole, isSuperAdmin } from "@/lib/auth/permissions";
 import type { AuthUser } from "@/lib/auth/auth-store";
+import { leaderLevelName } from "@/modules/leader-levels/leader-level-store";
 import { withFilters } from "@/lib/api/filters";
 
 const systemAdminRoleCodes = ["SUPER_ADMIN", "ADMIN_DIOCESE", "ADMIN_DEANERY", "ADMIN_PARISH"];
@@ -15,6 +16,10 @@ function canPickDeanery(user: AuthUser | null | undefined) {
 
 function canPickParish(user: AuthUser | null | undefined) {
   return hasRole(user, "ADMIN_DIOCESE") || hasRole(user, "ADMIN_DEANERY");
+}
+
+function text(value: unknown) {
+  return typeof value === "string" ? value.trim() : "";
 }
 
 function candidateEndpoint(values: Record<string, unknown>) {
@@ -35,6 +40,7 @@ export function getAccountCreateExcludedRoleCodes(user: AuthUser | null) {
 export const systemFormSpecs: ResourceFormSpec[] = [
   {
     kind: "accounts",
+    consentAttestation: true,
     actionType: "create",
     superAdminOnly: true,
     createTitle: "Tạo tài khoản",
@@ -84,6 +90,7 @@ export const systemFormSpecs: ResourceFormSpec[] = [
   },
   {
     kind: "accounts",
+    consentAttestation: true,
     createTitle: "Tạo tài khoản",
     description: "Chọn huynh trưởng liên kết, các vai trò được gán và một vai trò chính.",
     getInitialValues: (user) => ({
@@ -127,9 +134,12 @@ export const systemFormSpecs: ResourceFormSpec[] = [
         serverFiltered: true,
         optionValue: "id",
         optionLabel: "fullName",
-        optionLabelFields: ["holyName", "fullName", "parishName"],
+        optionLabelBuilder: (row) => [row.holyName, row.fullName].filter((item) => typeof item === "string" && item.trim()).join(" "),
+        optionDetailsBuilder: (row) =>
+          [leaderLevelName(text(row.leaderLevel)), text(row.subUnitName)].filter(Boolean),
         searchable: true,
         required: true,
+        wide: true,
         section: "Thông tin tài khoản",
       },
       {
@@ -218,31 +228,26 @@ export const systemFormSpecs: ResourceFormSpec[] = [
       { name: "username", label: "Tài khoản", type: "select", required: true, optionsEndpoint: "/system/accounts", optionValue: "username", optionLabel: "username", readOnlyOnEdit: true, section: "Thiết lập" },
       {
         name: "roleCodes",
-        label: "Danh sách vai trò chưa gán",
+        label: "Danh sách vai trò",
         type: "checkbox-list",
         required: true,
-        buildOptionsEndpoint: (values) => buildTargetOptionsEndpoint("/system/account-roles/assignable-roles", "username", values.username),
+        buildOptionsEndpoint: (values) => buildTargetOptionsEndpoint("/system/account-roles/assignable-roles", "username", values.username, { includeAssigned: "true" }),
         optionValue: "roleCode",
         optionLabel: "roleName",
         readOnlyOnEdit: true,
         maxSelect: 3,
-        helper: "Chọn tài khoản trước để tải các vai trò chưa được gán cho account này. Mỗi tài khoản tối đa 3 vai trò.",
-        section: "Vai trò chưa gán",
+        helper: "Chọn tài khoản trước để tải danh sách vai trò. Vai trò đã gán được đánh dấu sẵn và không thể chọn lại. Mỗi tài khoản tối đa 3 vai trò.",
+        section: "Vai trò",
       },
-      {
-        name: "primaryRoleCode",
-        label: "Vai trò chính",
-        type: "select",
-        buildOptionsEndpoint: (values) => buildTargetOptionsEndpoint("/system/account-roles/assignable-roles", "username", values.username),
-        optionValue: "roleCode",
-        optionLabel: "roleName",
-        helper: "Nếu chọn, vai trò này phải nằm trong danh sách vai trò đã tick.",
-        section: "Thiết lập",
-      },
+      { name: "leaderInfo", label: "Huynh trưởng của tài khoản", type: "account-leader-info", wide: true, section: "Thiết lập" },
       { name: "assignedAt", label: "Ngày gán", type: "datetime", section: "Thời hạn" },
       { name: "expiresAt", label: "Ngày hết hạn", type: "datetime", clearable: true, section: "Thời hạn" },
     ],
-    mapSubmit: (values) => compactPayload(values),
+    mapSubmit: (values) => {
+      const payload = compactPayload(values);
+      delete payload.leaderInfo;
+      return payload;
+    },
   },
   {
     kind: "account-roles",
@@ -454,10 +459,11 @@ export const systemFormSpecs: ResourceFormSpec[] = [
   },
 ];
 
-function buildTargetOptionsEndpoint(basePath: string, key: string, value: unknown) {
+function buildTargetOptionsEndpoint(basePath: string, key: string, value: unknown, extra?: Record<string, string>) {
   const target = typeof value === "string" ? value.trim() : "";
   if (!target) return undefined;
-  return `${basePath}?${key}=${encodeURIComponent(target)}`;
+  const extraQuery = Object.entries(extra ?? {}).map(([name, item]) => `&${name}=${encodeURIComponent(item)}`).join("");
+  return `${basePath}?${key}=${encodeURIComponent(target)}${extraQuery}`;
 }
 
 function currentDatetimeLocal() {

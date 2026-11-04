@@ -8,13 +8,15 @@ export type Option = {
   group?: string;
   disabled?: boolean;
   disabledReason?: string;
+  // Mục đã được gán sẵn (vd. vai trò tài khoản đã có): hiển thị đã tick, không đổi được và vẫn tính vào giới hạn chọn.
+  assigned?: boolean;
   // Các dòng thông tin phụ hiển thị dưới nhãn (ví dụ vai trò, huynh trưởng, giáo xứ, giáo hạt của tài khoản).
   details?: string[];
   // Phân loại quyền để lọc trong danh sách tick quyền.
   taxonomy?: { module?: string; resource?: string; action?: string; scope?: string };
 };
 
-export type FieldType = "text" | "email" | "url" | "image" | "number" | "date" | "datetime" | "textarea" | "select" | "multiselect" | "checkbox-list" | "radio" | "switch" | "registration-list" | "score-components";
+export type FieldType = "text" | "email" | "url" | "image" | "number" | "date" | "datetime" | "textarea" | "select" | "multiselect" | "checkbox-list" | "radio" | "switch" | "registration-list" | "score-components" | "account-leader-info";
 
 export type FormFieldSpec = {
   name: string;
@@ -36,6 +38,8 @@ export type FormFieldSpec = {
   optionLabelFields?: string[];
   // Tự dựng nhãn từ cả dòng dữ liệu (ví dụ ghép loại đơn vị + tên + giáo hạt); ưu tiên hơn optionLabelFields.
   optionLabelBuilder?: (row: Record<string, unknown>) => string;
+  // Các dòng thông tin phụ dưới nhãn của từng lựa chọn (thay cho dòng mã mặc định).
+  optionDetailsBuilder?: (row: Record<string, unknown>) => string[];
   optionSearchParam?: string;
   // Server đã lọc kết quả theo từ khóa tìm (optionSearchParam), không lọc lại ở trình duyệt theo nhãn hiển thị.
   serverFiltered?: boolean;
@@ -93,6 +97,9 @@ export type ResourceFormSpec = {
   submitLabel?: string;
   fields: FormFieldSpec[];
   mapSubmit?: (values: Record<string, unknown>, mode: ResourceFormMode) => Record<string, unknown>;
+  // Form quản trị viên nhập dữ liệu cá nhân của người khác: bắt buộc tích xác nhận người đó đã được thông báo và đồng ý (không tích sẵn).
+  // Khi gửi sẽ kèm subjectConsentConfirmed = true để BE ghi bằng chứng.
+  consentAttestation?: boolean;
   // Form đăng ký: hồ sơ ngoài đợt của khóa phải được xác nhận kèm lí do riêng trước khi gửi.
   offTarget?: {
     collect: (values: Record<string, unknown>) => RegistrationEntry[];

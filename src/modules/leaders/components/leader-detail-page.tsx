@@ -1,6 +1,7 @@
 "use client";
 
 import { AvatarLightbox } from "@/components/common/avatar-lightbox";
+import { ConsentCheckbox } from "@/components/common/consent-checkbox";
 import { AvatarUploadDialog } from "@/components/common/avatar-upload-dialog";
 import { MediaImage } from "@/components/common/media-image";
 import { BookOpen, Certificate as CertificateIcon, EnvelopeSimple, FloppyDisk, HouseLine, IdentificationCard, ImageSquare, Key, PencilSimple, Phone, User, X } from "@phosphor-icons/react";
@@ -18,7 +19,7 @@ import { useAuthStore } from "@/lib/auth/auth-store";
 import { canUseAction } from "@/lib/auth/permissions";
 import { cn } from "@/lib/utils";
 import { formatLeaderLevel } from "@/components/common/resource/resource-format";
-import { resourceKey } from "@/lib/api/query-keys";
+import { invalidateDataQueries } from "@/lib/api/query-keys";
 import { actorLabel, formatDate, genderLabel, type LeaderDetail, type RankHistoryRow } from "./leader-detail-utils";
 import { canTransferLeader, emptyLeaderEditValues, leaderEditableFields, toLeaderUpdatePayload, validateLeaderEdit, valuesFromLeader, type LeaderEditValues } from "./leader-edit";
 import { SectionCard, ProfileField, MetaText, HeaderFact, LevelBadge, StatusBadge, LeaderDetailSkeleton } from "./leader-detail-ui";
@@ -44,6 +45,9 @@ export function LeaderDetailPage({id, route}: LeaderDetailPageProps) {
     const [editingProfile, setEditingProfile] = useState(false);
     const [editValues, setEditValues] = useState<LeaderEditValues>(emptyLeaderEditValues);
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+    // Quản trị viên xác nhận người có hồ sơ đã được thông báo và đồng ý (luôn chưa tích mỗi lần sửa).
+    const [consentConfirmed, setConsentConfirmed] = useState(false);
+    const [consentError, setConsentError] = useState(false);
     const user = useAuthStore((state) => state.user);
     const queryClient = useQueryClient();
     const leaderQuery = useQuery({
@@ -60,16 +64,18 @@ export function LeaderDetailPage({id, route}: LeaderDetailPageProps) {
             if (Object.keys(nextErrors).length) throw new Error("Vui lòng kiểm tra các trường bắt buộc");
             return apiFetch<LeaderDetail>(`/leaders/${encodeURIComponent(id)}`, {
                 method: "PUT",
-                body: JSON.stringify(toLeaderUpdatePayload(editValues)),
+                body: JSON.stringify({...toLeaderUpdatePayload(editValues), subjectConsentConfirmed: true}),
             });
         },
         onSuccess: async (updatedLeader) => {
             toast.success("Lưu cập nhật thành công");
             setEditingProfile(false);
             setFieldErrors({});
+            setConsentConfirmed(false);
+            setConsentError(false);
             queryClient.setQueryData(["leader-detail-page", id], updatedLeader);
-            await queryClient.invalidateQueries({queryKey: resourceKey(route.endpoint)});
-            await queryClient.invalidateQueries({queryKey: ["leader-detail-page", id]});
+            // Tên / giáo xứ của huynh trưởng nằm trong chứng nhận, hồ sơ tham dự, ban điều hành: làm mới tất cả.
+            await invalidateDataQueries(queryClient);
         },
         onError: (error) => {
             toast.error(getApiErrorMessage(error));
@@ -93,7 +99,7 @@ export function LeaderDetailPage({id, route}: LeaderDetailPageProps) {
     } : leader;
 
     return (
-        <div className="space-y-4 pb-16">
+        <div className={cn("space-y-4", editingProfile ? "pb-44" : "pb-16")}>
             <div>
                 <h1 className="text-xl font-bold leading-7 tracking-[0] text-foreground">Chi tiết huynh
                     trưởng</h1>
@@ -214,23 +220,47 @@ export function LeaderDetailPage({id, route}: LeaderDetailPageProps) {
             {editingProfile && activeTab === "profile" ? (
                 <div
                     className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-white/95 px-4 py-2.5 shadow-[var(--shadow-bottom-bar)] backdrop-blur">
-                    <div className="mx-auto flex max-w-[1180px] justify-end gap-3">
-                        <Button
-                            onClick={() => {
-                                setEditingProfile(false);
-                                setEditValues(emptyLeaderEditValues);
-                                setFieldErrors({});
+                    <div className="mx-auto max-w-[1180px] space-y-2.5">
+                        <ConsentCheckbox
+                            checked={consentConfirmed}
+                            disabled={mutation.isPending}
+                            error={consentError && !consentConfirmed ? "Vui lòng xác nhận trước khi lưu" : null}
+                            onChange={(checked) => {
+                                setConsentConfirmed(checked);
+                                if (checked) setConsentError(false);
                             }}
-                            type="button"
-                            variant="outline"
-                        >
-                            <X size={16}/>
-                            Hủy
-                        </Button>
-                        <Button loading={mutation.isPending} onClick={() => mutation.mutate()} type="button">
-                            <FloppyDisk size={16}/>
-                            Lưu cập nhật
-                        </Button>
+                            variant="attestation"
+                        />
+                        <div className="flex justify-end gap-3">
+                            <Button
+                                onClick={() => {
+                                    setEditingProfile(false);
+                                    setEditValues(emptyLeaderEditValues);
+                                    setFieldErrors({});
+                                    setConsentConfirmed(false);
+                                    setConsentError(false);
+                                }}
+                                type="button"
+                                variant="outline"
+                            >
+                                <X size={16}/>
+                                Hủy
+                            </Button>
+                            <Button
+                                loading={mutation.isPending}
+                                onClick={() => {
+                                    if (!consentConfirmed) {
+                                        setConsentError(true);
+                                        return;
+                                    }
+                                    mutation.mutate();
+                                }}
+                                type="button"
+                            >
+                                <FloppyDisk size={16}/>
+                                Lưu cập nhật
+                            </Button>
+                        </div>
                     </div>
                 </div>
             ) : null}

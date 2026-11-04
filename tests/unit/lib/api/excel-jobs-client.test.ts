@@ -138,3 +138,21 @@ describe("apiMutationOnce", () => {
     expect(keys[3]).not.toBe(keys[2]);
   });
 });
+
+describe("xác nhận đồng ý khi nhập hộ", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    useAuthStore.getState().clear();
+  });
+
+  it("gửi subjectConsentConfirmed trong multipart khi quản trị viên đã xác nhận, và không gửi khi chưa", async () => {
+    useAuthStore.getState().setAccessToken("token");
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async () => okEnvelope({ ...job, kind: "IMPORT_LEADERS", importJob: true }, 202));
+
+    await createExcelImportJob("/leaders/import", new File(["x"], "mau.xlsx"), "key-123456789", null, true);
+    await createExcelImportJob("/leaders/import", new File(["x"], "mau.xlsx"), "key-123456780");
+
+    expect((fetchMock.mock.calls[0]?.[1]?.body as FormData).get("subjectConsentConfirmed")).toBe("true");
+    expect((fetchMock.mock.calls[1]?.[1]?.body as FormData).has("subjectConsentConfirmed")).toBe(false);
+  });
+});

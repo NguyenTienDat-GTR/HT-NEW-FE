@@ -8,7 +8,9 @@ import { resolveWsUrl } from "@/lib/env";
 import { apiFetch, refreshAccessToken } from "@/lib/api/client";
 import { useAuthStore, type AuthUser } from "@/lib/auth/auth-store";
 import { notificationKeys } from "@/modules/notifications/hooks";
-import { resourceKey } from "@/lib/api/query-keys";
+import { resourceKey, invalidateDataQueries } from "@/lib/api/query-keys";
+
+const DATA_REFRESH_DEBOUNCE_MS = 400;
 
 export function useNotificationsSocket() {
   const queryClient = useQueryClient();
@@ -17,6 +19,15 @@ export function useNotificationsSocket() {
 
   useEffect(() => {
     if (!token) return;
+    // Sự kiện đến dồn dập (vd. lưu điểm hàng loạt: mỗi hồ sơ một sự kiện) chỉ làm mới dữ liệu một lần sau khi lắng xuống.
+    let refreshTimer: ReturnType<typeof setTimeout> | undefined;
+    const refreshData = () => {
+      if (refreshTimer) clearTimeout(refreshTimer);
+      refreshTimer = setTimeout(() => {
+        refreshTimer = undefined;
+        void invalidateDataQueries(queryClient);
+      }, DATA_REFRESH_DEBOUNCE_MS);
+    };
     const client = new Client({
       brokerURL: resolveWsUrl(),
       reconnectDelay: 5000,
@@ -26,21 +37,17 @@ export function useNotificationsSocket() {
         client.connectHeaders = { Authorization: `Bearer ${useAuthStore.getState().accessToken ?? ""}` };
       },
       onConnect: () => {
-        client.subscribe("/user/queue/notifications", (message) => {
-          // Sự kiện đóng/mở đăng ký từ RabbitMQ: cập nhật luôn trạng thái trong danh sách khóa.
-          if (isCourseRegistrationEvent(message.body)) {
-            void queryClient.invalidateQueries({ queryKey: resourceKey("/training/courses") });
-          }
+        client.subscribe("/user/queue/notifications", () => {
+          // Mỗi thông báo đi kèm một thay đổi dữ liệu đã commit (tự duyệt hồ sơ, duyệt / từ chối, mở / đóng đăng ký,
+          // chuyển giáo xứ...), kể cả thay đổi do tác vụ nền: làm mới các màn dữ liệu đang mở để không hiện bản cũ.
+          refreshData();
           void queryClient.invalidateQueries({ queryKey: resourceKey("/system/notifications") });
           void queryClient.invalidateQueries({ queryKey: ["system", "notifications"] });
           void queryClient.invalidateQueries({ queryKey: notificationKeys.unreadCount });
         });
-        // Chứng nhận đổi (chấm điểm, tạo, sửa, duyệt): tải lại màn chứng nhận, tab duyệt chứng nhận và bảng chấm điểm của khóa.
-        client.subscribe("/topic/certificate-events", () => {
-          void queryClient.invalidateQueries({ queryKey: resourceKey("/certificates") });
-          void queryClient.invalidateQueries({ queryKey: resourceKey("/training/participants") });
-          void queryClient.invalidateQueries({ queryKey: ["resource-detail", "/certificates"] });
-        });
+        // Chứng nhận đổi (chấm điểm, tạo, sửa, duyệt, thu hồi, kết thúc khóa): tải lại màn chứng nhận, tab duyệt chứng nhận,
+        // bảng chấm điểm, chi tiết khóa và trang huynh trưởng đang mở.
+        client.subscribe("/topic/certificate-events", refreshData);
         client.subscribe("/user/queue/auth-events", () => {
           void refreshAccessToken().then(async (nextToken) => {
             if (!nextToken) {
@@ -61,16 +68,9 @@ export function useNotificationsSocket() {
     });
     client.activate();
     return () => {
+      if (refreshTimer) clearTimeout(refreshTimer);
       void client.deactivate();
     };
   }, [queryClient, router, token]);
 }
 
-function isCourseRegistrationEvent(body: string) {
-  try {
-    const eventType = (JSON.parse(body) as { eventType?: unknown }).eventType;
-    return typeof eventType === "string" && eventType.startsWith("training.course.registration_");
-  } catch {
-    return false;
-  }
-}

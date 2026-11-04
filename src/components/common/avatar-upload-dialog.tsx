@@ -3,6 +3,7 @@
 import { Camera, MagnifyingGlassMinus, MagnifyingGlassPlus, UploadSimple, UserFocus, Warning, X } from "@phosphor-icons/react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { useEffect, useRef, useState } from "react";
+import { ConsentCheckbox } from "@/components/common/consent-checkbox";
 import { MediaImage } from "@/components/common/media-image";
 import { Button } from "@/components/ui/button";
 import { getApiErrorMessage } from "@/lib/api/client";
@@ -19,6 +20,7 @@ export function AvatarUploadDialog({
   onOpenChange,
   currentUrl,
   category = "LEADER_AVATAR",
+  requireConsent = false,
   onUploaded,
 }: {
   open: boolean;
@@ -27,6 +29,8 @@ export function AvatarUploadDialog({
   currentUrl?: string | null;
   // Loại ảnh gửi lên backend: ảnh huynh trưởng (mặc định) hoặc ảnh tài khoản không gắn huynh trưởng.
   category?: "LEADER_AVATAR" | "ACCOUNT_AVATAR";
+  // Người dùng tự đặt ảnh của chính mình: bắt buộc tích đồng ý xử lý dữ liệu trước khi dùng ảnh (không tích sẵn).
+  requireConsent?: boolean;
   onUploaded: (result: MediaUploadResult) => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -38,6 +42,7 @@ export function AvatarUploadDialog({
   const [zoom, setZoom] = useState(1);
   const [offset, setOffset] = useState<Offset>({ x: 0, y: 0 });
   const [busy, setBusy] = useState(false);
+  const [consent, setConsent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Tự căn khuôn mặt vào giữa khung: detectRun đổi số mỗi lần dò / bị hủy để bỏ qua kết quả dò đã cũ.
   const detectRun = useRef(0);
@@ -83,6 +88,8 @@ export function AvatarUploadDialog({
     setOffset({ x: 0, y: 0 });
     setError(null);
     setBusy(false);
+    // Mỗi lần mở lại hộp thoại phải tích đồng ý lại.
+    setConsent(false);
   }
 
   function handleOpenChange(next: boolean) {
@@ -323,12 +330,14 @@ export function AvatarUploadDialog({
             </p>
           ) : null}
 
+          {requireConsent ? <ConsentCheckbox checked={consent} className="mt-4" disabled={busy} onChange={setConsent} variant="self" /> : null}
+
           <div className="mt-5 flex flex-wrap justify-end gap-2">
             <Button disabled={busy} onClick={() => inputRef.current?.click()} type="button" variant="outline">
               <UploadSimple aria-hidden className="h-4 w-4" />
               {file ? "Chọn ảnh khác" : "Chọn ảnh từ máy"}
             </Button>
-            <Button disabled={!natural || busy} loading={busy} onClick={() => void confirm()} type="button">
+            <Button disabled={!natural || busy || (requireConsent && !consent)} loading={busy} onClick={() => void confirm()} type="button">
               Dùng ảnh này
             </Button>
           </div>

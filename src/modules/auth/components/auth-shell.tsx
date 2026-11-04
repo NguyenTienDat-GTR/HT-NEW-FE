@@ -1,6 +1,8 @@
 import { Church } from "@phosphor-icons/react";
+import Link from "next/link";
 import type { ReactNode } from "react";
 import { AppVersion } from "@/components/common/app-version";
+import { PRIVACY_POLICY_LINK_LABEL, PRIVACY_POLICY_PATH } from "@/modules/privacy/constants";
 
 /** Khung nền và thẻ giữa trang dùng chung cho các màn đăng nhập, quên mật khẩu. */
 export function AuthShell({ children, maxWidth = "max-w-155" }: { children: ReactNode; maxWidth?: string }) {
@@ -16,6 +18,11 @@ export function AuthShell({ children, maxWidth = "max-w-155" }: { children: Reac
       >
         {children}
       </section>
+      <p className="relative mb-1 text-center text-xs">
+        <Link className="font-semibold text-primary hover:underline" href={PRIVACY_POLICY_PATH}>
+          {PRIVACY_POLICY_LINK_LABEL}
+        </Link>
+      </p>
       <AppVersion className="relative mb-2 text-center text-[11px] text-muted" />
     </main>
   );

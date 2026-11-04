@@ -274,7 +274,8 @@ export function ResourceCell({ column, row, value, displayMode = "table", fullNa
   if (column === "locked" && typeof value === "boolean") return <Badge tone={value ? "warning" : "neutral"}>{value ? "Đã khóa" : "Có thể sửa"}</Badge>;
   if (typeof value === "string") {
     const formattedDate = formatVietnamDateValue(value);
-    if (formattedDate) return <TextValue full={full}>{formattedDate}</TextValue>;
+    // Ngày giờ luôn hiển thị đủ trên một dòng, không cắt "...".
+    if (formattedDate) return <span className="whitespace-nowrap">{formattedDate}</span>;
   }
   if (column.toLowerCase().includes("status") && typeof value === "string") return <WorkflowBadge value={value} />;
   if (Array.isArray(value)) return <ArrayValue values={value} />;

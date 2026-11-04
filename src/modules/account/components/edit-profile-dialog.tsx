@@ -6,6 +6,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import { AvatarUploadDialog } from "@/components/common/avatar-upload-dialog";
+import { ConsentCheckbox } from "@/components/common/consent-checkbox";
 import { MediaImage } from "@/components/common/media-image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +14,7 @@ import { getApiErrorMessage } from "@/lib/api/client";
 import { myProfileQueryKey, profileApi, type MyLeaderProfile, type MyProfileUpdate } from "../account-api";
 import { FormError } from "./change-password-steps";
 import { PasswordField } from "./password-field";
+import { invalidateDataQueries } from "@/lib/api/query-keys";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_PATTERN = /^0\d{9}$/;
@@ -85,6 +87,7 @@ export function EditProfileDialog({ leader, onClose }: { leader: MyLeaderProfile
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [showErrors, setShowErrors] = useState(false);
+  const [consent, setConsent] = useState(false);
 
   const errors = validateDraft(draft);
   const changes = buildProfileChanges(leader, draft, avatar, password);
@@ -98,12 +101,14 @@ export function EditProfileDialog({ leader, onClose }: { leader: MyLeaderProfile
 
   async function submit() {
     setShowErrors(true);
-    if (Object.keys(errors).length || !hasChanges || needsPassword) return;
+    if (Object.keys(errors).length || !hasChanges || needsPassword || !consent) return;
     setPending(true);
     setError(null);
     try {
-      await profileApi.update(changes);
+      await profileApi.update({ ...changes, privacyConsent: true });
       await queryClient.invalidateQueries({ queryKey: myProfileQueryKey });
+      // Tên / ảnh của huynh trưởng hiện ở danh sách huynh trưởng, chứng nhận, hồ sơ tham dự: làm mới các màn đó.
+      await invalidateDataQueries(queryClient);
       toast.success("Đã cập nhật hồ sơ cá nhân");
       onClose();
     } catch (exception) {
@@ -211,6 +216,14 @@ export function EditProfileDialog({ leader, onClose }: { leader: MyLeaderProfile
                 {showErrors && needsPassword ? <p className="text-xs text-danger">Vui lòng nhập mật khẩu hiện tại để đổi email</p> : null}
               </div>
             ) : null}
+
+            <ConsentCheckbox
+              checked={consent}
+              disabled={pending}
+              error={showErrors && !consent ? "Vui lòng tích đồng ý để lưu thay đổi" : null}
+              onChange={setConsent}
+              variant="self"
+            />
 
             <FormError message={error} />
             <div className="flex justify-end gap-2">

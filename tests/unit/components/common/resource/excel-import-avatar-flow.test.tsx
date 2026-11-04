@@ -61,6 +61,13 @@ afterEach(() => {
   useAuthStore.getState().clear();
 });
 
+// Hộp thoại import bắt buộc tích xác nhận người có dữ liệu đã đồng ý (không tích sẵn) trước khi bấm Import.
+function clickImport() {
+  const consent = screen.getByRole("checkbox", { name: /Tôi xác nhận người có thông tin/ }) as HTMLInputElement;
+  if (!consent.checked) fireEvent.click(consent);
+  fireEvent.click(screen.getByRole("button", { name: "Import" }));
+}
+
 describe("ExcelImportDialog: Excel kèm ZIP ảnh", () => {
   it("xem trước ảnh đã căn mặt, đánh dấu ảnh cần xem lại, bỏ một ảnh rồi gửi Excel cùng ZIP đã xử lý", async () => {
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(new Response(JSON.stringify({ success: true, data: job }), { status: 202 }));
@@ -79,7 +86,7 @@ describe("ExcelImportDialog: Excel kèm ZIP ảnh", () => {
     fireEvent.click(screen.getByRole("button", { name: "Bỏ ảnh anh-khong-mat.jpg" }));
     expect(screen.getByTestId("avatar-zip-preview")).toHaveTextContent("Giữ 2/3 ảnh");
 
-    fireEvent.click(screen.getByRole("button", { name: "Import" }));
+    clickImport();
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
 
     const [, init] = fetchMock.mock.calls[0] as [RequestInfo, RequestInit];
@@ -98,7 +105,7 @@ describe("ExcelImportDialog: Excel kèm ZIP ảnh", () => {
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(new Response(JSON.stringify({ success: true, data: job }), { status: 202 }));
     renderDialog();
     fireEvent.change(screen.getByTestId("excel-import-input"), { target: { files: [new File(["x"], "huynh-truong.xlsx")] } });
-    fireEvent.click(screen.getByRole("button", { name: "Import" }));
+    clickImport();
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
     const body = (fetchMock.mock.calls[0][1] as RequestInit).body as FormData;
     expect(body.get("file")).toBeTruthy();
@@ -112,7 +119,7 @@ describe("ExcelImportDialog: Excel kèm ZIP ảnh", () => {
     fireEvent.change(screen.getByTestId("avatar-zip-input"), { target: { files: [zipOf(["a.jpg"])] } });
     await screen.findByTestId("avatar-zip-preview");
     fireEvent.click(screen.getByRole("button", { name: "Bỏ ảnh a.jpg" }));
-    fireEvent.click(screen.getByRole("button", { name: "Import" }));
+    clickImport();
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
     expect(((fetchMock.mock.calls[0][1] as RequestInit).body as FormData).has("images")).toBe(false);
   });
@@ -126,11 +133,11 @@ describe("ExcelImportDialog: Excel kèm ZIP ảnh", () => {
     fireEvent.change(screen.getByTestId("excel-import-input"), { target: { files: [new File(["x"], "huynh-truong.xlsx")] } });
     fireEvent.change(screen.getByTestId("avatar-zip-input"), { target: { files: [zipOf(["a.jpg", "b.jpg"])] } });
     await screen.findByTestId("avatar-zip-preview");
-    fireEvent.click(screen.getByRole("button", { name: "Import" }));
+    clickImport();
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
     await screen.findByRole("alert");
     fireEvent.click(screen.getByRole("button", { name: "Bỏ ảnh b.jpg" }));
-    fireEvent.click(screen.getByRole("button", { name: "Import" }));
+    clickImport();
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
     const keyOf = (index: number) => new Headers((fetchMock.mock.calls[index][1] as RequestInit).headers).get("Idempotency-Key");
     expect(keyOf(0)).toBeTruthy();

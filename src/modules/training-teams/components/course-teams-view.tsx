@@ -17,7 +17,7 @@ import type { TeamOverview } from "../types";
 import { TeamDivideDialog } from "./team-divide-dialog";
 import { TeamNameCell, teamSuggestions } from "./team-name-cell";
 import { TeamOverviewPanel } from "./team-overview-panel";
-import { resourceKey } from "@/lib/api/query-keys";
+import { resourceKey, invalidateDataQueries } from "@/lib/api/query-keys";
 
 // Tab "Chia đội" của khóa thường: tóm tắt đội, danh sách tham dự kèm đội (lọc theo đội), nút chia đội và import excel chia đội.
 export function CourseTeamsView({ route }: { route: RouteConfig }) {
@@ -62,7 +62,7 @@ export function CourseTeamsView({ route }: { route: RouteConfig }) {
     onSuccess: async () => {
       toast.success("Đã lưu đội cho hồ sơ");
       setDrafts({});
-      await queryClient.invalidateQueries({ queryKey: resourceKey() });
+      await invalidateDataQueries(queryClient);
     },
   });
 
@@ -85,7 +85,7 @@ export function CourseTeamsView({ route }: { route: RouteConfig }) {
     onSuccess: async () => {
       toast.success("Đã xóa chia đội của khóa");
       setClearOpen(false);
-      await queryClient.invalidateQueries({ queryKey: resourceKey() });
+      await invalidateDataQueries(queryClient);
     },
   });
 

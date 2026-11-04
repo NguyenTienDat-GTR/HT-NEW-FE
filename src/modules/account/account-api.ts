@@ -85,6 +85,8 @@ export type MyProfileUpdate = Partial<{
   phoneNumber: string;
   imageAssetId: string;
   currentPassword: string;
+  /** Người dùng đã tích đồng ý xử lý dữ liệu (BE bắt buộc, không có giá trị mặc định). */
+  privacyConsent: boolean;
 }>;
 
 export const profileApi = {
@@ -94,12 +96,12 @@ export const profileApi = {
 
 export const avatarApi = {
   // Đặt ảnh đại diện cho tài khoản không gắn huynh trưởng (ảnh đã tải lên qua /media, loại ACCOUNT_AVATAR). Chỉ thay, không xóa.
-  update: (imageAssetId: string) => apiFetch<MyProfile>("/auth/me/avatar", { method: "PUT", body: JSON.stringify({ imageAssetId }) }),
+  update: (imageAssetId: string) => apiFetch<MyProfile>("/auth/me/avatar", { method: "PUT", body: JSON.stringify({ imageAssetId, privacyConsent: true }) }),
 };
 
 export const emailApi = {
   update: (email: string, currentPassword: string) =>
-    apiFetch<{ email: string }>("/auth/me/email", { method: "PUT", body: JSON.stringify({ email, currentPassword }) }),
+    apiFetch<{ email: string }>("/auth/me/email", { method: "PUT", body: JSON.stringify({ email, currentPassword, privacyConsent: true }) }),
 };
 
 export const passwordChangeApi = {

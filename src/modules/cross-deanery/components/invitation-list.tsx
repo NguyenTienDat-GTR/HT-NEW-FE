@@ -12,6 +12,7 @@ import { apiFetch, apiMutation } from "@/lib/api/client";
 import { formatVietnamDateValue } from "@/lib/date-format";
 import { accessLabels, accessTones, type CourseInvitation } from "../types";
 import { CourseInfoBlock } from "./course-info";
+import { invalidateDataQueries } from "@/lib/api/query-keys";
 
 // Khóa của giáo hạt khác mở liên giáo hạt: giáo hạt nhà xem thông tin khóa rồi cho phép / từ chối giáo xứ của mình gửi hồ sơ.
 export function InvitationList() {
@@ -33,7 +34,7 @@ export function InvitationList() {
     onSuccess: async (_data, body) => {
       toast.success(body.allowed ? "Đã cho phép giáo xứ gửi hồ sơ sang khóa này" : "Đã từ chối cho giáo xứ gửi hồ sơ sang khóa này");
       setDenying(null);
-      await queryClient.invalidateQueries({ queryKey: ["cross-deanery"] });
+      await invalidateDataQueries(queryClient);
     },
   });
 
