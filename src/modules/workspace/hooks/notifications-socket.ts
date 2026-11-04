@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { resolveWsUrl } from "@/lib/env";
 import { apiFetch, refreshAccessToken } from "@/lib/api/client";
-import { useAuthStore, type AuthUser } from "@/lib/auth/auth-store";
+import { bearerTokenOf, useAuthStore, type AuthUser } from "@/lib/auth/auth-store";
 import { notificationKeys } from "@/modules/notifications/hooks";
 import { resourceKey } from "@/lib/api/query-keys";
 
@@ -23,7 +23,9 @@ export function useNotificationsSocket() {
       heartbeatIncoming: 10000,
       heartbeatOutgoing: 10000,
       beforeConnect: () => {
-        client.connectHeaders = { Authorization: `Bearer ${useAuthStore.getState().accessToken ?? ""}` };
+        // Không có token trong JS (test/production): bỏ header, BE lấy access token từ cookie HttpOnly của handshake.
+        const bearer = bearerTokenOf(useAuthStore.getState().accessToken);
+        client.connectHeaders = bearer ? { Authorization: `Bearer ${bearer}` } : {};
       },
       onConnect: () => {
         client.subscribe("/user/queue/notifications", (message) => {

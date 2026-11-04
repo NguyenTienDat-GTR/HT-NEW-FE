@@ -11,7 +11,7 @@ import {BRAND_NAME, BRAND_TAGLINE_EN, BRAND_TAGLINE_VI, BrandMark} from "@/compo
 import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
 import {apiFetch, getApiErrorMessage} from "@/lib/api/client";
-import {useAuthStore, type AuthUser} from "@/lib/auth/auth-store";
+import {COOKIE_SESSION, useAuthStore, type AuthUser} from "@/lib/auth/auth-store";
 import {getDeviceId} from "@/lib/auth/device-id";
 import {AuthShell} from "./auth-shell";
 import {useState} from "react";
@@ -56,7 +56,7 @@ export function LoginView() {
                 method: "POST",
                 body: JSON.stringify({...values, deviceId: getDeviceId()}),
             });
-            setAccessToken(data.accessToken);
+            setAccessToken(data.accessToken ?? COOKIE_SESSION);
             setUser(data.user);
             toast.success("Đăng nhập thành công");
             const next = data.user.mustChangePassword ? "/change-password" : safeNextPath(searchParams.get("next"));

@@ -72,7 +72,7 @@ describe("LoginView", () => {
     await waitFor(() => expect(apiFetch).toHaveBeenCalledTimes(1));
     const [path, options] = vi.mocked(apiFetch).mock.calls[0];
     expect(path).toBe("/auth/login");
-    expect(JSON.parse(String((options as RequestInit).body))).toEqual({ username: "tester", password: "secret", rememberMe: false });
+    expect(JSON.parse(String((options as RequestInit).body))).toEqual({ username: "tester", password: "secret", rememberMe: false, deviceId: expect.any(String) });
   });
 
   it("sends rememberMe=true when the user ticks 'Ghi nhớ đăng nhập'", async () => {
