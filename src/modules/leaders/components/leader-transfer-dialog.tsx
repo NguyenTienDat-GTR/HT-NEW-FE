@@ -9,7 +9,7 @@ import { optionFromRow, rowsFromResponse } from "@/components/form/resource-form
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { apiFetch, getApiErrorMessage, type PageResponse } from "@/lib/api/client";
-import { resourceKey } from "@/lib/api/query-keys";
+import { resourceKey, invalidateDataQueries } from "@/lib/api/query-keys";
 import { serializeBaseSearch } from "@/lib/api/search";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
 import { cn } from "@/lib/utils";
@@ -55,7 +55,7 @@ export function LeaderTransferDialog(props: LeaderTransferDialogProps) {
   );
 }
 
-function TransferContent({ leader, leaderId, endpoint, onTransferred, onClose }: LeaderTransferDialogProps & { onClose: () => void }) {
+function TransferContent({ leader, leaderId, onTransferred, onClose }: LeaderTransferDialogProps & { onClose: () => void }) {
   const [search, setSearch] = useState("");
   const [deaneryId, setDeaneryId] = useState("");
   const [chosen, setChosen] = useState<ParishRow | null>(null);
@@ -101,7 +101,7 @@ function TransferContent({ leader, leaderId, endpoint, onTransferred, onClose }:
       toast.success("Chuyển giáo xứ thành công");
       onClose();
       onTransferred(updated);
-      await queryClient.invalidateQueries({ queryKey: resourceKey(endpoint) });
+      await invalidateDataQueries(queryClient);
     },
     onError: (error) => toast.error(getApiErrorMessage(error)),
   });

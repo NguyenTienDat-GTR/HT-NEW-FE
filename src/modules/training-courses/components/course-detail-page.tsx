@@ -45,7 +45,7 @@ import { useSessionState } from "@/lib/use-session-state";
 import { useIsDesktop } from "@/lib/use-media-query";
 import { CourseConditionList, courseConditionItems } from "@/modules/training-courses/components/course-conditions";
 import { CourseScoreComponentsPanel } from "@/modules/training-courses/components/course-score-components";
-import { resourceKey } from "@/lib/api/query-keys";
+import { resourceKey, invalidateDataQueries } from "@/lib/api/query-keys";
 
 // Quy trình huấn luyện của một khóa: mỗi tab dùng lại đúng màn hình/logic của menu cũ, lọc theo khóa đang chọn.
 const workflowTabs = [
@@ -105,7 +105,7 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
     mutationFn: (locked: boolean) => apiMutation(`${route.endpoint}/${encodeURIComponent(id)}/score-lock`, "PATCH", { locked }),
     onSuccess: async (_data, locked) => {
       toast.success(locked ? "Đã khóa chỉnh sửa điểm" : "Đã mở chỉnh sửa điểm");
-      await queryClient.invalidateQueries({ queryKey: ["resource-detail", route.endpoint, id] });
+      await invalidateDataQueries(queryClient);
     },
   });
 
@@ -117,8 +117,8 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
     onSuccess: async () => {
       toast.success("Đã kết thúc khóa huấn luyện");
       setFinishOpen(false);
-      await queryClient.invalidateQueries({ queryKey: ["resource-detail", route.endpoint, id] });
-      await queryClient.invalidateQueries({ queryKey: resourceKey() });
+      // Kết thúc khóa chốt kết quả, thăng cấp huynh trưởng và khóa điểm: làm mới khóa, chứng nhận, huynh trưởng, thống kê.
+      await invalidateDataQueries(queryClient);
     },
     onError: (error) => toast.error(getApiErrorMessage(error)),
   });

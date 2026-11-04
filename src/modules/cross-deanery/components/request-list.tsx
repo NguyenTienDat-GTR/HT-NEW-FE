@@ -12,7 +12,7 @@ import { candidateName } from "../send-form";
 import { itemStatusLabels, statusLabels, statusTones, type CrossRequest, type RequestStatus } from "../types";
 import { CourseInfoBlock } from "./course-info";
 import { DecisionDialog } from "./decision-dialog";
-import { resourceKey } from "@/lib/api/query-keys";
+import { invalidateDataQueries } from "@/lib/api/query-keys";
 
 const filters: { value: "" | RequestStatus; label: string }[] = [
   { value: "", label: "Tất cả" },
@@ -36,8 +36,7 @@ export function RequestList() {
   const requests = query.data ?? [];
 
   async function refresh() {
-    await queryClient.invalidateQueries({ queryKey: ["cross-deanery"] });
-    await queryClient.invalidateQueries({ queryKey: resourceKey() });
+    await invalidateDataQueries(queryClient);
   }
 
   const decide = useMutation({

@@ -20,6 +20,7 @@ import { InvitationDialog } from "./invitation-dialog";
 import { InvitationResultDialog } from "./invitation-result-dialog";
 import { ParticipantDetailDrawer } from "./participant-detail-drawer";
 import { ParticipantsTable } from "./participants-table";
+import { invalidateDataQueries } from "@/lib/api/query-keys";
 
 type CourseInfo = {
   courseCode: string;
@@ -80,8 +81,9 @@ export function CourseParticipantsHub({ course, search }: { course: CourseInfo; 
     setState((current) => ({ ...current, ...next, page: next.page ?? 0 }));
   }
 
+  // Điểm danh / gửi email đổi dữ liệu khóa (BE đã xóa cache khóa): làm mới cả tab tham dự lẫn chi tiết khóa đang mở.
   async function refreshAll() {
-    await queryClient.invalidateQueries({ queryKey: participantKeys.all(courseCode) });
+    await invalidateDataQueries(queryClient);
   }
 
   const sendMutation = useMutation({

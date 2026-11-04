@@ -14,6 +14,7 @@ import { getApiErrorMessage } from "@/lib/api/client";
 import { myProfileQueryKey, profileApi, type MyLeaderProfile, type MyProfileUpdate } from "../account-api";
 import { FormError } from "./change-password-steps";
 import { PasswordField } from "./password-field";
+import { invalidateDataQueries } from "@/lib/api/query-keys";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_PATTERN = /^0\d{9}$/;
@@ -106,6 +107,8 @@ export function EditProfileDialog({ leader, onClose }: { leader: MyLeaderProfile
     try {
       await profileApi.update({ ...changes, privacyConsent: true });
       await queryClient.invalidateQueries({ queryKey: myProfileQueryKey });
+      // Tên / ảnh của huynh trưởng hiện ở danh sách huynh trưởng, chứng nhận, hồ sơ tham dự: làm mới các màn đó.
+      await invalidateDataQueries(queryClient);
       toast.success("Đã cập nhật hồ sơ cá nhân");
       onClose();
     } catch (exception) {

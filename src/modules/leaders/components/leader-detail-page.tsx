@@ -19,7 +19,7 @@ import { useAuthStore } from "@/lib/auth/auth-store";
 import { canUseAction } from "@/lib/auth/permissions";
 import { cn } from "@/lib/utils";
 import { formatLeaderLevel } from "@/components/common/resource/resource-format";
-import { resourceKey } from "@/lib/api/query-keys";
+import { invalidateDataQueries } from "@/lib/api/query-keys";
 import { actorLabel, formatDate, genderLabel, type LeaderDetail, type RankHistoryRow } from "./leader-detail-utils";
 import { canTransferLeader, emptyLeaderEditValues, leaderEditableFields, toLeaderUpdatePayload, validateLeaderEdit, valuesFromLeader, type LeaderEditValues } from "./leader-edit";
 import { SectionCard, ProfileField, MetaText, HeaderFact, LevelBadge, StatusBadge, LeaderDetailSkeleton } from "./leader-detail-ui";
@@ -74,8 +74,8 @@ export function LeaderDetailPage({id, route}: LeaderDetailPageProps) {
             setConsentConfirmed(false);
             setConsentError(false);
             queryClient.setQueryData(["leader-detail-page", id], updatedLeader);
-            await queryClient.invalidateQueries({queryKey: resourceKey(route.endpoint)});
-            await queryClient.invalidateQueries({queryKey: ["leader-detail-page", id]});
+            // Tên / giáo xứ của huynh trưởng nằm trong chứng nhận, hồ sơ tham dự, ban điều hành: làm mới tất cả.
+            await invalidateDataQueries(queryClient);
         },
         onError: (error) => {
             toast.error(getApiErrorMessage(error));

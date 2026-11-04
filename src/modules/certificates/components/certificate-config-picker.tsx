@@ -48,6 +48,8 @@ export function CertificateConfigPicker({ courseTypeCode, courseTypeName }: { co
     onSuccess: async () => {
       toast.success("Đã cập nhật cấu hình chứng nhận cho loại khóa");
       await queryClient.invalidateQueries({ queryKey: ["certificate-config"] });
+      // Đổi mẫu của loại khóa làm đổi bản xem trước mọi chứng nhận của loại khóa đó.
+      await queryClient.invalidateQueries({ queryKey: ["certificate-preview"] });
       setChoice(null);
     },
   });

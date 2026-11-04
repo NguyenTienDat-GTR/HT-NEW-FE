@@ -88,7 +88,12 @@ describe("ExcelJobsTray", () => {
     const { invalidate } = renderTray();
 
     await waitFor(() => expect(toastMock.success).toHaveBeenCalledWith("Đã import 3 huynh trưởng"));
-    await waitFor(() => expect(invalidate).toHaveBeenCalledWith({ queryKey: ["resource"] }));
+    // Làm mới theo nhóm (danh sách + chi tiết + các màn dữ liệu khác) qua một predicate.
+    await waitFor(() => expect(invalidate).toHaveBeenCalled());
+    const predicate = (invalidate.mock.calls[0][0] as { predicate: (query: { queryKey: readonly unknown[] }) => boolean }).predicate;
+    expect(predicate({ queryKey: ["resource", "/leaders", "page=0"] })).toBe(true);
+    expect(predicate({ queryKey: ["resource-detail", "/leaders", "id-1"] })).toBe(true);
+    expect(predicate({ queryKey: ["auth", "me"] })).toBe(false);
     await act(async () => {
       await new Promise((resolve) => setTimeout(resolve, 50));
     });

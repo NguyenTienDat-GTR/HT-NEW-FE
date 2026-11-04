@@ -17,6 +17,7 @@ import type { RouteConfig } from "@/config/routes/routes";
 import { cn } from "@/lib/utils";
 import { LEADER_LEVELS_QUERY_KEY, setLeaderLevels, type LeaderLevelItem } from "../leader-level-store";
 import { buildRows, firstTierBase, moveRow, sameRows, tierNumbers, toTiers, toggleLinked, type LevelRow } from "../reorder";
+import { invalidateDataQueries } from "@/lib/api/query-keys";
 
 const MANAGE_KEY = ["leader-levels", "manage"] as const;
 
@@ -73,6 +74,8 @@ export function LeaderLevelsView({ route }: { route?: RouteConfig }) {
     // Các nơi dùng nhãn / ô chọn lấy từ danh mục chung nên cập nhật ngay.
     const options = await queryClient.fetchQuery({ queryKey: LEADER_LEVELS_QUERY_KEY, queryFn: () => apiFetch<LeaderLevelItem[]>("/leader-levels/options"), staleTime: 0 });
     setLeaderLevels(options);
+    // Đổi cấp độ làm đổi dữ liệu khóa / chứng nhận / huynh trưởng ở BE (cache đã xóa): làm mới các màn đang mở.
+    await invalidateDataQueries(queryClient);
   }
 
   const reorderMutation = useMutation({
