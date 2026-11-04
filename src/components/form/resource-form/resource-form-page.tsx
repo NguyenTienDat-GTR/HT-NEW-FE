@@ -23,7 +23,7 @@ import { FormSections } from "./form-sections";
 import { LeaderFormLayout } from "./leader-form-layout";
 import { getFormSpec } from "./registry";
 import type { FormFieldSpec, ResourceFormMode } from "./types";
-import { resourceKey } from "@/lib/api/query-keys";
+import { invalidateDataQueries } from "@/lib/api/query-keys";
 
 type FormValue = string | string[] | number | boolean | null | undefined;
 
@@ -113,10 +113,8 @@ export function ResourceFormPage({
     },
     onSuccess: async () => {
       toast.success(effectiveAction === "revoke" ? "Thu hồi quyền thành công" : mode === "create" ? "Tạo mới thành công" : "Lưu cập nhật thành công");
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: resourceKey(effectiveRoute.endpoint) }),
-        queryClient.invalidateQueries({ queryKey: ["resource-detail", effectiveRoute.endpoint] }),
-      ]);
+      // Tạo / sửa / đăng ký có thể đổi dữ liệu ở màn khác (chi tiết khóa, hồ sơ tham dự, chứng nhận): làm mới tất cả.
+      await invalidateDataQueries(queryClient);
       router.push((returnTo ?? effectiveRoute.path) as Route);
     },
     onError: (error) => {

@@ -12,10 +12,11 @@ import { cn } from "@/lib/utils";
 import { certificateDetailHref } from "@/modules/certificates/scan-utils";
 import { classifyScan } from "@/modules/qr-scan/scan-payload";
 import { useQrCamera } from "@/modules/qr-scan/use-qr-camera";
-import { lookupAttendance, participantKeys, scanAttendance } from "../api";
+import { lookupAttendance, scanAttendance } from "../api";
 import { explainRejectedScan, LEGACY_ATTENDANCE_MESSAGE } from "../attendance-token";
 import { INITIAL_SCAN_FLOW, scanFlowReducer } from "../scan-flow";
 import { markScanned, shouldProcessScan, type ScanGateState } from "../scan-gate";
+import { invalidateDataQueries } from "@/lib/api/query-keys";
 
 // Quét mã QR: quét -> hiện người được quét -> người dùng bấm "Xác nhận điểm danh" (hoặc "Bỏ qua") -> thành công thì "Quét tiếp".
 // Camera chỉ đọc khi đang chờ quét; có thể dùng súng quét USB, dán mã hoặc chọn ảnh.
@@ -72,7 +73,7 @@ function Scanner({ courseCode, onClose }: { courseCode?: string; onClose: () => 
     mutationFn: (token: string) => scanAttendance(courseCode, token),
     onSuccess: async (person) => {
       dispatch({ type: "confirmed", person });
-      await queryClient.invalidateQueries({ queryKey: courseCode ? participantKeys.all(courseCode) : ["course-participants"] });
+      await invalidateDataQueries(queryClient);
     },
     onError: (error) => dispatch({ type: "failed", message: getApiErrorMessage(error) }),
   });

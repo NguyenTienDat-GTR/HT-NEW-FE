@@ -8,7 +8,7 @@ import { resolveWsUrl } from "@/lib/env";
 import { apiFetch, refreshAccessToken } from "@/lib/api/client";
 import { useAuthStore, type AuthUser } from "@/lib/auth/auth-store";
 import { notificationKeys } from "@/modules/notifications/hooks";
-import { resourceKey } from "@/lib/api/query-keys";
+import { resourceKey, invalidateDataQueries } from "@/lib/api/query-keys";
 
 export function useNotificationsSocket() {
   const queryClient = useQueryClient();
@@ -26,20 +26,19 @@ export function useNotificationsSocket() {
         client.connectHeaders = { Authorization: `Bearer ${useAuthStore.getState().accessToken ?? ""}` };
       },
       onConnect: () => {
-        client.subscribe("/user/queue/notifications", (message) => {
+        client.subscribe("/user/queue/notifications", () => {
           // Sự kiện đóng/mở đăng ký từ RabbitMQ: cập nhật luôn trạng thái trong danh sách khóa.
-          if (isCourseRegistrationEvent(message.body)) {
-            void queryClient.invalidateQueries({ queryKey: resourceKey("/training/courses") });
-          }
+          // Mỗi thông báo đi kèm một thay đổi dữ liệu đã commit (tự duyệt hồ sơ, duyệt / từ chối, mở / đóng đăng ký,
+          // chuyển giáo xứ...), kể cả thay đổi do tác vụ nền: làm mới các màn dữ liệu đang mở để không hiện bản cũ.
+          void invalidateDataQueries(queryClient);
           void queryClient.invalidateQueries({ queryKey: resourceKey("/system/notifications") });
           void queryClient.invalidateQueries({ queryKey: ["system", "notifications"] });
           void queryClient.invalidateQueries({ queryKey: notificationKeys.unreadCount });
         });
-        // Chứng nhận đổi (chấm điểm, tạo, sửa, duyệt): tải lại màn chứng nhận, tab duyệt chứng nhận và bảng chấm điểm của khóa.
+        // Chứng nhận đổi (chấm điểm, tạo, sửa, duyệt, thu hồi, kết thúc khóa): tải lại màn chứng nhận, tab duyệt chứng nhận,
+        // bảng chấm điểm, chi tiết khóa và trang huynh trưởng đang mở.
         client.subscribe("/topic/certificate-events", () => {
-          void queryClient.invalidateQueries({ queryKey: resourceKey("/certificates") });
-          void queryClient.invalidateQueries({ queryKey: resourceKey("/training/participants") });
-          void queryClient.invalidateQueries({ queryKey: ["resource-detail", "/certificates"] });
+          void invalidateDataQueries(queryClient);
         });
         client.subscribe("/user/queue/auth-events", () => {
           void refreshAccessToken().then(async (nextToken) => {
@@ -66,11 +65,3 @@ export function useNotificationsSocket() {
   }, [queryClient, router, token]);
 }
 
-function isCourseRegistrationEvent(body: string) {
-  try {
-    const eventType = (JSON.parse(body) as { eventType?: unknown }).eventType;
-    return typeof eventType === "string" && eventType.startsWith("training.course.registration_");
-  } catch {
-    return false;
-  }
-}

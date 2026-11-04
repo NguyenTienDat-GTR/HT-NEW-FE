@@ -43,7 +43,7 @@ import { ownsRowCourse, ResourceTable } from "./resource-table";
 import { ViewModeToggle } from "./view-mode-toggle";
 import { ResourceFilters } from "./resource-toolbar";
 import { useResourceQueryState } from "./use-resource-query-state";
-import { resourceKey, resourceListKey } from "@/lib/api/query-keys";
+import { resourceListKey, invalidateDataQueries } from "@/lib/api/query-keys";
 
 export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps) {
   const router = useRouter();
@@ -207,10 +207,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
       toast.success(actionSuccessMessage(variables.action, data));
       closeQueryDialog();
       // Thao tác có thể đổi dữ liệu ở các danh sách khác (hồ sơ tham dự, chứng nhận, khóa) và ở drawer chi tiết đang mở.
-      await queryClient.invalidateQueries({ queryKey: resourceKey() });
-      await queryClient.invalidateQueries({ queryKey: ["resource-detail"] });
-      await queryClient.invalidateQueries({ queryKey: ["certificate-preview"] });
-      await queryClient.invalidateQueries({ queryKey: ["executive-board-seats"] });
+      await invalidateDataQueries(queryClient);
     },
   });
 
@@ -231,7 +228,8 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
       }
       setSelectedIds([]);
       setBulkMode(null);
-      await queryClient.invalidateQueries({ queryKey: resourceKey(effectiveRoute.endpoint) });
+      // Duyệt / từ chối hàng loạt đổi số hồ sơ đã duyệt của khóa, chứng nhận, cấp độ huynh trưởng và thống kê.
+      await invalidateDataQueries(queryClient);
     },
   });
   const scoreComponents = scoreComponentsQuery.data ?? [];
@@ -360,8 +358,8 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
       else toast.success(`Đã lưu ${saved.length} hồ sơ`, { id: toastId });
       if (saved.length && failures.length) toast.success(`Đã lưu ${saved.length} hồ sơ`);
       if (saved.length) {
-        await queryClient.invalidateQueries({ queryKey: resourceKey(effectiveRoute.endpoint) });
-        await queryClient.invalidateQueries({ queryKey: ["resource-detail"] });
+        // Chấm điểm có thể tạo / xóa chứng nhận chờ duyệt: làm mới cả màn chứng nhận, chi tiết khóa, trang huynh trưởng.
+        await invalidateDataQueries(queryClient);
       }
     })();
   }
