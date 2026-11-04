@@ -113,9 +113,9 @@ const scoreComponentsControl: ControlRenderer = ({ value, values, readonly, onCh
     />;
 };
 
-type AccountLeaderInfo = { leaderHolyName?: string | null; leaderFullName?: string | null; parishName?: string | null; deaneryName?: string | null };
+type AccountLeaderInfo = { leaderHolyName?: string | null; leaderFullName?: string | null; leaderParishName?: string | null; leaderSubUnitName?: string | null; deaneryName?: string | null };
 
-// Thông tin huynh trưởng gắn với tài khoản đang chọn: tên thánh, họ tên, giáo xứ, giáo hạt (xuống dòng, không cắt chữ).
+// Thông tin huynh trưởng gắn với tài khoản đang chọn, gọn trên một hàng; tên thánh + họ tên không nhãn.
 const accountLeaderInfoControl: ControlRenderer = ({ values }) => {
   const username = typeof values?.username === "string" ? values.username.trim() : "";
   return <AccountLeaderInfoCard username={username} />;
@@ -125,34 +125,23 @@ function AccountLeaderInfoCard({ username }: { username: string }) {
   const query = useQuery({
     queryKey: ["account-leader-info", username],
     enabled: Boolean(username),
-    queryFn: async () => {
-      const response = await apiFetch<AccountLeaderInfo>(`/system/accounts/${encodeURIComponent(username)}`);
-      return response;
-    },
+    queryFn: () => apiFetch<AccountLeaderInfo>(`/system/accounts/${encodeURIComponent(username)}`),
   });
   const clean = (item?: string | null) => (item && item.trim() ? item.trim() : "");
   const data = query.data;
-  const rows: Array<[string, string]> = [
-    ["Tên thánh", clean(data?.leaderHolyName)],
-    ["Họ và tên", clean(data?.leaderFullName)],
-    ["Giáo xứ", clean(data?.parishName)],
-    ["Giáo hạt", clean(data?.deaneryName)],
-  ];
+  const name = [clean(data?.leaderHolyName), clean(data?.leaderFullName)].filter(Boolean).join(" ");
+  const parts = [
+    name ? <span className="font-semibold text-foreground" key="name">{name}</span> : null,
+    clean(data?.leaderParishName) ? <span key="parish">Giáo xứ: {clean(data?.leaderParishName)}</span> : null,
+    clean(data?.leaderSubUnitName) ? <span key="sub">{clean(data?.leaderSubUnitName)}</span> : null,
+    clean(data?.deaneryName) ? <span key="deanery">Giáo hạt: {clean(data?.deaneryName)}</span> : null,
+  ].filter(Boolean);
   return (
-    <div className="rounded-[8px] border border-border bg-surface-1 p-3 text-sm">
-      {!username ? <p className="text-muted">Chọn tài khoản để xem huynh trưởng gắn với tài khoản.</p> : null}
-      {username && query.isLoading ? <p className="text-muted">Đang tải thông tin...</p> : null}
-      {username && !query.isLoading && !rows.some(([, item]) => item) ? <p className="text-muted">Tài khoản này chưa gắn với huynh trưởng.</p> : null}
-      {username && data && rows.some(([, item]) => item) ? (
-        <dl className="grid gap-x-4 gap-y-2 sm:grid-cols-2">
-          {rows.map(([label, item]) => (
-            <div className="min-w-0" key={label}>
-              <dt className="text-xs font-medium text-muted">{label}</dt>
-              <dd className="break-words font-semibold text-foreground">{item || "—"}</dd>
-            </div>
-          ))}
-        </dl>
-      ) : null}
+    <div className="flex min-h-10 flex-wrap items-center gap-x-4 gap-y-1 rounded-[8px] border border-border bg-surface-1 px-3 py-2 text-sm text-text-secondary">
+      {!username ? <span className="text-muted">Chọn tài khoản để xem huynh trưởng gắn với tài khoản.</span> : null}
+      {username && query.isLoading ? <span className="text-muted">Đang tải thông tin...</span> : null}
+      {username && !query.isLoading && parts.length === 0 ? <span className="text-muted">Tài khoản này chưa gắn với huynh trưởng.</span> : null}
+      {username && parts.length > 0 ? parts : null}
     </div>
   );
 }
@@ -332,7 +321,7 @@ function OptionControl({
     enabled: Boolean(field.optionsEndpoint),
     queryFn: () => apiFetch<PageResponse<Record<string, unknown>> | Record<string, unknown>[]>(optionEndpointWithPaging(field.optionsEndpoint, field.optionSearchParam, remoteSearch)),
   });
-  const apiOptions = rowsFromResponse(query.data).map((row) => optionFromRow(row, field.optionValue, field.optionLabel, field.optionLabelFields, field.optionLabelBuilder));
+  const apiOptions = rowsFromResponse(query.data).map((row) => optionFromRow(row, field.optionValue, field.optionLabel, field.optionLabelFields, field.optionLabelBuilder, field.optionDetailsBuilder));
   const excludedValues = new Set([...(field.excludeOptionValues ?? []), ...(field.excludeOptionValuesWhen?.(user ?? null) ?? [])]);
   const filteredOptions = (field.options ?? apiOptions).filter((option) => !excludedValues.has(option.value));
   const currentValue = !multiple && !checkboxList ? String(value ?? "") : "";
@@ -548,7 +537,7 @@ function SearchableSelect({
                     <span className="break-words" key={detail}>{detail}</span>
                   ))}
                 </span>
-              ) : (
+              ) : option.details ? null : (
                 <span className="block break-words text-xs text-muted">{option.value}</span>
               )}
               {option.disabledReason ? <span className="block text-xs text-muted">{option.disabledReason}</span> : null}

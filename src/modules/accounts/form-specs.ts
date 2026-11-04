@@ -1,6 +1,7 @@
 import { compactPayload, type ResourceFormSpec } from "@/components/form/resource-form/types";
 import { hasRole, isSuperAdmin } from "@/lib/auth/permissions";
 import type { AuthUser } from "@/lib/auth/auth-store";
+import { leaderLevelName } from "@/modules/leader-levels/leader-level-store";
 import { withFilters } from "@/lib/api/filters";
 
 const systemAdminRoleCodes = ["SUPER_ADMIN", "ADMIN_DIOCESE", "ADMIN_DEANERY", "ADMIN_PARISH"];
@@ -15,6 +16,10 @@ function canPickDeanery(user: AuthUser | null | undefined) {
 
 function canPickParish(user: AuthUser | null | undefined) {
   return hasRole(user, "ADMIN_DIOCESE") || hasRole(user, "ADMIN_DEANERY");
+}
+
+function text(value: unknown) {
+  return typeof value === "string" ? value.trim() : "";
 }
 
 function candidateEndpoint(values: Record<string, unknown>) {
@@ -127,7 +132,9 @@ export const systemFormSpecs: ResourceFormSpec[] = [
         serverFiltered: true,
         optionValue: "id",
         optionLabel: "fullName",
-        optionLabelFields: ["holyName", "fullName", "parishName"],
+        optionLabelBuilder: (row) => [row.holyName, row.fullName].filter((item) => typeof item === "string" && item.trim()).join(" "),
+        optionDetailsBuilder: (row) =>
+          [leaderLevelName(text(row.leaderLevel)), text(row.subUnitName)].filter(Boolean),
         searchable: true,
         required: true,
         wide: true,
