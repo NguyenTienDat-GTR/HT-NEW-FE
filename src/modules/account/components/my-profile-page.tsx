@@ -28,6 +28,7 @@ import { getApiErrorMessage } from "@/lib/api/client";
 import { useAuthStore } from "@/lib/auth/auth-store";
 import { displayValue, formatDate, genderLabel } from "@/modules/leaders/components/leader-detail-utils";
 import { avatarApi, myProfileQueryKey, type MyLeaderProfile, type MyProfile, useMyProfile } from "../account-api";
+import { PrivacySection } from "@/modules/privacy/components/privacy-section";
 import { displayName } from "../account-display";
 import { RoleChip } from "./account-menu";
 import { CertificatesSection, RankHistorySection, SectionTitle } from "./my-profile-sections";
@@ -112,6 +113,8 @@ export function MyProfilePage() {
         <AccountInfo onChangeEmail={() => setEmailOpen(true)} profile={profile} />
       </div>
 
+      <PrivacySection />
+
       {leader ? (
         <>
           <RankHistorySection histories={profile.rankHistory ?? []} />
@@ -122,6 +125,7 @@ export function MyProfilePage() {
       {leader ? null : (
         <AvatarUploadDialog
           category="ACCOUNT_AVATAR"
+          requireConsent
           currentUrl={profile.imageUrl}
           onOpenChange={setAvatarOpen}
           onUploaded={async (uploaded) => {

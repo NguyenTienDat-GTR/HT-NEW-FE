@@ -47,10 +47,12 @@ export function createExcelExportJob(path: string, idempotencyKey: string) {
 }
 
 // Tải file Excel (kèm ZIP ảnh đại diện nếu có) lên và tạo tác vụ nhập nền (multipart).
-export function createExcelImportJob(path: string, file: File, idempotencyKey: string, images?: File | null) {
+// subjectConsentConfirmed: quản trị viên xác nhận người có dữ liệu trong file đã được thông báo và đồng ý (BE bắt buộc, ghi bằng chứng).
+export function createExcelImportJob(path: string, file: File, idempotencyKey: string, images?: File | null, subjectConsentConfirmed = false) {
   const form = new FormData();
   form.append("file", file);
   if (images) form.append("images", images);
+  if (subjectConsentConfirmed) form.append("subjectConsentConfirmed", "true");
   return apiFetch<ExcelJob>(path, { method: "POST", body: form, headers: { "Idempotency-Key": idempotencyKey } });
 }
 

@@ -93,6 +93,9 @@ export type ResourceFormSpec = {
   submitLabel?: string;
   fields: FormFieldSpec[];
   mapSubmit?: (values: Record<string, unknown>, mode: ResourceFormMode) => Record<string, unknown>;
+  // Form quản trị viên nhập dữ liệu cá nhân của người khác: bắt buộc tích xác nhận người đó đã được thông báo và đồng ý (không tích sẵn).
+  // Khi gửi sẽ kèm subjectConsentConfirmed = true để BE ghi bằng chứng.
+  consentAttestation?: boolean;
   // Form đăng ký: hồ sơ ngoài đợt của khóa phải được xác nhận kèm lí do riêng trước khi gửi.
   offTarget?: {
     collect: (values: Record<string, unknown>) => RegistrationEntry[];

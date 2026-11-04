@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { apiFetch, refreshAccessToken } from "@/lib/api/client";
 import { ServerAuthContext, useAuthStore, type AuthUser } from "@/lib/auth/auth-store";
 import { resourceKey } from "@/lib/api/query-keys";
+import { PrivacyConsentGate } from "@/modules/privacy/components/privacy-consent-gate";
 
 // initialUser: người dùng server đã đọc từ cookie phiên khi render HTML (null nếu cookie hết hạn / không có).
 export function AuthGate({ children, initialUser }: { children: React.ReactNode; initialUser: AuthUser | null }) {
@@ -95,5 +96,10 @@ function AuthGateInner({ children, initialUser }: { children: React.ReactNode; i
     );
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      <PrivacyConsentGate />
+    </>
+  );
 }

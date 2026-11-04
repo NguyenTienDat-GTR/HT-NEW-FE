@@ -5,6 +5,7 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
+import { ConsentCheckbox } from "@/components/common/consent-checkbox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { getApiErrorMessage } from "@/lib/api/client";
@@ -29,17 +30,19 @@ export function ChangeEmailDialog({
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [consent, setConsent] = useState(false);
 
   const trimmed = email.trim();
   const emailInvalid = trimmed.length > 0 && !EMAIL_PATTERN.test(trimmed);
   const unchanged = trimmed.length > 0 && trimmed.toLowerCase() === (currentEmail ?? "").toLowerCase();
-  const canSubmit = trimmed.length > 0 && !emailInvalid && !unchanged && password.length > 0;
+  const canSubmit = trimmed.length > 0 && !emailInvalid && !unchanged && password.length > 0 && consent;
 
   function handleOpenChange(next: boolean) {
     if (!next && pending) return;
     if (!next) {
       setEmail("");
       setPassword("");
+      setConsent(false);
       setError(null);
     }
     onOpenChange(next);
@@ -115,6 +118,7 @@ export function ChangeEmailDialog({
               {unchanged ? <p className="mt-1 text-xs text-danger">Email mới trùng với email hiện tại</p> : null}
             </div>
             <PasswordField autoComplete="current-password" label="Mật khẩu hiện tại" onChange={setPassword} value={password} />
+            <ConsentCheckbox checked={consent} disabled={pending} onChange={setConsent} variant="self" />
             <FormError message={error} />
             <Button className="w-full" disabled={!canSubmit} loading={pending} size="lg" type="submit">
               Lưu email

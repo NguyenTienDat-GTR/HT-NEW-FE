@@ -4,6 +4,7 @@ import { withFilters } from "@/lib/api/filters";
 export const organizationFormSpecs: ResourceFormSpec[] = [
   {
     kind: "dioceses",
+    consentAttestation: true,
     createTitle: "Thêm giáo phận",
     editTitle: "Chỉnh sửa giáo phận",
     description: "Thông tin giáo phận, liên đoàn và liên hệ chính thức.",
@@ -20,6 +21,7 @@ export const organizationFormSpecs: ResourceFormSpec[] = [
   },
   {
     kind: "deaneries",
+    consentAttestation: true,
     createTitle: "Thêm giáo hạt",
     editTitle: "Chỉnh sửa giáo hạt",
     description: "Giáo hạt thuộc giáo phận và thông tin liên hệ.",
@@ -49,6 +51,7 @@ export const organizationFormSpecs: ResourceFormSpec[] = [
   },
   {
     kind: "parishes",
+    consentAttestation: true,
     createTitle: "Thêm giáo xứ / giáo họ / giáo điểm",
     editTitle: "Chỉnh sửa giáo xứ / giáo họ / giáo điểm",
     description: "Đơn vị cơ sở (giáo xứ, giáo họ hoặc giáo điểm), xứ đoàn và giáo hạt trực thuộc.",

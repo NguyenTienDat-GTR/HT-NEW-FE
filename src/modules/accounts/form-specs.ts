@@ -35,6 +35,7 @@ export function getAccountCreateExcludedRoleCodes(user: AuthUser | null) {
 export const systemFormSpecs: ResourceFormSpec[] = [
   {
     kind: "accounts",
+    consentAttestation: true,
     actionType: "create",
     superAdminOnly: true,
     createTitle: "Tạo tài khoản",
@@ -84,6 +85,7 @@ export const systemFormSpecs: ResourceFormSpec[] = [
   },
   {
     kind: "accounts",
+    consentAttestation: true,
     createTitle: "Tạo tài khoản",
     description: "Chọn huynh trưởng liên kết, các vai trò được gán và một vai trò chính.",
     getInitialValues: (user) => ({

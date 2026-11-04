@@ -111,8 +111,9 @@ describe("EditProfileDialog", () => {
     expect(screen.queryByLabelText("Mật khẩu hiện tại")).not.toBeInTheDocument();
     fireEvent.change(screen.getByLabelText("Số điện thoại"), { target: { value: "0907654321" } });
     expect(screen.queryByLabelText("Mật khẩu hiện tại")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("checkbox"));
     fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
-    await waitFor(() => expect(update).toHaveBeenCalledWith({ phoneNumber: "0907654321" }));
+    await waitFor(() => expect(update).toHaveBeenCalledWith({ phoneNumber: "0907654321", privacyConsent: true }));
     await waitFor(() => expect(onClose).toHaveBeenCalled());
   });
 
@@ -126,10 +127,21 @@ describe("EditProfileDialog", () => {
     expect(screen.getByText("Vui lòng nhập mật khẩu hiện tại để đổi email")).toBeInTheDocument();
   });
 
+  it("does not tick the consent box by default and refuses to save until it is ticked", async () => {
+    const update = vi.spyOn(profileApi, "update").mockResolvedValue({} as never);
+    setup();
+    expect(screen.getByRole("checkbox")).not.toBeChecked();
+    fireEvent.change(screen.getByLabelText("Số điện thoại"), { target: { value: "0907654321" } });
+    fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
+    expect(update).not.toHaveBeenCalled();
+    expect(await screen.findByText("Vui lòng tích đồng ý để lưu thay đổi")).toBeInTheDocument();
+  });
+
   it("shows the server message when the phone is already used", async () => {
     vi.spyOn(profileApi, "update").mockRejectedValue(new Error("Số điện thoại Huynh Trưởng đã tồn tại"));
     const { onClose } = setup();
     fireEvent.change(screen.getByLabelText("Số điện thoại"), { target: { value: "0907654321" } });
+    fireEvent.click(screen.getByRole("checkbox"));
     fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
     expect(await screen.findByText("Số điện thoại Huynh Trưởng đã tồn tại")).toBeInTheDocument();
     expect(onClose).not.toHaveBeenCalled();
