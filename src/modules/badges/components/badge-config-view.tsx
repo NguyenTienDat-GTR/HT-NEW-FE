@@ -3,7 +3,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { ArrowClockwise, ArrowCounterClockwise, ClockCounterClockwise, Copy, Star, Trash } from "@phosphor-icons/react";
+import { ArrowClockwise, ArrowCounterClockwise, Books, CaretDown, ClockCounterClockwise, Copy, Plus, Star, Trash } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { HelpTip } from "@/components/ui/help-tip";
 import { Input } from "@/components/ui/input";
@@ -27,7 +27,9 @@ import {
   type BadgeConfig,
   type BadgeForm,
 } from "../badge-design";
-import { BadgeCardSettings } from "./badge-card-settings";
+import { BadgeSheetSettings } from "./badge-card-settings";
+import { PreviewPdfButton } from "@/modules/layout-config/wysiwyg/preview-pdf-button";
+import { BADGE_SAMPLE_VALUES } from "../badge-sample-values";
 import { BadgeEditor } from "./badge-editor";
 import { BadgeLibrary, EMPTY_LIBRARY_FILTERS, buildLibraryParams, type LibraryFilters } from "./badge-library";
 import { Callout } from "@/modules/layout-config/form-controls";
@@ -44,6 +46,7 @@ export function BadgeConfigView({ route }: { route?: RouteConfig }) {
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loadedKey, setLoadedKey] = useState<string | null>(null);
+  const [libraryOpen, setLibraryOpen] = useState(false);
   const history = useUndoHistory<BadgeForm>(blankBadgeForm());
   const form = history.value;
 
@@ -184,34 +187,53 @@ export function BadgeConfigView({ route }: { route?: RouteConfig }) {
   const invalid = errors.length > 0;
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2">
+    <div className="space-y-3">
+      {/* Dòng đầu gọn: tiêu đề + cấu hình đang mở; thư viện chỉ mở ra khi cần đổi cấu hình để trình thiết kế nằm vừa một màn hình. */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <h1 className="text-xl font-bold leading-7 text-foreground">{route?.title ?? "Cấu hình thẻ tham dự"}</h1>
         {route?.subtitle ? <HelpTip label="Mô tả màn hình">{route.subtitle}</HelpTip> : null}
+        {resolvedId ? (
+          <div className="ml-auto flex items-center gap-2">
+            <Button aria-expanded={libraryOpen} onClick={() => setLibraryOpen((open) => !open)} size="sm" type="button" variant="outline">
+              <Books size={16} /> {libraryOpen ? "Ẩn thư viện" : "Đổi cấu hình"}
+              <CaretDown className={libraryOpen ? "rotate-180" : ""} size={14} />
+            </Button>
+            {canCreate ? (
+              <Button onClick={startNew} size="sm" type="button" variant={isNew ? "primary" : "outline"}>
+                <Plus size={16} /> Tạo mới
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
       </div>
 
-      <BadgeLibrary
-        activeId={resolvedId}
-        canCreate={canCreate}
-        error={libraryQuery.isError ? getApiErrorMessage(libraryQuery.error) : null}
-        filters={filters}
-        isNew={isNew}
-        items={libraryQuery.data?.content ?? []}
-        loading={libraryQuery.isLoading}
-        onCreate={startNew}
-        onFiltersChange={(patch) => {
-          setFilters((current) => ({ ...current, ...patch }));
-          setPage(0);
-        }}
-        onPageChange={setPage}
-        onSearchChange={setSearchInput}
-        onSelect={selectConfig}
-        page={page}
-        placeholder={libraryQuery.isPlaceholderData}
-        searchInput={searchInput}
-        totalElements={libraryQuery.data?.totalElements ?? 0}
-        totalPages={libraryQuery.data?.totalPages ?? 0}
-      />
+      {libraryOpen || !resolvedId ? (
+        <BadgeLibrary
+          activeId={resolvedId}
+          canCreate={canCreate}
+          error={libraryQuery.isError ? getApiErrorMessage(libraryQuery.error) : null}
+          filters={filters}
+          isNew={isNew}
+          items={libraryQuery.data?.content ?? []}
+          loading={libraryQuery.isLoading}
+          onCreate={startNew}
+          onFiltersChange={(patch) => {
+            setFilters((current) => ({ ...current, ...patch }));
+            setPage(0);
+          }}
+          onPageChange={setPage}
+          onSearchChange={setSearchInput}
+          onSelect={(id) => {
+            selectConfig(id);
+            setLibraryOpen(false);
+          }}
+          page={page}
+          placeholder={libraryQuery.isPlaceholderData}
+          searchInput={searchInput}
+          totalElements={libraryQuery.data?.totalElements ?? 0}
+          totalPages={libraryQuery.data?.totalPages ?? 0}
+        />
+      ) : null}
 
       {!isNew && selectedConfig && !selectedConfig.editable ? (
         <Callout>
@@ -220,80 +242,88 @@ export function BadgeConfigView({ route }: { route?: RouteConfig }) {
       ) : null}
 
       {ready ? (
-        <Panel className="overflow-hidden">
-          <div className="flex flex-wrap items-end justify-between gap-3 border-b border-border px-4 py-3">
-            <div className="min-w-[240px] max-w-md flex-1">
-              <div className="mb-1 flex items-center gap-1.5">
-                <label className="text-[13px] font-medium text-text-secondary" htmlFor="badge-config-name">
-                  Tên cấu hình
-                </label>
-                <HelpTip label="Hướng dẫn tên cấu hình">Trùng tên sẽ tự thêm hậu tố (1), (2)…</HelpTip>
-                {dirty ? (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-[var(--badge-warning-bg)] px-2 py-0.5 text-[11px] font-semibold text-[var(--badge-warning-fg)]">
-                    <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-warning" />
-                    Chưa lưu
-                  </span>
-                ) : null}
-              </div>
+        // Bàn làm việc: toàn bộ chức năng nằm trong một màn hình; chỉ cột trường và cột thuộc tính tự cuộn.
+        <Panel className="flex flex-col overflow-hidden lg:h-[calc(100dvh-10.5rem)] lg:min-h-[520px]">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-border px-3 py-2">
+            <div className="flex min-w-[220px] max-w-sm flex-1 items-center gap-1.5">
+              <label className="sr-only" htmlFor="badge-config-name">
+                Tên cấu hình
+              </label>
               <Input
+                aria-invalid={nameTooLong}
+                className="h-9"
                 disabled={!canEditCurrent}
                 id="badge-config-name"
                 maxLength={MAX_NAME_LENGTH + 20}
                 onChange={(event) => updateForm({ name: event.target.value }, "name")}
-                placeholder="Ví dụ: Thẻ tham dự khóa Dự trưởng"
+                placeholder="Tên cấu hình, ví dụ: Thẻ tham dự khóa Dự trưởng"
                 value={form.name}
               />
-              {nameTooLong ? (
-                <p className="mt-1 text-xs text-danger" role="alert">
-                  Tên tối đa {MAX_NAME_LENGTH} ký tự.
-                </p>
+              <HelpTip label="Hướng dẫn tên cấu hình">Trùng tên sẽ tự thêm hậu tố (1), (2)…</HelpTip>
+              {dirty ? (
+                <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--badge-warning-bg)] px-2 py-0.5 text-[11px] font-semibold text-[var(--badge-warning-fg)]">
+                  <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-warning" />
+                  Chưa lưu
+                </span>
               ) : null}
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <Button aria-label="Hoàn tác" disabled={!canEditCurrent || !history.canUndo} onClick={undo} size="icon" title="Hoàn tác (Ctrl+Z)" type="button" variant="icon">
-                <ArrowCounterClockwise size={18} />
+            {nameTooLong ? (
+              <p className="text-xs text-danger" role="alert">
+                Tên tối đa {MAX_NAME_LENGTH} ký tự.
+              </p>
+            ) : null}
+            <BadgeSheetSettings disabled={!canEditCurrent} errors={errors} form={form} onChange={updateForm} />
+
+            <div className="ml-auto flex flex-wrap items-center gap-2">
+              <Button aria-label="Hoàn tác" className="h-9 w-9" disabled={!canEditCurrent || !history.canUndo} onClick={undo} size="icon" title="Hoàn tác (Ctrl+Z)" type="button" variant="icon">
+                <ArrowCounterClockwise size={17} />
               </Button>
-              <Button aria-label="Làm lại" disabled={!canEditCurrent || !history.canRedo} onClick={redo} size="icon" title="Làm lại (Ctrl+Y)" type="button" variant="icon">
-                <ArrowClockwise size={18} />
+              <Button aria-label="Làm lại" className="h-9 w-9" disabled={!canEditCurrent || !history.canRedo} onClick={redo} size="icon" title="Làm lại (Ctrl+Y)" type="button" variant="icon">
+                <ArrowClockwise size={17} />
               </Button>
-              <Button disabled={!canEditCurrent || !dirty} onClick={restoreSaved} type="button" variant="outline">
-                <ClockCounterClockwise size={18} /> {isNew ? "Làm mới" : "Khôi phục bản đã lưu"}
+              <Button disabled={!canEditCurrent || !dirty} onClick={restoreSaved} size="sm" title={isNew ? "Xóa toàn bộ nội dung đang soạn" : "Khôi phục về bản đã lưu"} type="button" variant="outline">
+                <ClockCounterClockwise size={16} /> {isNew ? "Làm mới" : "Khôi phục"}
               </Button>
+              <PreviewPdfButton
+                buildBody={() => ({ config: badgePayload(form), values: BADGE_SAMPLE_VALUES })}
+                disabled={invalid}
+                fallbackName="xem-truoc-the-tham-du.pdf"
+                path="/badges/config/preview-pdf"
+              />
+              <span aria-hidden className="hidden h-6 w-px bg-border xl:block" />
+              <Button disabled={!canEditCurrent || busy || nameTooLong || invalid || (!isNew && !dirty)} loading={saveMutation.isPending} onClick={() => saveMutation.mutate()} size="sm" type="button">
+                {isNew ? "Tạo cấu hình" : "Lưu cấu hình"}
+              </Button>
+              {!isNew && canCreate ? (
+                <Button aria-label="Lưu thành cấu hình mới" disabled={busy || nameTooLong || invalid} loading={saveAsNewMutation.isPending} onClick={() => saveAsNewMutation.mutate()} size="sm" type="button" variant="outline">
+                  <Copy size={16} /> Lưu thành mới
+                </Button>
+              ) : null}
+              {!isNew && selectedConfig && canUpdate && selectedConfig.editable && !selectedConfig.isDefault ? (
+                <Button aria-label="Đặt làm cấu hình chung" disabled={busy} loading={setDefaultMutation.isPending} onClick={setAsDefault} size="sm" type="button" variant="outline">
+                  <Star size={16} /> Đặt làm chung
+                </Button>
+              ) : null}
+              {!isNew && selectedConfig && canDelete && selectedConfig.editable ? (
+                <Button
+                  aria-label="Xóa cấu hình"
+                  className="text-danger"
+                  disabled={busy || selectedConfig.isDefault}
+                  loading={deleteMutation.isPending}
+                  onClick={deleteConfig}
+                  size="sm"
+                  title={selectedConfig.isDefault ? "Không thể xóa cấu hình chung. Hãy chọn cấu hình khác làm cấu hình chung trước." : undefined}
+                  type="button"
+                  variant="outline"
+                >
+                  <Trash size={16} /> Xóa
+                </Button>
+              ) : null}
+              {!canUpdate && !canCreate ? <span className="text-sm text-muted">Bạn chỉ có quyền xem thư viện cấu hình.</span> : null}
             </div>
           </div>
+          {invalid && canEditCurrent ? <p className="border-b border-border bg-danger/5 px-3 py-1.5 text-xs text-danger">Sửa các lỗi ở phần khổ thẻ trước khi lưu.</p> : null}
 
-        <div className="flex flex-wrap items-center gap-3 border-b border-border px-4 py-3">
-          <Button disabled={!canEditCurrent || busy || nameTooLong || invalid || (!isNew && !dirty)} loading={saveMutation.isPending} onClick={() => saveMutation.mutate()} type="button">
-            {isNew ? "Tạo cấu hình" : "Lưu cấu hình"}
-          </Button>
-          {!isNew && canCreate ? (
-            <Button disabled={busy || nameTooLong || invalid} loading={saveAsNewMutation.isPending} onClick={() => saveAsNewMutation.mutate()} type="button" variant="outline">
-              <Copy size={16} /> Lưu thành cấu hình mới
-            </Button>
-          ) : null}
-          {!isNew && selectedConfig && canUpdate && selectedConfig.editable && !selectedConfig.isDefault ? (
-            <Button disabled={busy} loading={setDefaultMutation.isPending} onClick={setAsDefault} type="button" variant="outline">
-              <Star size={16} /> Đặt làm cấu hình chung
-            </Button>
-          ) : null}
-          {!isNew && selectedConfig && canDelete && selectedConfig.editable ? (
-            <Button
-              className="ml-auto text-danger"
-              disabled={busy || selectedConfig.isDefault}
-              loading={deleteMutation.isPending}
-              onClick={deleteConfig}
-              title={selectedConfig.isDefault ? "Không thể xóa cấu hình chung. Hãy chọn cấu hình khác làm cấu hình chung trước." : undefined}
-              type="button"
-              variant="outline"
-            >
-              <Trash size={16} /> Xóa cấu hình
-            </Button>
-          ) : null}
-          {invalid && canEditCurrent ? <span className="text-sm text-danger">Sửa các lỗi ở phần khổ thẻ trước khi lưu.</span> : null}
-          {!canUpdate && !canCreate ? <span className="text-sm text-muted">Bạn chỉ có quyền xem thư viện cấu hình.</span> : null}
-        </div>
-
-          <BadgeCardSettings disabled={!canEditCurrent} errors={errors} form={form} onChange={updateForm} />
           <BadgeEditor canEdit={canEditCurrent} fields={fieldsQuery.data ?? []} form={form} onChange={(updater, key) => history.set(updater, key)} />
         </Panel>
       ) : null}
