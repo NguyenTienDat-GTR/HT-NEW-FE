@@ -12,6 +12,7 @@ import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
 import {apiFetch, getApiErrorMessage} from "@/lib/api/client";
 import {useAuthStore, type AuthUser} from "@/lib/auth/auth-store";
+import {getDeviceId} from "@/lib/auth/device-id";
 import {AuthShell} from "./auth-shell";
 import {useState} from "react";
 
@@ -53,7 +54,7 @@ export function LoginView() {
         try {
             const data = await apiFetch<LoginResponse>("/auth/login", {
                 method: "POST",
-                body: JSON.stringify(values),
+                body: JSON.stringify({...values, deviceId: getDeviceId()}),
             });
             setAccessToken(data.accessToken);
             setUser(data.user);
