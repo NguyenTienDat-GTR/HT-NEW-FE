@@ -331,7 +331,8 @@ function OptionControl({
   const options = preserveCurrentOption(
     filteredOptions,
     currentValue,
-    Boolean(field.optionsEndpoint && !field.options),
+    // Ô phụ thuộc trường khác (đổi giáo hạt → danh sách giáo xứ): giá trị cũ không còn trong danh sách thì bị xóa, không giữ lại hiển thị mã.
+    Boolean(field.optionsEndpoint && !field.options && (field.searchable || field.currentLabel || !field.buildOptionsEndpoint)),
     field.currentLabel || (pickedOption?.value === currentValue ? pickedOption.label : undefined),
   );
   const handleSearchableChange = (next: FormValue) => {
