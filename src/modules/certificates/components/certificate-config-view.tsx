@@ -4,6 +4,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { HelpTip } from "@/components/ui/help-tip";
+import { Button } from "@/components/ui/button";
+import { Books, CaretDown, Plus } from "@phosphor-icons/react";
 import { apiFetch } from "@/lib/api/client";
 import { NEW_CONFIG, useConfigLibrary } from "@/modules/layout-config/use-config-library";
 import { useAuthStore } from "@/lib/auth/auth-store";
@@ -30,9 +32,11 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
   const canDelete = hasPermissionPrefix(user, "training.certificate_config.delete.");
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-  const [addFieldKey, setAddFieldKey] = useState<string>("");
+  // Danh sách phần tử đang chọn (chọn nhiều); phần tử "đang chọn" của bảng thuộc tính chỉ có khi chọn đúng một.
+  const [selection, setSelection] = useState<number[]>([]);
+  const setSelectedIndex = (index: number | null) => setSelection(index == null ? [] : [index]);
   const [preview, setPreview] = useState(false);
+  const [libraryOpen, setLibraryOpen] = useState(false);
   const [loadedKey, setLoadedKey] = useState<string | null>(null);
   const history = useUndoHistory<DesignForm>(blankForm());
   const form = history.value;
@@ -77,24 +81,20 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
     history.set((current) => ({ ...current, ...patch }), key);
   }
 
-  function updateItem(index: number, patch: Partial<LayoutItem>, key?: string) {
-    history.set(
-      (current) => ({
-        ...current,
-        layout: current.layout.map((item, idx) => (idx === index ? { ...item, ...patch } : item)),
-      }),
-      key ? `${key}:${index}` : undefined,
-    );
+  // Mọi thay đổi bố cục từ khung thiết kế (kéo, đổi cỡ, gõ chữ, căn lề, phím tắt).
+  function updateLayout(updater: (layout: LayoutItem[]) => LayoutItem[], key?: string) {
+    history.set((current) => ({ ...current, layout: updater(current.layout) }), key);
   }
 
-  function addField() {
-    if (!addFieldKey) return;
-    history.set((current) => ({
-      ...current,
-      layout: [...current.layout, fieldItem(addFieldKey)],
-    }));
+  // Thả một trường từ danh sách vào khung: tạo phần tử tại điểm thả và chọn nó.
+  function dropField(fieldKey: string, x: number, y: number) {
+    history.set((current) => ({ ...current, layout: [...current.layout, { ...fieldItem(fieldKey), x, y }] }));
     setSelectedIndex(form.layout.length);
-    setAddFieldKey("");
+  }
+
+  function addTextAt(x: number, y: number) {
+    history.set((current) => ({ ...current, layout: [...current.layout, { ...textItem(), x, y }] }));
+    setSelectedIndex(form.layout.length);
   }
 
   function addText() {
@@ -121,11 +121,6 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
       layout: [...current.layout, photoItem()],
     }));
     setSelectedIndex(form.layout.length);
-  }
-
-  function removeItem(index: number) {
-    history.set((current) => ({ ...current, layout: current.layout.filter((_, idx) => idx !== index) }));
-    setSelectedIndex(null);
   }
 
   const [albumOpen, setAlbumOpen] = useState(false);
@@ -248,29 +243,47 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
     deleteMutation.mutate();
   }
 
-  const selected = selectedIndex != null ? (form.layout[selectedIndex] ?? null) : null;
   const nameTooLong = form.name.length > MAX_NAME_LENGTH;
   const busy = saveMutation.isPending || saveAsNewMutation.isPending || setDefaultMutation.isPending || deleteMutation.isPending;
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2">
+    <div className="space-y-3">
+      {/* Dòng đầu gọn: tiêu đề + cấu hình đang mở; thư viện chỉ mở ra khi cần đổi cấu hình để trình thiết kế nằm vừa một màn hình. */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <h1 className="text-xl font-bold leading-7 text-foreground">{route?.title ?? "Cấu hình chứng nhận"}</h1>
         {route?.subtitle ? <HelpTip label="Mô tả màn hình">{route.subtitle}</HelpTip> : null}
+        {resolvedId ? (
+          <div className="ml-auto flex items-center gap-2">
+            <Button aria-expanded={libraryOpen} onClick={() => setLibraryOpen((open) => !open)} size="sm" type="button" variant="outline">
+              <Books size={16} /> {libraryOpen ? "Ẩn thư viện" : "Đổi cấu hình"}
+              <CaretDown className={libraryOpen ? "rotate-180" : ""} size={14} />
+            </Button>
+            {canCreate ? (
+              <Button onClick={startNew} size="sm" type="button" variant={isNew ? "primary" : "outline"}>
+                <Plus size={16} /> Tạo mới
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
       </div>
 
       {/* Thư viện cấu hình */}
-      <CertificateLibraryPanel
-        canCreate={canCreate}
-        courseTypes={courseTypesQuery.data ?? []}
-        fieldLabel={fieldLabel}
-        isNew={isNew}
-        library={library}
-        libraryQuery={libraryQuery}
-        resolvedId={resolvedId}
-        selectConfig={selectConfig}
-        startNew={startNew}
-      />
+      {libraryOpen || !resolvedId ? (
+        <CertificateLibraryPanel
+          canCreate={canCreate}
+          courseTypes={courseTypesQuery.data ?? []}
+          fieldLabel={fieldLabel}
+          isNew={isNew}
+          library={library}
+          libraryQuery={libraryQuery}
+          resolvedId={resolvedId}
+          selectConfig={(id) => {
+            selectConfig(id);
+            setLibraryOpen(false);
+          }}
+          startNew={startNew}
+        />
+      ) : null}
 
       {!isNew && selectedConfig && !selectedConfig.editable ? (
         <Callout>
@@ -300,8 +313,6 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
               setDefaultMutation={setDefaultMutation}
             />
           }
-          addField={addField}
-          addFieldKey={addFieldKey}
           addPhoto={addPhoto}
           addQr={addQr}
           addText={addText}
@@ -313,21 +324,25 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
           form={form}
           history={history}
           isNew={isNew}
+          configId={isNew ? null : resolvedId}
+          savedBackground={
+            selectedConfig?.backgroundAssetId && selectedConfig.backgroundWidthPx && selectedConfig.backgroundHeightPx
+              ? { assetId: selectedConfig.backgroundAssetId, widthPx: selectedConfig.backgroundWidthPx, heightPx: selectedConfig.backgroundHeightPx }
+              : null
+          }
           nameTooLong={nameTooLong}
           preview={preview}
           redo={redo}
-          removeItem={removeItem}
           restoreSaved={restoreSaved}
-          selected={selected}
-          selectedConfig={selectedConfig}
-          selectedIndex={selectedIndex}
-          setAddFieldKey={setAddFieldKey}
+          selection={selection}
+          setSelection={setSelection}
+          updateLayout={updateLayout}
+          dropField={dropField}
+          addTextAt={addTextAt}
           setAlbumOpen={setAlbumOpen}
           setPreview={setPreview}
-          setSelectedIndex={setSelectedIndex}
           undo={undo}
           updateForm={updateForm}
-          updateItem={updateItem}
         />
       ) : null}
     </div>

@@ -42,28 +42,30 @@ export function CertificateActionBar({
   setDefaultMutation: Action;
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-3 border-b border-border px-4 py-3">
+    <div className="flex flex-wrap items-center gap-2">
       <Button
+        size="sm"
         disabled={!canEditCurrent || busy || nameTooLong || (!isNew && !dirty)}
         loading={saveMutation.isPending}
         onClick={() => saveMutation.mutate()}
         type="button"
       >
-        {isNew ? "Tạo cấu hình" : "Lưu cấu hình"}
+        {isNew ? "Tạo cấu hình" : "Lưu"}
       </Button>
       {!isNew && canCreate ? (
-        <Button disabled={busy || nameTooLong} loading={saveAsNewMutation.isPending} onClick={() => saveAsNewMutation.mutate()} type="button" variant="outline">
-          <Copy size={16} /> Lưu thành cấu hình mới
+        <Button size="sm" disabled={busy || nameTooLong} loading={saveAsNewMutation.isPending} onClick={() => saveAsNewMutation.mutate()} type="button" variant="outline">
+          <Copy size={16} /> Lưu thành mới
         </Button>
       ) : null}
       {!isNew && selectedConfig && canUpdate && selectedConfig.editable && !selectedConfig.isDefault ? (
-        <Button disabled={busy} loading={setDefaultMutation.isPending} onClick={setAsDefault} type="button" variant="outline">
-          <Star size={16} /> Đặt làm cấu hình chung
+        <Button size="sm" disabled={busy} loading={setDefaultMutation.isPending} onClick={setAsDefault} type="button" variant="outline">
+          <Star size={16} /> Đặt làm chung
         </Button>
       ) : null}
       {!isNew && selectedConfig && canDelete && selectedConfig.editable ? (
         <Button
-          className="ml-auto text-danger"
+        size="sm"
+          className="text-danger"
           disabled={busy || selectedConfig.isDefault}
           loading={deleteMutation.isPending}
           onClick={deleteConfig}
@@ -71,7 +73,7 @@ export function CertificateActionBar({
           type="button"
           variant="outline"
         >
-          <Trash size={16} /> Xóa cấu hình
+          <Trash size={16} /> Xóa
         </Button>
       ) : null}
       {!isNew && selectedConfig?.isDefault && canDelete && selectedConfig.editable ? (

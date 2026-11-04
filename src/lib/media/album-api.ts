@@ -10,6 +10,9 @@ export type AlbumItem = {
   // URL đã ký (hết hạn sau một thời gian) của ảnh xem trước.
   url: string;
   createdAt: string;
+  // Kích thước (px) của ảnh gốc dùng để in, khác với ảnh xem trước đã thu nhỏ; null nếu chưa biết.
+  widthPx?: number | null;
+  heightPx?: number | null;
 };
 
 export type Album = {

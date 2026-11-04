@@ -122,6 +122,9 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
   const canBulkApprove = Boolean(config.bulkApprovePath) && canUseAction(user, effectiveRoute.actions?.approve) && embedded?.canApproveCourse !== false && !courseDisabled;
   const canExportPdf = Boolean(config.enablePdfExport && config.pdfExportPath);
   const [exporting, setExporting] = useState(false);
+  // Trong tab chứng nhận của khóa: nút xuất PDF luôn hiện cho tài khoản có quyền xem chứng nhận; không chọn hồ sơ thì xuất mọi chứng nhận đã duyệt của khóa.
+  const exportCourseCode = canExportPdf && typeof scoreCourseCode === "string" ? scoreCourseCode : undefined;
+  const showCourseExport = Boolean(exportCourseCode) && hasPermissionPrefix(user, "training.certificate.read.");
   // Khi bật xuất PDF: cho chọn mọi dòng (xuất kiểm tra "đã duyệt" ở BE). Ngược lại, duyệt hàng loạt chỉ chọn hồ sơ đang chờ.
   const selectableIds = canExportPdf
     ? rows.flatMap((row) => {
@@ -377,7 +380,21 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
     </Tip>
   ) : null;
   async function exportPdf(ids: string[]) {
-    if (!config.pdfExportPath || ids.length === 0) return;
+    if (!config.pdfExportPath) return;
+    if (ids.length === 0) {
+      if (!exportCourseCode) return;
+      setExporting(true);
+      const toastId = toast.loading("Đang tạo PDF các chứng nhận đã duyệt của khóa...");
+      try {
+        await runPdfExportJob(config.pdfExportPath, [], { courseCode: exportCourseCode });
+        toast.success("Đã xuất PDF các chứng nhận đã duyệt của khóa", { id: toastId });
+      } catch (error) {
+        toast.error(getApiErrorMessage(error), { id: toastId, duration: 10000 });
+      } finally {
+        setExporting(false);
+      }
+      return;
+    }
 
     // Kiểm tra ngay trên giao diện: chỉ cho xuất chứng nhận đã duyệt, nêu rõ chứng nhận nào chưa được duyệt.
     const notApproved = ids
@@ -411,12 +428,19 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
     }
   }
 
-  const exportActions = canExportPdf ? (
+  const exportActions = canExportPdf && (!exportCourseCode || showCourseExport) ? (
     <>
       <span className="whitespace-nowrap text-sm text-muted">Đã chọn {selectedIds.length} hồ sơ</span>
-      <Tip disabled={selectedIds.length === 0} label="Xuất PDF chứng nhận cho các hồ sơ đã chọn (chỉ chứng nhận đã duyệt)">
-        <Button disabled={selectedIds.length === 0 || exporting} onClick={() => exportPdf(selectedIds)} size="sm" type="button">
-          {exporting ? "Đang xuất..." : "Xuất PDF"}
+      <Tip
+        disabled={!exportCourseCode && selectedIds.length === 0}
+        label={
+          selectedIds.length > 0
+            ? "Xuất PDF chứng nhận cho các hồ sơ đã chọn (chỉ chứng nhận đã duyệt)"
+            : "Xuất PDF toàn bộ chứng nhận đã duyệt của khóa (chọn hồ sơ để chỉ xuất các hồ sơ đó)"
+        }
+      >
+        <Button disabled={(!exportCourseCode && selectedIds.length === 0) || exporting} onClick={() => exportPdf(selectedIds)} size="sm" type="button">
+          {exporting ? "Đang xuất..." : selectedIds.length > 0 ? "Xuất PDF" : exportCourseCode ? "Xuất tất cả PDF" : "Xuất PDF"}
         </Button>
       </Tip>
     </>
@@ -541,7 +565,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
               {permissionRevokeButton}
             </>
           }
-          leadingActions={selectedIds.length > 0 && (bulkActions || exportActions) ? <>{bulkActions}{exportActions}</> : scoreStats}
+          leadingActions={(selectedIds.length > 0 || showCourseExport) && (bulkActions || exportActions) ? <>{bulkActions}{exportActions}</> : scoreStats}
         />
         {scoreEntryEnabled && embedded?.scoreLocked === true ? (
           <div className="border-b border-warning/30 bg-warning/10 px-4 py-2 text-xs font-medium text-foreground">Điểm của khóa đang bị khóa chỉnh sửa. Cần mở khóa mới nhập được điểm.</div>

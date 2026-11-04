@@ -1,4 +1,5 @@
 import { normalizeItem, type ConfigScopeLevel, type LayoutItem } from "@/modules/certificates/components/certificate-design";
+import { BADGE_SAMPLE_VALUES } from "./badge-sample-values";
 import {
   DEFAULT_CARD,
   MAX_CARD_MM,
@@ -40,6 +41,11 @@ export type BadgeConfig = {
   backBackground?: string | null;
   frontBackgroundAssetId?: string | null;
   backBackgroundAssetId?: string | null;
+  // Kích thước (px) của ảnh nền gốc dùng để in (không phải ảnh xem trước).
+  frontBackgroundWidthPx?: number | null;
+  frontBackgroundHeightPx?: number | null;
+  backBackgroundWidthPx?: number | null;
+  backBackgroundHeightPx?: number | null;
   frontLayout?: LayoutItem[] | null;
   backLayout?: LayoutItem[] | null;
   updatedAt?: string | null;
@@ -182,37 +188,7 @@ export function validateBadgeForm(form: BadgeForm): string[] {
 }
 
 // Giá trị mẫu của trường thẻ để xem trước.
-export function sampleBadgeValue(key: string | undefined, fallback: string): string {
-  switch (key) {
-    case "holyName":
-      return "Giuse";
-    case "leaderName":
-      return "Nguyễn Văn An";
-    case "leaderFullName":
-      return "Giuse Nguyễn Văn An";
-    case "leaderParishName":
-      return "Giáo xứ Thượng Phúc";
-    case "leaderDeaneryName":
-      return "Giáo hạt Thủ Dầu Một";
-    case "leaderDioceseName":
-      return "Phú Cường";
-    case "teamName":
-      return "Đội 3";
-    case "courseName":
-      return "Sa mạc huấn luyện Dự trưởng";
-    case "courseCode":
-      return "KH-2026-01";
-    case "hostYear":
-      return "2026";
-    case "courseStartDate":
-      return "15/07/2026";
-    case "courseEndDate":
-      return "20/07/2026";
-    case "coursePeriod":
-      return "từ 15/07/2026 đến 20/07/2026";
-    case "courseLocation":
-      return "Nhà thờ Chánh Tòa";
-    default:
-      return fallback;
-  }
+export function sampleBadgeValue(key: string | undefined, fallback: string, values: Record<string, string> = BADGE_SAMPLE_VALUES): string {
+  if (key && Object.prototype.hasOwnProperty.call(values, key)) return values[key];
+  return fallback;
 }

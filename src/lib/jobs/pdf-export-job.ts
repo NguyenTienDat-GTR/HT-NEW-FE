@@ -9,11 +9,12 @@ const PDF_POLL_MAX_ATTEMPTS = 200;
 /**
  * Xuất PDF chạy nền: tạo job, hỏi trạng thái định kỳ rồi tải file về máy khi xong
  * (không treo request dù xuất vài trăm chứng nhận). Trả về tên file đã tải.
+ * Danh sách mã rỗng kèm courseCode: server xuất mọi chứng nhận đã duyệt của khóa.
  */
-export async function runPdfExportJob(basePath: string, certificateCodes: string[], options: { intervalMs?: number; sleep?: (ms: number) => Promise<void> } = {}) {
+export async function runPdfExportJob(basePath: string, certificateCodes: string[], options: { courseCode?: string; intervalMs?: number; sleep?: (ms: number) => Promise<void> } = {}) {
   const submit = await apiFetch<PdfJobStatus>(`${basePath}/jobs`, {
     method: "POST",
-    body: JSON.stringify({ certificateCodes }),
+    body: JSON.stringify({ certificateCodes, ...(options.courseCode ? { courseCode: options.courseCode } : {}) }),
   });
   const done = await pollUntilDone<PdfJobStatus>(
     submit,

@@ -9,7 +9,8 @@ import { Tip } from "@/components/ui/tip";
 import { ResourceCell } from "@/components/common/resource/resource-format";
 import { apiFetch, getApiErrorMessage } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
-import { CertificateCanvas, paperAspect, useCertificateFonts, type LayoutItem } from "./certificate-design";
+import { CertificateCanvas } from "./certificate-canvas";
+import { paperAspect, useCertificateFonts, type LayoutItem } from "./certificate-design";
 
 type Detail = Record<string, unknown>;
 
@@ -334,11 +335,8 @@ function PreviewPanel({ preview, loading, error, approved }: { preview?: Preview
               editable={false}
               fieldLabel={(key) => key ?? ""}
               layout={preview.items.map<LayoutItem>((item) => ({ ...item, type: item.type === "QR" ? "QR" : item.type === "PHOTO" ? "PHOTO" : "TEXT" }))}
-              onMove={() => undefined}
-              onSelect={() => undefined}
               preview
               sampleValue={() => ""}
-              selectedIndex={null}
             />
             <p className="mt-2 text-xs text-muted">
               Dựng từ cấu hình đang áp dụng và dữ liệu thật của chứng nhận, giống bản PDF khi xuất.

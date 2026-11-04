@@ -9,7 +9,7 @@ import { blankBadgeForm, formFromBadgeConfig, type BadgeConfig, type BadgeForm }
 import { BadgeCardSettings } from "@/modules/badges/components/badge-card-settings";
 import { BadgeConfigView } from "@/modules/badges/components/badge-config-view";
 import { BadgeEditor } from "@/modules/badges/components/badge-editor";
-import { BadgeLayoutInspector } from "@/modules/badges/components/badge-layout-inspector";
+import { ObjectSizeControls } from "@/modules/layout-config/wysiwyg/object-controls";
 import { BadgeLibrary, EMPTY_LIBRARY_FILTERS } from "@/modules/badges/components/badge-library";
 import { BadgeSheetPreview } from "@/modules/badges/components/badge-sheet-preview";
 import type { FieldCatalogItem, LayoutItem } from "@/modules/certificates/components/certificate-design";
@@ -158,63 +158,7 @@ describe("BadgeCardSettings", () => {
   });
 });
 
-describe("BadgeLayoutInspector", () => {
-  const fieldLabel = (key?: string) => FIELDS.find((field) => field.key === key)?.label ?? key ?? "";
-
-  it("asks the user to pick an element when nothing is selected", () => {
-    wrap(<BadgeLayoutInspector disabled={false} fieldLabel={fieldLabel} item={null} onChange={() => undefined} onRemove={() => undefined} />);
-    expect(screen.getByText("Chưa chọn phần tử")).toBeInTheDocument();
-  });
-
-  it("edits a text element and removes it", () => {
-    const onChange = vi.fn();
-    const onRemove = vi.fn();
-    wrap(<BadgeLayoutInspector disabled={false} fieldLabel={fieldLabel} item={item({ type: "TEXT", text: "Xin chào" })} onChange={onChange} onRemove={onRemove} />);
-    expect(screen.getByText("Văn bản tĩnh")).toBeInTheDocument();
-    fireEvent.change(screen.getByDisplayValue("Xin chào"), { target: { value: "Lưu ý" } });
-    expect(onChange).toHaveBeenCalledWith({ text: "Lưu ý" }, "text");
-    fireEvent.click(screen.getByRole("button", { name: "Xóa phần tử" }));
-    expect(onRemove).toHaveBeenCalled();
-  });
-
-  it("edits typography of a field", () => {
-    const onChange = vi.fn();
-    wrap(<BadgeLayoutInspector disabled={false} fieldLabel={fieldLabel} item={item({ fieldKey: "teamName" })} onChange={onChange} onRemove={() => undefined} />);
-    expect(screen.getByText("Tên đội")).toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText("Cỡ chữ (% chiều cao thẻ)"), { target: { value: "15" } });
-    expect(onChange).toHaveBeenLastCalledWith({ fontSize: 0.15 }, "fontSize");
-    fireEvent.change(screen.getByLabelText("Cỡ chữ (% chiều cao thẻ)"), { target: { value: "99" } });
-    expect(onChange).toHaveBeenLastCalledWith({ fontSize: 0.3 }, "fontSize");
-    fireEvent.click(screen.getByRole("button", { name: "Phải" }));
-    expect(onChange).toHaveBeenLastCalledWith({ align: "right" });
-    fireEvent.click(screen.getByRole("button", { name: "In đậm" }));
-    expect(onChange).toHaveBeenLastCalledWith({ bold: true });
-    fireEvent.click(screen.getByRole("button", { name: "In nghiêng" }));
-    expect(onChange).toHaveBeenLastCalledWith({ italic: true });
-    fireEvent.click(screen.getByRole("button", { name: "Gạch chân" }));
-    expect(onChange).toHaveBeenLastCalledWith({ underline: true });
-    fireEvent.change(screen.getByLabelText("Phông chữ"), { target: { value: "serif" } });
-    expect(onChange).toHaveBeenLastCalledWith({ fontFamily: "serif" });
-  });
-
-  it("a QR element only has a size, clamped between 5% and 50%", () => {
-    const onChange = vi.fn();
-    wrap(<BadgeLayoutInspector disabled={false} fieldLabel={fieldLabel} item={item({ type: "QR", size: 0.3 })} onChange={onChange} onRemove={() => undefined} />);
-    expect(screen.getByText("Mã QR điểm danh")).toBeInTheDocument();
-    expect(screen.queryByLabelText("Phông chữ")).toBeNull();
-    fireEvent.change(screen.getByLabelText("Kích thước mã QR (% chiều cao thẻ)"), { target: { value: "80" } });
-    expect(onChange).toHaveBeenLastCalledWith({ size: 0.5 }, "qrSize");
-    fireEvent.change(screen.getByLabelText("Kích thước mã QR (% chiều cao thẻ)"), { target: { value: "1" } });
-    expect(onChange).toHaveBeenLastCalledWith({ size: 0.05 }, "qrSize");
-  });
-
-  it("disables every control when read-only", () => {
-    wrap(<BadgeLayoutInspector disabled fieldLabel={fieldLabel} item={item()} onChange={() => undefined} onRemove={() => undefined} />);
-    expect(screen.getByRole("button", { name: "Xóa phần tử" })).toBeDisabled();
-    expect(screen.getByLabelText("Phông chữ")).toBeDisabled();
-    expect(screen.getByRole("button", { name: "In đậm" })).toBeDisabled();
-  });
-});
+describe("ObjectSizeControls", () => {  it("a QR element only has a size, clamped between 5% and 50%", () => {    const onChange = vi.fn();    wrap(<ObjectSizeControls item={item({ type: "QR", size: 0.3 })} onChange={onChange} />);    fireEvent.change(screen.getByLabelText("Cỡ mã QR (%)"), { target: { value: "80" } });    expect(onChange).toHaveBeenLastCalledWith({ size: 0.5 }, "qrSize");    fireEvent.change(screen.getByLabelText("Cỡ mã QR (%)"), { target: { value: "1" } });    expect(onChange).toHaveBeenLastCalledWith({ size: 0.05 }, "qrSize");  });  it("disables the controls when read-only", () => {    wrap(<ObjectSizeControls disabled item={item({ type: "QR", size: 0.3 })} onChange={() => undefined} />);    expect(screen.getByLabelText("Cỡ mã QR (%)")).toBeDisabled();  });});
 
 describe("BadgeEditor", () => {
   // Áp updater lên form để kiểm tra kết quả như BE nhận được.
@@ -235,27 +179,44 @@ describe("BadgeEditor", () => {
 
   it("adds a field, a text and a QR to the front side", () => {
     const ctx = setup(blankBadgeForm());
-    fireEvent.change(screen.getByLabelText("Thêm phần tử"), { target: { value: "teamName" } });
-    fireEvent.click(screen.getByRole("button", { name: /Thêm trường/ }));
-    fireEvent.click(screen.getByRole("button", { name: /Văn bản/ }));
-    fireEvent.click(screen.getByRole("button", { name: /Mã QR/ }));
+    // Thêm trường: nhấp đúp vào trường trong danh sách (hoặc kéo thả lên thẻ).
+    fireEvent.doubleClick(screen.getByText("Tên đội"));
+    fireEvent.click(screen.getByRole("button", { name: /văn bản/i }));
+    fireEvent.click(screen.getByRole("button", { name: /mã QR/i }));
     expect(ctx.form.frontLayout.map((layoutItem) => layoutItem.type)).toEqual(["FIELD", "TEXT", "QR"]);
     expect(ctx.form.frontLayout[0].fieldKey).toBe("teamName");
     expect(ctx.form.frontLayout[2].size).toBeGreaterThanOrEqual(0.05);
     expect(ctx.form.backLayout).toEqual([]);
   });
 
-  it("add button stays disabled until a field is chosen", () => {
-    setup(blankBadgeForm());
-    expect(screen.getByRole("button", { name: /Thêm trường/ })).toBeDisabled();
+  it("copies the front layout onto the back, mirrored left-to-right", () => {
+    vi.stubGlobal("ResizeObserver", class { observe() {} unobserve() {} disconnect() {} });
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    const ctx = setup({ ...blankBadgeForm(), hasBack: true, frontLayout: [item({ type: "TEXT", text: "Trái", x: 0.2, align: "left" })] });
+    const trigger = screen.getByRole("button", { name: /Sao chép mặt/ });
+    fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false });
+    fireEvent.click(trigger);
+    fireEvent.click(screen.getByText(/Chép lật gương mặt trước sang mặt sau/));
+    expect(ctx.form.backLayout).toHaveLength(1);
+    expect(ctx.form.backLayout[0]).toMatchObject({ text: "Trái", x: 0.8, align: "right" });
+    expect(ctx.form.frontLayout[0].x).toBe(0.2);
+  });
+
+  it("applies a layout template to the active side", () => {
+    vi.stubGlobal("ResizeObserver", class { observe() {} unobserve() {} disconnect() {} });
+    const ctx = setup(blankBadgeForm());
+    fireEvent.click(screen.getByRole("button", { name: /Mẫu bố cục/ }));
+    fireEvent.click(screen.getAllByRole("button", { name: "Dùng mẫu" })[0]);
+    expect(ctx.form.frontLayout.length).toBeGreaterThan(3);
+    expect(ctx.form.frontLayout.some((layoutItem) => layoutItem.type === "QR")).toBe(true);
   });
 
   it("edits the back side separately, including text and QR", () => {
     const ctx = setup({ ...blankBadgeForm(), hasBack: true, frontLayout: [item()] });
     fireEvent.click(screen.getByRole("tab", { name: "Mặt sau" }));
     expect(screen.getByText(/Mặt sau chưa có phần tử nào/)).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: /Văn bản/ }));
-    fireEvent.click(screen.getByRole("button", { name: /Mã QR/ }));
+    fireEvent.click(screen.getByRole("button", { name: /văn bản/i }));
+    fireEvent.click(screen.getByRole("button", { name: /mã QR/i }));
     expect(ctx.form.backLayout.map((layoutItem) => layoutItem.type)).toEqual(["TEXT", "QR"]);
     expect(ctx.form.frontLayout).toHaveLength(1);
   });
@@ -263,8 +224,8 @@ describe("BadgeEditor", () => {
   it("removing the selected element deletes it from the active side only", () => {
     const ctx = setup({ ...blankBadgeForm(), hasBack: true, frontLayout: [item({ fieldKey: "holyName" })], backLayout: [item({ type: "TEXT", text: "A" }), item({ type: "TEXT", text: "B" })] });
     fireEvent.click(screen.getByRole("tab", { name: "Mặt sau" }));
-    fireEvent.pointerDown(screen.getByText("A"));
-    fireEvent.click(screen.getByRole("button", { name: "Xóa phần tử" }));
+    fireEvent.click(screen.getByText("A"));
+    fireEvent.click(screen.getByRole("button", { name: "Xóa (Delete)" }));
     expect(ctx.form.backLayout.map((layoutItem) => layoutItem.text)).toEqual(["B"]);
     expect(ctx.form.frontLayout).toHaveLength(1);
   });
@@ -274,7 +235,7 @@ describe("BadgeEditor", () => {
 
   it("read-only users get no editing toolbar and cannot open the album", () => {
     setup(blankBadgeForm(), false);
-    expect(screen.queryByRole("button", { name: /Văn bản/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /văn bản/i })).toBeNull();
     expect(screen.queryByLabelText("Thêm phần tử")).toBeNull();
     expect(screen.getByRole("button", { name: /Chọn ảnh nền \(album\)/ })).toBeDisabled();
   });
@@ -370,7 +331,7 @@ describe("BadgeEditor", () => {
     setup({ ...blankBadgeForm(), frontLayout: [item({ fieldKey: "teamName" })] });
     expect(screen.getByText("[Tên đội]")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /Xem trước/ }));
-    expect(screen.getByText("Đội 3")).toBeInTheDocument();
+    expect(screen.getByText("Đội 1")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /Thiết kế/ }));
     expect(screen.getByText("[Tên đội]")).toBeInTheDocument();
   });
@@ -576,7 +537,10 @@ describe("BadgeConfigView", () => {
     mockApi();
     wrap(<BadgeConfigView route={route} />);
     await waitFor(() => expect((screen.getByLabelText("Tên cấu hình") as HTMLInputElement).value).toBe("Thẻ chung"));
-    fireEvent.change(screen.getByLabelText("Rộng (mm)"), { target: { value: "250" } });
+    // Radix Popover dùng ResizeObserver, jsdom chưa có.
+    vi.stubGlobal("ResizeObserver", class { observe() {} unobserve() {} disconnect() {} });
+    fireEvent.click(screen.getByRole("button", { name: "Khổ thẻ và giấy in" }));
+    fireEvent.change(await screen.findByLabelText("Rộng (mm)"), { target: { value: "250" } });
     expect(await screen.findByText(/lớn hơn vùng in của khổ A4/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Lưu cấu hình" })).toBeDisabled();
     expect(screen.getByText("Sửa các lỗi ở phần khổ thẻ trước khi lưu.")).toBeInTheDocument();
@@ -671,17 +635,10 @@ describe("leader photo element", () => {
       wrap(<BadgeEditor canEdit fields={FIELDS} form={current} onChange={onChange} />);
       return { get form() { return current; } };
     })();
-    fireEvent.click(screen.getByRole("button", { name: /Ảnh huynh trưởng/ }));
+    fireEvent.click(screen.getByRole("button", { name: /ảnh huynh trưởng/i }));
     expect(ctx.form.frontLayout).toHaveLength(1);
     expect(ctx.form.frontLayout[0]).toMatchObject({ type: "PHOTO", size: 0.5, photoRatio: "4x6" });
   });
 
-  it("shows a size control (and no font controls) in the inspector", () => {
-    const onChange = vi.fn();
-    wrap(<BadgeLayoutInspector disabled={false} fieldLabel={fieldLabel} item={item({ type: "PHOTO", size: 0.5 })} onChange={onChange} onRemove={() => undefined} />);
-    expect(screen.getByText("Ảnh huynh trưởng", { selector: "p" })).toBeInTheDocument();
-    expect(screen.queryByLabelText("Cỡ chữ (% chiều cao thẻ)")).toBeNull();
-    fireEvent.change(screen.getByLabelText("Chiều cao ảnh (% chiều cao thẻ)"), { target: { value: "99" } });
-    expect(onChange).toHaveBeenLastCalledWith({ size: 0.9 }, "photoSize");
-  });
+it("photo size is edited from the toolbar controls", () => {    const onChange = vi.fn();    wrap(<ObjectSizeControls item={item({ type: "PHOTO", size: 0.5 })} onChange={onChange} />);    fireEvent.change(screen.getByLabelText("Chiều cao ảnh (%)"), { target: { value: "99" } });    expect(onChange).toHaveBeenLastCalledWith({ size: 0.9 }, "photoSize");  });
 });
