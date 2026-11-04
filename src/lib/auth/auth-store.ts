@@ -15,6 +15,17 @@ export type AuthUser = {
   unitLocked?: boolean;
 };
 
+/**
+ * Test/production: BE không trả accessToken trong body, token chỉ nằm trong cookie HttpOnly.
+ * Giá trị này đánh dấu "đã có phiên" trong store; không phải token và không bao giờ được gửi đi.
+ */
+export const COOKIE_SESSION = "__cookie_session__";
+
+/** Token thật để đặt vào header Bearer, hoặc null khi phiên chỉ dựa vào cookie HttpOnly. */
+export function bearerTokenOf(token: string | null | undefined): string | null {
+  return token && token !== COOKIE_SESSION ? token : null;
+}
+
 type AuthState = {
   accessToken: string | null;
   user: AuthUser | null;
