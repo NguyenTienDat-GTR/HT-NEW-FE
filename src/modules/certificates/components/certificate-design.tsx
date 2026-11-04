@@ -143,6 +143,9 @@ export type LayoutItem = {
   bold: boolean;
   italic: boolean;
   underline: boolean;
+  // Khóa: không kéo / đổi cỡ được trong trình soạn (vẫn in bình thường). Ẩn: không hiện trong trình soạn xem trước và không in.
+  locked?: boolean;
+  hidden?: boolean;
 };
 
 export type CourseTypeRef = { typeCode: string; typeName: string };
@@ -240,6 +243,8 @@ export function normalizeItem(item: LayoutItem): LayoutItem {
     bold: Boolean(item.bold),
     italic: Boolean(item.italic),
     underline: Boolean(item.underline),
+    ...(item.locked ? { locked: true } : {}),
+    ...(item.hidden ? { hidden: true } : {}),
   };
 }
 
@@ -275,8 +280,8 @@ export function clamp(value: number, min: number, max: number) {
 }
 
 // Giá trị mẫu để xem trước.
-export function sampleValue(key: string | undefined, fieldLabel: (key?: string) => string) {
-  return (key && CERTIFICATE_SAMPLE_VALUES[key]) || fieldLabel(key);
+export function sampleValue(key: string | undefined, fieldLabel: (key?: string) => string, values: Record<string, string> = CERTIFICATE_SAMPLE_VALUES) {
+  return (key && values[key]) || fieldLabel(key);
 }
 
 
@@ -284,4 +289,10 @@ export function sampleValue(key: string | undefined, fieldLabel: (key?: string) 
 export function paperHeightMm(paperSize: string, orientation: string): number {
   const mm = PAPER_MM[paperSize] ?? PAPER_MM.A4;
   return orientation === "PORTRAIT" ? mm.h : mm.w;
+}
+
+/** Chiều rộng trang (mm) theo khổ giấy và hướng in. */
+export function paperWidthMm(paperSize: string, orientation: string): number {
+  const mm = PAPER_MM[paperSize] ?? PAPER_MM.A4;
+  return orientation === "PORTRAIT" ? mm.w : mm.h;
 }

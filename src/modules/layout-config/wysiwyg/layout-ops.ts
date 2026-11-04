@@ -104,3 +104,65 @@ export function patchItems(layout: LayoutItem[], selection: number[], patch: Par
   const set = new Set(selection);
   return layout.map((item, index) => (set.has(index) ? { ...item, ...patch } : item));
 }
+
+/** Lật gương theo chiều ngang (sao chép mặt trước sang mặt sau của thẻ in hai mặt): x → 1 − x, canh trái ↔ phải. */
+export function mirrorLayout(layout: LayoutItem[]): LayoutItem[] {
+  return layout.map((item) => ({
+    ...item,
+    x: Math.round((1 - item.x) * 10000) / 10000,
+    align: item.align === "left" ? "right" : item.align === "right" ? "left" : item.align,
+  }));
+}
+
+/** Đưa các phần tử được chọn lên trên / xuống dưới (thứ tự vẽ = thứ tự trong mảng). Trả về bố cục mới và chỉ số mới của chúng. */
+export function reorderItems(layout: LayoutItem[], selection: number[], direction: "front" | "back" | "forward" | "backward"): { layout: LayoutItem[]; selection: number[] } {
+  const set = new Set(selection.filter((i) => layout[i]));
+  if (set.size === 0) return { layout, selection };
+  const chosen = layout.filter((_, i) => set.has(i));
+  const others = layout.filter((_, i) => !set.has(i));
+  if (direction === "front") return { layout: [...others, ...chosen], selection: chosen.map((_, n) => others.length + n) };
+  if (direction === "back") return { layout: [...chosen, ...others], selection: chosen.map((_, n) => n) };
+  const next = [...layout];
+  const indexes = [...set].sort((a, b) => (direction === "forward" ? b - a : a - b));
+  const moved: number[] = [];
+  for (const index of indexes) {
+    const target = direction === "forward" ? index + 1 : index - 1;
+    if (target < 0 || target >= next.length || set.has(target) && !moved.includes(target)) {
+      moved.push(index);
+      continue;
+    }
+    [next[index], next[target]] = [next[target], next[index]];
+    moved.push(target);
+  }
+  return { layout: next, selection: moved.sort((a, b) => a - b) };
+}
+
+/** Các kiểu chữ có thể sao chép / dán (cọ định dạng). */
+export type TextStyle = Pick<LayoutItem, "fontFamily" | "fontSize" | "color" | "bold" | "italic" | "underline" | "align">;
+
+export function styleOf(item: LayoutItem): TextStyle {
+  return { fontFamily: item.fontFamily, fontSize: item.fontSize, color: item.color, bold: item.bold, italic: item.italic, underline: item.underline, align: item.align };
+}
+
+/** Dán kiểu chữ lên các phần tử chữ trong vùng chọn (bỏ qua QR / ảnh). */
+export function applyStyle(layout: LayoutItem[], selection: number[], style: TextStyle): LayoutItem[] {
+  const set = new Set(selection);
+  return layout.map((item, index) => (set.has(index) && (item.type === "FIELD" || item.type === "TEXT") ? { ...item, ...style } : item));
+}
+
+/** Chọn mọi phần tử chưa ẩn. */
+export function selectAllIndexes(layout: LayoutItem[]): number[] {
+  return layout.map((item, index) => (item.hidden ? -1 : index)).filter((index) => index >= 0);
+}
+
+// Bộ nhớ tạm sao chép / dán phần tử (Ctrl+C / Ctrl+V), dùng chung giữa mặt trước và mặt sau của thẻ.
+let clipboard: LayoutItem[] = [];
+
+export function copyToClipboard(items: LayoutItem[]) {
+  clipboard = items.map((item) => ({ ...item }));
+}
+
+/** Bản sao của các phần tử đang nằm trong bộ nhớ tạm, lệch một chút để thấy rõ khi dán. */
+export function readClipboard(offset = 0.02): LayoutItem[] {
+  return clipboard.map((item) => shift({ ...item, locked: undefined, hidden: undefined }, offset, offset));
+}

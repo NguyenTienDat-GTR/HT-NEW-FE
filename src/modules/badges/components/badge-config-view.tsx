@@ -29,7 +29,9 @@ import {
 } from "../badge-design";
 import { BadgeSheetSettings } from "./badge-card-settings";
 import { PreviewPdfButton } from "@/modules/layout-config/wysiwyg/preview-pdf-button";
-import { BADGE_SAMPLE_VALUES } from "../badge-sample-values";
+import { VersionHistoryButton, type ConfigVersion } from "@/modules/layout-config/wysiwyg/version-history";
+import { BADGE_SAMPLE_SETS } from "../badge-sample-values";
+import { useSampleSet } from "@/modules/layout-config/wysiwyg/use-designer-support";
 import { BadgeEditor } from "./badge-editor";
 import { BadgeLibrary, EMPTY_LIBRARY_FILTERS, buildLibraryParams, type LibraryFilters } from "./badge-library";
 import { Callout } from "@/modules/layout-config/form-controls";
@@ -47,6 +49,7 @@ export function BadgeConfigView({ route }: { route?: RouteConfig }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loadedKey, setLoadedKey] = useState<string | null>(null);
   const [libraryOpen, setLibraryOpen] = useState(false);
+  const sample = useSampleSet("layout-sample:badge", BADGE_SAMPLE_SETS);
   const history = useUndoHistory<BadgeForm>(blankBadgeForm());
   const form = history.value;
 
@@ -116,6 +119,19 @@ export function BadgeConfigView({ route }: { route?: RouteConfig }) {
     if (!dirty) return;
     if (!window.confirm(isNew ? "Xóa toàn bộ nội dung đang soạn?" : "Khôi phục về bản đã lưu? Các thay đổi chưa lưu sẽ mất (vẫn có thể hoàn tác bằng Ctrl+Z).")) return;
     history.set(() => baseline);
+  }
+
+  // Khôi phục một bản cũ: nạp nội dung (giữ tên hiện tại) vào trình soạn thành một bước hoàn tác, chưa lưu.
+  function restoreVersion(version: ConfigVersion) {
+    const snapshot = version.snapshot as unknown as BadgeConfig;
+    const restored = formFromBadgeConfig({ ...snapshot, name: form.name });
+    history.set((current) => ({
+      ...restored,
+      name: current.name,
+      // Ảnh đã bị gỡ khỏi cấu hình sau các lần lưu thì không còn: bỏ cả mã ảnh để khỏi lưu mã hỏng.
+      frontBackgroundAssetId: restored.frontBackground ? restored.frontBackgroundAssetId : "",
+      backBackgroundAssetId: restored.backBackground ? restored.backBackgroundAssetId : "",
+    }));
   }
 
   async function refresh() {
@@ -284,8 +300,9 @@ export function BadgeConfigView({ route }: { route?: RouteConfig }) {
               <Button disabled={!canEditCurrent || !dirty} onClick={restoreSaved} size="sm" title={isNew ? "Xóa toàn bộ nội dung đang soạn" : "Khôi phục về bản đã lưu"} type="button" variant="outline">
                 <ClockCounterClockwise size={16} /> {isNew ? "Làm mới" : "Khôi phục"}
               </Button>
+              <VersionHistoryButton onRestore={restoreVersion} path={isNew || !resolvedId ? null : `/badges/config/${resolvedId}/versions`} queryKey="badge" />
               <PreviewPdfButton
-                buildBody={() => ({ config: badgePayload(form), values: BADGE_SAMPLE_VALUES })}
+                buildBody={() => ({ config: badgePayload(form), values: sample.values })}
                 disabled={invalid}
                 fallbackName="xem-truoc-the-tham-du.pdf"
                 path="/badges/config/preview-pdf"
@@ -324,7 +341,7 @@ export function BadgeConfigView({ route }: { route?: RouteConfig }) {
           </div>
           {invalid && canEditCurrent ? <p className="border-b border-border bg-danger/5 px-3 py-1.5 text-xs text-danger">Sửa các lỗi ở phần khổ thẻ trước khi lưu.</p> : null}
 
-          <BadgeEditor canEdit={canEditCurrent} fields={fieldsQuery.data ?? []} form={form} onChange={(updater, key) => history.set(updater, key)} />
+          <BadgeEditor sample={sample} canEdit={canEditCurrent} fields={fieldsQuery.data ?? []} form={form} onChange={(updater, key) => history.set(updater, key)} />
         </Panel>
       ) : null}
     </div>

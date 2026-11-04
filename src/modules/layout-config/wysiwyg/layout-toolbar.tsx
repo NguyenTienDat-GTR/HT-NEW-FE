@@ -19,14 +19,19 @@ import {
   TextItalic,
   TextUnderline,
   Trash,
+  CaretDown,
+  LockSimple,
+  PaintBrush,
+  PaintBucket,
 } from "@phosphor-icons/react";
+import * as Popover from "@radix-ui/react-popover";
 import { useState, type MutableRefObject, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { FONT_OPTIONS, fontStack, type FontFamily, type LayoutItem } from "@/modules/certificates/components/certificate-design";
 import type { LayoutUpdater } from "@/modules/certificates/components/certificate-canvas";
 import { ObjectSizeControls } from "./object-controls";
 import { FONT_SIZE_PRESETS_PT, ptToRatio, ratioToPt, stepFontPt } from "./font-size";
-import { alignItems, distributeItems, duplicateItems, patchItems, removeItems, type AlignMode, type BoxOf, type DistributeAxis } from "./layout-ops";
+import { alignItems, applyStyle, distributeItems, duplicateItems, patchItems, removeItems, styleOf, type AlignMode, type BoxOf, type DistributeAxis, type TextStyle } from "./layout-ops";
 
 type Props = {
   layout: LayoutItem[];
@@ -53,6 +58,9 @@ export function LayoutToolbar({ layout, selection, onSelectionChange, onLayoutCh
   const only = chosen.length === 1 ? layout[chosen[0]] : undefined;
   const singleObject = only && (only.type === "QR" || only.type === "PHOTO") ? only : null;
   const none = disabled || chosen.length === 0;
+  const allLocked = chosen.length > 0 && chosen.every((index) => layout[index]?.locked);
+  // Cọ định dạng: lấy kiểu chữ từ một phần tử rồi dán cho nhiều phần tử khác.
+  const [painter, setPainter] = useState<TextStyle | null>(null);
   const noText = disabled || textIndexes.length === 0;
   const boxOf = (item: LayoutItem, index: number) => measureRef?.current?.(item, index) ?? { left: item.x, right: item.x, top: item.y, bottom: item.y };
 
@@ -190,36 +198,48 @@ export function LayoutToolbar({ layout, selection, onSelectionChange, onLayoutCh
           {icon}
         </Btn>
       ))}
+      <Sep />
+      <Popover.Root>
+        <Popover.Trigger asChild>
+          <button
+            aria-label="Căn chỉnh phần tử"
+            className="inline-flex h-8 shrink-0 cursor-pointer items-center gap-0.5 rounded-lg border border-transparent px-1.5 text-text-secondary hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-40"
+            disabled={none}
+            onMouseDown={(event) => event.preventDefault()}
+            title="Căn chỉnh phần tử (một phần tử căn theo trang, nhiều phần tử căn với nhau)"
+            type="button"
+          >
+            <AlignLeftSimple size={16} /> <CaretDown size={11} />
+          </button>
+        </Popover.Trigger>
+        <Popover.Portal>
+          <Popover.Content align="start" className="z-50 w-[250px] rounded-xl border border-border bg-white p-2 shadow-[var(--shadow-card)]" collisionPadding={12} sideOffset={6}>
+            <p className="px-1 pb-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted">{chosen.length > 1 ? "Căn các phần tử với nhau" : "Căn theo trang"}</p>
+            <div className="grid grid-cols-2 gap-1">
+              <MenuItem icon={<AlignLeftSimple size={16} />} label="Sát trái" onClick={() => align("left")} />
+              <MenuItem icon={<AlignTopSimple size={16} />} label="Sát trên" onClick={() => align("top")} />
+              <MenuItem icon={<AlignCenterHorizontalSimple size={16} />} label="Giữa ngang" onClick={() => align("centerX")} />
+              <MenuItem icon={<AlignCenterVerticalSimple size={16} />} label="Giữa dọc" onClick={() => align("middleY")} />
+              <MenuItem icon={<AlignRightSimple size={16} />} label="Sát phải" onClick={() => align("right")} />
+              <MenuItem icon={<AlignBottomSimple size={16} />} label="Sát dưới" onClick={() => align("bottom")} />
+              <MenuItem disabled={chosen.length < 3} icon={<ArrowsHorizontal size={16} />} label="Phân bố ngang" onClick={() => distribute("x")} />
+              <MenuItem disabled={chosen.length < 3} icon={<ArrowsVertical size={16} />} label="Phân bố dọc" onClick={() => distribute("y")} />
+            </div>
+            {chosen.length < 3 ? <p className="px-1 pt-1.5 text-[11px] text-muted">Phân bố đều cần chọn từ 3 phần tử.</p> : null}
+          </Popover.Content>
+        </Popover.Portal>
+      </Popover.Root>
 
       <Sep />
-      <Btn disabled={none} label="Căn sát trái" onClick={() => align("left")}>
-        <AlignLeftSimple size={16} />
+      <Btn disabled={noText} label="Lấy định dạng chữ (cọ định dạng)" onClick={() => primary && setPainter(styleOf(primary))}>
+        <PaintBrush size={16} />
       </Btn>
-      <Btn disabled={none} label="Căn giữa ngang" onClick={() => align("centerX")}>
-        <AlignCenterHorizontalSimple size={16} />
+      <Btn active={Boolean(painter)} disabled={noText || !painter} label="Dán định dạng đã lấy lên phần tử đang chọn" onClick={() => painter && onLayoutChange((items) => applyStyle(items, chosen, painter))}>
+        <PaintBucket size={16} />
       </Btn>
-      <Btn disabled={none} label="Căn sát phải" onClick={() => align("right")}>
-        <AlignRightSimple size={16} />
+      <Btn active={allLocked} disabled={none} label={allLocked ? "Mở khóa phần tử" : "Khóa phần tử (không kéo nhầm)"} onClick={() => onLayoutChange((items) => patchItems(items, chosen, { locked: allLocked ? undefined : true }))}>
+        <LockSimple size={16} weight={allLocked ? "fill" : "regular"} />
       </Btn>
-      <Btn disabled={none} label="Căn sát trên" onClick={() => align("top")}>
-        <AlignTopSimple size={16} />
-      </Btn>
-      <Btn disabled={none} label="Căn giữa dọc" onClick={() => align("middleY")}>
-        <AlignCenterVerticalSimple size={16} />
-      </Btn>
-      <Btn disabled={none} label="Căn sát dưới" onClick={() => align("bottom")}>
-        <AlignBottomSimple size={16} />
-      </Btn>
-      {chosen.length >= 3 ? (
-        <>
-      <Btn disabled={disabled} label="Phân bố đều theo chiều ngang" onClick={() => distribute("x")}>
-        <ArrowsHorizontal size={16} />
-      </Btn>
-      <Btn disabled={disabled} label="Phân bố đều theo chiều dọc" onClick={() => distribute("y")}>
-        <ArrowsVertical size={16} />
-      </Btn>
-        </>
-      ) : null}
 
       <Sep />
       <Btn disabled={none} label="Nhân bản (Ctrl+D)" onClick={duplicate}>
@@ -254,6 +274,20 @@ function Btn({ active, danger, disabled, label, onClick, children }: { active?: 
       type="button"
     >
       {children}
+    </button>
+  );
+}
+
+function MenuItem({ icon, label, onClick, disabled }: { icon: ReactNode; label: string; onClick: () => void; disabled?: boolean }) {
+  return (
+    <button
+      className="flex h-9 cursor-pointer items-center gap-2 rounded-lg px-2 text-left text-[13px] text-foreground hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-40"
+      disabled={disabled}
+      onClick={onClick}
+      type="button"
+    >
+      <span className="text-text-secondary">{icon}</span>
+      {label}
     </button>
   );
 }

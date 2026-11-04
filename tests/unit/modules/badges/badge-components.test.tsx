@@ -189,6 +189,28 @@ describe("BadgeEditor", () => {
     expect(ctx.form.backLayout).toEqual([]);
   });
 
+  it("copies the front layout onto the back, mirrored left-to-right", () => {
+    vi.stubGlobal("ResizeObserver", class { observe() {} unobserve() {} disconnect() {} });
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    const ctx = setup({ ...blankBadgeForm(), hasBack: true, frontLayout: [item({ type: "TEXT", text: "Trái", x: 0.2, align: "left" })] });
+    const trigger = screen.getByRole("button", { name: /Sao chép mặt/ });
+    fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false });
+    fireEvent.click(trigger);
+    fireEvent.click(screen.getByText(/Chép lật gương mặt trước sang mặt sau/));
+    expect(ctx.form.backLayout).toHaveLength(1);
+    expect(ctx.form.backLayout[0]).toMatchObject({ text: "Trái", x: 0.8, align: "right" });
+    expect(ctx.form.frontLayout[0].x).toBe(0.2);
+  });
+
+  it("applies a layout template to the active side", () => {
+    vi.stubGlobal("ResizeObserver", class { observe() {} unobserve() {} disconnect() {} });
+    const ctx = setup(blankBadgeForm());
+    fireEvent.click(screen.getByRole("button", { name: /Mẫu bố cục/ }));
+    fireEvent.click(screen.getAllByRole("button", { name: "Dùng mẫu" })[0]);
+    expect(ctx.form.frontLayout.length).toBeGreaterThan(3);
+    expect(ctx.form.frontLayout.some((layoutItem) => layoutItem.type === "QR")).toBe(true);
+  });
+
   it("edits the back side separately, including text and QR", () => {
     const ctx = setup({ ...blankBadgeForm(), hasBack: true, frontLayout: [item()] });
     fireEvent.click(screen.getByRole("tab", { name: "Mặt sau" }));

@@ -183,6 +183,6 @@ export function validateBadgeForm(form: BadgeForm): string[] {
 }
 
 // Giá trị mẫu của trường thẻ để xem trước.
-export function sampleBadgeValue(key: string | undefined, fallback: string): string {
-  return (key && BADGE_SAMPLE_VALUES[key]) || fallback;
+export function sampleBadgeValue(key: string | undefined, fallback: string, values: Record<string, string> = BADGE_SAMPLE_VALUES): string {
+  return (key && values[key]) || fallback;
 }

@@ -324,6 +324,7 @@ export function CertificateConfigView({ route }: { route?: RouteConfig }) {
           form={form}
           history={history}
           isNew={isNew}
+          configId={isNew ? null : resolvedId}
           nameTooLong={nameTooLong}
           preview={preview}
           redo={redo}
