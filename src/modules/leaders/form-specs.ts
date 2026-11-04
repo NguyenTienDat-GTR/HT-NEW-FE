@@ -11,6 +11,7 @@ const genderOptions = [
 export const personnelFormSpecs: ResourceFormSpec[] = [
   {
     kind: "leaders",
+    consentAttestation: true,
     createTitle: "Thêm huynh trưởng",
     editTitle: "Chỉnh sửa huynh trưởng",
     description: "Hồ sơ huynh trưởng theo giáo xứ / giáo họ / giáo điểm, cấp hiện tại và thông tin liên hệ.",

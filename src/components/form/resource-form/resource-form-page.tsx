@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { HelpTip } from "@/components/ui/help-tip";
 import { Panel } from "@/components/ui/panel";
 import type { RouteConfig } from "@/config/routes/routes";
+import { ConsentCheckbox } from "@/components/common/consent-checkbox";
 import { apiFetch, apiMutation, getApiErrorMessage } from "@/lib/api/client";
 import { useAuthStore } from "@/lib/auth/auth-store";
 import { canUseAction, hasPermissionPrefix } from "@/lib/auth/permissions";
@@ -52,6 +53,9 @@ export function ResourceFormPage({
   // Hồ sơ gửi ngoài đợt: hỏi xác nhận kèm lí do riêng; sau khi lưu lí do vào form mới gửi (submitRequested chạy ở effect sau khi render lại).
   const [offTargetOpen, setOffTargetOpen] = useState(false);
   const [submitRequested, setSubmitRequested] = useState(false);
+  // Xác nhận đồng ý của người có dữ liệu (chỉ form có spec.consentAttestation): luôn bắt đầu chưa tích.
+  const [consentConfirmed, setConsentConfirmed] = useState(false);
+  const [consentError, setConsentError] = useState(false);
 
   const detailQuery = useQuery({
     queryKey: ["resource-detail", effectiveRoute.endpoint, id],
@@ -101,7 +105,8 @@ export function ResourceFormPage({
       if (Object.keys(nextErrors).length) throw new Error("Vui lòng kiểm tra các trường bắt buộc");
 
       const submitValues = pickVisibleValues(visibleFields, mergedValues, spec.extraValueNames);
-      const payload = spec.mapSubmit ? spec.mapSubmit(submitValues, mode) : submitValues;
+      const mapped = spec.mapSubmit ? spec.mapSubmit(submitValues, mode) : submitValues;
+      const payload = spec.consentAttestation ? { ...mapped, subjectConsentConfirmed: true } : mapped;
       const path = spec.buildEndpoint
         ? spec.buildEndpoint({ ...submitValues, ...payload }, id)
         : mode === "create"
@@ -156,6 +161,10 @@ export function ResourceFormPage({
   const offTargetList = spec.offTarget?.collect(mergedValues) ?? [];
 
   function handleSubmit() {
+    if (spec?.consentAttestation && !consentConfirmed) {
+      setConsentError(true);
+      return;
+    }
     // Có hồ sơ ngoài đợt thì cảnh báo và bắt nhập lí do riêng trước khi gửi.
     if (offTargetList.length > 0) {
       setOffTargetOpen(true);
@@ -214,6 +223,18 @@ export function ResourceFormPage({
           </h2>
           <CertificateConfigPicker courseTypeCode={String(id)} courseTypeName={String(mergedValues.typeName ?? "")} />
         </Panel>
+      ) : null}
+
+      {spec.consentAttestation ? (
+        <ConsentCheckbox
+          checked={consentConfirmed}
+          error={consentError && !consentConfirmed ? "Vui lòng xác nhận trước khi lưu" : null}
+          onChange={(checked) => {
+            setConsentConfirmed(checked);
+            if (checked) setConsentError(false);
+          }}
+          variant="attestation"
+        />
       ) : null}
 
       {offTargetOpen ? (
