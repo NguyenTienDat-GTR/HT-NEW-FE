@@ -1,20 +1,22 @@
 "use client";
 
 import { BackgroundAlbumDialog } from "@/components/common/background-album-dialog";
-import { Eye, Images, PencilSimple, Plus, QrCode, TextT, UserCircle, X } from "@phosphor-icons/react";
-import { useState } from "react";
+import { Eye, Images, PencilSimple, QrCode, TextT, UserCircle, X } from "@phosphor-icons/react";
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Tip } from "@/components/ui/tip";
 import { cn } from "@/lib/utils";
 import {
-  CertificateCanvas,
   DEFAULT_QR_SIZE,
   type FieldCatalogItem,
   type LayoutItem,
 } from "@/modules/certificates/components/certificate-design";
+import { CertificateCanvas } from "@/modules/certificates/components/certificate-canvas";
+import { LayoutToolbar } from "@/modules/layout-config/wysiwyg/layout-toolbar";
+import { FieldPalette } from "@/modules/layout-config/wysiwyg/field-palette";
+import type { BoxOf } from "@/modules/layout-config/wysiwyg/layout-ops";
 import { cardAspect, sampleBadgeValue, type BadgeForm, type BadgeSide } from "../badge-design";
-import { BadgeLayoutInspector } from "./badge-layout-inspector";
-import { Field, SELECT_CLASS } from "@/modules/layout-config/form-controls";
+import { orientCard } from "../badge-sheet";
 
 const BASE_ITEM = { x: 0.5, y: 0.5, fontSize: 0.1, color: "#000000", align: "center", fontFamily: "sans", bold: false, italic: false, underline: false } as const;
 
@@ -43,23 +45,19 @@ export function BadgeEditor({
   onChange: (updater: (current: BadgeForm) => BadgeForm, key?: string) => void;
 }) {
   const [side, setSide] = useState<BadgeSide>("front");
-  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [selection, setSelection] = useState<number[]>([]);
+  const setSelectedIndex = (index: number | null) => setSelection(index == null ? [] : [index]);
+  const measureRef = useRef<BoxOf | null>(null);
   const [preview, setPreview] = useState(false);
-  const [addFieldKey, setAddFieldKey] = useState("");
 
   const activeSide: BadgeSide = form.hasBack ? side : "front";
   const layout = form[layoutKey(activeSide)];
   const background = form[backgroundKey(activeSide)];
-  const selected = selectedIndex != null ? (layout[selectedIndex] ?? null) : null;
   const fieldLabel = (key?: string) => fields.find((item) => item.key === key)?.label ?? key ?? "";
 
   function setLayout(updater: (items: LayoutItem[]) => LayoutItem[], key?: string) {
     const property = layoutKey(activeSide);
     onChange((current) => ({ ...current, [property]: updater(current[property]) }), key);
-  }
-
-  function updateItem(index: number, patch: Partial<LayoutItem>, key?: string) {
-    setLayout((items) => items.map((item, idx) => (idx === index ? { ...item, ...patch } : item)), key ? `${activeSide}:${key}:${index}` : undefined);
   }
 
   function addItem(item: LayoutItem) {
@@ -75,8 +73,8 @@ export function BadgeEditor({
   const [albumOpen, setAlbumOpen] = useState(false);
 
   return (
-    <div>
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-2.5">
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-3 py-2">
         <div className="flex flex-wrap items-center gap-3">
           {form.hasBack ? (
             <div aria-label="Mặt thẻ" className="inline-flex rounded-lg bg-surface-2 p-1" role="tablist">
@@ -99,7 +97,7 @@ export function BadgeEditor({
           ) : (
             <span className="text-sm font-semibold text-foreground">Mặt trước</span>
           )}
-          <Button disabled={!canEdit} onClick={() => setAlbumOpen(true)} type="button" variant="outline">
+          <Button disabled={!canEdit} onClick={() => setAlbumOpen(true)} size="sm" type="button" variant="outline">
             <Images size={16} />
             {background ? "Đổi ảnh nền (album)" : "Chọn ảnh nền (album)"}
           </Button>
@@ -138,78 +136,58 @@ export function BadgeEditor({
         </div>
       </div>
 
-      {canEdit ? (
-        <div className="flex flex-wrap items-end gap-2 border-b border-border bg-white px-4 py-2.5">
-          <Field label="Thêm phần tử">
-            <select className={cn(SELECT_CLASS, "min-w-[220px]")} onChange={(event) => setAddFieldKey(event.target.value)} value={addFieldKey}>
-              <option value="">— Chọn trường dữ liệu —</option>
-              {fields.map((item) => (
-                <option key={item.key} value={item.key}>
-                  {item.group} · {item.label}
-                </option>
-              ))}
-            </select>
-          </Field>
-          <Button
-            disabled={!addFieldKey}
-            onClick={() => {
-              addItem({ ...BASE_ITEM, type: "FIELD", fieldKey: addFieldKey });
-              setAddFieldKey("");
-            }}
-            type="button"
-            variant="outline"
-          >
-            <Plus size={16} /> Thêm trường
-          </Button>
-          <Button onClick={() => addItem({ ...BASE_ITEM, type: "TEXT", text: "Văn bản" })} type="button" variant="outline">
-            <TextT size={16} /> Văn bản
-          </Button>
-          <Tip label="Thêm ảnh đại diện của huynh trưởng trong hồ sơ tham dự. Ảnh lấy từ hồ sơ huynh trưởng khi xuất thẻ; huynh trưởng chưa có ảnh thì không in gì.">
-            <Button onClick={() => addItem({ ...BASE_ITEM, type: "PHOTO", photoRatio: "4x6", size: 0.5, x: 0.2, y: 0.5 })} type="button" variant="outline">
-              <UserCircle size={16} /> Ảnh huynh trưởng
-            </Button>
-          </Tip>
-          <Tip label="Thêm mã QR điểm danh. Mã được tạo riêng cho từng hồ sơ trong khóa khi xuất thẻ (không lưu ảnh QR). Dùng được ở cả mặt trước và mặt sau; khóa không bật điểm danh vẫn in mã nhưng chưa quét được.">
-            <Button onClick={() => addItem({ ...BASE_ITEM, type: "QR", size: DEFAULT_QR_SIZE * 2, x: 0.84, y: 0.5 })} type="button" variant="outline">
-              <QrCode size={16} /> Mã QR
-            </Button>
-          </Tip>
-          <span className="ml-auto hidden text-xs text-muted xl:block">Ctrl+Z hoàn tác · Ctrl+Y làm lại</span>
-        </div>
+      {canEdit && !preview ? (
+        <LayoutToolbar
+          layout={layout}
+          measureRef={measureRef}
+          onLayoutChange={(updater, key) => setLayout(updater, key ? `${activeSide}:${key}` : undefined)}
+          onSelectionChange={setSelection}
+          pageHeightMm={orientCard(form.cardWidthMm, form.cardHeightMm, form.cardOrientation).heightMm}
+          selection={selection}
+        />
       ) : null}
 
-      <div className="grid lg:grid-cols-[minmax(0,1fr)_340px]">
-        <div className="bg-slate-100 p-3 sm:p-4">
-          <div className="mx-auto" style={{ maxWidth: `${Math.min(720, Math.max(280, cardAspect(form) * 360))}px` }}>
+      <div className={cn("grid min-h-0 flex-1 lg:min-h-[240px]", canEdit && !preview ? "lg:grid-cols-[232px_minmax(0,1fr)]" : "")}>
+        {canEdit && !preview ? (
+          <aside aria-label="Trường dữ liệu" className="hidden overflow-y-auto border-r border-border bg-white p-3 lg:block">
+            <div className="mb-3 flex flex-wrap gap-1.5 border-b border-border pb-3">
+        <Button onClick={() => addItem({ ...BASE_ITEM, type: "TEXT", text: "Văn bản" })} size="sm" title="Thêm văn bản tĩnh (hoặc nhấp đúp vào chỗ trống trên thẻ)" type="button" variant="outline">
+          <TextT size={16} /> Văn bản
+        </Button>
+        <Tip label="Thêm ảnh đại diện của huynh trưởng trong hồ sơ tham dự. Ảnh lấy từ hồ sơ huynh trưởng khi xuất thẻ; huynh trưởng chưa có ảnh thì không in gì.">
+          <Button onClick={() => addItem({ ...BASE_ITEM, type: "PHOTO", photoRatio: "4x6", size: 0.5, x: 0.2, y: 0.5 })} size="sm" type="button" variant="outline">
+            <UserCircle size={16} /> Ảnh huynh trưởng
+          </Button>
+        </Tip>
+        <Tip label="Thêm mã QR điểm danh. Mã được tạo riêng cho từng hồ sơ trong khóa khi xuất thẻ (không lưu ảnh QR). Dùng được ở cả mặt trước và mặt sau; khóa không bật điểm danh vẫn in mã nhưng chưa quét được.">
+          <Button onClick={() => addItem({ ...BASE_ITEM, type: "QR", size: DEFAULT_QR_SIZE * 2, x: 0.84, y: 0.5 })} size="sm" type="button" variant="outline">
+            <QrCode size={16} /> Mã QR
+          </Button>
+        </Tip>
+            </div>
+            <FieldPalette fields={fields} onPick={(key) => addItem({ ...BASE_ITEM, type: "FIELD", fieldKey: key })} />
+          </aside>
+        ) : null}
+        <div className="flex min-h-[260px] min-w-0 flex-col items-center justify-center gap-2 bg-slate-100 p-3" style={{ containerType: "size" }}>
+          <div style={{ width: `min(100cqw, calc((100cqh - 28px) * ${cardAspect(form)}))` }}>
             <CertificateCanvas
               aspect={cardAspect(form)}
               backgroundImage={background}
               editable={canEdit && !preview}
               fieldLabel={fieldLabel}
               layout={layout}
-              onMove={(index, x, y) => updateItem(index, { x, y }, "move")}
-              onResizePhoto={(index, patch) => updateItem(index, patch, "photoResize")}
-              onSelect={setSelectedIndex}
+              measureRef={measureRef}
+              onAddTextAt={(x, y) => addItem({ ...BASE_ITEM, type: "TEXT", text: "Văn bản", x, y })}
+              onDropField={(fieldKey, x, y) => addItem({ ...BASE_ITEM, type: "FIELD", fieldKey, x, y })}
+              onLayoutChange={(updater, key) => setLayout(updater, key ? `${activeSide}:${key}` : undefined)}
+              onSelectionChange={setSelection}
+              selection={selection}
               preview={preview}
               sampleValue={(key) => sampleBadgeValue(key, fieldLabel(key))}
-              selectedIndex={selectedIndex}
             />
           </div>
-          {layout.length === 0 ? <p className="mt-2 text-center text-xs text-muted">{activeSide === "front" ? "Mặt trước" : "Mặt sau"} chưa có phần tử nào. Thêm trường, văn bản hoặc mã QR ở thanh phía trên.</p> : null}
+          {layout.length === 0 ? <p className="text-center text-xs text-muted">{activeSide === "front" ? "Mặt trước" : "Mặt sau"} chưa có phần tử nào. Thêm trường, văn bản hoặc mã QR ở thanh phía trên.</p> : null}
         </div>
-        <aside aria-label="Thuộc tính phần tử" className="space-y-4 border-t border-border bg-white p-4 lg:border-l lg:border-t-0">
-          <BadgeLayoutInspector
-            disabled={!canEdit}
-            fieldLabel={fieldLabel}
-            item={selected}
-            onChange={(patch, key) => selectedIndex != null && updateItem(selectedIndex, patch, key)}
-            onRemove={() => {
-              if (selectedIndex == null) return;
-              setLayout((items) => items.filter((_, idx) => idx !== selectedIndex));
-              setSelectedIndex(null);
-            }}
-          />
-        </aside>
       </div>
     </div>
   );

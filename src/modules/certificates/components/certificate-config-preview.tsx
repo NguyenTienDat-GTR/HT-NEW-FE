@@ -4,7 +4,8 @@ import * as Tooltip from "@radix-ui/react-tooltip";
 import { useQuery } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
 import { apiFetch } from "@/lib/api/client";
-import { CertificateCanvas, formFromConfig, paperAspect, sampleValue, type ConfigResponse } from "./certificate-design";
+import { CertificateCanvas } from "./certificate-canvas";
+import { formFromConfig, paperAspect, sampleValue, type ConfigResponse } from "./certificate-design";
 
 // Xem trước bố cục cấu hình (ảnh nền + các trường với dữ liệu mẫu) khi rê chuột vào cấu hình.
 // Chi tiết (ảnh nền + bố cục) chỉ được tải lúc rê chuột vào lần đầu, sau đó dùng lại từ cache.
@@ -45,11 +46,8 @@ export function ConfigPreviewTip({
                 editable={false}
                 fieldLabel={fieldLabel}
                 layout={form.layout}
-                onMove={() => undefined}
-                onSelect={() => undefined}
                 preview
                 sampleValue={(key) => sampleValue(key, fieldLabel)}
-                selectedIndex={null}
               />
               <p className="mt-1.5 text-[11px] text-muted">
                 {form.paperSize} · {form.orientation === "PORTRAIT" ? "Dọc" : "Ngang"} · {form.layout.length} phần tử · dữ liệu mẫu
