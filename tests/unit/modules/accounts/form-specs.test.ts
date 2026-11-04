@@ -84,7 +84,7 @@ describe("account create form (non super admin)", () => {
     expect(leader.optionSearchParam).toBe("search");
     expect(leader.serverFiltered).toBe(true);
     // Tên hiển thị gồm tên thánh + họ tên + giáo xứ, không phải mã.
-    expect(leader.optionLabelFields).toEqual(["holyName", "fullName", "parishName"]);
+    expect(leader.optionLabelBuilder?.({ holyName: "Phêrô", fullName: "Nguyễn Văn A" })).toBe("Phêrô Nguyễn Văn A");
   });
 
   it("does not send the filter dropdowns to the backend", () => {
