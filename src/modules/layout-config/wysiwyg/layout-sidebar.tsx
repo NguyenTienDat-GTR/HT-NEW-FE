@@ -1,6 +1,7 @@
 "use client";
 
 import * as Dialog from "@radix-ui/react-dialog";
+import * as Tooltip from "@radix-ui/react-tooltip";
 import { ArrowDown, ArrowUp, Eye, EyeSlash, LockSimple, LockSimpleOpen, QrCode, SquaresFour, TextT, UserCircle, X, TextAa } from "@phosphor-icons/react";
 import { useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
@@ -17,21 +18,15 @@ type Props = {
   onSelectionChange: (indexes: number[]) => void;
   onLayoutChange: (updater: LayoutUpdater, key?: string) => void;
   onPickField: (key: string) => void;
-  /** Nút thêm văn bản / ảnh / mã QR và các nút khác đặt đầu cột. */
-  actions?: ReactNode;
-  templates?: LayoutTemplate[];
-  onApplyTemplate?: (items: LayoutItem[]) => void;
   disabled?: boolean;
 };
 
 // Cột bên trái của trình thiết kế: thêm phần tử, danh sách trường (kéo thả) và danh sách lớp (ẩn / khóa / đổi thứ tự).
-export function LayoutSidebar({ fields, layout, selection, onSelectionChange, onLayoutChange, onPickField, actions, templates, onApplyTemplate, disabled }: Props) {
+export function LayoutSidebar({ fields, layout, selection, onSelectionChange, onLayoutChange, onPickField, disabled }: Props) {
   const [tab, setTab] = useState<"fields" | "layers">("fields");
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="space-y-2 border-b border-border p-3">
-        {actions ? <div className="flex flex-wrap gap-1.5">{actions}</div> : null}
-        {templates && onApplyTemplate ? <TemplatePicker disabled={disabled} hasContent={layout.length > 0} onApply={onApplyTemplate} templates={templates} /> : null}
         <div aria-label="Danh sách" className="flex rounded-lg bg-surface-2 p-0.5" role="tablist">
           {(
             [
@@ -166,7 +161,7 @@ function IconButton({ label, onClick, disabled, children }: { label: string; onC
 }
 
 // Chọn mẫu bố cục dựng sẵn. Áp mẫu thay toàn bộ bố cục hiện tại (hoàn tác được bằng Ctrl+Z).
-function TemplatePicker({ templates, onApply, hasContent, disabled }: { templates: LayoutTemplate[]; onApply: (items: LayoutItem[]) => void; hasContent: boolean; disabled?: boolean }) {
+export function TemplatePicker({ templates, onApply, hasContent, disabled, compact }: { templates: LayoutTemplate[]; onApply: (items: LayoutItem[]) => void; hasContent: boolean; disabled?: boolean; compact?: boolean }) {
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState<LayoutTemplate | null>(null);
   function apply(template: LayoutTemplate) {
@@ -176,15 +171,26 @@ function TemplatePicker({ templates, onApply, hasContent, disabled }: { template
   }
   return (
     <Dialog.Root onOpenChange={(next) => { setOpen(next); if (!next) setPending(null); }} open={open}>
+      <Tooltip.Root>
+        <Tooltip.Trigger asChild>
       <Dialog.Trigger asChild>
         <button
-          className="inline-flex h-8 w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-input bg-white px-3 text-[13px] font-semibold text-foreground shadow-sm hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+          aria-label="Mẫu bố cục"
+          className={compact ? "grid h-8 w-8 shrink-0 cursor-pointer place-items-center rounded-lg border border-input bg-white text-foreground shadow-sm hover:bg-slate-50 hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50" : "inline-flex h-8 w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-input bg-white px-3 text-[13px] font-semibold text-foreground shadow-sm hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"}
           disabled={disabled}
           type="button"
         >
-          <SquaresFour size={16} /> Mẫu bố cục
+          <SquaresFour size={compact ? 17 : 16} />{compact ? null : " Mẫu bố cục"}
         </button>
       </Dialog.Trigger>
+        </Tooltip.Trigger>
+        <Tooltip.Portal>
+          <Tooltip.Content className="z-[60] max-w-xs rounded-md border border-border bg-white px-2.5 py-1.5 text-xs font-medium text-foreground shadow-[var(--shadow-card)]" sideOffset={8}>
+            Chọn mẫu bố cục dựng sẵn rồi chỉnh tiếp
+            <Tooltip.Arrow className="fill-white" />
+          </Tooltip.Content>
+        </Tooltip.Portal>
+      </Tooltip.Root>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40" />
         <Dialog.Content className="fixed top-1/2 left-1/2 z-50 w-[min(520px,94vw)] -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-5 shadow-[var(--shadow-card)]">

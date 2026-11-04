@@ -2,10 +2,9 @@
 
 import { BackgroundAlbumDialog } from "@/components/common/background-album-dialog";
 import * as Popover from "@radix-ui/react-popover";
-import { CaretDown, Copy, Eye, Images, PencilSimple, QrCode, TextT, UserCircle, X } from "@phosphor-icons/react";
+import { CaretDown, Copy, Eye, Images, PencilSimple, X } from "@phosphor-icons/react";
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Tip } from "@/components/ui/tip";
 import { cn } from "@/lib/utils";
 import {
   DEFAULT_QR_SIZE,
@@ -15,6 +14,7 @@ import {
 import { CertificateCanvas } from "@/modules/certificates/components/certificate-canvas";
 import { LayoutToolbar } from "@/modules/layout-config/wysiwyg/layout-toolbar";
 import { LayoutSidebar } from "@/modules/layout-config/wysiwyg/layout-sidebar";
+import { AddElementBar } from "@/modules/layout-config/wysiwyg/add-element-bar";
 import { DesignStage } from "@/modules/layout-config/wysiwyg/design-stage";
 import { ShortcutsHelp, WarningsButton } from "@/modules/layout-config/wysiwyg/warnings-button";
 import { useStageView } from "@/modules/layout-config/wysiwyg/stage-view";
@@ -205,6 +205,18 @@ export function BadgeEditor({
 
       {canEdit && !preview ? (
         <LayoutToolbar
+          leading={
+            <AddElementBar
+              hasContent={layout.length > 0}
+              onAddPhoto={() => addItem({ ...BASE_ITEM, type: "PHOTO", photoRatio: "4x6", size: 0.5, x: 0.2, y: 0.5 })}
+              onAddQr={() => addItem({ ...BASE_ITEM, type: "QR", size: DEFAULT_QR_SIZE * 2, x: 0.84, y: 0.5 })}
+              onAddText={() => addItem({ ...BASE_ITEM, type: "TEXT", text: "Văn bản" })}
+              onApplyTemplate={(items) => setLayout(() => items)}
+              photoHint="Thêm ảnh đại diện của huynh trưởng trong hồ sơ tham dự. Ảnh lấy từ hồ sơ huynh trưởng khi xuất thẻ; huynh trưởng chưa có ảnh thì không in gì."
+              qrHint="Thêm mã QR điểm danh. Mã được tạo riêng cho từng hồ sơ trong khóa khi xuất thẻ (không lưu ảnh QR). Dùng được ở cả mặt trước và mặt sau; khóa không bật điểm danh vẫn in mã nhưng chưa quét được."
+              templates={BADGE_TEMPLATES}
+            />
+          }
           layout={layout}
           measureRef={measureRef}
           onLayoutChange={(updater, key) => setLayout(updater, key ? `${activeSide}:${key}` : undefined)}
@@ -218,31 +230,12 @@ export function BadgeEditor({
         {canEdit && !preview ? (
           <aside aria-label="Trường dữ liệu và lớp" className="hidden min-h-0 border-r border-border bg-white lg:block">
             <LayoutSidebar
-              actions={
-                <>
-                  <Button onClick={() => addItem({ ...BASE_ITEM, type: "TEXT", text: "Văn bản" })} size="sm" title="Thêm văn bản tĩnh (hoặc nhấp đúp vào chỗ trống trên thẻ)" type="button" variant="outline">
-                    <TextT size={16} /> Văn bản
-                  </Button>
-                  <Tip label="Thêm ảnh đại diện của huynh trưởng trong hồ sơ tham dự. Ảnh lấy từ hồ sơ huynh trưởng khi xuất thẻ; huynh trưởng chưa có ảnh thì không in gì.">
-                    <Button onClick={() => addItem({ ...BASE_ITEM, type: "PHOTO", photoRatio: "4x6", size: 0.5, x: 0.2, y: 0.5 })} size="sm" type="button" variant="outline">
-                      <UserCircle size={16} /> Ảnh huynh trưởng
-                    </Button>
-                  </Tip>
-                  <Tip label="Thêm mã QR điểm danh. Mã được tạo riêng cho từng hồ sơ trong khóa khi xuất thẻ (không lưu ảnh QR). Dùng được ở cả mặt trước và mặt sau; khóa không bật điểm danh vẫn in mã nhưng chưa quét được.">
-                    <Button onClick={() => addItem({ ...BASE_ITEM, type: "QR", size: DEFAULT_QR_SIZE * 2, x: 0.84, y: 0.5 })} size="sm" type="button" variant="outline">
-                      <QrCode size={16} /> Mã QR
-                    </Button>
-                  </Tip>
-                </>
-              }
               fields={fields}
               layout={layout}
-              onApplyTemplate={(items) => setLayout(() => items)}
               onLayoutChange={(updater, key) => setLayout(updater, key ? `${activeSide}:${key}` : undefined)}
               onPickField={(key) => addItem({ ...BASE_ITEM, type: "FIELD", fieldKey: key })}
               onSelectionChange={setSelection}
               selection={selection}
-              templates={BADGE_TEMPLATES}
             />
           </aside>
         ) : null}

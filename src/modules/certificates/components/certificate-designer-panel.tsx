@@ -1,12 +1,11 @@
 "use client";
 
 import { BackgroundAlbumDialog } from "@/components/common/background-album-dialog";
-import { ArrowClockwise, ArrowCounterClockwise, ClockCounterClockwise, Eye, PencilSimple, QrCode, TextT, Images, UserCircle } from "@phosphor-icons/react";
+import { ArrowClockwise, ArrowCounterClockwise, ClockCounterClockwise, Eye, PencilSimple, Images } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { HelpTip } from "@/components/ui/help-tip";
 import { Input } from "@/components/ui/input";
 import { Panel } from "@/components/ui/panel";
-import { Tip } from "@/components/ui/tip";
 import type {  } from "@/config/routes/routes";
 import { cn } from "@/lib/utils";
 import { useUndoHistory } from "../undo-history";
@@ -18,6 +17,7 @@ import { PreviewPdfButton } from "@/modules/layout-config/wysiwyg/preview-pdf-bu
 import { VersionHistoryButton, type ConfigVersion } from "@/modules/layout-config/wysiwyg/version-history";
 import { CERTIFICATE_SAMPLE_SETS } from "../certificate-sample-values";
 import { LayoutSidebar } from "@/modules/layout-config/wysiwyg/layout-sidebar";
+import { AddElementBar } from "@/modules/layout-config/wysiwyg/add-element-bar";
 import { DesignStage } from "@/modules/layout-config/wysiwyg/design-stage";
 import { ShortcutsHelp, WarningsButton } from "@/modules/layout-config/wysiwyg/warnings-button";
 import { useStageView } from "@/modules/layout-config/wysiwyg/stage-view";
@@ -246,6 +246,18 @@ export function CertificateDesignerPanel({
 
       {canDesign ? (
         <LayoutToolbar
+          leading={
+            <AddElementBar
+              hasContent={form.layout.length > 0}
+              onAddPhoto={addPhoto}
+              onAddQr={addQr}
+              onAddText={addText}
+              onApplyTemplate={(items) => updateLayout(() => items)}
+              photoHint="Thêm ảnh đại diện của huynh trưởng nhận chứng nhận. Ảnh lấy từ hồ sơ huynh trưởng khi xuất PDF; huynh trưởng chưa có ảnh thì không in gì."
+              qrHint="Thêm mã QR chứa mã chứng nhận. Chỉ khi bố cục có mã QR thì khi xuất PDF hệ thống mới tạo mã QR (không lưu lại)."
+              templates={CERTIFICATE_TEMPLATES}
+            />
+          }
           layout={form.layout}
           measureRef={measureRef}
           onLayoutChange={updateLayout}
@@ -259,31 +271,12 @@ export function CertificateDesignerPanel({
         {canDesign ? (
           <aside aria-label="Trường dữ liệu và lớp" className="hidden min-h-0 border-r border-border bg-white lg:block">
             <LayoutSidebar
-              actions={
-                <>
-                  <Button onClick={addText} size="sm" title="Thêm văn bản tĩnh (hoặc nhấp đúp vào chỗ trống trên ảnh)" type="button" variant="outline">
-                    <TextT size={16} /> Văn bản
-                  </Button>
-                  <Tip label="Thêm ảnh đại diện của huynh trưởng nhận chứng nhận. Ảnh lấy từ hồ sơ huynh trưởng khi xuất PDF; huynh trưởng chưa có ảnh thì không in gì.">
-                    <Button onClick={addPhoto} size="sm" type="button" variant="outline">
-                      <UserCircle size={16} /> Ảnh HT
-                    </Button>
-                  </Tip>
-                  <Tip label="Thêm mã QR chứa mã chứng nhận. Chỉ khi bố cục có mã QR thì khi xuất PDF hệ thống mới tạo mã QR (không lưu lại).">
-                    <Button onClick={addQr} size="sm" type="button" variant="outline">
-                      <QrCode size={16} /> Mã QR
-                    </Button>
-                  </Tip>
-                </>
-              }
               fields={fieldsQuery.data ?? []}
               layout={form.layout}
-              onApplyTemplate={(items) => updateLayout(() => items)}
               onLayoutChange={updateLayout}
               onPickField={(key) => dropField(key, 0.5, 0.5)}
               onSelectionChange={setSelection}
               selection={selection}
-              templates={CERTIFICATE_TEMPLATES}
             />
           </aside>
         ) : null}

@@ -93,6 +93,8 @@ export function CertificateCanvas({
   const [stageDims, setStageDims] = useState({ width: 1, height: 1 });
   const [editing, setEditing] = useState<number | null>(null);
   const [dropOver, setDropOver] = useState(false);
+  const pointerRef = useRef<{ x: number; y: number } | null>(null);
+  const pendingEdit = useRef<number | null>(null);
 
   const active = editable && !preview && Boolean(onLayoutChange);
   const selectionKey = selection.join(",");
@@ -110,6 +112,33 @@ export function CertificateCanvas({
   useLayoutEffect(() => {
     moveableRef.current?.updateRect();
   }, [layout, aspect]);
+
+  // Phím T: thêm văn bản tại con trỏ (hoặc giữa trang) rồi vào chế độ gõ ngay. Nghe ở cửa sổ để dùng được kể cả khi chưa nhấp vào khung,
+  // trừ khi đang gõ trong ô nhập, đang mở hộp thoại hoặc có phím bổ trợ.
+  useEffect(() => {
+    if (!active || !onAddTextAt) return;
+    function onKeyDown(event: globalThis.KeyboardEvent) {
+      if (event.key.toLowerCase() !== "t" || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey || event.repeat) return;
+      const target = event.target as HTMLElement | null;
+      if (target && (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName))) return;
+      if (document.querySelector('[role="dialog"]')) return;
+      event.preventDefault();
+      const point = pointerRef.current ?? { x: 0.5, y: 0.5 };
+      pendingEdit.current = layout.length;
+      onAddTextAt?.(point.x, point.y);
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [active, onAddTextAt, layout.length]);
+
+  // Văn bản vừa thêm bằng phím T: mở chế độ gõ ngay khi nó xuất hiện trong bố cục.
+  useEffect(() => {
+    const index = pendingEdit.current;
+    if (index != null && layout[index]?.type === "TEXT") {
+      pendingEdit.current = null;
+      setEditing(index);
+    }
+  }, [layout]);
 
   // Theo dõi kích thước khung để đặt đường hút giữa trang.
   useEffect(() => {
@@ -332,6 +361,11 @@ export function CertificateCanvas({
         ref={stageRef}
         className="absolute inset-0 overflow-hidden rounded-lg border border-border bg-surface-2"
         onDoubleClick={handleDoubleClickStage}
+        onPointerLeave={() => (pointerRef.current = null)}
+        onPointerMove={(event) => {
+          const rect = event.currentTarget.getBoundingClientRect();
+          pointerRef.current = { x: clamp((event.clientX - rect.left) / rect.width, 0, 1), y: clamp((event.clientY - rect.top) / rect.height, 0, 1) };
+        }}
         style={{ containerType: "size" }}
       >
         {backgroundImage ? (

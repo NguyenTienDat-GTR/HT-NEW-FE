@@ -63,6 +63,7 @@ const SHORTCUTS: Array<[string, string]> = [
   ["Kéo / Shift + nhấp / kéo vùng trống", "Di chuyển / chọn nhiều"],
   ["Mũi tên (Shift = bước lớn)", "Dịch phần tử đang chọn"],
   ["Nhấp đúp vào chữ / vào chỗ trống", "Sửa chữ tại chỗ / thêm văn bản"],
+  ["T", "Thêm văn bản tại con trỏ rồi gõ ngay"],
   ["Ctrl + A", "Chọn tất cả phần tử"],
   ["Ctrl + C / Ctrl + V", "Sao chép / dán (dùng được giữa hai mặt thẻ)"],
   ["Ctrl + D", "Nhân bản"],
