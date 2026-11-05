@@ -1475,7 +1475,6 @@ export interface components {
             /** Format: int32 */
             requiredMinAge?: number;
             /** Format: int32 */
-            requiredYearsActive?: number;
         };
         CourseRequirementResponse: {
             requirementCode?: string;
@@ -1487,7 +1486,6 @@ export interface components {
             /** Format: int32 */
             requiredMinAge?: number;
             /** Format: int32 */
-            requiredYearsActive?: number;
             /** Format: uuid */
             dioceseId?: string;
             /** Format: uuid */
@@ -2045,7 +2043,6 @@ export interface components {
             /** Format: int32 */
             requiredMinAge?: number;
             /** Format: int32 */
-            requiredYearsActive?: number;
         };
         TrainingApprovalRequest: {
             approved: boolean;

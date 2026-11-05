@@ -14,7 +14,19 @@ import { SCOPE_LABELS, type AssignmentResponse, type ConfigResponse } from "./ce
 const USE_DEFAULT = "";
 
 // Chọn cấu hình chứng nhận từ thư viện cho một loại khóa (nhúng trong form loại khóa).
-export function CertificateConfigPicker({ courseTypeCode, courseTypeName }: { courseTypeCode: string; courseTypeName?: string }) {
+// Chế độ tạo mới (có onPendingChange): loại khóa chưa có mã nên chỉ ghi nhớ lựa chọn, form cha sẽ gán sau khi tạo xong.
+export function CertificateConfigPicker({
+  courseTypeCode,
+  courseTypeName,
+  pendingValue,
+  onPendingChange,
+}: {
+  courseTypeCode: string;
+  courseTypeName?: string;
+  pendingValue?: string;
+  onPendingChange?: (configId: string) => void;
+}) {
+  const deferred = Boolean(onPendingChange);
   const user = useAuthStore((state) => state.user);
   const queryClient = useQueryClient();
   const canAssign = hasPermissionPrefix(user, "training.certificate_config.update.");
@@ -26,17 +38,18 @@ export function CertificateConfigPicker({ courseTypeCode, courseTypeName }: { co
   });
   const assignmentsQuery = useQuery({
     queryKey: ["certificate-config", "assignments"],
-    enabled: Boolean(user),
+    enabled: Boolean(user) && !deferred,
     queryFn: () => apiFetch<AssignmentResponse[]>("/certificates/config/assignments"),
   });
 
   const configs = configsQuery.data ?? [];
-  const assignedId = assignmentsQuery.data?.find((item) => item.courseTypeCode === courseTypeCode)?.configId ?? USE_DEFAULT;
-  const [choice, setChoice] = useState<string | null>(null);
-  const value = choice ?? assignedId;
-  const dirty = value !== assignedId;
-
   const defaultConfig = configs.find((config) => config.isDefault && config.editable) ?? configs.find((config) => config.isDefault);
+  // Cấu hình chung đã có mục "Dùng cấu hình chung" nên không liệt kê lại; chọn nó tương đương dùng cấu hình chung.
+  const normalize = (id: string) => (defaultConfig && id === defaultConfig.id ? USE_DEFAULT : id);
+  const assignedId = normalize(assignmentsQuery.data?.find((item) => item.courseTypeCode === courseTypeCode)?.configId ?? USE_DEFAULT);
+  const [choice, setChoice] = useState<string | null>(null);
+  const value = deferred ? normalize(pendingValue ?? USE_DEFAULT) : (choice ?? assignedId);
+  const dirty = value !== assignedId;
   const effective = value === USE_DEFAULT ? defaultConfig : configs.find((config) => config.id === value);
 
   const saveMutation = useMutation({
@@ -69,27 +82,28 @@ export function CertificateConfigPicker({ courseTypeCode, courseTypeName }: { co
           <select
             className="h-11 w-full rounded-[8px] border border-border bg-white px-3 text-sm"
             disabled={!canAssign || configsQuery.isLoading}
-            onChange={(event) => setChoice(event.target.value)}
+            onChange={(event) => (deferred ? onPendingChange?.(event.target.value) : setChoice(event.target.value))}
             value={value}
           >
-            <option value={USE_DEFAULT}>Dùng cấu hình chung{defaultConfig ? ` (${defaultConfig.name})` : ""}</option>
-            {configs.map((config) => (
+            <option value={USE_DEFAULT}>{defaultConfig ? `Cấu hình chung: ${defaultConfig.name}` : "Dùng cấu hình chung"}</option>
+            {configs.filter((config) => config.id !== defaultConfig?.id).map((config) => (
               <option key={config.id} value={config.id}>
                 {config.name}
-                {config.isDefault ? " · chung" : ""}
                 {!config.editable ? ` · ${SCOPE_LABELS[config.scopeLevel]}` : ""}
               </option>
             ))}
           </select>
         </div>
-        {canAssign ? (
+        {canAssign && !deferred ? (
           <Button disabled={!dirty} loading={saveMutation.isPending} onClick={() => saveMutation.mutate()} type="button">
             Áp dụng
           </Button>
         ) : null}
-        <Button asChild variant="outline">
-          <Link href="/certificates/config">Mở thư viện cấu hình</Link>
-        </Button>
+        {!deferred ? (
+          <Button asChild variant="outline">
+            <Link href="/certificates/config">Mở thư viện cấu hình</Link>
+          </Button>
+        ) : null}
       </div>
 
       {configsQuery.isError ? <p className="text-sm text-danger">{getApiErrorMessage(configsQuery.error)}</p> : null}

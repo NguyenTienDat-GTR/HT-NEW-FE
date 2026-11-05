@@ -101,24 +101,14 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
         section: "Thông tin loại khóa",
       },
       {
-        name: "certificateShortCode",
-        label: "Mã viết tắt chứng chỉ",
-        // Bắt buộc khi loại khóa có cấp độ đạt được (có yêu cầu chứng nhận).
-        requiredWhen: (values) => typeof values.resultingLevel === "string" && values.resultingLevel !== "" && values.resultingLevel !== "NONE",
-        helper: "Dùng để sinh mã chứng chỉ, ví dụ HTI. Bắt buộc với loại khóa có cấp độ đạt được.",
-        section: "Thông tin loại khóa",
-      },
-      { name: "requiredCurrentLevel", label: "Cấp độ yêu cầu", type: "select", ...leaderLevelSelect, section: "Điều kiện tham dự" },
-      { name: "requiredMinAge", label: "Tuổi tối thiểu", type: "number", section: "Điều kiện tham dự" },
-      { name: "requiredYearsActive", label: "Số năm sinh hoạt", type: "number", section: "Điều kiện tham dự" },
-      {
         name: "prerequisiteTypeCode",
         label: "Khóa tiên quyết",
         type: "select",
         optionsEndpoint: "/training/course-types",
         optionValue: "typeCode",
         optionLabel: "typeName",
-        section: "Nâng cấp",
+        twoColumnSection: true,
+        section: "Điều kiện tham dự",
       },
       {
         name: "maxYearsAfterPrerequisite",
@@ -129,12 +119,41 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
         clearLabel: "Đặt về không giới hạn",
         visibleWhen: (values) => typeof values.prerequisiteTypeCode === "string" && values.prerequisiteTypeCode !== "",
         helper: "Phải đi khóa này trong vòng bao nhiêu năm kể từ lần đạt khóa tiên quyết gần nhất. Để trống nếu không giới hạn.",
-        section: "Nâng cấp",
+        section: "Điều kiện tham dự",
       },
-      { name: "resultingLevel", label: "Cấp độ khi hoàn thành", type: "select", ...leaderLevelSelect, section: "Nâng cấp" },
+      { name: "requiredCurrentLevel", label: "Cấp độ yêu cầu", type: "select", ...leaderLevelSelect, section: "Điều kiện tham dự" },
+      { name: "requiredMinAge", label: "Tuổi tối thiểu", type: "number", section: "Điều kiện tham dự" },
+      {
+        name: "hasCertificate",
+        label: "Khóa có cấp chứng nhận",
+        type: "switch",
+        switchLabels: ["Có cấp chứng nhận", "Không cấp chứng nhận"],
+        // Loại khóa đã có cấp độ đạt được (đã có thể có chứng nhận) thì không tắt lại được.
+        readOnlyWhen: (values, mode) => mode === "edit" && values.certificateLocked === true,
+        helper: "Bật để nhập mã viết tắt chứng chỉ, cấp độ khi hoàn thành và chọn cấu hình chứng nhận.",
+        section: "Chứng nhận",
+      },
+      {
+        name: "certificateShortCode",
+        label: "Mã viết tắt chứng chỉ",
+        visibleWhen: (values) => values.hasCertificate === true,
+        requiredWhen: (values) => values.hasCertificate === true,
+        helper: "Dùng để sinh mã chứng chỉ, ví dụ HTI.",
+        section: "Chứng nhận",
+      },
+      {
+        name: "resultingLevel",
+        label: "Cấp độ khi hoàn thành",
+        type: "select",
+        ...leaderLevelSelect,
+        visibleWhen: (values) => values.hasCertificate === true,
+        requiredWhen: (values) => values.hasCertificate === true,
+        section: "Chứng nhận",
+      },
     ],
     mapSubmit: (values, mode) => {
       const payload = compactPayload(values);
+      delete payload.hasCertificate;
       if (mode === "edit") delete payload.typeCode;
       // Ô "Đặt về không giới hạn": gửi cờ xóa riêng cho thời hạn sau khóa tiên quyết.
       if (Array.isArray(payload.clearFields) && payload.clearFields.includes("maxYearsAfterPrerequisite")) {
@@ -173,7 +192,7 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
         type: "number",
         min: 0,
         readOnlyWhen: lockedByParticipations,
-        helper: "Số năm tối thiểu giữa năm đạt cấp độ tiên quyết và năm tổ chức khóa này. Mặc định 0, không được âm.",
+        helper: "Số năm tính từ lúc huynh trưởng đạt cấp độ yêu cầu (hoặc đạt khóa tiên quyết) đến năm tổ chức khóa, làm tròn theo năm. Ví dụ khóa 2026 yêu cầu 2 năm: đạt từ 2024 trở về trước. Mặc định 0 (không yêu cầu).",
         section: "Thông tin khóa",
       },
       { name: "location", label: "Địa điểm", section: "Thông tin khóa" },
