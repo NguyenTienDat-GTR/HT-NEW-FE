@@ -60,7 +60,6 @@ const COURSE_TYPE_SECTIONS: DetailSection[] = [
     fields: [
       { key: "requiredCurrentLevel", label: "Cấp hiện tại yêu cầu", render: (row) => (hasText(row.requiredCurrentLevel) ? <ResourceCell column="requiredCurrentLevel" displayMode="detail" row={row} value={row.requiredCurrentLevel} /> : "Không yêu cầu") },
       { key: "requiredMinAge", label: "Tuổi tối thiểu", render: (row) => (hasNumber(row.requiredMinAge) ? `${row.requiredMinAge} tuổi` : "Không yêu cầu") },
-      { key: "requiredYearsActive", label: "Số năm sinh hoạt", render: (row) => (hasNumber(row.requiredYearsActive) ? `${row.requiredYearsActive} năm` : "Không yêu cầu") },
     ],
   },
   {

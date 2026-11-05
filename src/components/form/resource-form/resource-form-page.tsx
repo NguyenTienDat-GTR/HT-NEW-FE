@@ -17,6 +17,7 @@ import { apiFetch, apiMutation, getApiErrorMessage } from "@/lib/api/client";
 import { useAuthStore } from "@/lib/auth/auth-store";
 import { canUseAction, hasPermissionPrefix } from "@/lib/auth/permissions";
 import { OffTargetConfirmDialog } from "@/modules/training-workflow/components/off-target-confirm-dialog";
+import { CourseTypeRequirements } from "@/modules/training-courses/components/course-conditions";
 import { CertificateConfigPicker } from "@/modules/certificates/components/certificate-config-picker";
 import { cn } from "@/lib/utils";
 import { resolveRouteForUser } from "@/modules/workspace/super-admin-route-overrides";
@@ -56,6 +57,8 @@ export function ResourceFormPage({
   // Xác nhận đồng ý của người có dữ liệu (chỉ form có spec.consentAttestation): luôn bắt đầu chưa tích.
   const [consentConfirmed, setConsentConfirmed] = useState(false);
   const [consentError, setConsentError] = useState(false);
+  // Cấu hình chứng nhận chọn khi tạo loại khóa; gán sau khi tạo xong (loại khóa chưa có mã lúc điền form).
+  const [pendingCertConfigId, setPendingCertConfigId] = useState("");
 
   const detailQuery = useQuery({
     queryKey: ["resource-detail", effectiveRoute.endpoint, id],
@@ -72,7 +75,13 @@ export function ResourceFormPage({
     mode === "create"
       ? { ...(spec?.getInitialValues?.(user) ?? {}), ...(prefillCourseCode && spec?.fields.some((field) => field.name === "courseCode") ? { courseCode: prefillCourseCode } : {}) }
       : {};
-  const mergedValues = mode === "edit" ? { ...initialValues, ...values } : { ...createDefaults, ...values };
+  const baseValues = mode === "edit" ? { ...initialValues, ...values } : { ...createDefaults, ...values };
+  // Cờ "khóa có cấp chứng nhận" suy từ cấp độ đạt được của loại khóa; đã có cấp độ thì không tắt lại được.
+  const certificateLocked = mode === "edit" && effectiveRoute.kind === "course-types" && requiresCertification(initialValues);
+  const mergedValues =
+    effectiveRoute.kind === "course-types"
+      ? { ...baseValues, certificateLocked, hasCertificate: baseValues.hasCertificate ?? requiresCertification(baseValues) }
+      : baseValues;
 
   // Trường chỉ hiện khi có từ hai lựa chọn (tư cách gửi của tài khoản nhiều role): đếm số lựa chọn từ API.
   const singleOptionGate = spec?.fields.find((field) => field.hideWhenSingleOption && field.optionsEndpoint);
@@ -97,6 +106,12 @@ export function ResourceFormPage({
       currentLabel: field.name === "courseCode" && prefillCourseName ? prefillCourseName : field.currentLabel,
     }));
 
+  // Chỉ hiện khi bật cờ "khóa có cấp chứng nhận".
+  const showCertPicker =
+    effectiveRoute.kind === "course-types" &&
+    mergedValues.hasCertificate === true &&
+    hasPermissionPrefix(user, "training.certificate_config.read.");
+
   const mutation = useMutation({
     mutationFn: async () => {
       if (!spec) throw new Error("Chưa có cấu hình form cho màn hình này");
@@ -114,7 +129,18 @@ export function ResourceFormPage({
           : `${effectiveRoute.endpoint}/${encodeURIComponent(String(id))}`;
       if (!path) throw new Error("Route này chưa có endpoint để lưu");
       const method = spec.method ?? (mode === "create" ? "POST" : "PUT");
-      return apiMutation<Record<string, unknown>>(path, method, payload);
+      const result = await apiMutation<Record<string, unknown>>(path, method, payload);
+      if (effectiveRoute.kind === "course-types" && showCertPicker && !certificateLocked && pendingCertConfigId) {
+        const typeCode = mode === "create" ? String(result?.typeCode ?? "") : String(id);
+        if (typeCode) {
+          try {
+            await apiMutation("/certificates/config/assignments", "PUT", { courseTypeCode: typeCode, configId: pendingCertConfigId });
+          } catch (error) {
+            toast.error(`Đã tạo loại khóa nhưng chưa gán được cấu hình chứng nhận: ${getApiErrorMessage(error)}`);
+          }
+        }
+      }
+      return result;
     },
     onSuccess: async () => {
       toast.success(effectiveAction === "revoke" ? "Thu hồi quyền thành công" : mode === "create" ? "Tạo mới thành công" : "Lưu cập nhật thành công");
@@ -193,6 +219,10 @@ export function ResourceFormPage({
         </div>
       </div>
 
+      {effectiveRoute.kind === "courses" && typeof mergedValues.courseTypeCode === "string" && mergedValues.courseTypeCode ? (
+        <CourseTypeRequirements courseTypeCode={mergedValues.courseTypeCode} />
+      ) : null}
+
       {detailQuery.isLoading ? (
         <Panel className="h-60 animate-pulse" />
       ) : leaderLayout ? (
@@ -210,16 +240,17 @@ export function ResourceFormPage({
         <FormSections errors={errors} fields={sectionFields} mode={mode} onChange={handleFieldChange} onFieldChange={handleOtherFieldChange} user={user} values={mergedValues} />
       )}
 
-      {mode === "edit" &&
-      effectiveRoute.kind === "course-types" &&
-      requiresCertification(mergedValues) &&
-      hasPermissionPrefix(user, "training.certificate_config.read.") ? (
+      {showCertPicker ? (
         <Panel className="space-y-3 p-4">
           <h2 className="flex items-center gap-2 text-sm font-semibold leading-5 text-foreground">
             <span aria-hidden className="h-4 w-1 rounded-full bg-primary" />
             Cấu hình chứng nhận
           </h2>
-          <CertificateConfigPicker courseTypeCode={String(id)} courseTypeName={String(mergedValues.typeName ?? "")} />
+          {!certificateLocked ? (
+            <CertificateConfigPicker courseTypeCode={mode === "edit" ? String(id) : ""} courseTypeName={String(mergedValues.typeName ?? "")} onPendingChange={setPendingCertConfigId} pendingValue={pendingCertConfigId} />
+          ) : (
+            <CertificateConfigPicker courseTypeCode={String(id)} courseTypeName={String(mergedValues.typeName ?? "")} />
+          )}
         </Panel>
       ) : null}
 

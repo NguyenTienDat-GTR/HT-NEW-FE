@@ -84,7 +84,7 @@ function ExportBody({ courseCode, open, selectedIds, totalParticipants, teams, p
             <Field label="Cấu hình thẻ">
               <select className={cn(SELECT_CLASS, "w-full")} disabled={configs.length === 0} onChange={(event) => setConfigId(event.target.value)} value={configId}>
                 <option value="">{applied ? `Cấu hình chung: ${applied.name}` : "— Chưa có cấu hình chung —"}</option>
-                {configs.map((config) => (
+                {configs.filter((config) => config.id !== applied?.id).map((config) => (
                   <option key={config.id} value={config.id}>
                     {config.name} · {SCOPE_LABELS[config.scopeLevel]} · {formatMm(config.cardWidthMm)}×{formatMm(config.cardHeightMm)} mm{config.hasBack ? " · 2 mặt" : ""}
                   </option>

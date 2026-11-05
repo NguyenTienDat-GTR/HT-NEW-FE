@@ -13,6 +13,8 @@ export type FormSectionPlan = {
   fields: FormFieldSpec[];
   // compact: nhóm ngắn, xếp cạnh nhóm khác (nửa chiều ngang); full: nhóm lớn chiếm trọn hàng.
   size: "compact" | "full";
+  // Số cột tối đa của nhóm full ở màn hình rộng.
+  columns: 2 | 3;
 };
 
 const BULKY_TYPES = new Set(["image", "checkbox-list", "registration-list", "score-components"]);
@@ -32,7 +34,9 @@ export function planFormSections(fields: FormFieldSpec[]): FormSectionPlan[] {
   return groupFields(fields).map(([title, sectionFields]) => ({
     title,
     fields: sectionFields,
-    size: sectionFields.length <= COMPACT_MAX_FIELDS && !sectionFields.some((field) => field.wide || BULKY_TYPES.has(field.type ?? "text")) ? "compact" : "full",
+    size:
+      sectionFields.length <= COMPACT_MAX_FIELDS && !sectionFields.some((field) => field.wide || field.twoColumnSection || BULKY_TYPES.has(field.type ?? "text")) ? "compact" : "full",
+    columns: sectionFields.some((field) => field.twoColumnSection) ? 2 : 3,
   }));
 }
 
@@ -77,9 +81,9 @@ export function FormSections({
               <span aria-hidden className="h-4 w-1 rounded-full bg-primary" />
               {plan.title}
             </h2>
-            <div className={cn("grid gap-x-4 gap-y-3 sm:grid-cols-2", span === "full" && plan.size === "full" && "xl:grid-cols-3")}>
+            <div className={cn("grid gap-x-4 gap-y-3 sm:grid-cols-2", span === "full" && plan.size === "full" && plan.columns === 3 && "xl:grid-cols-3")}>
               {plan.fields.map((field) => (
-                <div className={fieldSpanClass(field, span === "full" && plan.size === "full")} key={field.name}>
+                <div className={fieldSpanClass(field, span === "full" && plan.size === "full" && plan.columns === 3)} key={field.name}>
                   <FormField
                     error={errors[field.name]}
                     field={field}
