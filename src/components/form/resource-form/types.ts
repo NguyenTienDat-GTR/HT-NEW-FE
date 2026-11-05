@@ -75,6 +75,8 @@ export type FormFieldSpec = {
     compute?: (values: Record<string, unknown>) => { text: string; invalid?: boolean } | undefined;
   };
   section?: string;
+  // Nhóm chứa trường này chiếm trọn hàng nhưng chỉ chia 2 cột đều (tránh 3 cột làm hẹp ô có nhãn dài).
+  twoColumnSection?: boolean;
 };
 
 export type ResourceFormMode = "create" | "edit";
