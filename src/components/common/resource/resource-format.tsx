@@ -204,6 +204,8 @@ type ResourceCellProps = {
   displayMode?: "table" | "detail";
   // Hiển thị đầy đủ tên và đơn vị (không cắt "..."): bảng nằm trong tab khóa huấn luyện hoặc danh sách huynh trưởng.
   fullNames?: boolean;
+  // Hiện đủ nội dung các ô, không cắt "..." (danh sách giáo phận, giáo hạt).
+  fullText?: boolean;
 };
 
 // Trong các tab của khóa huấn luyện: tên và đơn vị hiển thị đầy đủ (không cắt "..."), tên giáo xứ / giáo hạt bỏ tiền tố;
@@ -212,9 +214,9 @@ const COURSE_TAB_UNIT_COLUMNS = new Set(["parishName", "deaneryName", "leaderPar
 const COURSE_TAB_NAME_COLUMNS = new Set(["leaderFullName", "leaderHolyName", "holyName", "fullName", "teamName"]);
 const NOTE_COLUMNS = new Set(["registrationNote", "scoreNote", "exceptionReason", "approvalReason", "offTargetReason", "crossDeaneryReason", "review"]);
 
-export function ResourceCell({ column, row, value, displayMode = "table", fullNames = false }: ResourceCellProps) {
+export function ResourceCell({ column, row, value, displayMode = "table", fullNames = false, fullText = false }: ResourceCellProps) {
   const embedded = useEmbeddedResource() !== null || fullNames;
-  const full = displayMode === "detail" || (embedded && (COURSE_TAB_NAME_COLUMNS.has(column) || COURSE_TAB_UNIT_COLUMNS.has(column)));
+  const full = displayMode === "detail" || fullText || (embedded && (COURSE_TAB_NAME_COLUMNS.has(column) || COURSE_TAB_UNIT_COLUMNS.has(column)));
   if (embedded && COURSE_TAB_UNIT_COLUMNS.has(column)) {
     // Cột mã đơn vị (parishId / deaneryId) hiển thị theo tên đi kèm trong dòng dữ liệu.
     const unitName = column === "parishId" || column === "deaneryId" ? resolveRelatedDisplayValue(column, row) : value;
