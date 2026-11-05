@@ -202,7 +202,7 @@ function ResourceRows({
       {indexOffset !== undefined ? <td className="h-14 w-12 border-b border-slate-100 px-3 align-middle text-muted">{indexOffset + rowIndex + 1}</td> : null}
       {columns.map((column) => (
         <td className={`h-14 border-b border-slate-100 align-middle ${scoreEntry ? "px-2 py-1" : "px-3"} ${scoreEntry && column === "leaderFullName" ? "min-w-40" : ""}`} key={column}>
-          {route.kind === "leaders" && column === "fullName" ? <LeaderIdentity row={row} /> : cellEditors?.[column] ? cellEditors[column](row) : <ResourceCell column={column} displayMode={scoreEntry ? "detail" : "table"} fullNames={route.kind === "leaders"} row={row} value={row[column]} />}
+          {route.kind === "leaders" && column === "fullName" ? <LeaderIdentity row={row} /> : cellEditors?.[column] ? cellEditors[column](row) : <ResourceCell column={column} displayMode={scoreEntry ? "detail" : "table"} fullNames={route.kind === "leaders"} fullText={route.kind === "dioceses" || route.kind === "deaneries"} row={row} value={row[column]} />}
         </td>
       ))}
       {scoreEntry?.components.map((component) => {

@@ -15,9 +15,7 @@ export const organizationRouteGroup: RouteGroup = {
         idField: "id",
         kind: "dioceses",
         icon: Buildings,
-        columns: ["name", "unionName", "deaneryCount", "parishCount", "leaderCount", "chaplain", "phoneNumber", "email", "status"],
-        sortFields: { deaneryCount: null, parishCount: null, leaderCount: null },
-        // Chỉ tìm theo thuộc tính entity (deaneryCount là số đếm tính ra, không tìm được).
+        columns: ["name", "unionName", "chaplain", "phoneNumber", "email", "status"],
         searchFields: ["name", "unionName"],
         permissionPrefixes: ["organization.diocese.read."],
         actionPermissionPrefixes: ["organization.diocese.create.", "organization.diocese.update.", "organization.diocese.toggle."],
@@ -34,9 +32,7 @@ export const organizationRouteGroup: RouteGroup = {
         idField: "id",
         kind: "deaneries",
         icon: Buildings,
-        columns: ["name", "associationName", "parishCount", "leaderCount", "chaplain", "phoneNumber", "email", "status"],
-        sortFields: { parishCount: null, leaderCount: null },
-        // Chỉ tìm theo thuộc tính entity (parishCount là số đếm tính ra, không tìm được).
+        columns: ["name", "associationName", "chaplain", "phoneNumber", "email", "status"],
         searchFields: ["name", "associationName"],
         permissionPrefixes: ["organization.deanery.read."],
         actionPermissionPrefixes: ["organization.deanery.create.", "organization.deanery.update.", "organization.deanery.toggle."],

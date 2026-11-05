@@ -500,6 +500,24 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
         hint="Mọi cột đều bắt buộc trừ Cấp độ (để trống là Chưa có cấp): Tên thánh, Họ và tên, Ngày sinh (dd/MM/yyyy), Giới tính (Nam/Nữ), Email, Số điện thoại, Giáo hạt, Giáo xứ. Giáo hạt và giáo xứ phải đã có trong hệ thống. Email và số điện thoại không được trùng với huynh trưởng khác. Cột Tên file ảnh không bắt buộc."
         title="Nhập excel hồ sơ huynh trưởng"
       />
+    ) : !embedded && effectiveRoute.kind === "deaneries" && effectiveRoute.endpoint === "/deaneries" && canCreate ? (
+      <ExcelImportDialog
+        description="Tạo nhiều giáo hạt cùng lúc trong giáo phận của bạn từ file Excel mẫu. Chỉ cần một dòng sai thì không có giáo hạt nào được lưu."
+        endpoint="/deaneries/import"
+        templateFileName="mau-import-giao-hat.xlsx"
+        templatePath="/deaneries/import-template"
+        hint="Chỉ bắt buộc cột Tên giáo hạt, các cột còn lại (Ngày bổn mạng, Ngày thành lập, Linh mục tuyên úy, Số điện thoại, Email, Tên hiệp đoàn) có thể để trống. Tên giáo hạt không được trùng với giáo hạt đã có hoặc trùng giữa các dòng."
+        title="Nhập excel giáo hạt"
+      />
+    ) : !embedded && effectiveRoute.kind === "parishes" && effectiveRoute.endpoint === "/parishes" && canCreate ? (
+      <ExcelImportDialog
+        description="Tạo nhiều giáo xứ, giáo họ, giáo điểm cùng lúc từ file Excel mẫu. Chỉ cần một dòng sai thì không có đơn vị nào được lưu."
+        endpoint="/parishes/import"
+        templateFileName="mau-import-giao-xu.xlsx"
+        templatePath="/parishes/import-template"
+        hint="Bắt buộc: Tên giáo xứ và Tên giáo hạt (chọn từ danh sách, giáo hạt phải đã có trong hệ thống). Cột Loại để trống nếu là giáo xứ; giáo họ / giáo điểm phải chọn Loại và nhập thêm Giáo xứ cha (cùng giáo hạt). Các cột còn lại có thể để trống."
+        title="Nhập excel giáo xứ"
+      />
     ) : embedded?.tab === "participations" && effectiveRoute.endpoint === "/training/participants" && scoreCourseCode && !courseDisabled && canImportParticipants ? (
       <ExcelImportDialog
         allowAvatarZip
