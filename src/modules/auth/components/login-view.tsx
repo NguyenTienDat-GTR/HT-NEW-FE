@@ -13,8 +13,11 @@ import {Input} from "@/components/ui/input";
 import {apiFetch, getApiErrorMessage} from "@/lib/api/client";
 import {COOKIE_SESSION, useAuthStore, type AuthUser} from "@/lib/auth/auth-store";
 import {getDeviceId} from "@/lib/auth/device-id";
+import {AppVersion} from "@/components/common/app-version";
+import {PRIVACY_POLICY_LINK_LABEL, PRIVACY_POLICY_PATH} from "@/modules/privacy/constants";
 import {AuthShell} from "./auth-shell";
-import {useState} from "react";
+import {useEffect, useState} from "react";
+import {TurnstileWidget} from "./turnstile-widget";
 
 const loginSchema = z.object({
     username: z.string().min(1, "Nhập tài khoản"),
@@ -49,12 +52,40 @@ export function LoginView() {
         defaultValues: {username: "", password: "", rememberMe: false},
     });
     const [showPassword, setShowPassword] = useState(false);
+    // Cloudflare Turnstile: BE báo có bật hay không; chưa bật thì form hoạt động như cũ.
+    const [turnstileSiteKey, setTurnstileSiteKey] = useState<string | null>(null);
+    const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+    const [turnstileReset, setTurnstileReset] = useState(0);
+
+    useEffect(() => {
+        // Endpoint công khai, không cần token: dùng fetch thường để không đi qua luồng làm mới phiên của apiFetch.
+        let cancelled = false;
+        (async () => {
+            try {
+                const response = await fetch("/backend/api/auth/captcha-config", {credentials: "include"});
+                const body = (await response.json()) as {data?: {enabled?: boolean; siteKey?: string}};
+                const config = body.data;
+                if (!cancelled) setTurnstileSiteKey(config?.enabled && config.siteKey ? config.siteKey : null);
+            } catch {
+                if (!cancelled) setTurnstileSiteKey(null);
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     async function onSubmit(values: LoginForm) {
+        if (turnstileSiteKey && !turnstileToken) {
+            const message = "Vui lòng chờ xác minh bảo mật hoàn tất";
+            form.setError("root", {message});
+            toast.error(message);
+            return;
+        }
         try {
             const data = await apiFetch<LoginResponse>("/auth/login", {
                 method: "POST",
-                body: JSON.stringify({...values, deviceId: getDeviceId()}),
+                body: JSON.stringify({...values, deviceId: getDeviceId(), ...(turnstileToken ? {turnstileToken} : {})}),
             });
             setAccessToken(data.accessToken ?? COOKIE_SESSION);
             setUser(data.user);
@@ -67,6 +98,8 @@ export function LoginView() {
             const message = getApiErrorMessage(error);
             form.setError("root", {message});
             toast.error(message);
+            // Token Turnstile chỉ dùng được một lần: cho xác minh lại sau mỗi lần đăng nhập thất bại.
+            setTurnstileReset((value) => value + 1);
         }
     }
 
@@ -75,7 +108,7 @@ export function LoginView() {
     }
 
     return (
-        <AuthShell maxWidth="max-w-6xl">
+        <AuthShell inlineLegal maxWidth="max-w-6xl">
             <div className="grid gap-10 lg:grid-cols-[1.1fr_1fr] lg:gap-12">
                 <aside className="flex flex-col lg:border-r lg:border-border lg:pr-12">
                     <div className="flex items-center gap-4">
@@ -166,14 +199,26 @@ export function LoginView() {
                             khẩu?</Link>
                     </div>
 
+                    {turnstileSiteKey && (
+                        <TurnstileWidget siteKey={turnstileSiteKey} onToken={setTurnstileToken}
+                                         resetSignal={turnstileReset}/>
+                    )}
+
                     <p className="min-h-5 text-sm text-danger" role="alert">
                         {form.formState.errors.root?.message}
+                    </p>
+
+                    <p className="text-center text-xs">
+                        <Link className="font-semibold text-primary hover:underline" href={PRIVACY_POLICY_PATH}>
+                            {PRIVACY_POLICY_LINK_LABEL}
+                        </Link>
                     </p>
 
                     <Button className="h-13 w-full rounded-xl text-base" loading={form.formState.isSubmitting}
                             type="submit">
                         Đăng nhập
                     </Button>
+                    <AppVersion className="text-right text-[11px] text-muted"/>
                 </form>
                 </div>
             </div>
