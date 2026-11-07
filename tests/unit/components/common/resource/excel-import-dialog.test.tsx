@@ -151,6 +151,7 @@ describe("ApprovalDialog với khóa quá khứ", () => {
     render(<ApprovalDialog captureSigner onClose={() => undefined} onConfirm={onConfirm} open requireApprovalDate />);
 
     const approve = screen.getByRole("button", { name: "Duyệt" });
+    fireEvent.click(screen.getByLabelText("Linh mục tuyên úy (nhập tên)"));
     fireEvent.change(screen.getByPlaceholderText("Tên người ký"), { target: { value: "Cha Giuse" } });
     expect(approve).toBeDisabled();
 
@@ -165,12 +166,24 @@ describe("ApprovalDialog với khóa quá khứ", () => {
     expect(onConfirm).toHaveBeenCalledWith("", undefined, { signerType: "CHAPLAIN", signerName: "Cha Giuse", signerTitle: "Linh mục tuyên úy", approvalDate: "2019-12-20" }, undefined);
   });
 
-  it("khóa thường không hiện ô ngày duyệt và không gửi ngày", () => {
+  it("khóa thường không hiện ô ngày duyệt; mặc định người ký là cha tuyên úy của đơn vị tổ chức khóa (không cần nhập tên)", () => {
     const onConfirm = vi.fn();
     render(<ApprovalDialog captureSigner onClose={() => undefined} onConfirm={onConfirm} open />);
     expect(screen.queryByTestId("approval-date-input")).toBeNull();
-    fireEvent.change(screen.getByPlaceholderText("Tên người ký"), { target: { value: "Cha Giuse" } });
+    expect(screen.queryByPlaceholderText("Tên người ký")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Duyệt" }));
-    expect(onConfirm).toHaveBeenCalledWith("", undefined, { signerType: "CHAPLAIN", signerName: "Cha Giuse", signerTitle: "Linh mục tuyên úy", approvalDate: undefined }, undefined);
+    expect(onConfirm).toHaveBeenCalledWith("", undefined, { signerType: "COURSE_CHAPLAIN", signerName: "", signerTitle: "Linh mục tuyên úy", approvalDate: undefined }, undefined);
+  });
+
+  it("chọn Khác thì phải nhập tên và chức danh", () => {
+    const onConfirm = vi.fn();
+    render(<ApprovalDialog captureSigner onClose={() => undefined} onConfirm={onConfirm} open />);
+    fireEvent.click(screen.getByLabelText("Khác"));
+    const approve = screen.getByRole("button", { name: "Duyệt" });
+    expect(approve).toBeDisabled();
+    fireEvent.change(screen.getByPlaceholderText("Tên người ký"), { target: { value: "Ông A" } });
+    fireEvent.change(screen.getByPlaceholderText("Chức danh"), { target: { value: "Trưởng ban" } });
+    fireEvent.click(approve);
+    expect(onConfirm).toHaveBeenCalledWith("", undefined, { signerType: "OTHER", signerName: "Ông A", signerTitle: "Trưởng ban", approvalDate: undefined }, undefined);
   });
 });
