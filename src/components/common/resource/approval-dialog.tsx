@@ -24,7 +24,9 @@ export function achievableLevels(item: Pick<ExceptionLevelItem, "leaderLevel" | 
 }
 
 // approvalDate (yyyy-MM-dd): ngày duyệt do người duyệt chọn, bắt buộc với chứng nhận của khóa quá khứ.
-export type CertificateSigner = { signerType: "CHAPLAIN" | "OTHER"; signerName: string; signerTitle: string; approvalDate?: string };
+// COURSE_CHAPLAIN: hệ thống tự lấy cha tuyên úy của đơn vị tổ chức khóa, không cần nhập tên.
+export type SignerType = "COURSE_CHAPLAIN" | "CHAPLAIN" | "OTHER";
+export type CertificateSigner = { signerType: SignerType; signerName: string; signerTitle: string; approvalDate?: string };
 
 type ReasonScope = "shared" | "individual";
 
@@ -67,7 +69,7 @@ export function ApprovalDialog({
   const [note, setNote] = useState("");
   const [scope, setScope] = useState<ReasonScope>("shared");
   const [reasons, setReasons] = useState<Record<string, string>>({});
-  const [signerType, setSignerType] = useState<"CHAPLAIN" | "OTHER">("CHAPLAIN");
+  const [signerType, setSignerType] = useState<SignerType>("COURSE_CHAPLAIN");
   const [signerName, setSignerName] = useState("");
   const [signerTitle, setSignerTitle] = useState("");
   const [levels, setLevels] = useState<Record<string, string>>({});
@@ -82,7 +84,7 @@ export function ApprovalDialog({
   const multi = reject && (items?.length ?? 0) >= 2;
   const individual = multi && scope === "individual";
   const needSigner = Boolean(captureSigner) && !reject;
-  const missingSigner = needSigner && (!signerName.trim() || (signerType === "OTHER" && !signerTitle.trim()));
+  const missingSigner = needSigner && signerType !== "COURSE_CHAPLAIN" && (!signerName.trim() || (signerType === "OTHER" && !signerTitle.trim()));
   // Từ chối phải nêu lý do: một lý do chung, hoặc đủ lý do cho từng hồ sơ.
   const missingReason = reject && (individual ? (items ?? []).some((item) => !reasons[item.id]?.trim()) : !note.trim());
   const missingCount = individual ? (items ?? []).filter((item) => !reasons[item.id]?.trim()).length : 0;
@@ -90,7 +92,7 @@ export function ApprovalDialog({
   const signer: CertificateSigner | undefined = needSigner
     ? {
         signerType,
-        signerName: signerName.trim(),
+        signerName: signerType === "COURSE_CHAPLAIN" ? "" : signerName.trim(),
         signerTitle: signerType === "OTHER" ? signerTitle.trim() : "Linh mục tuyên úy",
         approvalDate: needDate ? approvalDate : undefined,
       }
@@ -252,22 +254,30 @@ export function ApprovalDialog({
               <span className="block text-sm font-semibold text-foreground">Người ký chứng nhận <span className="text-danger">*</span></span>
               <div className="flex flex-wrap gap-4">
                 <label className="inline-flex items-center gap-2 text-sm">
+                  <input checked={signerType === "COURSE_CHAPLAIN"} onChange={() => setSignerType("COURSE_CHAPLAIN")} type="radio" />
+                  Linh mục tuyên úy của đơn vị tổ chức khóa
+                </label>
+                <label className="inline-flex items-center gap-2 text-sm">
                   <input checked={signerType === "CHAPLAIN"} onChange={() => setSignerType("CHAPLAIN")} type="radio" />
-                  Linh mục tuyên úy
+                  Linh mục tuyên úy (nhập tên)
                 </label>
                 <label className="inline-flex items-center gap-2 text-sm">
                   <input checked={signerType === "OTHER"} onChange={() => setSignerType("OTHER")} type="radio" />
                   Khác
                 </label>
               </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <input className={inputClass} onChange={(event) => setSignerName(event.target.value)} placeholder="Tên người ký" value={signerName} />
-                {signerType === "OTHER" ? (
-                  <input className={inputClass} onChange={(event) => setSignerTitle(event.target.value)} placeholder="Chức danh" value={signerTitle} />
-                ) : (
-                  <input className={cn(inputClass, "bg-surface-2 text-muted")} disabled value="Linh mục tuyên úy" />
-                )}
-              </div>
+              {signerType === "COURSE_CHAPLAIN" ? (
+                <p className="text-sm text-muted">Hệ thống tự ghi tên Linh mục tuyên úy của đơn vị tổ chức khóa (giáo hạt hoặc giáo phận) vào chứng nhận. Nếu đơn vị chưa có thông tin cha tuyên úy, hãy cập nhật đơn vị hoặc chọn cách nhập tên.</p>
+              ) : (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <input className={inputClass} onChange={(event) => setSignerName(event.target.value)} placeholder="Tên người ký" value={signerName} />
+                  {signerType === "OTHER" ? (
+                    <input className={inputClass} onChange={(event) => setSignerTitle(event.target.value)} placeholder="Chức danh" value={signerTitle} />
+                  ) : (
+                    <input className={cn(inputClass, "bg-surface-2 text-muted")} disabled value="Linh mục tuyên úy" />
+                  )}
+                </div>
+              )}
             </div>
           ) : null}
 
