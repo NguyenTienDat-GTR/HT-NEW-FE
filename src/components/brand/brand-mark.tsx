@@ -2,8 +2,8 @@ import Image from "next/image";
 import {cn} from "@/lib/utils";
 
 export const BRAND_NAME = "C-LEAD";
-export const BRAND_TAGLINE_EN = "Forming Leaders, Serving Christ";
-export const BRAND_TAGLINE_VI = "Đào luyện người Huynh Trưởng, phụng sự Đức Kitô.";
+export const BRAND_TAGLINE_EN = "Leaders, To Serve";
+export const BRAND_TAGLINE_VI = "Huynh Trưởng, Phụng Sự";
 
 export function BrandMark({className, size = 44}: { className?: string; size?: number }) {
     return (

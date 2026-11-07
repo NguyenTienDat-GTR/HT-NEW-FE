@@ -13,7 +13,7 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 
 export const metadata: Metadata = {
   title: "C-LEAD",
-  description: "C-LEAD — Đào luyện người Huynh Trưởng, phụng sự Đức Kitô.",
+  description: "C-LEAD — HUYNH TRƯỞNG - PHỤNG SỰ.",
 };
 
 export default function RootLayout({
