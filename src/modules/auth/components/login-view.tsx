@@ -56,9 +56,21 @@ export function LoginView() {
     const [turnstileReset, setTurnstileReset] = useState(0);
 
     useEffect(() => {
-        apiFetch<{enabled: boolean; siteKey: string}>("/auth/captcha-config")
-            .then((config) => setTurnstileSiteKey(config.enabled && config.siteKey ? config.siteKey : null))
-            .catch(() => setTurnstileSiteKey(null));
+        // Endpoint công khai, không cần token: dùng fetch thường để không đi qua luồng làm mới phiên của apiFetch.
+        let cancelled = false;
+        (async () => {
+            try {
+                const response = await fetch("/backend/api/auth/captcha-config", {credentials: "include"});
+                const body = (await response.json()) as {data?: {enabled?: boolean; siteKey?: string}};
+                const config = body.data;
+                if (!cancelled) setTurnstileSiteKey(config?.enabled && config.siteKey ? config.siteKey : null);
+            } catch {
+                if (!cancelled) setTurnstileSiteKey(null);
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
     }, []);
 
     async function onSubmit(values: LoginForm) {
@@ -71,7 +83,7 @@ export function LoginView() {
         try {
             const data = await apiFetch<LoginResponse>("/auth/login", {
                 method: "POST",
-                body: JSON.stringify({...values, deviceId: getDeviceId(), turnstileToken}),
+                body: JSON.stringify({...values, deviceId: getDeviceId(), ...(turnstileToken ? {turnstileToken} : {})}),
             });
             setAccessToken(data.accessToken ?? COOKIE_SESSION);
             setUser(data.user);
