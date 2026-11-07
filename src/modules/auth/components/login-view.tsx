@@ -14,7 +14,8 @@ import {apiFetch, getApiErrorMessage} from "@/lib/api/client";
 import {COOKIE_SESSION, useAuthStore, type AuthUser} from "@/lib/auth/auth-store";
 import {getDeviceId} from "@/lib/auth/device-id";
 import {AuthShell} from "./auth-shell";
-import {useState} from "react";
+import {useEffect, useState} from "react";
+import {TurnstileWidget} from "./turnstile-widget";
 
 const loginSchema = z.object({
     username: z.string().min(1, "Nhập tài khoản"),
@@ -49,12 +50,28 @@ export function LoginView() {
         defaultValues: {username: "", password: "", rememberMe: false},
     });
     const [showPassword, setShowPassword] = useState(false);
+    // Cloudflare Turnstile: BE báo có bật hay không; chưa bật thì form hoạt động như cũ.
+    const [turnstileSiteKey, setTurnstileSiteKey] = useState<string | null>(null);
+    const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+    const [turnstileReset, setTurnstileReset] = useState(0);
+
+    useEffect(() => {
+        apiFetch<{enabled: boolean; siteKey: string}>("/auth/captcha-config")
+            .then((config) => setTurnstileSiteKey(config.enabled && config.siteKey ? config.siteKey : null))
+            .catch(() => setTurnstileSiteKey(null));
+    }, []);
 
     async function onSubmit(values: LoginForm) {
+        if (turnstileSiteKey && !turnstileToken) {
+            const message = "Vui lòng chờ xác minh bảo mật hoàn tất";
+            form.setError("root", {message});
+            toast.error(message);
+            return;
+        }
         try {
             const data = await apiFetch<LoginResponse>("/auth/login", {
                 method: "POST",
-                body: JSON.stringify({...values, deviceId: getDeviceId()}),
+                body: JSON.stringify({...values, deviceId: getDeviceId(), turnstileToken}),
             });
             setAccessToken(data.accessToken ?? COOKIE_SESSION);
             setUser(data.user);
@@ -67,6 +84,8 @@ export function LoginView() {
             const message = getApiErrorMessage(error);
             form.setError("root", {message});
             toast.error(message);
+            // Token Turnstile chỉ dùng được một lần: cho xác minh lại sau mỗi lần đăng nhập thất bại.
+            setTurnstileReset((value) => value + 1);
         }
     }
 
@@ -165,6 +184,11 @@ export function LoginView() {
                         <Link className="font-semibold text-primary hover:underline" href="/forgot-password">Quên mật
                             khẩu?</Link>
                     </div>
+
+                    {turnstileSiteKey && (
+                        <TurnstileWidget siteKey={turnstileSiteKey} onToken={setTurnstileToken}
+                                         resetSignal={turnstileReset}/>
+                    )}
 
                     <p className="min-h-5 text-sm text-danger" role="alert">
                         {form.formState.errors.root?.message}
