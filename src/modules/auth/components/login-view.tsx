@@ -13,6 +13,8 @@ import {Input} from "@/components/ui/input";
 import {apiFetch, getApiErrorMessage} from "@/lib/api/client";
 import {COOKIE_SESSION, useAuthStore, type AuthUser} from "@/lib/auth/auth-store";
 import {getDeviceId} from "@/lib/auth/device-id";
+import {AppVersion} from "@/components/common/app-version";
+import {PRIVACY_POLICY_LINK_LABEL, PRIVACY_POLICY_PATH} from "@/modules/privacy/constants";
 import {AuthShell} from "./auth-shell";
 import {useState} from "react";
 
@@ -75,7 +77,7 @@ export function LoginView() {
     }
 
     return (
-        <AuthShell maxWidth="max-w-6xl">
+        <AuthShell inlineLegal maxWidth="max-w-6xl">
             <div className="grid gap-10 lg:grid-cols-[1.1fr_1fr] lg:gap-12">
                 <aside className="flex flex-col lg:border-r lg:border-border lg:pr-12">
                     <div className="flex items-center gap-4">
@@ -170,10 +172,17 @@ export function LoginView() {
                         {form.formState.errors.root?.message}
                     </p>
 
+                    <p className="text-center text-xs">
+                        <Link className="font-semibold text-primary hover:underline" href={PRIVACY_POLICY_PATH}>
+                            {PRIVACY_POLICY_LINK_LABEL}
+                        </Link>
+                    </p>
+
                     <Button className="h-13 w-full rounded-xl text-base" loading={form.formState.isSubmitting}
                             type="submit">
                         Đăng nhập
                     </Button>
+                    <AppVersion className="text-right text-[11px] text-muted"/>
                 </form>
                 </div>
             </div>
