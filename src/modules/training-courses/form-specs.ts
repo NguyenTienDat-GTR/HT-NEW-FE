@@ -218,7 +218,7 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
         name: "registrationEnabled",
         label: "Mở đăng ký",
         type: "switch",
-        switchLabels: ["Bật: nhập thời gian đăng ký, tài khoản có quyền đăng ký được gửi hồ sơ", "Tắt: khóa không nhận đăng ký"],
+        switchLabels: ["Bật: khóa nhận đăng ký", "Tắt: khóa không nhận đăng ký"],
         helper: "Tắt nếu khóa không cần đăng ký (ví dụ nhập danh sách tham dự trực tiếp). Khi tắt, không cần nhập thời gian đăng ký và không tài khoản nào đăng ký được.",
         section: "Thời gian đăng ký",
       },
