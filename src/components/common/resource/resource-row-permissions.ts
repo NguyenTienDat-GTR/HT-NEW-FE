@@ -62,7 +62,14 @@ const ROW_RULES: Partial<Record<ResourceKind, RowRules>> = {
   // Phân công là lịch sử nhiệm kì: chỉ vô hiệu hóa (kết thúc) được, phân công đã kết thúc không bật lại.
   "executive-board": { toggle: (route, row, user) => row.status === true && hasScopedRowPermission(route, user, "toggle", row) },
   dioceses: { toggle: (_route, _row, user) => isSuperAdmin(user) },
-  deaneries: { toggle: (_route, _row, user) => hasRole(user, "ADMIN_DIOCESE") },
+  // Khớp BE: update.all hoặc update.diocese (danh sách đã giới hạn theo giáo phận), update.deanery chỉ cho đúng giáo hạt của mình.
+  deaneries: {
+    edit: (_route, row, user) =>
+      hasPermission(user, "organization.deanery.update.all") ||
+      hasPermission(user, "organization.deanery.update.diocese") ||
+      (hasPermission(user, "organization.deanery.update.deanery") && Boolean(user?.deaneryId) && row.id === user?.deaneryId),
+    toggle: (_route, _row, user) => hasRole(user, "ADMIN_DIOCESE"),
+  },
   // Admin giáo hạt bật/tắt giáo xứ trong giáo hạt; admin giáo phận bật/tắt giáo xứ trong giáo phận khi có quyền toggle.diocese.
   parishes: {
     toggle: (_route, _row, user) =>
