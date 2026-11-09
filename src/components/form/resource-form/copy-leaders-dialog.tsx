@@ -48,12 +48,12 @@ export function CopyLeadersDialog({
   passedOnly: boolean;
 }) {
   const query = useQuery({
-    queryKey: ["course-copy-candidates", courseCode ?? courseTypeCode ?? "", sourceCourseCodes],
+    queryKey: ["course-copy-candidates", courseCode ?? "", courseTypeCode ?? "", sourceCourseCodes],
     enabled: open && sourceCourseCodes.length > 0 && Boolean(courseCode || courseTypeCode),
     queryFn: () => {
       const params = new URLSearchParams();
       if (courseCode) params.set("courseCode", courseCode);
-      else if (courseTypeCode) params.set("courseTypeCode", courseTypeCode);
+      if (courseTypeCode) params.set("courseTypeCode", courseTypeCode);
       sourceCourseCodes.forEach((code) => params.append("sourceCourseCodes", code));
       return apiFetch<CopyCandidate[]>(`/training/courses/copy-sources/candidates?${params.toString()}`);
     },
@@ -97,7 +97,7 @@ export function CopyLeadersDialog({
               <Dialog.Title className="flex items-center gap-2 text-lg font-semibold text-foreground">
                 Chọn hồ sơ huynh trưởng để sao chép
                 <HelpTip>
-                  Danh sách gồm các huynh trưởng trong danh sách tham dự của các khóa nguồn đã chọn. Tích chọn những người bạn muốn đưa vào khóa này; người không được tích sẽ không được sao chép. Huynh trưởng đã có trong khóa, ngưng hoạt động hoặc thuộc giáo xứ bị khóa không chọn được.
+                  Danh sách gồm các huynh trưởng trong danh sách tham dự của các khóa tiên quyết đã chọn. Tích chọn những người bạn muốn đưa vào khóa này; người không được tích sẽ không được sao chép. Huynh trưởng đã có trong khóa, ngưng hoạt động hoặc thuộc giáo xứ bị khóa không chọn được.
                 </HelpTip>
               </Dialog.Title>
               <Dialog.Description className="mt-1 text-sm leading-6 text-muted">
@@ -114,7 +114,7 @@ export function CopyLeadersDialog({
           <div className="mt-4 flex flex-wrap items-center gap-2">
             <div className="relative min-w-[220px] flex-1">
               <MagnifyingGlass aria-hidden className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={16} />
-              <Input aria-label="Tìm huynh trưởng" className="h-9 pl-9" onChange={(event) => setKeyword(event.target.value)} placeholder="Tìm theo tên, giáo xứ, giáo hạt hoặc khóa nguồn" value={keyword} />
+              <Input aria-label="Tìm huynh trưởng" className="h-9 pl-9" onChange={(event) => setKeyword(event.target.value)} placeholder="Tìm theo tên, giáo xứ, giáo hạt hoặc khóa tiên quyết" value={keyword} />
             </div>
             <select
               aria-label="Lọc theo kết quả"
@@ -137,7 +137,7 @@ export function CopyLeadersDialog({
             ) : query.isError ? (
               <p className="px-3 py-4 text-sm text-danger">{getApiErrorMessage(query.error)}</p>
             ) : candidates.length === 0 ? (
-              <p className="px-3 py-6 text-center text-sm text-muted">Các khóa nguồn đã chọn chưa có hồ sơ nào để sao chép.</p>
+              <p className="px-3 py-6 text-center text-sm text-muted">Các khóa tiên quyết đã chọn chưa có hồ sơ nào để sao chép.</p>
             ) : visible.length === 0 ? (
               <p className="px-3 py-6 text-center text-sm text-muted">Không có hồ sơ nào khớp bộ lọc.</p>
             ) : (
@@ -151,7 +151,7 @@ export function CopyLeadersDialog({
                         <span className="min-w-0 flex-1">
                           <span className="block break-words text-sm font-semibold text-foreground">{[item.holyName, item.fullName].filter(Boolean).join(" ")}</span>
                           <span className="block break-words text-xs text-text-secondary">{[item.parishName, item.deaneryName].filter(Boolean).join(" · ")}</span>
-                          <span className="block break-words text-xs text-muted">Khóa nguồn: {item.sourceCourseName}</span>
+                          <span className="block break-words text-xs text-muted">Khóa tiên quyết: {item.sourceCourseName}</span>
                           {blocked ? <span className="mt-0.5 block text-xs font-medium text-warning">Không sao chép được: {item.blockedReason}</span> : null}
                         </span>
                         <span className={cn("shrink-0 rounded-md px-1.5 py-0.5 text-[11px] font-semibold", item.finalResult === "PASSED" ? "bg-success/10 text-success" : "bg-danger/10 text-danger")}>

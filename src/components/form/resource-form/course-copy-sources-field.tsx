@@ -28,7 +28,7 @@ export type CopySourceOption = {
 export type CopyMode = "ALL" | "PASSED_ONLY";
 
 const MODES: { value: CopyMode; label: string; hint: string }[] = [
-  { value: "ALL", label: "Tất cả hồ sơ", hint: "Sao chép mọi hồ sơ trong danh sách tham dự của khóa nguồn" },
+  { value: "ALL", label: "Tất cả hồ sơ", hint: "Sao chép mọi hồ sơ trong danh sách tham dự của khóa tiên quyết" },
   { value: "PASSED_ONLY", label: "Chỉ hồ sơ có kết quả đạt", hint: "Bỏ qua hồ sơ không đạt hoặc chưa có kết quả" },
 ];
 
@@ -70,8 +70,8 @@ function matches(source: CopySourceOption, keyword: string) {
     .every((part) => haystack.includes(part));
 }
 
-// Chọn khóa nguồn và chế độ sao chép danh sách tham dự ngay trong form tạo / sửa khóa; việc sao chép chạy khi bấm lưu khóa.
-// Sửa khóa truyền courseCode; tạo khóa truyền courseTypeCode (phạm vi nguồn theo cấp quản lý của loại khóa).
+// Chọn khóa tiên quyết đã kết thúc (nguồn) và chế độ sao chép danh sách tham dự ngay trong form tạo / sửa khóa; việc sao chép chạy khi bấm lưu khóa.
+// Nguồn là các khóa thuộc loại tiên quyết của loại khóa đang chọn (courseTypeCode); sửa khóa kèm courseCode để lấy đúng phạm vi.
 export function CourseCopySourcesField({
   courseCode,
   courseTypeCode,
@@ -100,14 +100,15 @@ export function CourseCopySourcesField({
   const [keyword, setKeyword] = useState("");
   const [leadersOpen, setLeadersOpen] = useState(false);
   const picked = leaderIds !== undefined;
-  const scopeKey = courseCode || courseTypeCode || "";
+  const scopeKey = `${courseCode ?? ""}|${courseTypeCode ?? ""}`;
   const query = useQuery({
     queryKey: ["course-copy-sources", scopeKey],
-    enabled: Boolean(scopeKey),
+    enabled: Boolean(courseCode || courseTypeCode),
     queryFn: () => {
+      // Khóa tiên quyết theo loại khóa đang chọn (sửa khóa kèm mã khóa để lấy đúng phạm vi).
       const params = new URLSearchParams();
       if (courseCode) params.set("courseCode", courseCode);
-      else if (courseTypeCode) params.set("courseTypeCode", courseTypeCode);
+      if (courseTypeCode) params.set("courseTypeCode", courseTypeCode);
       return apiFetch<CopySourceOption[]>(`/training/courses/copy-sources?${params.toString()}`);
     },
   });
@@ -130,7 +131,7 @@ export function CourseCopySourcesField({
       <div className="flex items-center gap-1.5 text-xs font-semibold text-text-secondary">
         Cách sao chép
         <HelpTip>
-          <strong>Tất cả hồ sơ</strong>: sao chép mọi huynh trưởng trong danh sách tham dự của khóa nguồn. <strong>Chỉ hồ sơ có kết quả đạt</strong>: bỏ qua người không đạt hoặc chưa có kết quả. Muốn chọn từng người, dùng nút “Chọn hồ sơ cụ thể” bên dưới.
+          <strong>Tất cả hồ sơ</strong>: sao chép mọi huynh trưởng trong danh sách tham dự của khóa tiên quyết. <strong>Chỉ hồ sơ có kết quả đạt</strong>: bỏ qua người không đạt hoặc chưa có kết quả. Muốn chọn từng người, dùng nút “Chọn hồ sơ cụ thể” bên dưới.
         </HelpTip>
       </div>
       <div aria-label="Chế độ sao chép" className="grid gap-2 sm:grid-cols-2" role="radiogroup">
@@ -158,11 +159,11 @@ export function CourseCopySourcesField({
       <div className="relative">
         <MagnifyingGlass aria-hidden className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={16} />
         <Input
-          aria-label="Tìm khóa nguồn"
+          aria-label="Tìm khóa tiên quyết"
           className="h-9 pl-9"
           disabled={readonly || sources.length === 0}
           onChange={(event) => setKeyword(event.target.value)}
-          placeholder="Tìm theo tên khóa, năm tổ chức hoặc loại khóa"
+          placeholder="Tìm khóa tiên quyết theo tên khóa hoặc năm tổ chức"
           value={keyword}
         />
       </div>
@@ -172,7 +173,7 @@ export function CourseCopySourcesField({
       ) : query.isError ? (
         <p className="rounded-lg border border-danger/30 bg-danger/5 px-3 py-2 text-sm text-danger">{getApiErrorMessage(query.error)}</p>
       ) : sources.length === 0 ? (
-        <p className="rounded-lg border border-dashed border-border px-3 py-4 text-center text-sm text-muted">Chưa có khóa nào đã kết thúc hoặc khóa quá khứ trong phạm vi để sao chép.</p>
+        <p className="rounded-lg border border-dashed border-border px-3 py-4 text-center text-sm text-muted">Loại khóa này chưa có khóa tiên quyết, hoặc chưa có khóa tiên quyết nào đã kết thúc trong phạm vi để sao chép.</p>
       ) : visible.length === 0 ? (
         <p className="rounded-lg border border-dashed border-border px-3 py-4 text-center text-sm text-muted">
           {searching ? "Không có khóa nào khớp từ khóa tìm kiếm." : `Không có khóa nào tổ chức từ năm ${targetYear - SOURCE_YEAR_WINDOW} đến năm ${targetYear}. Gõ tên khóa vào ô tìm kiếm để xem các khóa khác.`}
@@ -226,7 +227,7 @@ export function CourseCopySourcesField({
               "Chưa chọn riêng: sao chép theo cách đã chọn ở trên."
             )}
           </span>
-          <HelpTip>Mở danh sách huynh trưởng của các khóa nguồn đã chọn để tích chọn từng người cần sao chép (ví dụ khóa nguồn có 3 huynh trưởng thì chỉ chọn 1–2 người). Khi đã chọn riêng, cách sao chép ở trên không còn áp dụng.</HelpTip>
+          <HelpTip>Mở danh sách huynh trưởng của các khóa tiên quyết đã chọn để tích chọn từng người cần sao chép (ví dụ khóa tiên quyết có 3 huynh trưởng thì chỉ chọn 1–2 người). Khi đã chọn riêng, cách sao chép ở trên không còn áp dụng.</HelpTip>
           <Button disabled={readonly} onClick={() => setLeadersOpen(true)} size="sm" type="button" variant="outline">
             {picked ? "Sửa hồ sơ đã chọn" : "Chọn hồ sơ cụ thể"}
           </Button>
@@ -256,9 +257,9 @@ export function CourseCopySourcesField({
       <p className="break-words text-xs leading-5 text-muted">
         {selected.length > 0
           ? picked
-            ? `Đã chọn ${selected.length} khóa nguồn, ${leaderIds?.length ?? 0} hồ sơ chọn riêng sẽ được sao chép vào danh sách tham dự khi bấm lưu. `
-            : `Đã chọn ${selected.length} khóa nguồn, tối đa ${estimate} hồ sơ sẽ được sao chép vào danh sách tham dự khi bấm lưu. `
-          : "Không chọn khóa nguồn thì không sao chép. "}
+            ? `Đã chọn ${selected.length} khóa tiên quyết, ${leaderIds?.length ?? 0} hồ sơ chọn riêng sẽ được sao chép vào danh sách tham dự khi bấm lưu. `
+            : `Đã chọn ${selected.length} khóa tiên quyết, tối đa ${estimate} hồ sơ sẽ được sao chép vào danh sách tham dự khi bấm lưu. `
+          : "Không chọn khóa tiên quyết thì không sao chép. "}
         Hồ sơ trùng giữa các khóa, đã có trong khóa hoặc không sao chép được (huynh trưởng ngưng hoạt động, giáo xứ bị khóa, ngoài phạm vi khóa) sẽ tự bỏ qua; hồ sơ sao chép vào thẳng danh sách tham dự (đã duyệt).
       </p>
     </div>

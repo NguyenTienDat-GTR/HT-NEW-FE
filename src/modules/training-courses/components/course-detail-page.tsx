@@ -41,8 +41,6 @@ import { CourseTeamsView } from "@/modules/training-teams/components/course-team
 import { AutoSendBanner } from "@/modules/course-participants/components/auto-send-banner";
 import { CourseParticipantsHub } from "@/modules/course-participants/components/course-participants-hub";
 import { PrerequisiteCopyDialog } from "@/modules/prerequisite-copy/components/prerequisite-copy-dialog";
-import { targetYearOf } from "@/components/form/resource-form/course-copy-sources-field";
-import { CopyParticipantsDialog } from "./copy-participants-dialog";
 import { useSessionState } from "@/lib/use-session-state";
 import { useIsDesktop } from "@/lib/use-media-query";
 import { CourseConditionList, courseConditionItems } from "@/modules/training-courses/components/course-conditions";
@@ -444,15 +442,7 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
                 />
               ) : activeTab.key === "participations" && canManage && !isPastCourse && !courseDisabled && course && !course.finishedAt ? (
                 // Sao chép danh sách tham dự của khóa tiên quyết đã kết thúc: nút tự ẩn khi không có khóa nguồn.
-                <TrainingWorkflowResourceView
-                  route={activeTab.route}
-                  toolbarActions={
-                    <>
-                      <PrerequisiteCopyDialog courseCode={id} />
-                      <CopyParticipantsDialog courseCode={id} targetYear={targetYearOf(course.hostYear)} />
-                    </>
-                  }
-                />
+                <TrainingWorkflowResourceView route={activeTab.route} toolbarActions={<PrerequisiteCopyDialog courseCode={id} />} />
               ) : (
                 <TrainingWorkflowResourceView route={activeTab.route} />
               )}

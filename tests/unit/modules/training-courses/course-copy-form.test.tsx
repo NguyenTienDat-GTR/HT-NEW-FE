@@ -47,12 +47,12 @@ describe("CourseCopySourcesField", () => {
     expect(screen.getByText("Huấn luyện Huynh trưởng cấp I (Khai tâm)")).toBeTruthy();
     // Mặc định chỉ hiện khóa trong vòng 2 năm (2024-2026): khóa 2019 ẩn cho tới khi tìm kiếm.
     expect(screen.queryByText("Khóa cũ")).toBeNull();
-    await userEvent.type(screen.getByLabelText("Tìm khóa nguồn"), "cũ");
+    await userEvent.type(screen.getByLabelText("Tìm khóa tiên quyết"), "cũ");
     expect(await screen.findByText("Khóa cũ")).toBeTruthy();
     expect(screen.getByText("Khóa quá khứ")).toBeTruthy();
     await userEvent.click(screen.getByLabelText(/Khóa cũ/));
     expect(onSelectedChange).toHaveBeenCalledWith(["b"]);
-    await userEvent.clear(screen.getByLabelText("Tìm khóa nguồn"));
+    await userEvent.clear(screen.getByLabelText("Tìm khóa tiên quyết"));
     expect(vi.mocked(apiFetch).mock.calls[0][0]).toBe("/training/courses/copy-sources?courseTypeCode=HT1");
 
     await userEvent.click(screen.getByLabelText(/Chỉ hồ sơ có kết quả đạt/));

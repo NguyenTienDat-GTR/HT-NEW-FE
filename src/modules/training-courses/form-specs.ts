@@ -324,11 +324,11 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
       },
       {
         name: "copySourceCourseCodes",
-        label: "Khóa nguồn",
+        label: "Khóa tiên quyết",
         type: "course-copy",
         wide: true,
         visibleWhen: canCopyParticipants,
-        helper: "Không bắt buộc. Đưa sẵn huynh trưởng từ khóa đã kết thúc hoặc khóa quá khứ vào danh sách tham dự của khóa này khi bấm lưu, không cần đăng ký lại. Mặc định chỉ hiện các khóa tổ chức trong vòng 2 năm tính từ năm tổ chức của khóa này; gõ tên khóa vào ô tìm kiếm để xem khóa khác. Chọn cách sao chép (tất cả hồ sơ hoặc chỉ hồ sơ đạt) hoặc bấm Chọn hồ sơ cụ thể để tích từng huynh trưởng. Hồ sơ vào thẳng danh sách tham dự (đã duyệt); khóa bật “Tự gửi email thông tin tham dự” thì người vừa được sao chép sẽ được gửi email ngay. Huynh trưởng đã có trong khóa hoặc không sao chép được sẽ tự bỏ qua.",
+        helper: "Không bắt buộc. Đưa sẵn huynh trưởng từ các khóa tiên quyết đã kết thúc (khóa thuộc loại tiên quyết của loại khóa đang chọn) vào danh sách tham dự của khóa này khi bấm lưu, không cần đăng ký lại. Mặc định chỉ hiện các khóa tổ chức trong vòng 2 năm tính từ năm tổ chức của khóa này; gõ tên khóa vào ô tìm kiếm để xem khóa khác. Chọn cách sao chép (tất cả hồ sơ hoặc chỉ hồ sơ đạt) hoặc bấm Chọn hồ sơ cụ thể để tích từng huynh trưởng. Hồ sơ vào thẳng danh sách tham dự (đã duyệt); khóa bật “Tự gửi email thông tin tham dự” thì người vừa được sao chép sẽ được gửi email ngay. Huynh trưởng đã có trong khóa hoặc không sao chép được sẽ tự bỏ qua.",
         section: "Sao chép danh sách tham dự",
       },
       {
