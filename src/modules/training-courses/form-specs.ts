@@ -219,7 +219,7 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
         label: "Mở đăng ký",
         type: "switch",
         switchLabels: ["Bật: khóa nhận đăng ký", "Tắt: khóa không nhận đăng ký"],
-        helper: "Tắt nếu khóa không cần đăng ký (ví dụ nhập danh sách tham dự trực tiếp). Khi tắt, không cần nhập thời gian đăng ký và không tài khoản nào đăng ký được.",
+        helper: "Bật: khóa nhận đăng ký, bạn nhập thời gian mở và đóng đăng ký; chỉ trong khoảng đó các tài khoản có quyền đăng ký (giáo xứ...) mới gửi được hồ sơ. Tắt: khóa không nhận đăng ký, không cần nhập thời gian và không tài khoản nào đăng ký được (hợp với khóa chỉ nhập danh sách tham dự trực tiếp bằng Excel hoặc sao chép từ khóa khác). Muốn nhận đăng ký sau này, sửa khóa và bật lại công tắc.",
         section: "Thời gian đăng ký",
       },
       {
@@ -328,7 +328,7 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
         type: "course-copy",
         wide: true,
         visibleWhen: canCopyParticipants,
-        helper: "Không bắt buộc. Chọn khóa đã kết thúc hoặc khóa quá khứ để sao chép danh sách tham dự sang khóa này khi lưu.",
+        helper: "Không bắt buộc. Đưa sẵn huynh trưởng từ khóa đã kết thúc hoặc khóa quá khứ vào danh sách tham dự của khóa này khi bấm lưu, không cần đăng ký lại. Mặc định chỉ hiện các khóa tổ chức trong vòng 2 năm tính từ năm tổ chức của khóa này; gõ tên khóa vào ô tìm kiếm để xem khóa khác. Chọn cách sao chép (tất cả hồ sơ hoặc chỉ hồ sơ đạt) hoặc bấm Chọn hồ sơ cụ thể để tích từng huynh trưởng. Hồ sơ vào thẳng danh sách tham dự (đã duyệt), hệ thống không tự gửi email thông tin tham dự cho người được sao chép; huynh trưởng đã có trong khóa hoặc không sao chép được sẽ tự bỏ qua.",
         section: "Sao chép danh sách tham dự",
       },
       {
@@ -348,7 +348,7 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
       },
       { name: "additionalNotes", label: "Ghi chú", type: "textarea", clearable: true, section: "Thông tin bổ sung" },
     ],
-    extraValueNames: ["copyMode"],
+    extraValueNames: ["copyMode", "copyLeaderIds"],
     mapSubmit: (values, mode) => {
       const payload = compactPayload(values);
       if (mode === "edit") delete payload.courseCode;
@@ -363,9 +363,14 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
       if (copyCodes.length > 0) {
         payload.copySourceCourseCodes = copyCodes;
         payload.copyMode = values.copyMode === "PASSED_ONLY" ? "PASSED_ONLY" : "ALL";
+        // Chọn riêng từng huynh trưởng ở hộp thoại: chỉ các hồ sơ này được sao chép.
+        const leaderIds = Array.isArray(values.copyLeaderIds) ? values.copyLeaderIds.map(String) : [];
+        if (leaderIds.length > 0) payload.copyLeaderIds = leaderIds;
+        else delete payload.copyLeaderIds;
       } else {
         delete payload.copySourceCourseCodes;
         delete payload.copyMode;
+        delete payload.copyLeaderIds;
       }
       // Gửi cả danh sách rỗng khi sửa để có thể bỏ chọn toàn bộ người nhận.
       payload.recipientUsernames = Array.isArray(values.recipientUsernames) ? values.recipientUsernames : [];
