@@ -668,6 +668,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
         exceptionReasons={approveId ? exceptionReasonsOf([approveId]) : undefined}
         exceptionProfile={approveId ? exceptionProfileFor(approveId) : null}
         requireApprovalDate={Boolean(approveId && rowById(approveId)?.coursePast === true)}
+        requireApproveReason={Boolean(approveId && rowById(approveId)?.exceptionRequested === true)}
         loading={actionMutation.isPending}
         onClose={closeQueryDialog}
         onConfirm={(note, _reasons, signer, achievedLevels) => approveId && actionMutation.mutate({ action: "approve", id: approveId, note, signer, achievedLevel: achievedLevels?.[approveId] })}
@@ -679,6 +680,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
         exceptionItems={bulkExceptionItems}
         exceptionReasons={bulkMode ? exceptionReasonsOf(bulkTargetIds) : undefined}
         requireApprovalDate={bulkMode === "approve" && bulkTargetIds.some((id) => rowById(id)?.coursePast === true)}
+        requireApproveReason={bulkMode === "approve" && bulkTargetIds.some((id) => rowById(id)?.exceptionRequested === true)}
         loading={bulkMutation.isPending}
         mode={bulkMode === "reject" ? "reject" : "approve"}
         onClose={() => setBulkMode(null)}

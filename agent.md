@@ -589,3 +589,17 @@ BE tương ứng: `BE/project.md` mục "Training Course Registration Control an
 - Ô đồng ý (self): sửa hồ sơ, đổi email, ảnh đại diện tài khoản (`AvatarUploadDialog requireConsent`); gửi `privacyConsent: true`.
 - Ô xác nhận (attestation): engine form có cờ `consentAttestation` ở `ResourceFormSpec` (bật cho huynh trưởng, tài khoản, giáo phận, giáo hạt, giáo xứ; gửi `subjectConsentConfirmed: true`); `ExcelImportDialog` luôn có ô này và gửi multipart `subjectConsentConfirmed` (huynh trưởng, người tham dự khóa, chia đội).
 - Test: `consent-checkbox.test.tsx`, `privacy-consent-gate.test.tsx`; cập nhật test hộp thoại import, sửa hồ sơ, `excel-jobs-client`, `proxy`.
+
+## Email huynh trưởng tùy chọn, cờ mở đăng ký, hiển thị điểm khóa quá khứ, sao chép danh sách tham dự (nhánh `feat/course-registration-copy-optional-email`)
+
+- Form tạo/sửa huynh trưởng và trang chi tiết huynh trưởng không còn bắt buộc Email; để trống khi sửa gửi `clearFields: ["email"]`.
+- Form khóa thường: công tắc `registrationEnabled` ("Mở đăng ký"); tắt thì ẩn và không gửi thời gian đăng ký. Trạng thái FE `DISABLED` ("Không mở đăng ký") suy ra từ `registrationEnabled === false` (BE lưu `CLOSED`); nút đóng/mở đăng ký bị vô hiệu cho trạng thái này.
+- Form khóa quá khứ có công tắc `scoreVisible` như khóa thường.
+- Field mới `course-copy` (`course-copy-sources-field.tsx`) trong form tạo/sửa khóa thường (cần quyền `training.participation.approve.*`, khóa chưa kết thúc): chọn nhiều khóa nguồn (tên đầy đủ xuống dòng, năm tổ chức, loại khóa/khóa quá khứ, số hồ sơ/đạt), chế độ `ALL` hoặc `PASSED_ONLY`; sao chép chạy khi lưu khóa, toast báo số hồ sơ đã sao chép/bỏ qua.
+- Test: `tests/unit/modules/training-courses/course-copy-form.test.tsx`, cập nhật `leader-edit.test.ts`, `registration-state.test.ts`.
+
+## Chứng nhận ngoại lệ (tab chấm điểm / duyệt chứng nhận)
+
+- Tab chấm điểm: nút `ExceptionCertificateAction` (`exception-certificate-action.tsx`) ở hồ sơ đã chấm điểm nhưng không đạt, khóa thường có cấp độ đạt được và chưa kết thúc; gọi `POST /training/participations/{id}/exception-certificate`.
+- Tab duyệt chứng nhận: hàng có `exceptionRequested` được tô nổi kèm nhãn "Chứng nhận ngoại lệ"; `ApprovalDialog` có prop `requireApproveReason` bắt buộc nhập lý do khi duyệt (một hoặc hàng loạt).
+- Test: `tests/unit/components/exception-certificate.test.ts`.
