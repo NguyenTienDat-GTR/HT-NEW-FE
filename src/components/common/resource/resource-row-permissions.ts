@@ -49,7 +49,14 @@ type RowRules = { edit?: RowCheck; toggle?: RowCheck };
 
 const ROW_RULES: Partial<Record<ResourceKind, RowRules>> = {
   accounts: { edit: () => false, toggle: (_route, row, user) => !isOwnAccount(row, user) && !rowHasRole(row, "SUPER_ADMIN") },
-  leaders: { edit: () => false },
+  // Khớp BE: vai trò nào thì cần đúng quyền toggle của phạm vi đó (giáo phận / giáo hạt / giáo xứ).
+  leaders: {
+    edit: () => false,
+    toggle: (_route, _row, user) =>
+      (hasRole(user, "ADMIN_DIOCESE") && hasPermission(user, "organization.leader.toggle.diocese")) ||
+      (hasRole(user, "ADMIN_DEANERY") && hasPermission(user, "organization.leader.toggle.deanery")) ||
+      (hasRole(user, "ADMIN_PARISH") && hasPermission(user, "organization.leader.toggle.parish")),
+  },
   // Khóa giáo phận và khóa giáo hạt cùng hiện trong danh sách của tài khoản nhiều vai trò: chỉ sửa/bật tắt khóa thuộc đúng cấp mình.
   courses: {
     edit: (_route, row, user) => canActOnCourse(user, row, "update"),
