@@ -24,3 +24,11 @@ describe("registrationEnabled flag", () => {
     expect(resolveRegistrationState({ registrationEnabled: true, registrationStatus: "OPEN", organizingStatus: "UPCOMING" })).toBe("OPEN");
   });
 });
+
+describe("started courses close registration", () => {
+  it("shows ENDED for a course that already started even if the registration flag is on and the window is open", () => {
+    const started = { registrationEnabled: true, registrationStatus: "OPEN", organizingStatus: "ONGOING", startDate: "2000-01-01", endDate: "2999-01-01" };
+    expect(resolveRegistrationState(started)).toBe("ENDED");
+    expect(resolveRegistrationState({ ...started, organizingStatus: "UPCOMING", startDate: "2999-01-01", endDate: "2999-02-01" })).toBe("OPEN");
+  });
+});

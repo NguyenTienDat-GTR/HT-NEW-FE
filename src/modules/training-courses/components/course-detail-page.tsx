@@ -413,6 +413,7 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
                 scoringHint: course ? scoringWindowHint(course) : undefined,
                 scoreLocked: course ? course.scoreLocked === true : undefined,
                 courseFinished: course ? Boolean(course.finishedAt) : undefined,
+                courseStarted: course ? resolveOrganizingState(course) !== "UPCOMING" : undefined,
                 courseDisabled,
                 canApproveCourse: canActOnCourse(user, course, "approve"),
                 canScoreCourse: canActOnCourse(user, course, "score"),
@@ -440,8 +441,8 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
                   }}
                   search={search}
                 />
-              ) : activeTab.key === "participations" && canManage && !isPastCourse && !courseDisabled && course && !course.finishedAt ? (
-                // Sao chép danh sách tham dự của khóa tiên quyết đã kết thúc: nút tự ẩn khi không có khóa nguồn.
+              ) : activeTab.key === "participations" && canManage && !isPastCourse && !courseDisabled && course && !course.finishedAt && resolveOrganizingState(course) === "UPCOMING" ? (
+                // Sao chép danh sách tham dự của khóa tiên quyết đã kết thúc: chỉ khi khóa chưa diễn ra; nút tự ẩn khi không có khóa nguồn.
                 <TrainingWorkflowResourceView route={activeTab.route} toolbarActions={<PrerequisiteCopyDialog courseCode={id} />} />
               ) : (
                 <TrainingWorkflowResourceView route={activeTab.route} />

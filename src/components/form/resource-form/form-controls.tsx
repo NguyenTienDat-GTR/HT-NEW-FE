@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
 import { optionFromRow, rowsFromResponse } from "./api-utils";
 import { RegistrationListField, registrationEntries } from "./registration-list-field";
 import { ScoreComponentsField } from "./score-components-field";
-import { CourseCopySourcesField, copyModeValue, selectedCodes } from "./course-copy-sources-field";
+import { CourseCopySourcesField, copyModeValue, selectedCodes, targetYearOf } from "./course-copy-sources-field";
 import type { FormFieldSpec, Option } from "./types";
 
 type FormValue = string | string[] | number | boolean | null | undefined;
@@ -120,11 +120,21 @@ const courseCopyControl: ControlRenderer = ({ value, values, readonly, onChange,
     <CourseCopySourcesField
       courseCode={typeof values?.courseCode === "string" && values.courseCode ? values.courseCode : undefined}
       courseTypeCode={typeof values?.courseTypeCode === "string" ? values.courseTypeCode : undefined}
+      leaderIds={Array.isArray(values?.copyLeaderIds) ? (values?.copyLeaderIds as string[]) : undefined}
       mode={copyModeValue(values?.copyMode)}
-      onModeChange={(next) => onFieldChange?.("copyMode", next)}
-      onSelectedChange={(codes) => onChange(codes)}
+      onLeaderIdsChange={(ids) => onFieldChange?.("copyLeaderIds", ids as unknown as FormValue)}
+      // Đổi khóa nguồn hoặc cách sao chép thì lựa chọn riêng từng huynh trưởng không còn đúng: bỏ chọn riêng.
+      onModeChange={(next) => {
+        onFieldChange?.("copyMode", next);
+        onFieldChange?.("copyLeaderIds", undefined);
+      }}
+      onSelectedChange={(codes) => {
+        onChange(codes);
+        onFieldChange?.("copyLeaderIds", undefined);
+      }}
       readonly={readonly}
       selected={selectedCodes(value)}
+      targetYear={targetYearOf(values?.hostYear)}
     />
   );
 };

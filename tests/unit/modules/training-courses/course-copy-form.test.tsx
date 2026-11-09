@@ -1,8 +1,11 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { TooltipProvider } from "@radix-ui/react-tooltip";
 import { describe, expect, it, vi } from "vitest";
-import { CourseCopySourcesField, estimateCopyCount, type CopySourceOption } from "@/components/form/resource-form/course-copy-sources-field";
+import { CourseCopySourcesField, estimateCopyCount, inYearWindow, type CopySourceOption } from "@/components/form/resource-form/course-copy-sources-field";
+import { defaultLeaderSelection, matchesCandidate } from "@/components/form/resource-form/copy-leaders-dialog";
+import type { CopyCandidate } from "@/modules/prerequisite-copy/types";
 import { trainingFormSpecs } from "@/modules/training-courses/form-specs";
 
 vi.mock("@/lib/api/client", async (importOriginal) => ({
@@ -32,9 +35,9 @@ describe("CourseCopySourcesField", () => {
     const onSelectedChange = vi.fn();
     const onModeChange = vi.fn();
     render(
-      <QueryClientProvider client={new QueryClient()}>
-        <CourseCopySourcesField courseTypeCode="HT1" mode="ALL" onModeChange={onModeChange} onSelectedChange={onSelectedChange} selected={[]} />
-      </QueryClientProvider>,
+      <QueryClientProvider client={new QueryClient()}><TooltipProvider>
+        <CourseCopySourcesField courseTypeCode="HT1" mode="ALL" onLeaderIdsChange={vi.fn()} onModeChange={onModeChange} onSelectedChange={onSelectedChange} selected={[]} targetYear={2026} />
+      </TooltipProvider></QueryClientProvider>,
     );
     const name = await screen.findByText(longName);
     // Tên dài phải xuống dòng, không bị cắt bằng dấu ba chấm.
@@ -42,11 +45,16 @@ describe("CourseCopySourcesField", () => {
     expect(name.className).not.toContain("truncate");
     expect(screen.getByText("Năm tổ chức 2024")).toBeTruthy();
     expect(screen.getByText("Huấn luyện Huynh trưởng cấp I (Khai tâm)")).toBeTruthy();
+    // Mặc định chỉ hiện khóa trong vòng 2 năm (2024-2026): khóa 2019 ẩn cho tới khi tìm kiếm.
+    expect(screen.queryByText("Khóa cũ")).toBeNull();
+    await userEvent.type(screen.getByLabelText("Tìm khóa tiên quyết"), "cũ");
+    expect(await screen.findByText("Khóa cũ")).toBeTruthy();
     expect(screen.getByText("Khóa quá khứ")).toBeTruthy();
-    expect(vi.mocked(apiFetch).mock.calls[0][0]).toBe("/training/courses/copy-sources?courseTypeCode=HT1");
-
     await userEvent.click(screen.getByLabelText(/Khóa cũ/));
     expect(onSelectedChange).toHaveBeenCalledWith(["b"]);
+    await userEvent.clear(screen.getByLabelText("Tìm khóa tiên quyết"));
+    expect(vi.mocked(apiFetch).mock.calls[0][0]).toBe("/training/courses/copy-sources?courseTypeCode=HT1");
+
     await userEvent.click(screen.getByLabelText(/Chỉ hồ sơ có kết quả đạt/));
     expect(onModeChange).toHaveBeenCalledWith("PASSED_ONLY");
   });
@@ -75,5 +83,61 @@ describe("course form spec", () => {
     expect(start.visibleWhen!({}, "create")).toBe(true);
     const past = trainingFormSpecs.find((item) => item.moduleName === "training.course.past" && item.actionType === "create")!;
     expect(past.fields.some((field) => field.name === "scoreVisible")).toBe(true);
+  });
+});
+
+describe("year window and leader picking helpers", () => {
+  it("shows only sources organised within two years up to the target year by default", () => {
+    expect(inYearWindow(sources[0], 2026)).toBe(true);
+    expect(inYearWindow(sources[1], 2026)).toBe(false);
+    expect(inYearWindow({ ...sources[0], hostYear: 2027 }, 2026)).toBe(false);
+    expect(inYearWindow({ ...sources[0], hostYear: null }, 2026)).toBe(false);
+  });
+
+  const candidate = (overrides: Partial<CopyCandidate>): CopyCandidate => ({
+    leaderId: "l1", holyName: "Giuse", fullName: "Lê Minh Tâm", gender: "NAM", leaderLevel: null, deaneryId: null, deaneryName: "Hiệp An",
+    parishId: null, parishName: "Chánh Tòa", sourceCourseCode: "a", sourceCourseName: "Khóa A", finalResult: "PASSED", eligible: false, blockedReason: null, ...overrides,
+  });
+  const people = [candidate({ leaderId: "1" }), candidate({ leaderId: "2", finalResult: "FAILED" }), candidate({ leaderId: "3", blockedReason: "Đã có hồ sơ trong khóa" })];
+
+  it("preselects copyable leaders, only the passed ones in passed-only mode", () => {
+    expect(defaultLeaderSelection(people, false)).toEqual(["1", "2"]);
+    expect(defaultLeaderSelection(people, true)).toEqual(["1"]);
+  });
+
+  it("filters candidates by result and keyword", () => {
+    expect(people.filter((item) => matchesCandidate(item, "", "FAILED")).map((item) => item.leaderId)).toEqual(["2"]);
+    expect(matchesCandidate(people[0], "chánh tòa tâm", "")).toBe(true);
+    expect(matchesCandidate(people[0], "khác", "")).toBe(false);
+  });
+
+  it("sends the individually picked leader ids only together with source courses", () => {
+    const spec = trainingFormSpecs.find((item) => item.kind === "courses" && !item.moduleName)!;
+    const picked = spec.mapSubmit!({ courseName: "K", copySourceCourseCodes: ["a"], copyMode: "ALL", copyLeaderIds: ["1", "2"] }, "create");
+    expect(picked.copyLeaderIds).toEqual(["1", "2"]);
+    const none = spec.mapSubmit!({ courseName: "K", copyLeaderIds: ["1"] }, "create");
+    expect(none.copyLeaderIds).toBeUndefined();
+  });
+});
+
+describe("registration window versus the course start date", () => {
+  it("rejects registration times after the course start date but accepts the start date itself", async () => {
+    const { registrationNotAfterStart } = await import("@/modules/training-courses/form-specs");
+    const values = { registrationEnabled: true, startDate: "2026-12-10" };
+    expect(registrationNotAfterStart("2026-12-11T08:00", values)).toBe("Thời gian đăng ký không được sau ngày bắt đầu khóa");
+    expect(registrationNotAfterStart("2026-12-10T23:00", values)).toBeUndefined();
+    expect(registrationNotAfterStart("2026-12-01T08:00", values)).toBeUndefined();
+    // Tắt mở đăng ký hoặc chưa nhập ngày bắt đầu thì không kiểm tra.
+    expect(registrationNotAfterStart("2027-01-01T08:00", { registrationEnabled: false, startDate: "2026-12-10" })).toBeUndefined();
+    expect(registrationNotAfterStart("2027-01-01T08:00", { registrationEnabled: true })).toBeUndefined();
+  });
+
+  it("shows the copy section only while the course has not started", () => {
+    const spec = trainingFormSpecs.find((item) => item.kind === "courses" && !item.moduleName)!;
+    const field = spec.fields.find((item) => item.name === "copySourceCourseCodes")!;
+    const user = { permissions: ["training.participation.approve.diocese"] } as never;
+    expect(field.visibleWhen!({ organizingStatus: "UPCOMING" }, "edit", user)).toBe(true);
+    expect(field.visibleWhen!({ organizingStatus: "ONGOING" }, "edit", user)).toBe(false);
+    expect(field.visibleWhen!({ organizingStatus: "ENDED" }, "edit", user)).toBe(false);
   });
 });
