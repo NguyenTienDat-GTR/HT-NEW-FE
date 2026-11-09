@@ -203,6 +203,43 @@ const switchControl: ControlRenderer = ({ field, id, value, readonly, onChange }
   );
 };
 
+const SELECT_CLASS =
+  "h-10 min-w-0 flex-1 rounded-[8px] border border-input bg-white px-3 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-[3px] focus:ring-[var(--primary-ring)] disabled:cursor-not-allowed disabled:bg-surface-1 disabled:opacity-70";
+// Số ngày tối đa của từng tháng; tháng 2 cho phép 29 vì không có năm.
+const DAYS_IN_MONTH = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+
+// Ngày + tháng, không có năm (ví dụ ngày bổn mạng). Giá trị gửi lên API dạng "MM-dd"; chọn dở dang thì chưa gửi giá trị.
+function DayMonthControl({ id, value, readonly, onChange }: { id: string; value: FormValue; readonly?: boolean; onChange: (value: FormValue) => void }) {
+  const match = /^(\d{2})-(\d{2})$/.exec(String(value ?? ""));
+  const [partial, setPartial] = useState({ day: 0, month: 0 });
+  // Giá trị đầy đủ lấy từ form; khi chưa đủ ngày + tháng thì dùng phần đang chọn dở.
+  const draft = match ? { day: Number(match[2]), month: Number(match[1]) } : partial;
+  const update = (next: { day: number; month: number }) => {
+    const day = next.month ? Math.min(next.day, DAYS_IN_MONTH[next.month - 1]) : next.day;
+    setPartial({ day, month: next.month });
+    onChange(day && next.month ? `${String(next.month).padStart(2, "0")}-${String(day).padStart(2, "0")}` : "");
+  };
+  const maxDay = draft.month ? DAYS_IN_MONTH[draft.month - 1] : 31;
+  return (
+    <div className="flex gap-2" id={id}>
+      <select aria-label="Ngày" className={SELECT_CLASS} disabled={readonly} onChange={(event) => update({ ...draft, day: Number(event.target.value) })} value={draft.day || ""}>
+        <option value="">Ngày</option>
+        {Array.from({ length: maxDay }, (_, index) => index + 1).map((item) => (
+          <option key={item} value={item}>{item}</option>
+        ))}
+      </select>
+      <select aria-label="Tháng" className={SELECT_CLASS} disabled={readonly} onChange={(event) => update({ ...draft, month: Number(event.target.value) })} value={draft.month || ""}>
+        <option value="">Tháng</option>
+        {Array.from({ length: 12 }, (_, index) => index + 1).map((item) => (
+          <option key={item} value={item}>{`Tháng ${item}`}</option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+const dayMonthControl: ControlRenderer = (props) => <DayMonthControl id={props.id} onChange={props.onChange} readonly={props.readonly} value={props.value} />;
+
 const imageControl: ControlRenderer = ({ id, value, readonly, onChange }) => {
   return <ImagePickerControl id={id} onChange={onChange} readonly={readonly} value={value} />;
 };
@@ -233,6 +270,7 @@ const CONTROL_RENDERERS: Record<string, ControlRenderer> = {
   radio: optionControl,
   switch: switchControl,
   image: imageControl,
+  daymonth: dayMonthControl,
 };
 
 function renderControl(props: ControlProps) {
