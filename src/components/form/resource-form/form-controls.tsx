@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { optionFromRow, rowsFromResponse } from "./api-utils";
 import { RegistrationListField, registrationEntries } from "./registration-list-field";
 import { ScoreComponentsField } from "./score-components-field";
+import { CourseCopySourcesField, copyModeValue, selectedCodes } from "./course-copy-sources-field";
 import type { FormFieldSpec, Option } from "./types";
 
 type FormValue = string | string[] | number | boolean | null | undefined;
@@ -111,6 +112,21 @@ const scoreComponentsControl: ControlRenderer = ({ value, values, readonly, onCh
       readonly={readonly}
       value={value}
     />;
+};
+
+// Sao chép danh sách tham dự từ khóa nguồn khi lưu khóa: chọn khóa nguồn (copySourceCourseCodes) và chế độ sao chép (copyMode).
+const courseCopyControl: ControlRenderer = ({ value, values, readonly, onChange, onFieldChange }) => {
+  return (
+    <CourseCopySourcesField
+      courseCode={typeof values?.courseCode === "string" && values.courseCode ? values.courseCode : undefined}
+      courseTypeCode={typeof values?.courseTypeCode === "string" ? values.courseTypeCode : undefined}
+      mode={copyModeValue(values?.copyMode)}
+      onModeChange={(next) => onFieldChange?.("copyMode", next)}
+      onSelectedChange={(codes) => onChange(codes)}
+      readonly={readonly}
+      selected={selectedCodes(value)}
+    />
+  );
 };
 
 type AccountLeaderInfo = { leaderHolyName?: string | null; leaderFullName?: string | null; leaderParishName?: string | null; leaderSubUnitName?: string | null; deaneryName?: string | null };
@@ -262,6 +278,7 @@ return (
 const CONTROL_RENDERERS: Record<string, ControlRenderer> = {
   textarea: textareaControl,
   "score-components": scoreComponentsControl,
+  "course-copy": courseCopyControl,
   "registration-list": registrationListControl,
   "account-leader-info": accountLeaderInfoControl,
   select: optionControl,
