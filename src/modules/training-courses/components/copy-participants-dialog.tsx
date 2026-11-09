@@ -62,7 +62,7 @@ export function CopyParticipantsDialog({ courseCode, targetYear }: { courseCode:
               <Dialog.Title className="flex items-center gap-2 text-lg font-semibold text-foreground">
                 Sao chép danh sách tham dự từ khóa nguồn
                 <HelpTip>
-                  Đưa huynh trưởng từ danh sách tham dự của khóa đã kết thúc (hoặc khóa quá khứ) vào khóa này, không cần đăng ký lại. Hồ sơ vào thẳng danh sách tham dự (đã duyệt). Hệ thống không tự gửi email thông tin tham dự cho người được sao chép; bạn gửi sau ở tab Thẻ &amp; điểm danh nếu cần.
+                  Đưa huynh trưởng từ danh sách tham dự của khóa đã kết thúc (hoặc khóa quá khứ) vào khóa này, không cần đăng ký lại. Hồ sơ vào thẳng danh sách tham dự (đã duyệt). Khóa bật “Tự gửi email thông tin tham dự” thì người vừa được sao chép sẽ được gửi email ngay.
                 </HelpTip>
               </Dialog.Title>
               <Dialog.Description className="mt-1 text-sm leading-6 text-muted">Chọn khóa nguồn, rồi chọn cách sao chép hoặc từng huynh trưởng cụ thể.</Dialog.Description>
