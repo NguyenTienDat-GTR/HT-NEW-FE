@@ -126,7 +126,9 @@ export function CertificateCard({ data, href, onOpen, showHolder = true, selecti
 
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-t border-border bg-slate-50 px-4 py-3">
         <div className="min-w-0">
-          {hasScore ? (
+          {data.scoreHidden === true ? (
+            <p className="text-xs text-muted">Điểm không hiển thị</p>
+          ) : hasScore ? (
             <p className="text-xs text-text-secondary">
               Điểm tổng kết{" "}
               <span className={cn("text-sm font-semibold tabular-nums", data.passed === false ? "text-danger" : "text-foreground")}>{scoreText(data.totalScore)}</span>

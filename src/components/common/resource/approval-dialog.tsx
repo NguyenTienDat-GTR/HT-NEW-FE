@@ -46,6 +46,7 @@ export function ApprovalDialog({
   exceptionReasons,
   requireApprovalDate,
   exceptionProfile,
+  requireApproveReason,
 }: {
   loading?: boolean;
   onClose: () => void;
@@ -65,6 +66,8 @@ export function ApprovalDialog({
   requireApprovalDate?: boolean;
   // Duyệt một hồ sơ ngoại lệ: hiện hồ sơ huynh trưởng, lịch sử cấp độ và điều kiện của khóa để người duyệt tham chiếu.
   exceptionProfile?: ExceptionReviewTarget | null;
+  // Chứng nhận ngoại lệ do người chấm điểm tạo cho hồ sơ không đạt: bắt buộc nhập lý do khi duyệt.
+  requireApproveReason?: boolean;
 }) {
   const [note, setNote] = useState("");
   const [scope, setScope] = useState<ReasonScope>("shared");
@@ -86,7 +89,7 @@ export function ApprovalDialog({
   const needSigner = Boolean(captureSigner) && !reject;
   const missingSigner = needSigner && signerType !== "COURSE_CHAPLAIN" && (!signerName.trim() || (signerType === "OTHER" && !signerTitle.trim()));
   // Từ chối phải nêu lý do: một lý do chung, hoặc đủ lý do cho từng hồ sơ.
-  const missingReason = reject && (individual ? (items ?? []).some((item) => !reasons[item.id]?.trim()) : !note.trim());
+  const missingReason = reject ? (individual ? (items ?? []).some((item) => !reasons[item.id]?.trim()) : !note.trim()) : Boolean(requireApproveReason) && !note.trim();
   const missingCount = individual ? (items ?? []).filter((item) => !reasons[item.id]?.trim()).length : 0;
 
   const signer: CertificateSigner | undefined = needSigner
@@ -130,7 +133,7 @@ export function ApprovalDialog({
                   {reject ? (multi ? `Từ chối ${items?.length} hồ sơ` : "Từ chối duyệt hồ sơ") : "Duyệt hồ sơ"}
                 </Dialog.Title>
                 <Dialog.Description className="mt-1 text-sm leading-6 text-muted">
-                  {reject ? "Nhập lý do từ chối duyệt." : "Nhập ghi chú hoặc lý do ngoại lệ nếu cần."}
+                  {reject ? "Nhập lý do từ chối duyệt." : requireApproveReason ? "Chứng nhận ngoại lệ cho hồ sơ không đạt: bắt buộc nhập lý do duyệt." : "Nhập ghi chú hoặc lý do ngoại lệ nếu cần."}
                 </Dialog.Description>
               </div>
             </div>
@@ -205,7 +208,7 @@ export function ApprovalDialog({
             <textarea
               className={cn(textareaClass, "mt-4 min-h-28")}
               onChange={(event) => setNote(event.target.value)}
-              placeholder={reject ? (multi ? "Lý do chung cho tất cả hồ sơ (bắt buộc)" : "Lý do từ chối (bắt buộc)") : "Ghi chú duyệt"}
+              placeholder={reject ? (multi ? "Lý do chung cho tất cả hồ sơ (bắt buộc)" : "Lý do từ chối (bắt buộc)") : requireApproveReason ? "Lý do duyệt chứng nhận ngoại lệ (bắt buộc)" : "Ghi chú duyệt"}
               value={note}
             />
           )}

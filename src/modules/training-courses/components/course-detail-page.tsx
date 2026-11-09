@@ -487,6 +487,7 @@ function SummaryValue({ column, course }: { column: string; course: Record<strin
     return <span>{managementLevelLabel(course)}</span>;
   }
   if (column === "registrationPeriod") {
+    if (course.registrationEnabled === false) return <span>Không mở đăng ký</span>;
     const start = formatVietnamDateValue(typeof course.registrationStartAt === "string" ? course.registrationStartAt : null);
     const end = formatVietnamDateValue(typeof course.registrationEndAt === "string" ? course.registrationEndAt : null);
     return <span>{start || end ? `${start ?? "…"} → ${end ?? "…"}` : "Chưa có"}</span>;

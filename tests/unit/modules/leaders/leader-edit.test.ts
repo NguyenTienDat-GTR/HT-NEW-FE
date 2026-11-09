@@ -8,9 +8,14 @@ describe("leader edit mappers", () => {
     expect(values).toEqual({ ...emptyLeaderEditValues, holyName: "Giuse", email: "a@b.c", gender: "NAM" });
   });
 
-  it("requires holy name, email and gender (parish is changed via the separate transfer action)", () => {
-    expect(Object.keys(validateLeaderEdit(emptyLeaderEditValues)).sort()).toEqual(["email", "gender", "holyName"]);
+  it("requires holy name and gender but not email (parish is changed via the separate transfer action)", () => {
+    expect(Object.keys(validateLeaderEdit(emptyLeaderEditValues)).sort()).toEqual(["gender", "holyName"]);
     expect(validateLeaderEdit({ ...emptyLeaderEditValues, holyName: "G", email: "e", gender: "NU" })).toEqual({});
+  });
+
+  it("clears the email when blank so the optional email can be removed", () => {
+    const base = { ...emptyLeaderEditValues, holyName: "Giuse", gender: "NAM", phoneNumber: "090" };
+    expect(toLeaderUpdatePayload(base)).toEqual({ holyName: "Giuse", gender: "NAM", phoneNumber: "090", clearFields: ["email"] });
   });
 
   it("clears the phone number when blank and only sends a new avatar asset id", () => {

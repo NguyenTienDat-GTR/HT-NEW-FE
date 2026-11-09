@@ -52,7 +52,7 @@ function CourseCard({ route, row }: { route: RouteConfig; row: Record<string, un
   const location = typeof row.location === "string" ? row.location : "";
   const startDate = typeof row.startDate === "string" ? formatVietnamDate(row.startDate) : null;
   const endDate = typeof row.endDate === "string" ? formatVietnamDate(row.endDate) : null;
-  const registrationEnd = typeof row.registrationEndAt === "string" ? formatVietnamDateTime(row.registrationEndAt) : null;
+  const registrationEnd = row.registrationEnabled !== false && typeof row.registrationEndAt === "string" ? formatVietnamDateTime(row.registrationEndAt) : null;
   const approved = typeof row.approvedParticipantCount === "number" ? row.approvedParticipantCount : null;
   const hostYear = typeof row.hostYear === "number" || typeof row.hostYear === "string" ? String(row.hostYear) : "";
 

@@ -26,11 +26,13 @@ export function RegistrationToggleButton({ endpoint, id, row }: { endpoint: stri
   });
 
   const label = !toggleable
-    ? state === "ENDED"
-      ? resolveOrganizingState(row) === "ENDED"
-        ? "Khóa đã kết thúc nên đăng ký đã đóng và không thể mở lại"
-        : `${registrationStateLabels.ENDED}, hãy gia hạn thời gian đăng ký để mở lại`
-      : "Chưa đến giờ đăng ký, hệ thống sẽ tự mở khi đến giờ"
+    ? state === "DISABLED"
+      ? "Khóa không mở đăng ký, hãy bật \"Mở đăng ký\" trong chỉnh sửa khóa để nhận đăng ký"
+      : state === "ENDED"
+        ? resolveOrganizingState(row) === "ENDED"
+          ? "Khóa đã kết thúc nên đăng ký đã đóng và không thể mở lại"
+          : `${registrationStateLabels.ENDED}, hãy gia hạn thời gian đăng ký để mở lại`
+        : "Chưa đến giờ đăng ký, hệ thống sẽ tự mở khi đến giờ"
     : closed
       ? "Mở đăng ký"
       : "Đóng đăng ký";

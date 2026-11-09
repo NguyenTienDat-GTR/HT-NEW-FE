@@ -286,7 +286,7 @@ function inferRouteFilters(config: RouteConfig): RouteFilterConfig[] {
         options: [
           { value: "OPEN", label: "Đang mở đăng ký" },
           { value: "NOT_STARTED", label: "Chưa đến giờ đăng ký" },
-          { value: "CLOSED", label: "Đã đóng thủ công" },
+          { value: "CLOSED", label: "Đã đóng hoặc không mở đăng ký" },
           { value: "ENDED", label: "Đã hết hạn đăng ký" },
         ],
       });

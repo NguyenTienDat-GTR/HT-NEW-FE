@@ -131,12 +131,13 @@ const PARTICIPATION_SECTIONS: DetailSection[] = [
   },
   {
     title: "Kết quả khóa huấn luyện",
-    visible: (row) => row.totalScore !== null && row.totalScore !== undefined || Array.isArray(row.componentScores) && row.componentScores.length > 0 || hasText(row.scoreNote),
+    visible: (row) => row.scoreHidden === true || row.totalScore !== null && row.totalScore !== undefined || Array.isArray(row.componentScores) && row.componentScores.length > 0 || hasText(row.scoreNote),
     fields: [
       { key: "componentScores", label: "Điểm thành phần", wide: true, render: (row) => <ComponentScoreList scores={row.componentScores} />, visible: (row) => Array.isArray(row.componentScores) && row.componentScores.length > 0 },
-      { key: "totalScore", label: "Tổng điểm" },
-      { key: "passingScore", label: "Điểm đạt" },
-      { key: "passed", label: "Đánh giá điểm" },
+      // Khóa không bật "hiển thị điểm": cấp dưới cấp tổ chức khóa không thấy điểm (BE đã che), chỉ thấy kết quả.
+      { key: "totalScore", label: "Tổng điểm", render: (row) => (row.scoreHidden === true ? <span className="text-muted">Không hiển thị</span> : String(row.totalScore ?? "—")) },
+      { key: "passingScore", label: "Điểm đạt", visible: (row) => row.scoreHidden !== true },
+      { key: "passed", label: "Đánh giá điểm", visible: (row) => row.scoreHidden !== true },
       { key: "finalResult", label: "Kết quả chung", visible: (row) => hasText(row.finalResult) },
       { key: "courseResultingLevel", label: "Cấp độ khi đạt", visible: (row) => hasText(row.courseResultingLevel) && row.courseResultingLevel !== "NONE" },
       { key: "targetLevel", label: "Cấp độ đạt được (ngoại lệ)", visible: (row) => hasText(row.targetLevel) },

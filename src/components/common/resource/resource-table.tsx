@@ -15,6 +15,7 @@ import { canActOnCourse, type CourseAction } from "@/modules/training-courses/co
 import { canEditRow, canResetPasswordRow, canToggleRow, isPermanentlyRevokedAssignment } from "./resource-row-permissions";
 import type { ScoreEntry, ScoreNotes } from "./score-entry";
 import { ScoreNoteAction } from "./score-note-action";
+import { canCreateExceptionCertificate, ExceptionCertificateAction } from "./exception-certificate-action";
 import { useIsDesktop } from "@/lib/use-media-query";
 import { ResourceCardList } from "./resource-card-list";
 import { RegistrationToggleButton } from "@/modules/training-courses/components/registration-toggle-button";
@@ -184,8 +185,10 @@ function ResourceRows({
   return rows.map((row, rowIndex) => {
     const rowId = getResourceId(route, row);
     const selectable = Boolean(selection && rowId && selection.selectableIds.includes(rowId));
+    // Chứng nhận ngoại lệ do người chấm điểm tạo cho hồ sơ không đạt: tô nổi để người duyệt nhận ra.
+    const flagged = route.kind === "certificates" && row.exceptionRequested === true;
     return (
-    <tr className="group bg-white transition-colors hover:bg-slate-50" key={String(row.id ?? row.username ?? row.certificateCode ?? rowIndex)}>
+    <tr className={`group transition-colors ${flagged ? "bg-warning/10 hover:bg-warning/15" : "bg-white hover:bg-slate-50"}`} key={String(row.id ?? row.username ?? row.certificateCode ?? rowIndex)}>
       {selection ? (
         <td className="h-14 w-10 border-b border-slate-100 px-3 align-middle">
           {selectable && rowId ? (
@@ -203,6 +206,7 @@ function ResourceRows({
       {columns.map((column) => (
         <td className={`h-14 border-b border-slate-100 align-middle ${scoreEntry ? "px-2 py-1" : "px-3"} ${scoreEntry && column === "leaderFullName" ? "min-w-40" : ""}`} key={column}>
           {route.kind === "leaders" && column === "fullName" ? <LeaderIdentity row={row} /> : cellEditors?.[column] ? cellEditors[column](row) : <ResourceCell column={column} displayMode={scoreEntry ? "detail" : "table"} fullNames={route.kind === "leaders"} fullText={route.kind === "dioceses" || route.kind === "deaneries"} row={row} value={row[column]} />}
+          {flagged && column === "leaderFullName" ? <span className="mt-1 inline-block rounded-md bg-warning/20 px-1.5 py-0.5 text-[11px] font-semibold text-warning">Chứng nhận ngoại lệ · cần lý do duyệt</span> : null}
         </td>
       ))}
       {scoreEntry?.components.map((component) => {
@@ -229,7 +233,7 @@ function ResourceRows({
           </td>
         );
       })}
-      <td className="sticky right-0 h-14 border-b border-slate-100 bg-white px-3 text-right shadow-(--shadow-table-sticky) transition-colors group-hover:bg-slate-50">
+      <td className={`sticky right-0 h-14 border-b border-slate-100 px-3 text-right shadow-(--shadow-table-sticky) transition-colors ${flagged ? "bg-amber-50 group-hover:bg-amber-100" : "bg-white group-hover:bg-slate-50"}`}>
         <RowActions route={route} row={row} onExportRow={onExportRow} exportingRow={exportingRow} scoreNotes={scoreEntry?.notes} />
       </td>
     </tr>
@@ -290,6 +294,9 @@ export function RowActions({ route, row, onExportRow, exportingRow, scoreNotes }
   return (
     <div className="inline-flex items-center gap-1">
       {scoreNotes ? <ScoreNoteAction notes={scoreNotes} row={row} rowId={id} /> : null}
+      {scoreNotes && canUseAction(user, route.actions?.score) && embedded?.canScoreCourse !== false && ownsRowCourse(route, row, user, "score") && !courseDisabled && canCreateExceptionCertificate(row) ? (
+        <ExceptionCertificateAction row={row} rowId={id} />
+      ) : null}
       {canView ? (
         <Tip label="Xem chi tiết hồ sơ">
           <Button asChild aria-label="Xem chi tiết" className="h-8 min-w-8 rounded-lg" size="icon" variant="icon">
