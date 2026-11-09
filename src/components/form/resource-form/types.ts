@@ -16,7 +16,7 @@ export type Option = {
   taxonomy?: { module?: string; resource?: string; action?: string; scope?: string };
 };
 
-export type FieldType = "text" | "email" | "url" | "image" | "number" | "date" | "daymonth" | "datetime" | "textarea" | "select" | "multiselect" | "checkbox-list" | "radio" | "switch" | "registration-list" | "score-components" | "account-leader-info";
+export type FieldType = "text" | "email" | "url" | "image" | "number" | "date" | "daymonth" | "datetime" | "textarea" | "select" | "multiselect" | "checkbox-list" | "radio" | "switch" | "registration-list" | "score-components" | "course-copy" | "account-leader-info";
 
 export type FormFieldSpec = {
   name: string;
@@ -60,6 +60,8 @@ export type FormFieldSpec = {
   requiredWhen?: (values: Record<string, unknown>, mode: ResourceFormMode) => boolean;
   readOnlyWhen?: (values: Record<string, unknown>, mode: ResourceFormMode) => boolean;
   readOnlyOnCreate?: boolean;
+  // Kiểm tra giá trị của trường dựa trên các trường khác; trả về thông báo lỗi hoặc undefined nếu hợp lệ.
+  validate?: (value: unknown, values: Record<string, unknown>) => string | undefined;
   // Nhãn hiển thị của giá trị hiện tại khi giá trị chưa có trong danh sách lựa chọn tải từ API (ví dụ tên khóa được truyền từ trang trước).
   currentLabel?: string;
   readOnlyOnEdit?: boolean;

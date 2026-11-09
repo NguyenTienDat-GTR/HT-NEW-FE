@@ -16,3 +16,19 @@ describe("course status resolution", () => {
     expect(resolveOrganizingState({ startDate: "2026-11-01", endDate: "2026-11-10" }, now)).toBe("UPCOMING");
   });
 });
+
+describe("registrationEnabled flag", () => {
+  it("shows a course that does not open registration as DISABLED unless it has already ended", () => {
+    expect(resolveRegistrationState({ registrationEnabled: false, registrationStatus: "CLOSED", organizingStatus: "UPCOMING" })).toBe("DISABLED");
+    expect(resolveRegistrationState({ registrationEnabled: false, registrationStatus: "ENDED", organizingStatus: "ENDED" })).toBe("ENDED");
+    expect(resolveRegistrationState({ registrationEnabled: true, registrationStatus: "OPEN", organizingStatus: "UPCOMING" })).toBe("OPEN");
+  });
+});
+
+describe("started courses close registration", () => {
+  it("shows ENDED for a course that already started even if the registration flag is on and the window is open", () => {
+    const started = { registrationEnabled: true, registrationStatus: "OPEN", organizingStatus: "ONGOING", startDate: "2000-01-01", endDate: "2999-01-01" };
+    expect(resolveRegistrationState(started)).toBe("ENDED");
+    expect(resolveRegistrationState({ ...started, organizingStatus: "UPCOMING", startDate: "2999-01-01", endDate: "2999-02-01" })).toBe("OPEN");
+  });
+});

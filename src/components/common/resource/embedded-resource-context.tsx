@@ -18,6 +18,8 @@ export type EmbeddedResource = {
   scoreLocked?: boolean;
   // Khóa đã kết thúc: không sửa được điểm lẫn ghi chú.
   courseFinished?: boolean;
+  // Khóa đã diễn ra (tới ngày bắt đầu hoặc đã kết thúc): đóng đăng ký, không sao chép / nhập Excel thêm vào danh sách tham dự.
+  courseStarted?: boolean;
   // Khóa đã bị vô hiệu hóa: chỉ xem, mọi thao tác trong khóa bị chặn (BE cũng chặn).
   courseDisabled?: boolean;
   // Tài khoản có quyền duyệt / chấm điểm đúng cấp quản lý của khóa này không (false: ẩn nút duyệt, từ chối, xóa, nhập điểm).

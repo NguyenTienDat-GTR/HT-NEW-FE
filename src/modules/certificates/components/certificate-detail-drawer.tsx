@@ -99,8 +99,9 @@ const SECTIONS: SectionSpec[] = [
   {
     title: "Kết quả học tập",
     fields: [
-      { key: "totalScore", label: "Tổng điểm" },
-      { key: "passed", label: "Đánh giá điểm" },
+      // Khóa không bật "hiển thị điểm": cấp dưới cấp tổ chức khóa không thấy điểm (BE đã che).
+      { key: "totalScore", label: "Tổng điểm", render: (value, row) => (row.scoreHidden === true ? "Không hiển thị" : String(value ?? "—")) },
+      { key: "passed", label: "Đánh giá điểm", show: (row) => row.scoreHidden !== true },
       { key: "scoreNote", label: "Nhận xét", fullWidth: true },
     ],
   },

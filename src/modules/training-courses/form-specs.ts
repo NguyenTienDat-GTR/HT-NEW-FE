@@ -2,9 +2,10 @@ import { DEFAULT_SCORE_COMPONENT, maxFinalScore, scoreComponentRows, scoreCompon
 import { compactPayload, unitTypeSelectOptions, type ResourceFormSpec } from "@/components/form/resource-form/types";
 import type { AuthUser } from "@/lib/auth/auth-store";
 import { useAuthStore } from "@/lib/auth/auth-store";
-import { hasPermission } from "@/lib/auth/permissions";
+import { hasPermission, hasPermissionPrefix } from "@/lib/auth/permissions";
 import { leaderLevelSelect } from "@/modules/organizations/form-specs";
 import { withFilters } from "@/lib/api/filters";
+import { resolveOrganizingState } from "./registration-state";
 
 const unitTypes = unitTypeSelectOptions(["DIOCESE", "DEANERY"]);
 
@@ -34,6 +35,20 @@ function courseTypesInScope(resource: ManagedResource) {
 
 // Khóa đã có hồ sơ tham gia (BE trả hasParticipations ở chi tiết khóa) thì khóa các trường này khi sửa.
 const lockedByParticipations = (values: Record<string, unknown>, mode: string) => mode === "edit" && values.hasParticipations === true;
+
+// Khóa có mở đăng ký (mặc định mở): chỉ khi mở mới nhập thời gian đăng ký.
+const registrationEnabled = (values: Record<string, unknown>) => values.registrationEnabled !== false;
+
+// Thời gian đăng ký (khi mở đăng ký) không được sau ngày bắt đầu của khóa: khóa tới ngày bắt đầu thì đăng ký tự đóng.
+export function registrationNotAfterStart(value: unknown, values: Record<string, unknown>) {
+  if (values.registrationEnabled === false || typeof value !== "string" || !value || typeof values.startDate !== "string" || !values.startDate) return undefined;
+  return value.slice(0, 10) > values.startDate ? "Thời gian đăng ký không được sau ngày bắt đầu khóa" : undefined;
+}
+
+// Sao chép danh sách tham dự từ khóa nguồn cần quyền duyệt đăng ký; khóa đã kết thúc hoặc ngừng hoạt động thì không sao chép được.
+const canCopyParticipants = (values: Record<string, unknown>, mode: string, user?: AuthUser | null) =>
+  hasPermissionPrefix(user ?? useAuthStore.getState().user, "training.participation.approve.") &&
+  (mode === "edit" ? resolveOrganizingState(values) === "UPCOMING" && values.status !== false : Boolean(values.courseTypeCode));
 
 const pastCourseFields: ResourceFormSpec["fields"] = [
   { name: "courseName", label: "Tên khóa", required: true, section: "Thông tin khóa" },
@@ -69,6 +84,14 @@ const pastCourseFields: ResourceFormSpec["fields"] = [
     min: 0,
     readOnlyWhen: lockedByParticipations,
     helper: "Không bắt buộc (mặc định 0). Kết quả Đạt / Không đạt của từng học viên lấy theo file Excel.",
+    section: "Cấu hình chấm điểm",
+  },
+  {
+    name: "scoreVisible",
+    label: "Hiển thị điểm của khóa",
+    type: "switch",
+    switchLabels: ["Bật: hiển thị điểm trong chứng nhận và kết quả", "Tắt: chỉ cấp sở hữu khóa hoặc cấp cao hơn xem điểm"],
+    helper: "Cấp sở hữu khóa và cấp cao hơn luôn xem được điểm. Bật để các cấp còn lại (giáo xứ, huynh trưởng) cũng thấy điểm trong chứng nhận và tab kết quả của hồ sơ huynh trưởng.",
     section: "Cấu hình chấm điểm",
   },
   { name: "additionalNotes", label: "Ghi chú", type: "textarea", section: "Thông tin bổ sung" },
@@ -170,7 +193,7 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
     createTitle: "Tạo khóa huấn luyện",
     editTitle: "Chỉnh sửa khóa huấn luyện",
     description: "Khóa huấn luyện, thời gian, cửa sổ đăng ký và điểm đạt. Sau khi khóa có hồ sơ tham gia, không đổi được loại khóa, năm tổ chức, số năm hoạt động và điểm đạt.",
-    getInitialValues: () => ({ scoreComponents: [{ ...DEFAULT_SCORE_COMPONENT }], yearsActive: 0, autoApproveEligible: false, scoreVisible: false, attendanceEnabled: false, autoSendInvitation: false, openToOtherDeaneries: false }),
+    getInitialValues: () => ({ scoreComponents: [{ ...DEFAULT_SCORE_COMPONENT }], yearsActive: 0, registrationEnabled: true, copyMode: "ALL", autoApproveEligible: false, scoreVisible: false, attendanceEnabled: false, autoSendInvitation: false, openToOtherDeaneries: false }),
     fields: [
       { name: "courseName", label: "Tên khóa", required: true, section: "Thông tin khóa" },
       {
@@ -198,8 +221,32 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
       { name: "location", label: "Địa điểm", section: "Thông tin khóa" },
       { name: "startDate", label: "Ngày bắt đầu", type: "date", required: true, section: "Thời gian" },
       { name: "endDate", label: "Ngày kết thúc", type: "date", required: true, section: "Thời gian" },
-      { name: "registrationStartAt", label: "Mở đăng ký", type: "datetime", required: true, section: "Thời gian đăng ký" },
-      { name: "registrationEndAt", label: "Đóng đăng ký", type: "datetime", required: true, section: "Thời gian đăng ký" },
+      {
+        name: "registrationEnabled",
+        label: "Mở đăng ký",
+        type: "switch",
+        switchLabels: ["Bật: khóa nhận đăng ký", "Tắt: khóa không nhận đăng ký"],
+        helper: "Bật: khóa nhận đăng ký, bạn nhập thời gian mở và đóng đăng ký; chỉ trong khoảng đó các tài khoản có quyền đăng ký (giáo xứ...) mới gửi được hồ sơ. Tắt: khóa không nhận đăng ký, không cần nhập thời gian và không tài khoản nào đăng ký được (hợp với khóa chỉ nhập danh sách tham dự trực tiếp bằng Excel hoặc sao chép từ khóa khác). Muốn nhận đăng ký sau này, sửa khóa và bật lại công tắc.",
+        section: "Thời gian đăng ký",
+      },
+      {
+        name: "registrationStartAt",
+        label: "Mở đăng ký",
+        type: "datetime",
+        visibleWhen: registrationEnabled,
+        requiredWhen: registrationEnabled,
+        validate: registrationNotAfterStart,
+        section: "Thời gian đăng ký",
+      },
+      {
+        name: "registrationEndAt",
+        label: "Đóng đăng ký",
+        type: "datetime",
+        visibleWhen: registrationEnabled,
+        requiredWhen: registrationEnabled,
+        validate: registrationNotAfterStart,
+        section: "Thời gian đăng ký",
+      },
       {
         name: "passingScore",
         label: "Điểm đạt",
@@ -285,6 +332,15 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
         section: "Đợt của khóa",
       },
       {
+        name: "copySourceCourseCodes",
+        label: "Khóa tiên quyết",
+        type: "course-copy",
+        wide: true,
+        visibleWhen: canCopyParticipants,
+        helper: "Không bắt buộc. Đưa sẵn huynh trưởng từ các khóa tiên quyết đã kết thúc (khóa thuộc loại tiên quyết của loại khóa đang chọn) vào danh sách tham dự của khóa này khi bấm lưu, không cần đăng ký lại. Mặc định chỉ hiện các khóa tổ chức trong vòng 2 năm tính từ năm tổ chức của khóa này; gõ tên khóa vào ô tìm kiếm để xem khóa khác. Chọn cách sao chép (tất cả hồ sơ hoặc chỉ hồ sơ đạt) hoặc bấm Chọn hồ sơ cụ thể để tích từng huynh trưởng. Hồ sơ vào thẳng danh sách tham dự (đã duyệt); khóa bật “Tự gửi email thông tin tham dự” thì người vừa được sao chép sẽ được gửi email ngay. Huynh trưởng đã có trong khóa hoặc không sao chép được sẽ tự bỏ qua.",
+        section: "Sao chép danh sách tham dự",
+      },
+      {
         name: "recipientUsernames",
         label: "Tài khoản nhận danh sách đăng ký",
         type: "multiselect",
@@ -301,9 +357,30 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
       },
       { name: "additionalNotes", label: "Ghi chú", type: "textarea", clearable: true, section: "Thông tin bổ sung" },
     ],
+    extraValueNames: ["copyMode", "copyLeaderIds"],
     mapSubmit: (values, mode) => {
       const payload = compactPayload(values);
       if (mode === "edit") delete payload.courseCode;
+      // Không mở đăng ký: BE bỏ thời gian đăng ký; luôn gửi cờ để tắt / bật lại được khi sửa.
+      payload.registrationEnabled = values.registrationEnabled !== false;
+      if (payload.registrationEnabled === false) {
+        delete payload.registrationStartAt;
+        delete payload.registrationEndAt;
+      }
+      // Sao chép danh sách tham dự chỉ gửi khi có chọn khóa nguồn.
+      const copyCodes = Array.isArray(values.copySourceCourseCodes) ? values.copySourceCourseCodes.map(String) : [];
+      if (copyCodes.length > 0) {
+        payload.copySourceCourseCodes = copyCodes;
+        payload.copyMode = values.copyMode === "PASSED_ONLY" ? "PASSED_ONLY" : "ALL";
+        // Chọn riêng từng huynh trưởng ở hộp thoại: chỉ các hồ sơ này được sao chép.
+        const leaderIds = Array.isArray(values.copyLeaderIds) ? values.copyLeaderIds.map(String) : [];
+        if (leaderIds.length > 0) payload.copyLeaderIds = leaderIds;
+        else delete payload.copyLeaderIds;
+      } else {
+        delete payload.copySourceCourseCodes;
+        delete payload.copyMode;
+        delete payload.copyLeaderIds;
+      }
       // Gửi cả danh sách rỗng khi sửa để có thể bỏ chọn toàn bộ người nhận.
       payload.recipientUsernames = Array.isArray(values.recipientUsernames) ? values.recipientUsernames : [];
       // Khóa giáo phận: gửi cả danh sách rỗng khi sửa để bỏ chọn toàn bộ giáo hạt; khóa giáo hạt / chưa chọn thì không gửi.
@@ -321,7 +398,7 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
       editTitle: "Chỉnh sửa khóa huấn luyện quá khứ",
       description:
         "Lưu lại khóa đã tổ chức trong quá khứ: chỉ cần tên khóa và năm tổ chức, không cần loại khóa hay thời gian đăng ký. Sau khi tạo, import danh sách tham dự (kèm điểm và kết quả) từ Excel ở chi tiết khóa.",
-      getInitialValues: () => ({ passingScore: 0 }),
+      getInitialValues: () => ({ passingScore: 0, scoreVisible: false }),
       buildEndpoint: (_values, id) => (id ? `/training/courses/past/${encodeURIComponent(id)}` : "/training/courses/past"),
       fields: pastCourseFields,
       mapSubmit: (values) => compactPayload(values),

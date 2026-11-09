@@ -43,7 +43,7 @@ export function CourseTab({leaderId}: { leaderId: string }) {
                     workflowLabel(row.participationStatus),
                     row.scoreHidden === true ? "Không hiển thị" : scoreText(row.totalScore, row.passingScore),
                     row.passed === undefined || row.passed === null ? workflowLabel(row.result) : row.passed ? "Đạt" : "Không đạt",
-                    row.scoreHidden === true ? "Không hiển thị" : row.scoreNote,
+                    row.scoreNote,
                     row.id ? (
                         <Button
                             aria-label="Xem chi tiết kết quả khóa huấn luyện"

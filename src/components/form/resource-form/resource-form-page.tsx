@@ -142,8 +142,14 @@ export function ResourceFormPage({
       }
       return result;
     },
-    onSuccess: async () => {
+    onSuccess: async (result) => {
       toast.success(effectiveAction === "revoke" ? "Thu hồi quyền thành công" : mode === "create" ? "Tạo mới thành công" : "Lưu cập nhật thành công");
+      // Khóa vừa lưu kèm sao chép danh sách tham dự: báo số hồ sơ đã sao chép và số hồ sơ bị bỏ qua.
+      const copied = Number(result?.copiedParticipantCount);
+      if (Number.isFinite(copied) && result?.copiedParticipantCount !== undefined && result?.copiedParticipantCount !== null) {
+        const skipped = Number(result?.copySkippedCount ?? 0);
+        toast.success(`Đã sao chép ${copied} hồ sơ vào danh sách tham dự${skipped > 0 ? `, bỏ qua ${skipped} hồ sơ không sao chép được` : ""}`);
+      }
       // Tạo / sửa / đăng ký có thể đổi dữ liệu ở màn khác (chi tiết khóa, hồ sơ tham dự, chứng nhận): làm mới tất cả.
       await invalidateDataQueries(queryClient);
       router.push((returnTo ?? effectiveRoute.path) as Route);
@@ -304,6 +310,10 @@ function nextValuesForField(current: Record<string, unknown>, fieldName: string,
     // Đổi khóa thì điều kiện tham dự đổi theo, phải lập lại cả hai danh sách.
     return { ...current, courseCode: value, leaderIds: [], exceptionLeaders: [] };
   }
+  if (fieldName === "courseTypeCode") {
+    // Đổi loại khóa có thể đổi cấp quản lý (phạm vi khóa nguồn) nên bỏ các khóa nguồn đã chọn.
+    return { ...current, courseTypeCode: value, copySourceCourseCodes: [] };
+  }
   if (fieldName === "senderType") {
     // Đổi tư cách gửi thì phạm vi huynh trưởng đổi theo: lập lại cả hai danh sách (khóa không còn hợp lệ sẽ tự bỏ chọn).
     return { ...current, senderType: value, leaderIds: [], exceptionLeaders: [] };
@@ -334,6 +344,11 @@ function validateFields(fields: FormFieldSpec[], values: Record<string, unknown>
     if (field.type === "score-components") {
       const message = scoreComponentsError(raw);
       if (message) errors[field.name] = message;
+      return;
+    }
+    const invalid = field.validate?.(raw, values);
+    if (invalid) {
+      errors[field.name] = invalid;
       return;
     }
     if (!field.required) return;
