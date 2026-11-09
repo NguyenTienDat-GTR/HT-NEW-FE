@@ -25,7 +25,7 @@ export const emptyLeaderEditValues: LeaderEditValues = {
 export const leaderEditableFields = {
     holyName: {name: "holyName", label: "Tên thánh", required: true},
     phoneNumber: {name: "phoneNumber", label: "Số điện thoại", placeholder: "Nhập số điện thoại"},
-    email: {name: "email", label: "Email", type: "email", required: true, placeholder: "Nhập email chính thức"},
+    email: {name: "email", label: "Email", type: "email", placeholder: "Nhập email chính thức (không bắt buộc)"},
     gender: {
         name: "gender",
         label: "Giới tính",
@@ -57,7 +57,6 @@ export function valuesFromLeader(leader: LeaderDetail): LeaderEditValues {
 export function validateLeaderEdit(values: LeaderEditValues) {
     const errors: Record<string, string> = {};
     if (!values.holyName.trim()) errors.holyName = "Trường này là bắt buộc";
-    if (!values.email.trim()) errors.email = "Trường này là bắt buộc";
     if (!values.gender.trim()) errors.gender = "Trường này là bắt buộc";
     return errors;
 }
@@ -65,10 +64,13 @@ export function validateLeaderEdit(values: LeaderEditValues) {
 export function toLeaderUpdatePayload(values: LeaderEditValues) {
     const payload: Record<string, unknown> = {
         holyName: values.holyName.trim(),
-        email: values.email.trim(),
         gender: values.gender,
     };
     const clearFields: string[] = [];
+
+    // Email không bắt buộc: để trống thì xóa email khỏi hồ sơ.
+    if (values.email.trim()) payload.email = values.email.trim();
+    else clearFields.push("email");
 
     if (values.phoneNumber.trim()) payload.phoneNumber = values.phoneNumber.trim();
     else clearFields.push("phoneNumber");
