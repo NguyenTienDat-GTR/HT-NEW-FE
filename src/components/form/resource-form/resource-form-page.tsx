@@ -346,6 +346,11 @@ function validateFields(fields: FormFieldSpec[], values: Record<string, unknown>
       if (message) errors[field.name] = message;
       return;
     }
+    const invalid = field.validate?.(raw, values);
+    if (invalid) {
+      errors[field.name] = invalid;
+      return;
+    }
     if (!field.required) return;
     const value = values[field.name];
     if (value === undefined || value === null || value === "" || (Array.isArray(value) && value.length === 0)) {

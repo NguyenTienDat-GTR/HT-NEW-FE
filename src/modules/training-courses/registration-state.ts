@@ -58,8 +58,9 @@ function isOrganizingState(value: unknown): value is OrganizingState {
 
 // Ưu tiên trạng thái BE đã lưu (scheduler tự chuyển); fallback suy ra từ khung thời gian khi BE chưa trả.
 export function resolveRegistrationState(row: CourseStatusRow, now = Date.now()): RegistrationState {
-  // Khóa đã kết thúc thì bắt buộc đã đóng đăng ký (BE cũng ép như vậy), kể cả khi trạng thái lưu chưa kịp cập nhật.
-  if (resolveOrganizingState(row, new Date(now)) === "ENDED") return "ENDED";
+  // Khóa đã diễn ra (tới ngày bắt đầu) hoặc đã kết thúc thì bắt buộc đã đóng đăng ký (BE cũng ép như vậy), kể cả khi cờ mở đăng ký còn bật
+  // hoặc trạng thái lưu chưa kịp cập nhật.
+  if (resolveOrganizingState(row, new Date(now)) !== "UPCOMING") return "ENDED";
   if (row.registrationEnabled === false) return "DISABLED";
   if (isRegistrationState(row.registrationStatus)) return row.registrationStatus;
   const start = toTime(row.registrationStartAt);

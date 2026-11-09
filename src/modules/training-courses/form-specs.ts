@@ -5,6 +5,7 @@ import { useAuthStore } from "@/lib/auth/auth-store";
 import { hasPermission, hasPermissionPrefix } from "@/lib/auth/permissions";
 import { leaderLevelSelect } from "@/modules/organizations/form-specs";
 import { withFilters } from "@/lib/api/filters";
+import { resolveOrganizingState } from "./registration-state";
 
 const unitTypes = unitTypeSelectOptions(["DIOCESE", "DEANERY"]);
 
@@ -38,10 +39,16 @@ const lockedByParticipations = (values: Record<string, unknown>, mode: string) =
 // Khóa có mở đăng ký (mặc định mở): chỉ khi mở mới nhập thời gian đăng ký.
 const registrationEnabled = (values: Record<string, unknown>) => values.registrationEnabled !== false;
 
+// Thời gian đăng ký (khi mở đăng ký) không được sau ngày bắt đầu của khóa: khóa tới ngày bắt đầu thì đăng ký tự đóng.
+export function registrationNotAfterStart(value: unknown, values: Record<string, unknown>) {
+  if (values.registrationEnabled === false || typeof value !== "string" || !value || typeof values.startDate !== "string" || !values.startDate) return undefined;
+  return value.slice(0, 10) > values.startDate ? "Thời gian đăng ký không được sau ngày bắt đầu khóa" : undefined;
+}
+
 // Sao chép danh sách tham dự từ khóa nguồn cần quyền duyệt đăng ký; khóa đã kết thúc hoặc ngừng hoạt động thì không sao chép được.
 const canCopyParticipants = (values: Record<string, unknown>, mode: string, user?: AuthUser | null) =>
   hasPermissionPrefix(user ?? useAuthStore.getState().user, "training.participation.approve.") &&
-  (mode === "edit" ? values.organizingStatus !== "ENDED" && values.status !== false : Boolean(values.courseTypeCode));
+  (mode === "edit" ? resolveOrganizingState(values) === "UPCOMING" && values.status !== false : Boolean(values.courseTypeCode));
 
 const pastCourseFields: ResourceFormSpec["fields"] = [
   { name: "courseName", label: "Tên khóa", required: true, section: "Thông tin khóa" },
@@ -228,6 +235,7 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
         type: "datetime",
         visibleWhen: registrationEnabled,
         requiredWhen: registrationEnabled,
+        validate: registrationNotAfterStart,
         section: "Thời gian đăng ký",
       },
       {
@@ -236,6 +244,7 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
         type: "datetime",
         visibleWhen: registrationEnabled,
         requiredWhen: registrationEnabled,
+        validate: registrationNotAfterStart,
         section: "Thời gian đăng ký",
       },
       {

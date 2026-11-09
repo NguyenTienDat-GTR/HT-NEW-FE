@@ -119,3 +119,25 @@ describe("year window and leader picking helpers", () => {
     expect(none.copyLeaderIds).toBeUndefined();
   });
 });
+
+describe("registration window versus the course start date", () => {
+  it("rejects registration times after the course start date but accepts the start date itself", async () => {
+    const { registrationNotAfterStart } = await import("@/modules/training-courses/form-specs");
+    const values = { registrationEnabled: true, startDate: "2026-12-10" };
+    expect(registrationNotAfterStart("2026-12-11T08:00", values)).toBe("Thời gian đăng ký không được sau ngày bắt đầu khóa");
+    expect(registrationNotAfterStart("2026-12-10T23:00", values)).toBeUndefined();
+    expect(registrationNotAfterStart("2026-12-01T08:00", values)).toBeUndefined();
+    // Tắt mở đăng ký hoặc chưa nhập ngày bắt đầu thì không kiểm tra.
+    expect(registrationNotAfterStart("2027-01-01T08:00", { registrationEnabled: false, startDate: "2026-12-10" })).toBeUndefined();
+    expect(registrationNotAfterStart("2027-01-01T08:00", { registrationEnabled: true })).toBeUndefined();
+  });
+
+  it("shows the copy section only while the course has not started", () => {
+    const spec = trainingFormSpecs.find((item) => item.kind === "courses" && !item.moduleName)!;
+    const field = spec.fields.find((item) => item.name === "copySourceCourseCodes")!;
+    const user = { permissions: ["training.participation.approve.diocese"] } as never;
+    expect(field.visibleWhen!({ organizingStatus: "UPCOMING" }, "edit", user)).toBe(true);
+    expect(field.visibleWhen!({ organizingStatus: "ONGOING" }, "edit", user)).toBe(false);
+    expect(field.visibleWhen!({ organizingStatus: "ENDED" }, "edit", user)).toBe(false);
+  });
+});
