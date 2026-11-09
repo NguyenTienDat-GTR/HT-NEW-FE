@@ -13,6 +13,12 @@ export function formatVietnamDate(value: string | null | undefined) {
   return `${day}-${month}-${year}`;
 }
 
+/** Ngày + tháng không năm ("MM-dd" từ API) -> "dd-MM". */
+export function formatVietnamDayMonth(value: string | null | undefined) {
+  const match = /^(\d{2})-(\d{2})$/.exec(value?.trim() ?? "");
+  return match ? `${match[2]}-${match[1]}` : null;
+}
+
 export function formatVietnamDateTime(value: string | null | undefined) {
   if (!value) return null;
 

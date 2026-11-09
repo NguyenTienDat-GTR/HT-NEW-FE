@@ -12,7 +12,7 @@ import * as Tooltip from "@radix-ui/react-tooltip";
 import type React from "react";
 import { shortUnitName } from "@/lib/unit-name";
 import { useEmbeddedResource } from "./embedded-resource-context";
-import { formatVietnamDateValue } from "@/lib/date-format";
+import { formatVietnamDateValue, formatVietnamDayMonth } from "@/lib/date-format";
 import { cn, viNumber } from "@/lib/utils";
 import { leaderLevelName } from "@/modules/leader-levels/leader-level-store";
 import { formatPermissionTaxonomyValue, permissionTaxonomyKindFromColumn } from "./permission-taxonomy-labels";
@@ -273,6 +273,10 @@ export function ResourceCell({ column, row, value, displayMode = "table", fullNa
   }
   if (column === "passed" && typeof value === "boolean") return <Badge tone={value ? "success" : "danger"}>{value ? "Đạt" : "Chưa đạt"}</Badge>;
   if (column === "locked" && typeof value === "boolean") return <Badge tone={value ? "warning" : "neutral"}>{value ? "Đã khóa" : "Có thể sửa"}</Badge>;
+  if (column === "patronSaintDay" && typeof value === "string") {
+    const dayMonth = formatVietnamDayMonth(value);
+    if (dayMonth) return <span className="whitespace-nowrap">{dayMonth}</span>;
+  }
   if (typeof value === "string") {
     const formattedDate = formatVietnamDateValue(value);
     // Ngày giờ luôn hiển thị đủ trên một dòng, không cắt "...".
