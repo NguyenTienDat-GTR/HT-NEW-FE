@@ -18,6 +18,7 @@ import { optionFromRow, rowsFromResponse } from "./api-utils";
 import { RegistrationListField, registrationEntries } from "./registration-list-field";
 import { ScoreComponentsField } from "./score-components-field";
 import { CourseCopySourcesField, copyModeValue, selectedCodes, targetYearOf } from "./course-copy-sources-field";
+import { PrerequisiteTypeField, type CourseLevel } from "./prerequisite-type-field";
 import type { FormFieldSpec, Option } from "./types";
 
 type FormValue = string | string[] | number | boolean | null | undefined;
@@ -138,6 +139,30 @@ const courseCopyControl: ControlRenderer = ({ value, values, readonly, onChange,
     />
   );
 };
+
+const courseLevelOf = (value: unknown): CourseLevel | undefined => (value === "DIOCESE" || value === "DEANERY" ? value : undefined);
+
+// Khóa tiên quyết của loại khóa: bỏ chọn khi sửa thì gửi cờ clearPrerequisite (ô trống không đổi giá trị đã lưu).
+const prerequisiteTypeControl: ControlRenderer = ({ id, value, values, readonly, onChange, onFieldChange }) => (
+  <PrerequisiteTypeField
+    currentLevel={courseLevelOf(values?.prerequisiteManagementUnitType)}
+    currentOwnedByDeanery={Boolean(values?.prerequisiteOwnerDeaneryId)}
+    currentName={typeof values?.prerequisiteTypeName === "string" ? values.prerequisiteTypeName : undefined}
+    forTypeCode={typeof values?.typeCode === "string" && values.typeCode ? values.typeCode : undefined}
+    id={id}
+    onChange={(code) => {
+      onChange(code);
+      onFieldChange?.("clearPrerequisite", false);
+    }}
+    onClear={() => {
+      onChange("");
+      onFieldChange?.("clearPrerequisite", true);
+    }}
+    ownerLevel={courseLevelOf(values?.managementUnitType)}
+    readonly={readonly}
+    value={typeof value === "string" ? value : ""}
+  />
+);
 
 type AccountLeaderInfo = { leaderHolyName?: string | null; leaderFullName?: string | null; leaderParishName?: string | null; leaderSubUnitName?: string | null; deaneryName?: string | null };
 
@@ -291,6 +316,7 @@ const CONTROL_RENDERERS: Record<string, ControlRenderer> = {
   "course-copy": courseCopyControl,
   "registration-list": registrationListControl,
   "account-leader-info": accountLeaderInfoControl,
+  "prerequisite-type": prerequisiteTypeControl,
   select: optionControl,
   multiselect: optionControl,
   "checkbox-list": optionControl,

@@ -16,7 +16,9 @@ export function courseConditionItems(course: Record<string, unknown> | null | un
   if (course.requiredMinAge != null && Number.isFinite(minAge) && minAge > 0) items.push({ label: "Tuổi tối thiểu", value: `${minAge} tuổi` });
   const prerequisite = typeof course.prerequisiteTypeName === "string" ? course.prerequisiteTypeName : "";
   if (prerequisite) {
-    items.push({ label: "Khóa tiên quyết", value: `Đã đạt ${prerequisite}` });
+    // Khóa tiên quyết cấp giáo hạt: học ở giáo hạt nào trong giáo phận cũng được tính.
+    const anyDeanery = course.prerequisiteManagementUnitType === "DEANERY" ? (course.prerequisiteOwnerDeaneryId ? " (cấp giáo hạt, do giáo hạt tự tạo)" : " (cấp giáo hạt, tổ chức ở giáo hạt nào cũng được)") : "";
+    items.push({ label: "Khóa tiên quyết", value: `Đã đạt ${prerequisite}${anyDeanery}` });
     const maxYears = Number(course.maxYearsAfterPrerequisite);
     if (course.maxYearsAfterPrerequisite != null && Number.isFinite(maxYears) && maxYears > 0) items.push({ label: "Thời hạn tham dự", value: `Tối đa ${maxYears} năm kể từ lần đạt khóa tiên quyết gần nhất` });
   }
@@ -29,9 +31,9 @@ export function CourseConditionList({ items, className }: { items: CourseConditi
   return (
     <dl className={cn("flex flex-wrap gap-x-8 gap-y-1.5 text-[13px]", className)}>
       {items.map((item) => (
-        <div className="flex items-baseline gap-1.5 whitespace-nowrap" key={item.label}>
-          <dt className="text-muted">{item.label}:</dt>
-          <dd className="font-medium text-foreground">{item.value}</dd>
+        <div className="flex min-w-0 items-baseline gap-1.5" key={item.label}>
+          <dt className="shrink-0 whitespace-nowrap text-muted">{item.label}:</dt>
+          <dd className="min-w-0 break-words font-medium text-foreground">{item.value}</dd>
         </div>
       ))}
     </dl>
@@ -81,6 +83,8 @@ export function CourseTypeRequirements({ courseTypeCode }: { courseTypeCode: str
     requiredCurrentLevelName: levelName,
     requiredMinAge: type.requiredMinAge,
     prerequisiteTypeName: type.prerequisiteTypeName,
+    prerequisiteManagementUnitType: type.prerequisiteManagementUnitType,
+    prerequisiteOwnerDeaneryId: type.prerequisiteOwnerDeaneryId,
     maxYearsAfterPrerequisite: type.maxYearsAfterPrerequisite,
   });
   return (
