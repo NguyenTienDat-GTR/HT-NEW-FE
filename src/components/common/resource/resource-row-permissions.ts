@@ -2,6 +2,7 @@ import type { ResourceKind, RouteConfig } from "@/config/routes/routes";
 import type { AuthUser } from "@/lib/auth/auth-store";
 import { hasPermission, hasRole, isSuperAdmin } from "@/lib/auth/permissions";
 import { canActOnCourse } from "@/modules/training-courses/course-permissions";
+import { isCourseEnded } from "@/modules/training-courses/registration-state";
 
 type Row = Record<string, unknown>;
 type RowCheck = (route: RouteConfig, row: Row, user: AuthUser | null) => boolean;
@@ -59,8 +60,14 @@ const ROW_RULES: Partial<Record<ResourceKind, RowRules>> = {
   },
   // Khóa giáo phận và khóa giáo hạt cùng hiện trong danh sách của tài khoản nhiều vai trò: chỉ sửa/bật tắt khóa thuộc đúng cấp mình.
   courses: {
-    edit: (_route, row, user) => canActOnCourse(user, row, "update"),
+    // Khóa đã kết thúc chỉ còn xem, không sửa nữa (BE cũng chặn).
+    edit: (_route, row, user) => canActOnCourse(user, row, "update") && !isCourseEnded(row),
     toggle: (_route, row, user) => canActOnCourse(user, row, "toggle"),
+  },
+  // Loại khóa do giáo phận tạo thì giáo hạt chỉ được dùng; loại giáo hạt tự tạo thì giáo phận không sửa (BE trả editable theo chủ sở hữu).
+  "course-types": {
+    edit: (_route, row) => row.editable !== false,
+    toggle: (_route, row) => row.editable !== false,
   },
   positions: {
     edit: (route, row, user) => hasScopedRowPermission(route, user, "update", row),

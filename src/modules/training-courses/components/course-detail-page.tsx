@@ -31,12 +31,14 @@ import {
   organizingStateTones,
   registrationStateLabels,
   registrationStateTones,
+  isCourseEnded,
   resolveOrganizingState,
   resolveRegistrationState,
   type StatusTone,
 } from "@/modules/training-courses/registration-state";
 import { CertificateResourceView } from "@/modules/certificates/components/certificate-resource-view";
 import { TrainingWorkflowResourceView } from "@/modules/training-workflow/components/training-workflow-resource-view";
+import { TabStatChips } from "@/modules/training-courses/components/tab-stat-chips";
 import { CourseTeamsView } from "@/modules/training-teams/components/course-teams-view";
 import { AutoSendBanner } from "@/modules/course-participants/components/auto-send-banner";
 import { CourseParticipantsHub } from "@/modules/course-participants/components/course-participants-hub";
@@ -231,7 +233,7 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
                   </Link>
                 </Button>
               ) : null
-            ) : editHref && canUseAction(user, route.actions?.edit) && canActOnCourse(user, course, "update") && !courseDisabled ? (
+            ) : editHref && canUseAction(user, route.actions?.edit) && canActOnCourse(user, course, "update") && !courseDisabled && !(course && isCourseEnded(course)) ? (
               <Button asChild variant="outline">
                 <Link href={editHref as Route}>
                   <PencilSimple size={16} />
@@ -422,6 +424,29 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
                 courseName: course && typeof course.courseName === "string" ? course.courseName : undefined,
               }}
             >
+              {activeTab.key === "certificate-approvals" || activeTab.key === "scores" ? (
+                <div className="mb-3">
+                  <TabStatChips
+                    chips={
+                      activeTab.key === "scores"
+                        ? [
+                            { label: "Tổng số hồ sơ" },
+                            { label: "Đạt", filters: { result: "COMPLETED" }, tone: "success" },
+                            { label: "Không đạt", filters: { result: "UNCOMPLETED" }, tone: "danger" },
+                          ]
+                        : [
+                            { label: "Tổng số hồ sơ" },
+                            { label: "Chờ duyệt", filters: { approvalStatus: "PENDING" }, tone: "warning" },
+                            { label: "Được duyệt", filters: { approvalStatus: "APPROVED" }, tone: "success" },
+                            { label: "Từ chối", filters: { approvalStatus: "REJECTED" }, tone: "danger" },
+                          ]
+                    }
+                    courseCode={id}
+                    endpoint={activeTab.route.endpoint ?? ""}
+                    total={tabCounts[activeTab.key]}
+                  />
+                </div>
+              ) : null}
               {activeTab.key === "certificate-approvals" ? (
                 <CertificateResourceView route={activeTab.route} />
               ) : activeTab.key === "teams" ? (

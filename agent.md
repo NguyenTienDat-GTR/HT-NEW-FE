@@ -608,3 +608,19 @@ BE tương ứng: `BE/project.md` mục "Training Course Registration Control an
 ## Modal lập danh sách / ngoại lệ: cột năm đạt cấp độ (feat/registration-achieved-year)
 
 - `RegistrationCandidateModal` (`registration-list-field.tsx`) thêm cột "Năm đạt cấp độ" (`levelAchievedYear` từ BE, trống hiện "—"), mở rộng modal (`max-w-[1500px]`, bảng `min-w-[1240px]`), thêm `px-3` cho ô và giảm chữ tiêu đề cột còn `text-[11px]`.
+## Khóa tiên quyết liên cấp (nhánh feat/cross-level-prerequisite)
+
+- Ô khóa tiên quyết của loại khóa là `prerequisite-type-field.tsx` (type `prerequisite-type`): thẻ tóm tắt + hộp thoại tìm, lọc theo cấp, nhóm theo cấp, nhãn "Dùng chung" / "Giáo hạt tự tạo"; dữ liệu từ `/training/course-types/prerequisite-options`.
+- Danh sách loại khóa có cột / bộ lọc "Nguồn tạo"; nút Sửa và Đổi trạng thái ẩn khi BE trả `editable: false` (`resource-row-permissions.ts`).
+- Test: `prerequisite-type-field.test.tsx`, `course-type-owner.test.ts`.
+
+## Bỏ trống cấp độ khi hoàn thành, quy tắc đạt khóa tiên quyết (nhánh fix/course-type-level-clear-prerequisite-rule)
+
+- Form loại khóa: ô "Cấp độ khi hoàn thành" có lựa chọn trống mang nhãn "Bỏ trống (không thăng cấp)" (`emptyOptionLabel` trong `FormFieldSpec`). Khi sửa mà để trống, `mapSubmit` gửi `clearResultingLevel: true`; trước đây giá trị rỗng bị `compactPayload` bỏ đi nên BE giữ cấp độ cũ. "Tuổi tối thiểu" có `min: 0`, nhập 0 để bỏ yêu cầu tuổi (BE lưu thành trống). Cả ba ô điều kiện có dòng trợ giúp nói rõ cách bỏ trống.
+- Dòng trợ giúp và hộp thoại chọn khóa tiên quyết ghi quy tắc đạt: loại có cấp chứng nhận tính theo chứng nhận được duyệt, loại không cấp chứng nhận tính theo kết quả khóa (`PASS_RULE_TEXT`).
+- `TabStatChips`: nhãn "Tổng số hồ sơ" dùng lại tổng số tab đã tải (`total`), các nhãn có bộ lọc chỉ xin 1 dòng (`statChipCountUrl`, `size: 1` được thêm vào `BaseSearchParams`).
+- Hàm bỏ dấu để tìm kiếm gom về `src/lib/search-text.ts` (`normalizeSearchText`), dùng ở ô chọn của form, ô chọn khóa tiên quyết và bộ lọc sao chép từ khóa tiên quyết.
+- Test: `prerequisite-type-field.test.tsx` (payload), `tab-stat-chips.test.tsx`, `search-text.test.ts`.
+- Sửa khóa cấp giáo phận: ô "Loại khóa" chỉ liệt kê loại cấp giáo phận (`courseTypesForDioceseCourse` ở `buildOptionsEndpoint`, dùng `managementUnitType` của khóa đang sửa), khớp BE từ chối loại giáo hạt cho khóa giáo phận.
+- Khóa đã kết thúc (kết thúc thủ công hoặc quá ngày kết thúc, `isCourseEnded` trong `registration-state.ts`) ẩn nút Sửa ở danh sách (`resource-row-permissions.ts`) và trang chi tiết; BE cũng chặn.
+- Test: `registration-state.test.ts`, `course-type-options.test.ts`.

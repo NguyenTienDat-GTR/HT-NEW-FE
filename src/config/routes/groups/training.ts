@@ -15,7 +15,7 @@ export const trainingRouteGroup: RouteGroup = {
         idField: "typeCode",
         kind: "course-types",
         icon: ListChecks,
-        columns: ["typeName", "managementUnitType", "requiredCurrentLevel", "prerequisiteTypeName", "resultingLevel", "status"],
+        columns: ["typeName", "managementUnitType", "ownerUnitType", "requiredCurrentLevel", "prerequisiteTypeName", "resultingLevel", "status"],
         sortFields: { prerequisiteTypeName: "prerequisiteType.typeName" },
         searchFields: ["typeName"],
         permissionPrefixes: ["training.course_type.read."],

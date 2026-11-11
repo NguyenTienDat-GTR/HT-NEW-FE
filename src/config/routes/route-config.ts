@@ -269,6 +269,15 @@ function inferRouteFilters(config: RouteConfig): RouteFilterConfig[] {
         type: "select",
         options: unitTypeFilterOptions(["DIOCESE", "DEANERY"]),
       });
+      filters.push({
+        key: "ownerUnitType",
+        label: "Nguồn tạo",
+        type: "select",
+        options: [
+          { value: "DIOCESE", label: "Giáo phận tạo" },
+          { value: "DEANERY", label: "Giáo hạt tự tạo" },
+        ],
+      });
       break;
     case "courses":
       filters.push({

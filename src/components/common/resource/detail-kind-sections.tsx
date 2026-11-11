@@ -51,6 +51,7 @@ const COURSE_TYPE_SECTIONS: DetailSection[] = [
     fields: [
       { key: "typeName", label: "Tên loại khóa", wide: true },
       { key: "managementUnitType", label: "Cấp quản lý" },
+      { key: "ownerUnitType", label: "Nguồn tạo" },
       { key: "certificateShortCode", label: "Mã viết tắt chứng chỉ", visible: (row) => hasText(row.certificateShortCode) },
       { key: "status", label: "Trạng thái" },
     ],
@@ -65,7 +66,15 @@ const COURSE_TYPE_SECTIONS: DetailSection[] = [
   {
     title: "Khóa tiên quyết và nâng cấp",
     fields: [
-      { key: "prerequisiteTypeName", label: "Khóa tiên quyết", render: (row) => (hasText(row.prerequisiteTypeName) ? String(row.prerequisiteTypeName) : "Không có") },
+      {
+        key: "prerequisiteTypeName",
+        label: "Khóa tiên quyết",
+        render: (row) => {
+          if (!hasText(row.prerequisiteTypeName)) return "Không có";
+          const level = row.prerequisiteManagementUnitType === "DEANERY" ? (row.prerequisiteOwnerDeaneryId ? "cấp giáo hạt, do giáo hạt tự tạo" : "cấp giáo hạt, tổ chức ở giáo hạt nào cũng được") : row.prerequisiteManagementUnitType === "DIOCESE" ? "cấp giáo phận" : "";
+          return level ? `${String(row.prerequisiteTypeName)} (${level})` : String(row.prerequisiteTypeName);
+        },
+      },
       {
         key: "maxYearsAfterPrerequisite",
         label: "Thời hạn tối đa sau khóa tiên quyết",
