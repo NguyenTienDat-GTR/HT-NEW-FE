@@ -506,3 +506,6 @@ BE tương ứng: `BE/project.md` mục "Training Course Registration Control an
 - Import Excel hồ sơ huynh trưởng và import danh sách tham dự / chia đội của khóa huấn luyện có cảnh báo trùng hồ sơ: sau khi import xong, các dòng nghi trùng (cùng tên thánh, họ tên, ngày sinh, giáo xứ với hồ sơ đã có nhưng khác số điện thoại) được giữ lại, các dòng còn lại đã import. `ExcelJob.duplicates` (`excel-jobs-client.ts`) trả danh sách; khay tác vụ (`excel-jobs-tray.tsx`) báo, hiện nút "Xác nhận N hồ sơ trùng" và tự mở `import-duplicates-dialog.tsx`.
 - Hộp thoại: mỗi dòng chọn "Cùng một người" (id hồ sơ đã có, số điện thoại hồ sơ đó che bớt) hoặc "Hai người khác nhau"; phải chọn hết mới gửi. Gửi `POST /excel-jobs/{id}/resolve-duplicates` (`resolveExcelJobDuplicates`), BE tạo tác vụ import mới chỉ xử lý các dòng đó; tác vụ mới được theo dõi ở khay, job cũ hết `duplicates`.
 - Test: `excel-jobs-tray.test.tsx` (mở hộp thoại, bắt chọn hết, payload quyết định).
+
+## feat/cap-do-dat-duoc-import-excel
+- `resource-list-runtime.tsx`: mô tả hộp thoại "Nhập excel danh sách tham dự": khóa quá khứ có thêm cột Cấp độ đạt được (tùy chọn); khóa thường nhắc xóa các dòng ví dụ ở cả hai sheet. Không đổi logic.
