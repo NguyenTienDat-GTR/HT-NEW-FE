@@ -1,170 +1,43 @@
 # HT Management FE Agent Log
 
-## Preflight rule
+## Quy tắc làm việc
 
-- Before each implementation or test task, reread the full DOCX guide paragraphs and tables, `D:\quan-li-ht-new\BE\project.md`, and this file.
-- For UI tasks, reread `D:\quan-li-ht-new\FE\DESIGN.md`.
-- When creating or changing UI, follow the local UIPro skill from `D:\quan-li-ht-new\FE\.codex\skills\ui-ux-pro-max`: start with its design-system search, synthesize the result with `DESIGN.md`, and keep the output in a professional SaaS/admin style.
-- FE changes, architecture, routes, components, auth client, permission UI, data flow, design tokens, animation, responsive behavior, FE tests, done items, and FE remaining work are recorded here.
-- BE changes are recorded only in `D:\quan-li-ht-new\BE\project.md`.
+- Không đọc lại toàn bộ file này hay `BE/project.md` trước mỗi việc (hai file cộng lại khoảng 300 KB). Đọc phần "Kiến trúc FE" và "Route và luồng dữ liệu" bên dưới, rồi tìm theo từ khóa (tên module, endpoint, tên quyền) và chỉ đọc đúng mục liên quan. Mã nguồn là nguồn sự thật; mục nhật ký nào lệch với mã thì mã đúng.
+- Việc cần biết hợp đồng API hoặc quy tắc nghiệp vụ phía BE: tìm đúng mục trong `BE/project.md` (repo `HT-NEW`), hoặc xem `openapi/ht-management.json` và `src/lib/api/schema.d.ts`.
+- Việc giao diện: đọc `DESIGN.md` và `src/styles/tokens.css`. Dùng skill `ui-ux-pro-max` khi thiết kế màn hình hoặc thành phần mới; kết quả phải khớp `DESIGN.md` và bộ Next.js / Tailwind / Phosphor hiện có.
+- Ghi thay đổi của FE vào cuối file này: mỗi nhánh một mục ngắn, chỉ ghi quyết định và hành vi mà đọc mã không thấy ngay. Không dán kết quả chạy lint / test / build và không liệt kê lại danh sách file đã sửa (đã có trong git).
+- Thay đổi của BE chỉ ghi ở `BE/project.md`.
 - BẮT BUỘC chia nhỏ code theo từng module, feature, component để tái sử dụng; tránh để một file code thủ công quá dài hoặc gom nhiều trách nhiệm không cùng phạm vi.
+- Mọi thông báo hiển thị cho người dùng viết bằng tiếng Việt; lưu file UTF-8.
+- Trước khi mở PR: `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`. PR mở vào `test` trước, thử trên môi trường test rồi mới mở PR `test` -> `main`.
 
-## FE architecture
+## Kiến trúc FE
 
-- Next.js App Router with TypeScript strict and Tailwind CSS v4 scaffolded in `D:\quan-li-ht-new\FE`.
-- Runtime dependencies installed: Radix/shadcn-style primitives, Phosphor Icons, TanStack Query/Table, React Hook Form, Zod, Zustand, openapi-fetch, StompJS, Recharts, Motion, date-fns/date-fns-tz, Sonner.
-- Test/codegen dependencies installed: Vitest, Testing Library, MSW, Playwright, axe, openapi-typescript.
-- `next.config.ts` enables `typedRoutes`, `output: "standalone"`, and rewrites `/backend/api/:path*` to `${BACKEND_ORIGIN}/api/:path*`.
-- `.env.example` documents `BACKEND_ORIGIN`, `NEXT_PUBLIC_WS_URL`, `E2E_USERNAME`, and `E2E_PASSWORD` with no secrets.
+- Next.js 16 App Router, React 19, TypeScript strict, Tailwind CSS v4.
+- Thư viện chạy: Radix (dialog, dropdown-menu, popover, slot, tooltip), Phosphor Icons, TanStack Query, React Hook Form, Zod, Zustand, openapi-fetch, StompJS, Recharts, Motion, Sonner, ExcelJS, fflate, jsQR, MediaPipe Tasks Vision, react-moveable, react-selecto.
+- Kiểm thử và sinh mã: Vitest, Testing Library, Playwright, axe, openapi-typescript.
+- `next.config.ts` bật `typedRoutes`, `output: "standalone"` và rewrite `/backend/api/:path*` sang `${BACKEND_ORIGIN}/api/:path*`.
+- `.env.example` mô tả `BACKEND_ORIGIN`, `NEXT_PUBLIC_WS_URL`, `E2E_USERNAME`, `E2E_PASSWORD`, không chứa bí mật.
+- Thư mục: `src/app` (route mỏng), `src/modules/<nghiệp vụ>` (màn hình và logic), `src/components` (`ui`, `common/resource`, `form/resource-form`), `src/config/routes` (route, menu, quyền), `src/lib` (API client, auth, tiện ích), `src/styles/tokens.css`. Unit test nằm ở `tests/unit`, không đặt trong `src`.
 
-## Routes and data flow
+## Route và luồng dữ liệu
 
 - `/login` and `/change-password` render dedicated auth forms with React Hook Form and Zod.
 - `/dashboard`, `/analytics`, `/notifications`, organization, training, certificate, and system routes render through the App Router workspace catch-all and route registry.
-- Current module refactor/UI branch is `feature/fe-module-refactor-ui`, created from up-to-date `main` on 2026-07-21.
 - Sidebar menu is grouped by module name: dashboard, organization, leader, executive-board, training, training-workflow, certificate, and system.
 - Ban điều hành routes now use `/executive-board/positions` and `/executive-board/assignments`; workflow aliases exist for `/training/registrations`, `/training/approvals`, `/training/scores`, `/certificates/approvals`, and `/leaders/profiles`.
 - Auth state uses Zustand memory only. Refresh and protected calls use `credentials: "include"`, Bearer access token, single-flight refresh, and retry once.
 - Tables sync `page`, `size`, `search`, `sortBy`, and `sortDirection` to URL with 300ms debounce. BaseSearchRequest serializes `filters` as `JSON.stringify`.
 - Notifications hydrate from REST and invalidate cache from STOMP `/user/queue/notifications` after connect or message.
 
-## Design system and animation
+## Thiết kế
 
-- Light-only design uses Be Vietnam Pro via `next/font`, HR navy/teal OKLCH palette in `src/styles/tokens.css` (`primary: oklch(0.38 0.085 250)`, `accent: oklch(0.72 0.12 185)`, `success: oklch(0.68 0.14 150)`, `warning: oklch(0.78 0.16 75)`, `danger: oklch(0.62 0.2 25)`, `background: oklch(0.985 0.005 250)`), 44px targets, 264px/76px sidebar states, 1480px content max, compact data rows, 10px buttons, 8px inputs, and 12px panels/charts.
-- 2026-07-14 management UI refresh keeps the Clerk-style light surface but widens the workspace to 1400px, uses grouped navigation, module chips, richer table badges, workflow hints, empty/error/loading states, and dashboard work-queue shortcuts.
-- Button variants implemented: `primary`, `secondary`, `outline`, `ghost`, `destructive`, and `icon`; loading keeps width stable and disables double submit.
-- KPI `AnimatedMetric` uses Motion `useMotionValue`, `useSpring`, and `useReducedMotion`; visual number is `aria-hidden` while final value is exposed by accessible label.
-- Chart primitives include `ChartFrame`, `ChartHeader`, `ChartLegend`, `ChartTooltip`, `ChartSkeleton`, `ChartEmpty`, `ChartError`, and `ChartDataTable`.
-- Recharts animations are viewport-gated, reduced-motion aware, and use the shared brand/success/warning OKLCH chart palette.
-- Muted implementation token is `#70727f` to pass axe/WCAG AA at 14px on white.
+- Giao diện sáng, phông Plus Jakarta Sans, màu chính xanh `#1e40af`, nền slate; chi tiết ở `DESIGN.md`, giá trị thật ở `src/styles/tokens.css`.
+- Thanh bên 260px / 76px. Nút có các biến thể `primary`, `secondary`, `outline`, `ghost`, `destructive`, `icon`; trạng thái đang xử lý khóa bấm lặp.
 
-## Completed FE files
+## Nhật ký thay đổi (cũ trước, mới sau)
 
-- `FE/agent.md`: created as the required execution log skeleton.
-- `FE/DESIGN.md`: moved from root `DESIGN.md`; SHA-256 before and after is `59CBC6D86E6943AA470D40A24A950925D5E0190AC07AD4E54D2F8CB0749CC24E`; root `DESIGN.md` is no longer present.
-- `FE/package.json` and `FE/package-lock.json`: Next.js scaffold, scripts, dependency stack, and lockfile.
-- `FE/.gitignore`: ignores build artifacts, coverage, Playwright output, `.env`, `.env.*`, `.idea/`, and `*.iml`; keeps `.env.example`.
-- `FE/.env.example`: non-sensitive environment variable sample.
-- `FE/next.config.ts`: typed routes, standalone output, and backend rewrite.
-- `FE/vitest.config.ts`, `FE/src/test/setup.ts`, `FE/playwright.config.ts`: initial unit and E2E test configuration.
-- `FE/scripts/capture-openapi.mjs`: local OpenAPI capture helper for `/v3/api-docs`.
-- `FE/openapi/ht-management.json`: captured OpenAPI document.
-- `FE/src/lib/api/schema.d.ts`: generated typed API schema.
-- `FE/src/lib/api/client.ts`, `FE/src/lib/api/search.ts`, `FE/src/lib/env.ts`: API client, refresh flow, BaseSearchRequest serializer, and env validation.
-- `FE/src/lib/auth/*`: memory auth store and permission matcher.
-- `FE/src/components/ui/*`: button, icon tooltip button, input, and panel primitives.
-- `FE/src/features/auth/*`: login and change-password screens.
-- `FE/src/features/workspace/*`: app shell, auth gate, route registry, realtime notification subscription, and workspace renderer.
-- `FE/src/features/analytics/*`: KPI, chart primitives, dashboard, analytics adapters, and analytics screens.
-- `FE/src/features/resources/resource-list-page.tsx` plus `resource-toolbar.tsx` and `resource-table.tsx`: generic permission-first resource list/table shell for V1 modules.
-- `FE/src/**/*.test.*` and `FE/e2e/login.spec.ts`: unit/integration and E2E coverage.
-- `FE/src/components/ui/button.tsx`: fixed Radix Slot `asChild` behavior so the Slot receives exactly one child element and no loading wrapper overlay.
-- `FE/src/components/ui/button.test.tsx`: added regression coverage for `Button asChild` with `next/link` and kept loading double-submit coverage UTF-8 safe.
-- `FE/src/lib/api/client.ts`: kept envelope errors as typed thrown errors for callers, added shared error-message extraction, and restored UTF-8 Vietnamese fallback messages.
-- `FE/src/features/auth/login-view.tsx`: catches login envelope errors, shows the server message in toast and form state, and prevents Next dev runtime overlay for invalid credentials.
-- `FE/src/features/auth/change-password-view.tsx`: catches submit errors after mutation toast and writes the message into form state instead of leaking the rejection.
-- `FE/src/features/auth/login-view.test.tsx` and `FE/src/lib/api/client.test.ts`: cover server-message propagation and login-form toast handling.
-- `FE/src/features/workspace/app-shell.tsx`: logout now calls `/auth/logout` with the in-memory Bearer token and refresh cookie through `apiFetch`, treats the server call as best-effort, clears TanStack Query cache, clears Zustand auth memory, disables duplicate logout clicks while pending, and routes back to `/login`.
-- `FE/src/features/workspace/routes.ts`: rebuilt route metadata around module names, grouped sidebar sections, corrected executive-board paths, and added workflow/detail aliases for leader profiles, registration, approval, scoring, and certificate approval screens.
-- `FE/src/features/workspace/app-shell.tsx`: refreshed grouped module sidebar, topbar search placeholder, user summary, notification entry, mobile drawer, and 1400px workspace width.
-- `FE/src/features/workspace/workspace-page.tsx`: cleaned UTF-8 not-found copy after route registry refresh.
-- `FE/src/features/resources/resource-list-page.tsx`: redesigned generic resource screens with module chip headers, permission-aware primary actions, filter chips, status selector, richer table cells, avatars, badges, row actions, loading skeletons, empty state, and contextual errors.
-- `FE/src/features/workspace/route-config.ts` and `FE/src/features/workspace/route-groups/*`: split route metadata by dashboard, organization, leader, executive-board, training, training-workflow, certificate, and system modules; `routes.ts` now only aggregates groups and exports lookup helpers.
-- `FE/src/features/resources/resource-format.tsx`, `resource-list-page.tsx`, `resource-toolbar.tsx`, `resource-table.tsx`, `resource-pagination.tsx`, and `use-resource-query-state.ts`: split generic resource screen formatting, filters/header, table rows, pagination, and URL query-state logic into reusable components/hooks.
-- `FE/src/features/resources/resource-pagination.tsx` and `use-resource-query-state.ts`: pagination footer now lets users choose page size and jump to a specific page, keeps first/previous/next/last navigation, and validates URL-derived `page`/`size` defaults before serializing `BaseSearchRequest`.
-- `FE/src/features/resources/resource-pagination.tsx`: page selection now uses clickable page-number buttons with compact ellipsis ranges instead of a numeric page input.
-- `FE/src/features/resources/use-resource-query-state.ts`: search debounce now updates URL only when the search term differs from the URL search value, so pagination changes no longer get reset back to page 0.
-- `FE/src/features/resources/use-resource-query-state.ts`: resource list URL `page` is now one-based for users while `BaseSearchRequest.page` remains zero-based internally for backend calls.
-- `FE/src/features/analytics/dashboard-view.tsx`: redesigned dashboard with KPI cards, trend chart, work-queue shortcuts, scope/filter/data insight cards, and clean Vietnamese copy.
-- `FE/src/features/analytics/analytics-view.tsx` and `FE/src/features/analytics/types.ts`: refreshed analytics tabs and restored UTF-8 metric labels.
-- `FE/src/lib/api/client.ts`: restored UTF-8 Vietnamese fallback messages while preserving refresh/retry and typed envelope behavior.
-- `FE/tests/unit/**/*`: unit tests moved out of `FE/src` into `FE/tests/unit`; `FE/src` no longer contains `*.test.*` or `src/test`.
-- `FE/vitest.config.ts`: Vitest now includes `tests/unit/**/*.test.ts(x)` and uses `tests/unit/test/setup.ts`.
-- `FE/src/components/brand/brand-mark.tsx`: added the shared HT brand mark used by login and workspace shell.
-- `FE/src/features/resources/resource-list-page.tsx`: replaced the old one-file generic resource screen with a reusable data/list primitive that module screens compose.
-- `FE/src/features/leader/leader-resource-view.tsx`, `FE/src/features/organization/organization-resource-view.tsx`, `FE/src/features/executive-board/executive-board-resource-view.tsx`, `FE/src/features/training/training-resource-view.tsx`, `FE/src/features/training-workflow/training-workflow-resource-view.tsx`, `FE/src/features/certificate/certificate-resource-view.tsx`, and `FE/src/features/system/system-resource-view.tsx`: added module-owned resource screens with their own summary cards, workflow hints, side panels, and tone.
-- `FE/src/features/workspace/module-resource-renderer.tsx` and `FE/src/features/workspace/workspace-page.tsx`: route resource pages through module-owned views instead of `ResourceView`; `FE/src/features/resources/resource-view.tsx` was removed.
-- `FE/src/features/workspace/app-shell.tsx`, `FE/src/features/auth/login-view.tsx`, `FE/src/features/auth/change-password-view.tsx`, `FE/src/features/resources/resource-toolbar.tsx`, `FE/src/features/resources/resource-table.tsx`, `FE/src/features/resources/resource-format.tsx`, `FE/src/features/analytics/dashboard-view.tsx`, and `FE/src/features/analytics/animated-metric.tsx`: refreshed UI from the provided visual references with a light branded admin system, white panels, active navigation, centered auth card, module summary cards, icon row actions, and stable table controls.
-- `FE/src/features/workspace/app-shell.tsx`: revised the sidebar to match the reference layout more closely with per-module accordion collapse, default-open Organization and Leader groups, icon-only full-sidebar collapse, and visible Organization children for Diocese/Deanery/Parish.
-- `FE/src/features/resources/resource-list-page.tsx`: simplified module list pages to a table-first layout with compact breadcrumb/title/action, one full-width filter panel, and full-width table/pagination; summary cards and side panels no longer shrink the list.
-- `FE/src/features/resources/resource-toolbar.tsx`: removed duplicate status filter chips and kept a single status select plus filter button to match the reference list screens.
-
-## Validation
-
-- Preflight source docs read before bootstrap.
-- Bootstrap hash verification completed.
-- Scaffold task preflight read the DOCX guide, `BE/project.md`, `FE/agent.md`, and `FE/DESIGN.md`.
-- Dependency install and lockfile sync completed with `npm.cmd install` and `npm.cmd install --package-lock-only`.
-- Implementation/test preflights reread DOCX guide, `BE/project.md`, `FE/agent.md`, and `FE/DESIGN.md`.
-- `npm.cmd run api:generate`: passed.
-- `npm.cmd run typecheck`: passed.
-- `npm.cmd run lint`: passed.
-- `npm.cmd run test`: 7 files passed, 7 tests passed.
-- `npm.cmd run build`: passed.
-- `npm.cmd run test:e2e`: 3 projects passed at 1440px, 1024px, and 390px. Playwright Chromium was installed locally before this run.
-- Runtime Slot fix preflight reread the DOCX guide, `BE/project.md`, `FE/agent.md`, and `FE/DESIGN.md`.
-- `npm.cmd run typecheck`: passed after the Button Slot fix.
-- `npm.cmd run lint`: passed after the Button Slot fix.
-- `npm.cmd run test -- src/components/ui/button.test.tsx`: passed, 1 file and 2 tests.
-- Auth error-display fix preflight reread the DOCX guide, `BE/project.md`, `FE/agent.md`, and `FE/DESIGN.md`.
-- `npm.cmd run typecheck`: passed after the auth error-display fix.
-- `npm.cmd run lint`: passed after the auth error-display fix.
-- `npm.cmd run test -- src/features/auth/login-view.test.tsx src/lib/api/client.test.ts`: passed, 2 files and 3 tests.
-- `npm.cmd run test`: passed, 8 files and 10 tests.
-- Current-session logout FE preflight reread the DOCX guide, `BE/project.md`, and `FE/agent.md`.
-- `npm.cmd run typecheck`: passed after the FE logout update.
-- `npm.cmd run lint`: passed after the FE logout update.
-- `npm.cmd run test`: passed after the FE logout update, 8 files and 10 tests.
-- Management UI design preflight reread the DOCX guide, `BE/project.md`, `FE/agent.md`, and `FE/DESIGN.md`.
-- `git fetch origin` and `git pull --ff-only origin main`: local `main` was up to date before creating `feature/management-ui-design`.
-- `npm.cmd run typecheck`: passed after the grouped menu/resource/dashboard refresh and test relocation.
-- `npm.cmd run lint`: passed after removing the unused dashboard import and avoiding raw `<img>` in the generic table avatar.
-- `npm.cmd run test`: passed after moving unit tests to `tests/unit`, 8 files and 10 tests.
-- `rg --files src | rg "(test|spec)\.(ts|tsx)$|^src/test/"`: no results, confirming tests are out of `src`.
-- `npm.cmd run build`: passed with Next.js 16 production build.
-- FE modular-refactor preflight reread the DOCX guide, `BE/project.md`, `FE/agent.md`, and `FE/DESIGN.md`.
-- Mandatory modularization rule added to this agent file: split code by module, feature, and component for reuse; avoid oversized manual files with mixed responsibilities.
-- Route/resource modular refactor line-count check: `routes.ts` reduced to 24 lines, `resource-view.tsx` reduced to 63 lines; generated `schema.d.ts` remains intentionally untouched.
-- `npm.cmd run typecheck`: passed after splitting route groups and resource components/hooks.
-- `npm.cmd run lint`: passed after the modular refactor.
-- `npm.cmd run test`: passed after the modular refactor, 8 files and 10 tests.
-- `npm.cmd run build`: passed after the modular refactor with Next.js 16 production build.
-- Resource pagination enhancement preflight reread the DOCX guide, `BE/project.md`, `FE/agent.md`, and `FE/DESIGN.md`.
-- `npm.cmd run typecheck`: passed after adding page jump and page-size controls to the reusable resource pagination footer.
-- `npm.cmd run lint`: passed after the resource pagination enhancement.
-- `npm.cmd run test`: passed after the resource pagination enhancement, 8 files and 10 tests.
-- `npm.cmd run build`: passed after the resource pagination enhancement with Next.js 16 production build.
-- Resource page-button pagination correction preflight reread the DOCX guide, `BE/project.md`, `FE/agent.md`, and `FE/DESIGN.md`.
-- `npm.cmd run typecheck`: passed after replacing the page number input with clickable page buttons.
-- `npm.cmd run lint`: passed after replacing the page number input with clickable page buttons.
-- `npm.cmd run test`: passed after replacing the page number input with clickable page buttons, 8 files and 10 tests.
-- `npm.cmd run build`: passed after replacing the page number input with clickable page buttons with Next.js 16 production build.
-- Resource pagination page-change fix preflight reread the DOCX guide, `BE/project.md`, `FE/agent.md`, and `FE/DESIGN.md`.
-- `npm.cmd run typecheck`: passed after preventing the search debounce from resetting page changes.
-- `npm.cmd run lint`: passed after preventing the search debounce from resetting page changes.
-- `npm.cmd run test`: passed after preventing the search debounce from resetting page changes, 8 files and 10 tests.
-- `npm.cmd run build`: passed after preventing the search debounce from resetting page changes with Next.js 16 production build.
-- Resource user-facing page URL fix preflight reread the DOCX guide, `BE/project.md`, `FE/agent.md`, and `FE/DESIGN.md`.
-- `npm.cmd run typecheck`: passed after making URL page one-based while keeping API page zero-based.
-- `npm.cmd run lint`: passed after making URL page one-based while keeping API page zero-based.
-- `npm.cmd run test`: passed after making URL page one-based while keeping API page zero-based, 8 files and 10 tests.
-- `npm.cmd run build`: passed after making URL page one-based while keeping API page zero-based with Next.js 16 production build.
-- Reference-image UI refresh preflight reread the DOCX guide, `BE/project.md`, `FE/agent.md`, and `FE/DESIGN.md`.
-- `npm.cmd run typecheck`: passed after replacing `ResourceView` with module-owned resource screens.
-- `npm.cmd run lint`: passed after the module-owned UI refresh.
-- `npm.cmd run test`: passed after the module-owned UI refresh, 8 files and 10 tests.
-- `npm.cmd run build`: passed after the module-owned UI refresh with Next.js 16 production build.
-- `npm.cmd run test:e2e`: passed after the login redesign at 1440px, 1024px, and 390px.
-- Reference-alignment correction preflight reread the DOCX guide, `BE/project.md`, `FE/agent.md`, and `FE/DESIGN.md`.
-- Manual Playwright mock opened `/leaders` with mocked `/auth/me` and `/leaders`, confirming sidebar shows Organization with Giáo phận/Giáo hạt/Giáo xứ and separate Huynh trưởng group, while the list table stays full-width.
-- Admin-diocese real-login menu gap traced to BE `/api/auth/me.permissions`, not FE route rendering: FE keeps menu visibility permission-prefix based, while BE branch `fix/admin-diocese-menu-permissions` seeds missing scoped organization/leader grants and adds `organization.leader.read.diocese/deanery`.
-- Organization action rule from BE: scoped admin roles read descendant organization lists, update only their own managed unit, and may create/toggle only direct-child units. FE hides create buttons through route `primaryActionPermissionPrefixes`, so `ADMIN_DIOCESE` does not see "Thêm giáo phận", can see "Thêm giáo hạt", and does not see "Thêm giáo xứ".
-- `npm.cmd run typecheck`: passed after the direct-child organization action permission correction.
-- `npm.cmd run typecheck`: passed after the accordion sidebar and table-first list correction.
-- `npm.cmd run lint`: passed after the accordion sidebar and table-first list correction.
-- `npm.cmd run test`: passed after the accordion sidebar and table-first list correction, 8 files and 10 tests.
-- `npm.cmd run build`: passed after the accordion sidebar and table-first list correction with Next.js 16 production build.
-- `npm.cmd run test:e2e`: passed after the correction at 1440px, 1024px, and 390px.
+Các mục dưới đây ghi theo thời điểm làm; đường dẫn file trong các mục trước 2026-07-21 có thể không còn (thư mục `src/features` đã chuyển sang `src/modules`).
 
 ### All-module form workflow rollout 2026-07-15
 
@@ -628,3 +501,11 @@ BE tương ứng: `BE/project.md` mục "Training Course Registration Control an
 ## fix/account-roles-role-name
 - Màn hình "Gán vai trò" (`/system/account-roles`, `src/config/routes/groups/system.ts`): cột hiển thị tên vai trò (`roleName`, nhãn "Vai trò") thay cho mã vai trò (`roleCode`, "Mã vai trò"). BE đã trả sẵn `roleName` trong `AccountRoleResponse`; bộ lọc "Vai trò" vốn đã chọn theo tên.
 - Test `login-view.test.tsx` ("does not remember the login unless the box is ticked") đang lỗi sẵn trên `main`, không liên quan thay đổi này.
+
+## feat/canh-bao-trung-ho-so-ht
+- Import Excel hồ sơ huynh trưởng và import danh sách tham dự / chia đội của khóa huấn luyện có cảnh báo trùng hồ sơ: sau khi import xong, các dòng nghi trùng (cùng tên thánh, họ tên, ngày sinh, giáo xứ với hồ sơ đã có nhưng khác số điện thoại) được giữ lại, các dòng còn lại đã import. `ExcelJob.duplicates` (`excel-jobs-client.ts`) trả danh sách; khay tác vụ (`excel-jobs-tray.tsx`) báo, hiện nút "Xác nhận N hồ sơ trùng" và tự mở `import-duplicates-dialog.tsx`.
+- Hộp thoại: mỗi dòng chọn "Cùng một người" (id hồ sơ đã có, số điện thoại hồ sơ đó che bớt) hoặc "Hai người khác nhau"; phải chọn hết mới gửi. Gửi `POST /excel-jobs/{id}/resolve-duplicates` (`resolveExcelJobDuplicates`), BE tạo tác vụ import mới chỉ xử lý các dòng đó; tác vụ mới được theo dõi ở khay, job cũ hết `duplicates`.
+- Test: `excel-jobs-tray.test.tsx` (mở hộp thoại, bắt chọn hết, payload quyết định).
+
+## feat/cap-do-dat-duoc-import-excel
+- `resource-list-runtime.tsx`: mô tả hộp thoại "Nhập excel danh sách tham dự": khóa quá khứ có thêm cột Cấp độ đạt được (tùy chọn); khóa thường nhắc xóa các dòng ví dụ ở cả hai sheet. Không đổi logic.
