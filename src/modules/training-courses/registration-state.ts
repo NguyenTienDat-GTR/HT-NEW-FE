@@ -80,6 +80,15 @@ export function resolveOrganizingState(row: CourseStatusRow, now = new Date()): 
   return "ONGOING";
 }
 
+// Khóa đã kết thúc: kết thúc thủ công, hoặc quá ngày kết thúc (giờ Việt Nam) dù trạng thái lưu chưa kịp cập nhật.
+// BE không cho sửa khóa đã kết thúc; FE dùng để ẩn nút sửa.
+export function isCourseEnded(row: CourseStatusRow & { finishedAt?: unknown }, now = new Date()) {
+  if (row.finishedAt) return true;
+  const today = new Date(now.getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const end = typeof row.endDate === "string" ? row.endDate : undefined;
+  return (end !== undefined && today > end) || resolveOrganizingState(row, now) === "ENDED";
+}
+
 // Khóa đang trong thời gian diễn ra theo ngày bắt đầu/kết thúc (giờ Việt Nam), không phụ thuộc trạng thái đã lưu
 // (trạng thái lưu chỉ cập nhật khi sửa khóa hoặc khi job định kỳ chạy). Giống quy tắc kiểm tra của BE khi chấm điểm.
 export function isCourseWithinDates(row: Pick<CourseStatusRow, "startDate" | "endDate">, now = new Date()) {

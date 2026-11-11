@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveOrganizingState, resolveRegistrationState } from "@/modules/training-courses/registration-state";
+import { isCourseEnded, resolveOrganizingState, resolveRegistrationState } from "@/modules/training-courses/registration-state";
 
 describe("course status resolution", () => {
   it("prefers the status stored by the backend", () => {
@@ -30,5 +30,22 @@ describe("started courses close registration", () => {
     const started = { registrationEnabled: true, registrationStatus: "OPEN", organizingStatus: "ONGOING", startDate: "2000-01-01", endDate: "2999-01-01" };
     expect(resolveRegistrationState(started)).toBe("ENDED");
     expect(resolveRegistrationState({ ...started, organizingStatus: "UPCOMING", startDate: "2999-01-01", endDate: "2999-02-01" })).toBe("OPEN");
+  });
+});
+
+describe("isCourseEnded", () => {
+  const now = new Date("2026-10-19T12:00:00+07:00");
+
+  it("treats a manually finished course as ended even before its planned end date", () => {
+    expect(isCourseEnded({ finishedAt: "2026-10-18T09:00:00+07:00", organizingStatus: "ONGOING", endDate: "2026-10-30" }, now)).toBe(true);
+  });
+
+  it("treats a course past its end date as ended even when the stored status is stale", () => {
+    expect(isCourseEnded({ organizingStatus: "ONGOING", startDate: "2026-10-01", endDate: "2026-10-18" }, now)).toBe(true);
+  });
+
+  it("keeps upcoming and ongoing courses editable", () => {
+    expect(isCourseEnded({ organizingStatus: "UPCOMING", startDate: "2026-10-25", endDate: "2026-10-27" }, now)).toBe(false);
+    expect(isCourseEnded({ organizingStatus: "ONGOING", startDate: "2026-10-18", endDate: "2026-10-19" }, now)).toBe(false);
   });
 });

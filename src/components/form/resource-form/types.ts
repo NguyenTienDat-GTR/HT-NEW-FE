@@ -16,7 +16,7 @@ export type Option = {
   taxonomy?: { module?: string; resource?: string; action?: string; scope?: string };
 };
 
-export type FieldType = "text" | "email" | "url" | "image" | "number" | "date" | "daymonth" | "datetime" | "textarea" | "select" | "multiselect" | "checkbox-list" | "radio" | "switch" | "registration-list" | "score-components" | "course-copy" | "account-leader-info";
+export type FieldType = "text" | "email" | "url" | "image" | "number" | "date" | "daymonth" | "datetime" | "textarea" | "select" | "multiselect" | "checkbox-list" | "radio" | "switch" | "registration-list" | "score-components" | "course-copy" | "account-leader-info" | "prerequisite-type";
 
 export type FormFieldSpec = {
   name: string;
@@ -25,6 +25,8 @@ export type FormFieldSpec = {
   required?: boolean;
   helper?: string;
   placeholder?: string;
+  // Nhãn của lựa chọn trống trong ô chọn một giá trị (mặc định "Chọn"), dùng khi bỏ trống là một lựa chọn có nghĩa.
+  emptyOptionLabel?: string;
   min?: number;
   // Trường lập danh sách huynh trưởng bằng modal: courseField = trường chứa mã khóa, otherField = danh sách còn lại (không được trùng người).
   registrationList?: { mode: "standard" | "exception"; courseField: string; otherField: string; senderField?: string };

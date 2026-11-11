@@ -1,17 +1,10 @@
+import { normalizeSearchText } from "@/lib/search-text";
 import type { CandidateFilters, CopyCandidate } from "./types";
 
 export type Option = { value: string; label: string };
 
 // Bỏ dấu để tìm kiếm tiếng Việt không phân biệt dấu / hoa thường.
-function normalize(value: string) {
-  return value
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .replace(/đ/g, "d")
-    .replace(/Đ/g, "D")
-    .toLowerCase()
-    .trim();
-}
+const normalize = (value: string) => normalizeSearchText(value).trim();
 
 export function candidateName(candidate: CopyCandidate) {
   return [candidate.holyName, candidate.fullName].filter(Boolean).join(" ");
