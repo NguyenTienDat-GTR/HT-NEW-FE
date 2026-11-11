@@ -8,7 +8,7 @@ const route = { kind: "course-types" } as unknown as RouteConfig;
 describe("course type owner", () => {
   it("labels where a course type comes from", () => {
     expect(courseTypeOwnerLabel({ managementUnitType: "DIOCESE", ownerUnitType: "DIOCESE" })).toBe("Giáo phận");
-    expect(courseTypeOwnerLabel({ managementUnitType: "DEANERY", ownerUnitType: "DIOCESE" })).toBe("Giáo phận tạo · dùng chung");
+    expect(courseTypeOwnerLabel({ managementUnitType: "DEANERY", ownerUnitType: "DIOCESE" })).toBe("Dùng chung");
     expect(courseTypeOwnerLabel({ managementUnitType: "DEANERY", ownerUnitType: "DEANERY" })).toBe("Giáo hạt tự tạo");
   });
 

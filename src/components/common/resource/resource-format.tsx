@@ -217,7 +217,7 @@ const NOTE_COLUMNS = new Set(["registrationNote", "scoreNote", "exceptionReason"
 // Nguồn tạo loại khóa: giáo phận tạo (cấp giáo hạt thì dùng chung cho mọi giáo hạt) hoặc giáo hạt tự tạo.
 export function courseTypeOwnerLabel(row: Record<string, unknown>) {
   if (row.ownerUnitType === "DEANERY") return "Giáo hạt tự tạo";
-  return row.managementUnitType === "DEANERY" ? "Giáo phận tạo · dùng chung" : "Giáo phận";
+  return row.managementUnitType === "DEANERY" ? "Dùng chung" : "Giáo phận";
 }
 
 export function ResourceCell({ column, row, value, displayMode = "table", fullNames = false, fullText = false }: ResourceCellProps) {
