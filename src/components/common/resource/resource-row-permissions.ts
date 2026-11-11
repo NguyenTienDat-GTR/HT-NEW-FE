@@ -62,6 +62,11 @@ const ROW_RULES: Partial<Record<ResourceKind, RowRules>> = {
     edit: (_route, row, user) => canActOnCourse(user, row, "update"),
     toggle: (_route, row, user) => canActOnCourse(user, row, "toggle"),
   },
+  // Loại khóa do giáo phận tạo thì giáo hạt chỉ được dùng; loại giáo hạt tự tạo thì giáo phận không sửa (BE trả editable theo chủ sở hữu).
+  "course-types": {
+    edit: (_route, row) => row.editable !== false,
+    toggle: (_route, row) => row.editable !== false,
+  },
   positions: {
     edit: (route, row, user) => hasScopedRowPermission(route, user, "update", row),
     toggle: (route, row, user) => hasScopedRowPermission(route, user, "toggle", row),

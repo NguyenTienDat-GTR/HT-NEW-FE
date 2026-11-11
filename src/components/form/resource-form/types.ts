@@ -16,7 +16,7 @@ export type Option = {
   taxonomy?: { module?: string; resource?: string; action?: string; scope?: string };
 };
 
-export type FieldType = "text" | "email" | "url" | "image" | "number" | "date" | "daymonth" | "datetime" | "textarea" | "select" | "multiselect" | "checkbox-list" | "radio" | "switch" | "registration-list" | "score-components" | "course-copy" | "account-leader-info";
+export type FieldType = "text" | "email" | "url" | "image" | "number" | "date" | "daymonth" | "datetime" | "textarea" | "select" | "multiselect" | "checkbox-list" | "radio" | "switch" | "registration-list" | "score-components" | "course-copy" | "account-leader-info" | "prerequisite-type";
 
 export type FormFieldSpec = {
   name: string;

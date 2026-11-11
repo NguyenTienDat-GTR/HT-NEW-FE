@@ -59,6 +59,7 @@ export const columnLabels: Record<string, string> = {
   typeCode: "Mã loại khóa",
   typeName: "Tên loại khóa",
   managementUnitType: "Cấp quản lý",
+  ownerUnitType: "Nguồn tạo",
   prerequisiteTypeCode: "Khóa tiên quyết",
   prerequisiteTypeName: "Khóa tiên quyết",
   resultingLevel: "Cấp độ khi đạt",
@@ -213,6 +214,12 @@ const COURSE_TAB_UNIT_COLUMNS = new Set(["parishName", "deaneryName", "leaderPar
 const COURSE_TAB_NAME_COLUMNS = new Set(["leaderFullName", "leaderHolyName", "holyName", "fullName", "teamName"]);
 const NOTE_COLUMNS = new Set(["registrationNote", "scoreNote", "exceptionReason", "approvalReason", "offTargetReason", "crossDeaneryReason", "review"]);
 
+// Nguồn tạo loại khóa: giáo phận tạo (cấp giáo hạt thì dùng chung cho mọi giáo hạt) hoặc giáo hạt tự tạo.
+export function courseTypeOwnerLabel(row: Record<string, unknown>) {
+  if (row.ownerUnitType === "DEANERY") return "Giáo hạt tự tạo";
+  return row.managementUnitType === "DEANERY" ? "Giáo phận tạo · dùng chung" : "Giáo phận";
+}
+
 export function ResourceCell({ column, row, value, displayMode = "table", fullNames = false, fullText = false }: ResourceCellProps) {
   const embedded = useEmbeddedResource() !== null || fullNames;
   const full = displayMode === "detail" || fullText || (embedded && (COURSE_TAB_NAME_COLUMNS.has(column) || COURSE_TAB_UNIT_COLUMNS.has(column)));
@@ -239,6 +246,7 @@ export function ResourceCell({ column, row, value, displayMode = "table", fullNa
     }
     if (holy) return <TextValue full={full}>{name}</TextValue>;
   }
+  if (column === "ownerUnitType") return <TextValue full={full}>{courseTypeOwnerLabel(row)}</TextValue>;
   if (column === "resource" && typeof value === "string") return <TextValue full={full}>{formatPermissionTaxonomyValue("resource", value) ?? value}</TextValue>;
   if (column === "resourceName") {
     const target = auditTargetText(row);

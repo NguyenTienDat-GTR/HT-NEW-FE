@@ -126,10 +126,10 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
       {
         name: "prerequisiteTypeCode",
         label: "Khóa tiên quyết",
-        type: "select",
-        optionsEndpoint: "/training/course-types",
-        optionValue: "typeCode",
-        optionLabel: "typeName",
+        type: "prerequisite-type",
+        wide: true,
+        helper:
+          "Huynh trưởng phải hoàn thành một khóa thuộc loại được chọn. Loại khóa cấp giáo phận chọn được khóa tiên quyết cấp giáo phận hoặc loại cấp giáo hạt do giáo phận tạo (dùng chung, học ở giáo hạt nào cũng được tính); loại giáo hạt tự tạo không chọn được. Loại khóa cấp giáo hạt chỉ chọn loại cấp giáo hạt do giáo phận tạo hoặc do chính giáo hạt đó tạo. Năm đạt tính theo năm duyệt chứng nhận, khóa không cấp chứng nhận thì theo năm tổ chức.",
         twoColumnSection: true,
         section: "Điều kiện tham dự",
       },
@@ -174,10 +174,20 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
         section: "Chứng nhận",
       },
     ],
+    // Cờ bỏ khóa tiên quyết do ô chọn khóa tiên quyết đặt (không có trường hiển thị riêng).
+    extraValueNames: ["clearPrerequisite"],
     mapSubmit: (values, mode) => {
       const payload = compactPayload(values);
       delete payload.hasCertificate;
       if (mode === "edit") delete payload.typeCode;
+      // Bỏ khóa tiên quyết khi sửa: gửi cờ xóa, đồng thời đặt thời hạn sau khóa tiên quyết về không giới hạn.
+      const clearPrerequisite = payload.clearPrerequisite === true && !payload.prerequisiteTypeCode;
+      delete payload.clearPrerequisite;
+      if (mode === "edit" && clearPrerequisite) {
+        payload.clearPrerequisite = true;
+        payload.clearMaxYearsAfterPrerequisite = true;
+        delete payload.maxYearsAfterPrerequisite;
+      }
       // Ô "Đặt về không giới hạn": gửi cờ xóa riêng cho thời hạn sau khóa tiên quyết.
       if (Array.isArray(payload.clearFields) && payload.clearFields.includes("maxYearsAfterPrerequisite")) {
         payload.clearMaxYearsAfterPrerequisite = true;
