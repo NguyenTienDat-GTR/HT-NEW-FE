@@ -14,7 +14,7 @@ const nextConfig: NextConfig = {
   compress: true,
   experimental: {
     // Chỉ nạp các icon/hàm thật sự dùng thay vì cả thư viện.
-    optimizePackageImports: ["@phosphor-icons/react", "motion/react", "date-fns"],
+    optimizePackageImports: ["@phosphor-icons/react", "motion/react"],
   },
   async rewrites() {
     return [
