@@ -604,6 +604,10 @@ BE tương ứng: `BE/project.md` mục "Training Course Registration Control an
 - Tab duyệt chứng nhận: hàng có `exceptionRequested` được tô nổi kèm nhãn "Chứng nhận ngoại lệ"; `ApprovalDialog` có prop `requireApproveReason` bắt buộc nhập lý do khi duyệt (một hoặc hàng loạt).
 - Test: `tests/unit/components/exception-certificate.test.ts`.
 
+
+## Modal lập danh sách / ngoại lệ: cột năm đạt cấp độ (feat/registration-achieved-year)
+
+- `RegistrationCandidateModal` (`registration-list-field.tsx`) thêm cột "Năm đạt cấp độ" (`levelAchievedYear` từ BE, trống hiện "—"), mở rộng modal (`max-w-[1500px]`, bảng `min-w-[1240px]`), thêm `px-3` cho ô và giảm chữ tiêu đề cột còn `text-[11px]`.
 ## Khóa tiên quyết liên cấp (nhánh feat/cross-level-prerequisite)
 
 - Ô khóa tiên quyết của loại khóa là `prerequisite-type-field.tsx` (type `prerequisite-type`): thẻ tóm tắt + hộp thoại tìm, lọc theo cấp, nhóm theo cấp, nhãn "Dùng chung" / "Giáo hạt tự tạo"; dữ liệu từ `/training/course-types/prerequisite-options`.
