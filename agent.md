@@ -624,3 +624,7 @@ BE tương ứng: `BE/project.md` mục "Training Course Registration Control an
 - Sửa khóa cấp giáo phận: ô "Loại khóa" chỉ liệt kê loại cấp giáo phận (`courseTypesForDioceseCourse` ở `buildOptionsEndpoint`, dùng `managementUnitType` của khóa đang sửa), khớp BE từ chối loại giáo hạt cho khóa giáo phận.
 - Khóa đã kết thúc (kết thúc thủ công hoặc quá ngày kết thúc, `isCourseEnded` trong `registration-state.ts`) ẩn nút Sửa ở danh sách (`resource-row-permissions.ts`) và trang chi tiết; BE cũng chặn.
 - Test: `registration-state.test.ts`, `course-type-options.test.ts`.
+
+## fix/account-roles-role-name
+- Màn hình "Gán vai trò" (`/system/account-roles`, `src/config/routes/groups/system.ts`): cột hiển thị tên vai trò (`roleName`, nhãn "Vai trò") thay cho mã vai trò (`roleCode`, "Mã vai trò"). BE đã trả sẵn `roleName` trong `AccountRoleResponse`; bộ lọc "Vai trò" vốn đã chọn theo tên.
+- Test `login-view.test.tsx` ("does not remember the login unless the box is ticked") đang lỗi sẵn trên `main`, không liên quan thay đổi này.
