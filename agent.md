@@ -603,3 +603,9 @@ BE tương ứng: `BE/project.md` mục "Training Course Registration Control an
 - Tab chấm điểm: nút `ExceptionCertificateAction` (`exception-certificate-action.tsx`) ở hồ sơ đã chấm điểm nhưng không đạt, khóa thường có cấp độ đạt được và chưa kết thúc; gọi `POST /training/participations/{id}/exception-certificate`.
 - Tab duyệt chứng nhận: hàng có `exceptionRequested` được tô nổi kèm nhãn "Chứng nhận ngoại lệ"; `ApprovalDialog` có prop `requireApproveReason` bắt buộc nhập lý do khi duyệt (một hoặc hàng loạt).
 - Test: `tests/unit/components/exception-certificate.test.ts`.
+
+## Khóa tiên quyết liên cấp (nhánh feat/cross-level-prerequisite)
+
+- Ô khóa tiên quyết của loại khóa là `prerequisite-type-field.tsx` (type `prerequisite-type`): thẻ tóm tắt + hộp thoại tìm, lọc theo cấp, nhóm theo cấp, nhãn "Dùng chung" / "Giáo hạt tự tạo"; dữ liệu từ `/training/course-types/prerequisite-options`.
+- Danh sách loại khóa có cột / bộ lọc "Nguồn tạo"; nút Sửa và Đổi trạng thái ẩn khi BE trả `editable: false` (`resource-row-permissions.ts`).
+- Test: `prerequisite-type-field.test.tsx`, `course-type-owner.test.ts`.
