@@ -148,7 +148,7 @@ export const systemRouteGroup: RouteGroup = {
       idField: "id",
       kind: "account-roles",
       icon: ShieldCheck,
-      columns: ["username", "roleCode", "isPrimary", "assignedAt", "expiresAt", "status"],
+      columns: ["username", "roleName", "isPrimary", "assignedAt", "expiresAt", "status"],
       permissionPrefixes: ["system.account_role.assign."],
       actionPermissionPrefixes: ["system.account_role.assign.", "system.account_role.toggle."],
       actions: {
