@@ -603,3 +603,8 @@ BE tương ứng: `BE/project.md` mục "Training Course Registration Control an
 - Tab chấm điểm: nút `ExceptionCertificateAction` (`exception-certificate-action.tsx`) ở hồ sơ đã chấm điểm nhưng không đạt, khóa thường có cấp độ đạt được và chưa kết thúc; gọi `POST /training/participations/{id}/exception-certificate`.
 - Tab duyệt chứng nhận: hàng có `exceptionRequested` được tô nổi kèm nhãn "Chứng nhận ngoại lệ"; `ApprovalDialog` có prop `requireApproveReason` bắt buộc nhập lý do khi duyệt (một hoặc hàng loạt).
 - Test: `tests/unit/components/exception-certificate.test.ts`.
+
+
+## Modal lập danh sách / ngoại lệ: cột năm đạt cấp độ (feat/registration-achieved-year)
+
+- `RegistrationCandidateModal` (`registration-list-field.tsx`) thêm cột "Năm đạt cấp độ" (`levelAchievedYear` từ BE, trống hiện "—"), mở rộng modal (`max-w-[1500px]`, bảng `min-w-[1240px]`), thêm `px-3` cho ô và giảm chữ tiêu đề cột còn `text-[11px]`.

@@ -23,6 +23,8 @@ export type RegistrationCandidate = {
   phoneNumber?: string | null;
   email?: string | null;
   leaderLevel?: string | null;
+  // Năm đạt cấp độ hiện tại: năm duyệt chứng nhận, hoặc năm tổ chức khóa nếu khóa không cấp chứng nhận.
+  levelAchievedYear?: number | null;
   parishId?: string | null;
   parishName?: string | null;
   deaneryId?: string | null;
@@ -273,7 +275,7 @@ function RegistrationCandidateModal({
 
   return (
     <div aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" role="dialog">
-      <div className="flex max-h-[92vh] w-full max-w-[1180px] flex-col rounded-xl bg-white shadow-xl">
+      <div className="flex max-h-[92vh] w-full max-w-[1500px] flex-col rounded-xl bg-white shadow-xl">
         <div className="flex items-start justify-between gap-3 border-b border-border px-5 py-4">
           <div>
             <h2 className="text-lg font-semibold text-foreground">{title}</h2>
@@ -349,41 +351,42 @@ function RegistrationCandidateModal({
         </div>
 
         <div className="min-h-0 flex-1 overflow-auto px-5 py-3">
-          <table className="w-full min-w-[900px] text-left text-sm">
-            <thead className="text-xs uppercase tracking-[0.02em] text-muted">
+          <table className="w-full min-w-[1240px] text-left text-sm">
+            <thead className="text-[11px] uppercase tracking-[0.02em] text-muted">
               <tr className="border-b border-border">
-                <th className="w-10 py-2">
+                <th className="w-10 px-3 py-2">
                   {exception ? null : <input aria-label="Chọn cả trang" checked={pageAllSelected} className="h-4 w-4 accent-primary" onChange={togglePage} type="checkbox" />}
                 </th>
-                <th className="py-2">STT</th>
-                <th className="py-2">Tên thánh</th>
-                <th className="py-2">Họ tên</th>
-                <th className="py-2">Ngày sinh</th>
-                <th className="py-2">Số ĐT</th>
-                <th className="py-2">Email</th>
-                <th className="py-2">Cấp huynh trưởng</th>
-                {showParish ? <th className="py-2">Giáo xứ / giáo họ / giáo điểm</th> : null}
-                {showDeanery ? <th className="py-2">Giáo hạt</th> : null}
+                <th className="px-3 py-2">STT</th>
+                <th className="px-3 py-2">Tên thánh</th>
+                <th className="px-3 py-2">Họ tên</th>
+                <th className="px-3 py-2">Ngày sinh</th>
+                <th className="px-3 py-2">Số ĐT</th>
+                <th className="px-3 py-2">Email</th>
+                <th className="px-3 py-2">Cấp huynh trưởng</th>
+                <th className="px-3 py-2">Năm đạt cấp độ</th>
+                {showParish ? <th className="px-3 py-2">Giáo xứ / giáo họ / giáo điểm</th> : null}
+                {showDeanery ? <th className="px-3 py-2">Giáo hạt</th> : null}
               </tr>
             </thead>
             <tbody>
               {candidatesQuery.isLoading ? (
                 <tr>
-                  <td className="py-6 text-center text-muted" colSpan={10}>
+                  <td className="px-3 py-6 text-center text-muted" colSpan={11}>
                     Đang tải dữ liệu...
                   </td>
                 </tr>
               ) : null}
               {candidatesQuery.isError ? (
                 <tr>
-                  <td className="py-6 text-center text-danger" colSpan={10}>
+                  <td className="px-3 py-6 text-center text-danger" colSpan={11}>
                     Không thể tải danh sách huynh trưởng
                   </td>
                 </tr>
               ) : null}
               {!candidatesQuery.isLoading && !candidatesQuery.isError && rows.length === 0 ? (
                 <tr>
-                  <td className="py-6 text-center text-muted" colSpan={10}>
+                  <td className="px-3 py-6 text-center text-muted" colSpan={11}>
                     Không có huynh trưởng phù hợp
                   </td>
                 </tr>
@@ -392,7 +395,7 @@ function RegistrationCandidateModal({
                 const checked = exception ? singleId === row.id : Boolean(selected[row.id]);
                 return (
                   <tr className={cn("cursor-pointer border-b border-border/60 hover:bg-primary/5", checked && "bg-primary/8")} key={row.id} onClick={() => toggleRow(row)}>
-                    <td className="py-2">
+                    <td className="px-3 py-2">
                       <input
                         aria-label={`Chọn ${row.fullName ?? ""}`}
                         checked={checked}
@@ -403,18 +406,19 @@ function RegistrationCandidateModal({
                         type={exception ? "radio" : "checkbox"}
                       />
                     </td>
-                    <td className="py-2">{page * PAGE_SIZE + index + 1}</td>
-                    <td className="py-2">{row.holyName ?? "—"}</td>
-                    <td className="py-2 font-semibold text-foreground">
+                    <td className="px-3 py-2">{page * PAGE_SIZE + index + 1}</td>
+                    <td className="px-3 py-2">{row.holyName ?? "—"}</td>
+                    <td className="px-3 py-2 font-semibold text-foreground">
                       {row.fullName ?? "—"}
                       {row.offTarget ? <OffTargetBadge /> : null}
                     </td>
-                    <td className="py-2">{formatDate(row.birthDate)}</td>
-                    <td className="py-2">{row.phoneNumber ?? "—"}</td>
-                    <td className="py-2">{row.email ?? "—"}</td>
-                    <td className="py-2">{formatLeaderLevel(row.leaderLevel ?? "")}</td>
-                    {showParish ? <td className="py-2">{row.parishName ?? "—"}</td> : null}
-                    {showDeanery ? <td className="py-2">{row.deaneryName ?? "—"}</td> : null}
+                    <td className="px-3 py-2">{formatDate(row.birthDate)}</td>
+                    <td className="px-3 py-2">{row.phoneNumber ?? "—"}</td>
+                    <td className="px-3 py-2">{row.email ?? "—"}</td>
+                    <td className="px-3 py-2">{formatLeaderLevel(row.leaderLevel ?? "")}</td>
+                    <td className="px-3 py-2">{row.levelAchievedYear ?? "—"}</td>
+                    {showParish ? <td className="px-3 py-2">{row.parishName ?? "—"}</td> : null}
+                    {showDeanery ? <td className="px-3 py-2">{row.deaneryName ?? "—"}</td> : null}
                   </tr>
                 );
               })}
