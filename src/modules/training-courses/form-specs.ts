@@ -102,7 +102,7 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
     kind: "course-types",
     createTitle: "Thêm loại khóa",
     editTitle: "Chỉnh sửa loại khóa",
-    description: "Loại khóa huấn luyện: cấp quản lý, điều kiện tham dự, khóa tiên quyết và cấp độ khi hoàn thành.",
+    description: "Loại khóa huấn luyện: cấp quản lý, điều kiện tham dự, khóa tiên quyết, chứng nhận và thăng cấp khi hoàn thành.",
     // Mặc định chọn cấp quản lý theo phạm vi tài khoản đang quản lý.
     getInitialValues: (user) => {
       const types = managedUnitTypes(user, "course_type");
@@ -151,9 +151,9 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
         label: "Khóa có cấp chứng nhận",
         type: "switch",
         switchLabels: ["Có cấp chứng nhận", "Không cấp chứng nhận"],
-        // Loại khóa đã có cấp độ đạt được (đã có thể có chứng nhận) thì không tắt lại được.
+        // Loại khóa đã bật cấp chứng nhận (đã có thể có chứng nhận) thì không tắt lại được.
         readOnlyWhen: (values, mode) => mode === "edit" && values.certificateLocked === true,
-        helper: "Bật để nhập mã viết tắt chứng chỉ, cấp độ khi hoàn thành và chọn cấu hình chứng nhận.",
+        helper: "Chỉ quyết định khóa có cấp chứng nhận hay không. Bật để nhập mã viết tắt chứng chỉ và chọn cấu hình chứng nhận. Việc thăng cấp được cài riêng ở mục \"Thăng cấp khi hoàn thành\".",
         section: "Chứng nhận",
       },
       {
@@ -169,16 +169,23 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
         label: "Cấp độ khi hoàn thành",
         type: "select",
         ...leaderLevelSelect,
-        visibleWhen: (values) => values.hasCertificate === true,
-        requiredWhen: (values) => values.hasCertificate === true,
-        section: "Chứng nhận",
+        helper:
+          "Không bắt buộc. Để trống thì hoàn thành khóa không thăng cấp. Thăng cấp dựa vào: nếu khóa bật cấp chứng nhận thì theo chứng nhận (chứng nhận được duyệt mới thăng cấp, kể cả khi kết quả khóa không đạt; kết quả khóa đạt mà chứng nhận bị từ chối hoặc còn chờ xử lý khi kết thúc khóa thì không thăng cấp); nếu không cấp chứng nhận thì theo kết quả khóa (đạt thì thăng cấp khi kết thúc khóa). Cấp hiện tại chỉ tăng nếu cấp mới cao hơn.",
+        dynamicHelper: {
+          compute: (values) => ({
+            text:
+              values.hasCertificate === true
+                ? "Khóa có cấp chứng nhận: thăng cấp dựa vào chứng nhận được duyệt."
+                : "Khóa không cấp chứng nhận: thăng cấp dựa vào kết quả khóa (đạt).",
+          }),
+        },
+        section: "Thăng cấp khi hoàn thành",
       },
     ],
     // Cờ bỏ khóa tiên quyết do ô chọn khóa tiên quyết đặt (không có trường hiển thị riêng).
     extraValueNames: ["clearPrerequisite"],
     mapSubmit: (values, mode) => {
       const payload = compactPayload(values);
-      delete payload.hasCertificate;
       if (mode === "edit") delete payload.typeCode;
       // Bỏ khóa tiên quyết khi sửa: gửi cờ xóa, đồng thời đặt thời hạn sau khóa tiên quyết về không giới hạn.
       const clearPrerequisite = payload.clearPrerequisite === true && !payload.prerequisiteTypeCode;

@@ -76,11 +76,11 @@ export function ResourceFormPage({
       ? { ...(spec?.getInitialValues?.(user) ?? {}), ...(prefillCourseCode && spec?.fields.some((field) => field.name === "courseCode") ? { courseCode: prefillCourseCode } : {}) }
       : {};
   const baseValues = mode === "edit" ? { ...initialValues, ...values } : { ...createDefaults, ...values };
-  // Cờ "khóa có cấp chứng nhận" suy từ cấp độ đạt được của loại khóa; đã có cấp độ thì không tắt lại được.
-  const certificateLocked = mode === "edit" && effectiveRoute.kind === "course-types" && requiresCertification(initialValues);
-  const mergedValues =
+  // Cờ "khóa có cấp chứng nhận" lấy từ loại khóa; đã bật thì không tắt lại được.
+  const certificateLocked = mode === "edit" && effectiveRoute.kind === "course-types" && initialValues.hasCertificate === true;
+  const mergedValues: Record<string, unknown> =
     effectiveRoute.kind === "course-types"
-      ? { ...baseValues, certificateLocked, hasCertificate: baseValues.hasCertificate ?? requiresCertification(baseValues) }
+      ? { ...baseValues, certificateLocked, hasCertificate: baseValues.hasCertificate === true }
       : baseValues;
 
   // Trường chỉ hiện khi có từ hai lựa chọn (tư cách gửi của tài khoản nhiều role): đếm số lựa chọn từ API.
@@ -325,12 +325,6 @@ function nextValuesForField(current: Record<string, unknown>, fieldName: string,
   const currentPrimary = String(current.primaryRoleCode ?? mergedValues.primaryRoleCode ?? "");
   const nextPrimary = currentPrimary && roleCodes.includes(currentPrimary) ? currentPrimary : roleCodes[0] ?? "";
   return { ...current, roleCodes, primaryRoleCode: nextPrimary };
-}
-
-// Loại khóa có yêu cầu chứng nhận khi có cấp độ đạt được (resultingLevel khác rỗng/NONE).
-function requiresCertification(values: Record<string, unknown>) {
-  const level = values.resultingLevel;
-  return typeof level === "string" && level !== "" && level !== "NONE";
 }
 
 function validateFields(fields: FormFieldSpec[], values: Record<string, unknown>) {
