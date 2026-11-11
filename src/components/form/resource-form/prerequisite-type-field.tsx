@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { apiFetch, getApiErrorMessage } from "@/lib/api/client";
+import { normalizeSearchText } from "@/lib/search-text";
 import { cn } from "@/lib/utils";
 
 export type CourseLevel = "DIOCESE" | "DEANERY";
@@ -31,6 +32,10 @@ export type PrerequisiteOption = {
 
 export const LEVEL_LABELS: Record<CourseLevel, string> = { DIOCESE: "Cấp giáo phận", DEANERY: "Cấp giáo hạt" };
 
+// Thế nào là đã hoàn thành khóa tiên quyết (BE dùng cùng quy tắc cho điều kiện tham dự và số huynh trưởng đã hoàn thành).
+export const PASS_RULE_TEXT =
+  "Loại khóa có cấp chứng nhận tính theo chứng nhận được duyệt; loại khóa không cấp chứng nhận tính theo kết quả khóa (đạt).";
+
 // Danh sách loại khóa chọn được làm khóa tiên quyết (BE lọc theo quy tắc cấp, loại khóa đang sửa và vòng lặp).
 export function prerequisiteOptionsEndpoint(ownerLevel: CourseLevel, forTypeCode?: string) {
   const params = new URLSearchParams({ managementUnitType: ownerLevel });
@@ -38,18 +43,13 @@ export function prerequisiteOptionsEndpoint(ownerLevel: CourseLevel, forTypeCode
   return `/training/course-types/prerequisite-options?${params.toString()}`;
 }
 
-// Bỏ dấu tiếng Việt để tìm "cap 1" vẫn ra "Cấp 1".
-function normalize(text: string) {
-  return text.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D").toLowerCase();
-}
-
 export function filterPrerequisiteOptions(options: PrerequisiteOption[], filter: { keyword: string; level: LevelFilter; onlyWithGraduates: boolean }) {
-  const parts = normalize(filter.keyword.trim()).split(/\s+/).filter(Boolean);
+  const parts = normalizeSearchText(filter.keyword.trim()).split(/\s+/).filter(Boolean);
   return options.filter((option) => {
     if (filter.level !== "ALL" && option.managementUnitType !== filter.level) return false;
     if (filter.onlyWithGraduates && option.completedLeaderCount <= 0 && !option.current) return false;
     if (!parts.length) return true;
-    const haystack = normalize([option.typeName, option.requiredCurrentLevelName, option.resultingLevelName, option.prerequisiteTypeName].filter(Boolean).join(" "));
+    const haystack = normalizeSearchText([option.typeName, option.requiredCurrentLevelName, option.resultingLevelName, option.prerequisiteTypeName].filter(Boolean).join(" "));
     return parts.every((part) => haystack.includes(part));
   });
 }
@@ -264,7 +264,8 @@ function PrerequisitePickerDialog({
               <Dialog.Description className="mt-1 text-sm leading-6 text-muted">
                 {ownerLevel === "DIOCESE"
                   ? "Huynh trưởng phải hoàn thành một khóa thuộc loại được chọn trước khi tham dự. Chọn được loại khóa cấp giáo phận hoặc loại cấp giáo hạt do giáo phận tạo (dùng chung); khóa tổ chức ở giáo hạt nào cũng được tính. Loại khóa do giáo hạt tự tạo không chọn được."
-                  : "Huynh trưởng phải hoàn thành một khóa thuộc loại được chọn trước khi tham dự. Chọn được loại cấp giáo hạt do giáo phận tạo (dùng chung) hoặc do giáo hạt bạn tự tạo."}
+                  : "Huynh trưởng phải hoàn thành một khóa thuộc loại được chọn trước khi tham dự. Chọn được loại cấp giáo hạt do giáo phận tạo (dùng chung) hoặc do giáo hạt bạn tự tạo."}{" "}
+                {PASS_RULE_TEXT}
               </Dialog.Description>
             </div>
             <Dialog.Close asChild>

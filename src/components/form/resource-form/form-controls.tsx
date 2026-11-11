@@ -10,6 +10,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { formatPermissionTaxonomyValue } from "@/components/common/resource/permission-taxonomy-labels";
 import { HelpTip } from "@/components/ui/help-tip";
 import { Input } from "@/components/ui/input";
+import { normalizeSearchText } from "@/lib/search-text";
 import { apiFetch, type PageResponse } from "@/lib/api/client";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
 import type { AuthUser } from "@/lib/auth/auth-store";
@@ -533,7 +534,7 @@ function OptionControl({
       }}
       value={multiple ? (Array.isArray(value) ? value : []) : String(value ?? "")}
     >
-      {!multiple ? <option value="">Chọn</option> : null}
+      {!multiple ? <option value="">{field.emptyOptionLabel ?? "Chọn"}</option> : null}
       {options.map((option) => (
         <option disabled={option.disabled} key={option.value} value={option.value}>
           {option.label}
@@ -864,11 +865,6 @@ function useDynamicHelper(field: FormFieldSpec, values?: Record<string, unknown>
   if (field.dynamicHelper?.compute) return field.dynamicHelper.compute(values ?? {});
   if (!field.dynamicHelper?.format || !endpoint || query.data === undefined) return undefined;
   return field.dynamicHelper.format(query.data, values ?? {});
-}
-
-// Bỏ dấu + hạ chữ thường để tìm kiếm tiếng Việt không phân biệt dấu.
-function normalizeSearchText(value: string) {
-  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D").toLowerCase();
 }
 
 function SearchableMultiSelect({

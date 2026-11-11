@@ -20,16 +20,19 @@ const toneClass: Record<NonNullable<StatChip["tone"]>, string> = {
   danger: "bg-danger/10 text-danger",
 };
 
+// Địa chỉ đếm số hồ sơ theo bộ lọc: chỉ cần totalElements nên xin đúng 1 dòng.
+export function statChipCountUrl(endpoint: string, courseCode: string, filters: Record<string, string>) {
+  return `${endpoint}?${serializeBaseSearch({ page: 0, size: 1, filters: { "course.courseCode": courseCode, ...filters } }).toString()}`;
+}
+
 // Hàng nhãn thống kê của một tab trong khóa: mỗi nhãn là tổng số dòng (totalElements) theo bộ lọc riêng, không phụ thuộc ô tìm kiếm.
-export function TabStatChips({ endpoint, courseCode, chips }: { endpoint: string; courseCode: string; chips: StatChip[] }) {
+// Nhãn không có bộ lọc dùng lại tổng số của tab (total) mà trang khóa đã tải để hiện trên tab, không gọi API lần nữa.
+export function TabStatChips({ endpoint, courseCode, chips, total }: { endpoint: string; courseCode: string; chips: StatChip[]; total?: number }) {
   const queries = useQueries({
     queries: chips.map((chip) => ({
       queryKey: resourceKey(endpoint, "tab-stat", courseCode, chip.filters ?? null),
-      enabled: Boolean(endpoint),
-      queryFn: () =>
-        apiFetch<PageResponse<Record<string, unknown>>>(
-          `${endpoint}?${serializeBaseSearch({ page: 0, size: 10, filters: { "course.courseCode": courseCode, ...chip.filters } }).toString()}`,
-        ),
+      enabled: Boolean(endpoint) && Boolean(chip.filters),
+      queryFn: () => apiFetch<PageResponse<Record<string, unknown>>>(statChipCountUrl(endpoint, courseCode, chip.filters ?? {})),
       placeholderData: keepPreviousData,
     })),
   });
@@ -39,7 +42,7 @@ export function TabStatChips({ endpoint, courseCode, chips }: { endpoint: string
       {chips.map((chip, index) => (
         <span key={chip.label} className={cn("inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium", toneClass[chip.tone ?? "neutral"])}>
           {chip.label}
-          <strong className="text-sm font-semibold">{queries[index]?.data?.totalElements ?? "–"}</strong>
+          <strong className="text-sm font-semibold">{(chip.filters ? queries[index]?.data?.totalElements : total) ?? "–"}</strong>
         </span>
       ))}
     </div>

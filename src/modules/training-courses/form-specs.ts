@@ -33,6 +33,11 @@ function courseTypesInScope(resource: ManagedResource) {
   };
 }
 
+// Khóa cấp giáo phận (đang sửa, BE trả managementUnitType = DIOCESE) chỉ dùng loại khóa cấp giáo phận; khóa cấp khác thì giữ theo phạm vi tài khoản.
+export function courseTypesForDioceseCourse(values: Record<string, unknown>) {
+  return values.managementUnitType === "DIOCESE" ? withFilters(ACTIVE_COURSE_TYPES, { managementUnitType: "DIOCESE" }) : undefined;
+}
+
 // Khóa đã có hồ sơ tham gia (BE trả hasParticipations ở chi tiết khóa) thì khóa các trường này khi sửa.
 const lockedByParticipations = (values: Record<string, unknown>, mode: string) => mode === "edit" && values.hasParticipations === true;
 
@@ -129,7 +134,7 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
         type: "prerequisite-type",
         wide: true,
         helper:
-          "Huynh trưởng phải hoàn thành một khóa thuộc loại được chọn. Loại khóa cấp giáo phận chọn được khóa tiên quyết cấp giáo phận hoặc loại cấp giáo hạt do giáo phận tạo (dùng chung, học ở giáo hạt nào cũng được tính); loại giáo hạt tự tạo không chọn được. Loại khóa cấp giáo hạt chỉ chọn loại cấp giáo hạt do giáo phận tạo hoặc do chính giáo hạt đó tạo. Năm đạt tính theo năm duyệt chứng nhận, khóa không cấp chứng nhận thì theo năm tổ chức.",
+          "Huynh trưởng phải hoàn thành một khóa thuộc loại được chọn: loại khóa có cấp chứng nhận thì tính theo chứng nhận được duyệt (chờ duyệt, bị từ chối hoặc đã thu hồi đều chưa tính), loại khóa không cấp chứng nhận thì tính theo kết quả khóa (đạt). Loại khóa cấp giáo phận chọn được khóa tiên quyết cấp giáo phận hoặc loại cấp giáo hạt do giáo phận tạo (dùng chung, học ở giáo hạt nào cũng được tính); loại giáo hạt tự tạo không chọn được. Loại khóa cấp giáo hạt chỉ chọn loại cấp giáo hạt do giáo phận tạo hoặc do chính giáo hạt đó tạo. Năm đạt tính theo năm duyệt chứng nhận, khóa không cấp chứng nhận thì theo năm tổ chức.",
         twoColumnSection: true,
         section: "Điều kiện tham dự",
       },
@@ -144,8 +149,24 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
         helper: "Phải đi khóa này trong vòng bao nhiêu năm kể từ lần đạt khóa tiên quyết gần nhất. Để trống nếu không giới hạn.",
         section: "Điều kiện tham dự",
       },
-      { name: "requiredCurrentLevel", label: "Cấp độ yêu cầu", type: "select", ...leaderLevelSelect, section: "Điều kiện tham dự" },
-      { name: "requiredMinAge", label: "Tuổi tối thiểu", type: "number", section: "Điều kiện tham dự" },
+      {
+        name: "requiredCurrentLevel",
+        label: "Cấp độ yêu cầu",
+        type: "select",
+        ...leaderLevelSelect,
+        helper:
+          "Huynh trưởng phải đang ở đúng cấp độ này mới đủ điều kiện tham dự. Khóa dành cho huynh trưởng chưa có cấp độ thì chọn \"Chưa có cấp\".",
+        section: "Điều kiện tham dự",
+      },
+      {
+        name: "requiredMinAge",
+        label: "Tuổi tối thiểu",
+        type: "number",
+        min: 0,
+        helper:
+          "Không bắt buộc. Không yêu cầu tuổi thì để trống hoặc nhập 0; khi sửa, nhập 0 để bỏ tuổi tối thiểu đã lưu. Có yêu cầu tuổi thì huynh trưởng chưa có ngày sinh không đủ điều kiện.",
+        section: "Điều kiện tham dự",
+      },
       {
         name: "hasCertificate",
         label: "Khóa có cấp chứng nhận",
@@ -169,8 +190,10 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
         label: "Cấp độ khi hoàn thành",
         type: "select",
         ...leaderLevelSelect,
+        // Bỏ trống là một lựa chọn có nghĩa: khi sửa, chọn lại mục này để xóa cấp độ đã lưu (mapSubmit gửi clearResultingLevel).
+        emptyOptionLabel: "Bỏ trống (không thăng cấp)",
         helper:
-          "Không bắt buộc. Để trống thì hoàn thành khóa không thăng cấp. Thăng cấp dựa vào: nếu khóa bật cấp chứng nhận thì theo chứng nhận (chứng nhận được duyệt mới thăng cấp, kể cả khi kết quả khóa không đạt; kết quả khóa đạt mà chứng nhận bị từ chối hoặc còn chờ xử lý khi kết thúc khóa thì không thăng cấp); nếu không cấp chứng nhận thì theo kết quả khóa (đạt thì thăng cấp khi kết thúc khóa). Cấp hiện tại chỉ tăng nếu cấp mới cao hơn.",
+          "Không bắt buộc. Chọn \"Bỏ trống (không thăng cấp)\" nếu hoàn thành khóa không thăng cấp; khi sửa, ô này hiện cấp độ đã lưu, chọn lại \"Bỏ trống (không thăng cấp)\" rồi lưu để xóa cấp độ đó. Thăng cấp dựa vào: nếu khóa bật cấp chứng nhận thì theo chứng nhận (chứng nhận được duyệt mới thăng cấp, kể cả khi kết quả khóa không đạt; kết quả khóa đạt mà chứng nhận bị từ chối hoặc còn chờ xử lý khi kết thúc khóa thì không thăng cấp); nếu không cấp chứng nhận thì theo kết quả khóa (đạt thì thăng cấp khi kết thúc khóa). Cấp hiện tại chỉ tăng nếu cấp mới cao hơn.",
         dynamicHelper: {
           compute: (values) => ({
             text:
@@ -187,6 +210,11 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
     mapSubmit: (values, mode) => {
       const payload = compactPayload(values);
       if (mode === "edit") delete payload.typeCode;
+      // Bỏ trống cấp độ khi hoàn thành lúc sửa: giá trị rỗng bị compactPayload bỏ đi nên phải gửi cờ xóa, nếu không BE giữ cấp độ cũ.
+      const resultingLevel = values.resultingLevel;
+      if (mode === "edit" && (resultingLevel === undefined || resultingLevel === null || resultingLevel === "")) {
+        payload.clearResultingLevel = true;
+      }
       // Bỏ khóa tiên quyết khi sửa: gửi cờ xóa, đồng thời đặt thời hạn sau khóa tiên quyết về không giới hạn.
       const clearPrerequisite = payload.clearPrerequisite === true && !payload.prerequisiteTypeCode;
       delete payload.clearPrerequisite;
@@ -220,6 +248,8 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
         required: true,
         optionsEndpoint: ACTIVE_COURSE_TYPES,
         optionsEndpointForUser: courseTypesInScope("course"),
+        // Sửa khóa cấp giáo phận: chỉ chọn loại khóa cấp giáo phận, không chọn loại do giáo phận tạo nhưng thuộc cấp quản lý giáo hạt.
+        buildOptionsEndpoint: courseTypesForDioceseCourse,
         optionValue: "typeCode",
         optionLabel: "typeName",
         readOnlyWhen: lockedByParticipations,

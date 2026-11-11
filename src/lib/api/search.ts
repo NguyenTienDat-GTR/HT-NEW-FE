@@ -1,6 +1,7 @@
 export type BaseSearchParams = {
   page?: number;
-  size?: 10 | 20 | 30 | 50 | 100;
+  // 1 dành cho lời gọi chỉ cần totalElements (đếm số dòng); các cỡ còn lại là cỡ trang danh sách.
+  size?: 1 | 10 | 20 | 30 | 50 | 100;
   search?: string;
   searchFields?: string[];
   filters?: Record<string, string | number | boolean | string[] | null | undefined>;

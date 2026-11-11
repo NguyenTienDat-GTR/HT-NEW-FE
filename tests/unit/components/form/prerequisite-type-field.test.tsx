@@ -123,4 +123,27 @@ describe("course type submit payload", () => {
     expect(spec.mapSubmit!({ prerequisiteTypeCode: "C1", clearPrerequisite: false }, "edit").clearPrerequisite).toBeUndefined();
     expect(spec.mapSubmit!({ clearPrerequisite: true }, "create").clearPrerequisite).toBeUndefined();
   });
+
+  it("sends clearResultingLevel when the completion level is left empty on edit", () => {
+    expect(spec.mapSubmit!({ typeName: "Khóa", resultingLevel: "" }, "edit").clearResultingLevel).toBe(true);
+    expect(spec.mapSubmit!({ typeName: "Khóa" }, "edit").clearResultingLevel).toBe(true);
+    const kept = spec.mapSubmit!({ typeName: "Khóa", resultingLevel: "CAP_1" }, "edit");
+    expect(kept.clearResultingLevel).toBeUndefined();
+    expect(kept.resultingLevel).toBe("CAP_1");
+    expect(spec.mapSubmit!({ typeName: "Khóa", resultingLevel: "" }, "create").clearResultingLevel).toBeUndefined();
+  });
+
+  it("keeps a zero minimum age in the payload so the saved age can be removed", () => {
+    expect(spec.mapSubmit!({ typeName: "Khóa", resultingLevel: "CAP_1", requiredMinAge: 0 }, "edit").requiredMinAge).toBe(0);
+  });
+
+  it("explains how to leave the level, required level and minimum age empty", () => {
+    const field = (name: string) => spec.fields.find((item) => item.name === name)!;
+    expect(field("resultingLevel").emptyOptionLabel).toBe("Bỏ trống (không thăng cấp)");
+    expect(field("resultingLevel").helper).toContain("Bỏ trống (không thăng cấp)");
+    expect(field("requiredCurrentLevel").helper).toContain("Chưa có cấp");
+    expect(field("requiredMinAge").min).toBe(0);
+    expect(field("requiredMinAge").helper).toContain("nhập 0");
+    expect(field("prerequisiteTypeCode").helper).toContain("chứng nhận được duyệt");
+  });
 });

@@ -31,6 +31,7 @@ import {
   organizingStateTones,
   registrationStateLabels,
   registrationStateTones,
+  isCourseEnded,
   resolveOrganizingState,
   resolveRegistrationState,
   type StatusTone,
@@ -232,7 +233,7 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
                   </Link>
                 </Button>
               ) : null
-            ) : editHref && canUseAction(user, route.actions?.edit) && canActOnCourse(user, course, "update") && !courseDisabled ? (
+            ) : editHref && canUseAction(user, route.actions?.edit) && canActOnCourse(user, course, "update") && !courseDisabled && !(course && isCourseEnded(course)) ? (
               <Button asChild variant="outline">
                 <Link href={editHref as Route}>
                   <PencilSimple size={16} />
@@ -442,6 +443,7 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
                     }
                     courseCode={id}
                     endpoint={activeTab.route.endpoint ?? ""}
+                    total={tabCounts[activeTab.key]}
                   />
                 </div>
               ) : null}
