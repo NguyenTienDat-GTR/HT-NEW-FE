@@ -6,6 +6,22 @@ export type ImportErrorRow = { sheet: string; row: number; column: string; messa
 // Cảnh báo riêng của ảnh khi import: dữ liệu vẫn được lưu, chỉ hồ sơ này không có ảnh.
 export type AvatarWarning = { row: number; fullName: string; fileName: string; reason: string };
 
+// Dòng nghi trùng với hồ sơ huynh trưởng đã có (cùng tên thánh, họ tên, ngày sinh, giáo xứ nhưng khác số điện thoại), chờ người dùng xác nhận.
+// existing: các hồ sơ đã có khớp; chỉ có số điện thoại che bớt vì các thông tin còn lại giống hệt dòng này.
+export type ImportDuplicate = {
+  sheet: string;
+  row: number;
+  holyName: string;
+  fullName: string;
+  birthDate: string;
+  parish: string;
+  phone: string;
+  existing: { id: string; maskedPhone?: string | null }[];
+};
+
+// sameLeaderId có giá trị: cùng một người với hồ sơ đó; null: hai người khác nhau.
+export type DuplicateDecision = { sheet: string; row: number; sameLeaderId: string | null };
+
 export type AvatarJobStatus = "PENDING" | "RUNNING" | "DONE";
 
 export type ExcelJobStatus = "QUEUED" | "RUNNING" | "SUCCEEDED" | "FAILED" | "CANCELLED";
@@ -29,6 +45,8 @@ export type ExcelJob = {
   warning?: string | null;
   errorMessage?: string | null;
   errors?: ImportErrorRow[] | null;
+  // Còn dòng nghi trùng chờ xác nhận (các dòng còn lại đã import). Hết khi đã xác nhận hoặc quá hạn lưu.
+  duplicates?: ImportDuplicate[] | null;
   created?: number | null;
   resultMessage?: string | null;
   downloadable: boolean;
@@ -54,6 +72,11 @@ export function createExcelImportJob(path: string, file: File, idempotencyKey: s
   if (images) form.append("images", images);
   if (subjectConsentConfirmed) form.append("subjectConsentConfirmed", "true");
   return apiFetch<ExcelJob>(path, { method: "POST", body: form, headers: { "Idempotency-Key": idempotencyKey } });
+}
+
+// Xác nhận các hồ sơ nghi trùng của một lần import đã xong; backend tạo tác vụ import mới chỉ xử lý các dòng đó.
+export function resolveExcelJobDuplicates(id: string, decisions: DuplicateDecision[]) {
+  return apiFetch<ExcelJob>(`/excel-jobs/${encodeURIComponent(id)}/resolve-duplicates`, { method: "POST", body: JSON.stringify({ decisions }) });
 }
 
 export function fetchExcelJob(id: string) {

@@ -6,10 +6,18 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { getApiErrorMessage } from "@/lib/api/client";
-import { cancelExcelJob, downloadExcelJobFile, fetchExcelJob, type ExcelJob } from "@/lib/jobs/excel-jobs-client";
+import {
+  cancelExcelJob,
+  downloadExcelJobFile,
+  fetchExcelJob,
+  resolveExcelJobDuplicates,
+  type DuplicateDecision,
+  type ExcelJob,
+} from "@/lib/jobs/excel-jobs-client";
 import { excelJobsStore, isActiveJob, isAvatarPending, needsPolling, restoreExcelJobs, useExcelJobs } from "@/lib/jobs/excel-jobs-store";
 import { cn } from "@/lib/utils";
 import { AvatarWarningsList } from "./avatar-warnings-list";
+import { ImportDuplicatesDialog } from "./import-duplicates-dialog";
 import { ImportErrorsTable } from "./import-errors-table";
 import { invalidateDataQueries } from "@/lib/api/query-keys";
 
@@ -30,6 +38,9 @@ export function ExcelJobsTray() {
   const [collapsed, setCollapsed] = useState(false);
   const [openErrors, setOpenErrors] = useState<string | null>(null);
   const [openAvatarWarnings, setOpenAvatarWarnings] = useState<string | null>(null);
+  // Job có hồ sơ nghi trùng đang mở hộp thoại xác nhận.
+  const [openDuplicates, setOpenDuplicates] = useState<string | null>(null);
+  const [resolving, setResolving] = useState(false);
   // Trạng thái đã thông báo cho từng job, để mỗi kết quả chỉ báo một lần dù poll nhiều lần hay tải lại trang.
   const notified = useRef<Map<string, string>>(new Map());
 
@@ -74,6 +85,12 @@ export function ExcelJobsTray() {
     if (job.status === "SUCCEEDED") {
       if (job.importJob) {
         if (previous === undefined) toast.success(job.resultMessage ?? `${job.label} hoàn tất`);
+        if (previous === undefined && job.duplicates?.length) {
+          toast.warning(`Có ${job.duplicates.length} hồ sơ nghi trùng với hồ sơ đã có, cần bạn xác nhận là cùng một người hay hai người khác nhau.`, {
+            duration: 15000,
+          });
+          setOpenDuplicates(job.id);
+        }
         if (job.avatarStatus === "DONE") announceAvatars(job);
         // Dữ liệu đã đổi: làm mới các danh sách / chi tiết đang mở.
         await invalidateDataQueries(queryClient);
@@ -108,6 +125,22 @@ export function ExcelJobsTray() {
     }
   }
 
+  // Gửi quyết định cho các dòng nghi trùng: backend tạo tác vụ import mới chỉ xử lý các dòng đó, tiến độ hiện ngay ở khay.
+  async function resolveDuplicates(job: ExcelJob, decisions: DuplicateDecision[]) {
+    setResolving(true);
+    try {
+      const next = await resolveExcelJobDuplicates(job.id, decisions);
+      excelJobsStore.getState().track(next);
+      excelJobsStore.getState().update({ ...job, duplicates: null });
+      toast.info("Đã nhận xác nhận, đang import tiếp các hồ sơ đã xác nhận.");
+      setOpenDuplicates(null);
+    } catch (error) {
+      toast.error(getApiErrorMessage(error));
+    } finally {
+      setResolving(false);
+    }
+  }
+
   async function cancel(job: ExcelJob) {
     try {
       excelJobsStore.getState().update(await cancelExcelJob(job.id));
@@ -118,7 +151,10 @@ export function ExcelJobsTray() {
 
   if (jobs.length === 0) return null;
 
+  const duplicatesJob = openDuplicates ? jobs.find((item) => item.id === openDuplicates && item.duplicates?.length) : undefined;
+
   return (
+    <>
     <aside aria-label="Tác vụ nền" className="fixed bottom-4 right-4 z-30 w-[min(92vw,360px)] rounded-xl border border-border bg-white shadow-[var(--shadow-elevated)]">
       <button
         aria-expanded={!collapsed}
@@ -168,6 +204,12 @@ export function ExcelJobsTray() {
                 ) : null}
                 {job.status === "FAILED" && job.errorMessage ? <p className="text-xs text-danger">{job.errorMessage}</p> : null}
                 {job.status === "SUCCEEDED" && job.importJob && job.resultMessage ? <p className="text-xs text-success">{job.resultMessage}</p> : null}
+                {job.status === "SUCCEEDED" && job.duplicates?.length ? (
+                  <p className="flex items-start gap-1.5 rounded-lg bg-warning/10 px-2 py-1.5 text-xs text-foreground">
+                    <Warning className="mt-0.5 shrink-0 text-warning" size={14} weight="bold" />
+                    {job.duplicates.length} hồ sơ nghi trùng với hồ sơ đã có đang chờ bạn xác nhận.
+                  </p>
+                ) : null}
                 {isAvatarPending(job) ? (
                   <p className="text-xs text-muted">
                     Đang gắn ảnh đại diện · {job.avatarProcessed ?? 0}/{job.avatarTotal ?? 0}
@@ -183,6 +225,11 @@ export function ExcelJobsTray() {
                     <Button onClick={() => void download(job)} size="sm" type="button" variant="outline">
                       <DownloadSimple size={16} />
                       Tải về
+                    </Button>
+                  ) : null}
+                  {job.status === "SUCCEEDED" && job.duplicates?.length ? (
+                    <Button onClick={() => setOpenDuplicates(job.id)} size="sm" type="button">
+                      Xác nhận {job.duplicates.length} hồ sơ trùng
                     </Button>
                   ) : null}
                   {job.importJob && job.errors?.length ? (
@@ -209,5 +256,15 @@ export function ExcelJobsTray() {
         </ul>
       )}
     </aside>
+    {duplicatesJob?.duplicates ? (
+      <ImportDuplicatesDialog
+        duplicates={duplicatesJob.duplicates}
+        job={duplicatesJob}
+        onClose={() => setOpenDuplicates(null)}
+        onSubmit={(decisions) => void resolveDuplicates(duplicatesJob, decisions)}
+        submitting={resolving}
+      />
+    ) : null}
+    </>
   );
 }

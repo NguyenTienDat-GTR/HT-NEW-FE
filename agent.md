@@ -628,3 +628,8 @@ BE tương ứng: `BE/project.md` mục "Training Course Registration Control an
 ## fix/account-roles-role-name
 - Màn hình "Gán vai trò" (`/system/account-roles`, `src/config/routes/groups/system.ts`): cột hiển thị tên vai trò (`roleName`, nhãn "Vai trò") thay cho mã vai trò (`roleCode`, "Mã vai trò"). BE đã trả sẵn `roleName` trong `AccountRoleResponse`; bộ lọc "Vai trò" vốn đã chọn theo tên.
 - Test `login-view.test.tsx` ("does not remember the login unless the box is ticked") đang lỗi sẵn trên `main`, không liên quan thay đổi này.
+
+## feat/canh-bao-trung-ho-so-ht
+- Import Excel hồ sơ huynh trưởng và import danh sách tham dự / chia đội của khóa huấn luyện có cảnh báo trùng hồ sơ: sau khi import xong, các dòng nghi trùng (cùng tên thánh, họ tên, ngày sinh, giáo xứ với hồ sơ đã có nhưng khác số điện thoại) được giữ lại, các dòng còn lại đã import. `ExcelJob.duplicates` (`excel-jobs-client.ts`) trả danh sách; khay tác vụ (`excel-jobs-tray.tsx`) báo, hiện nút "Xác nhận N hồ sơ trùng" và tự mở `import-duplicates-dialog.tsx`.
+- Hộp thoại: mỗi dòng chọn "Cùng một người" (id hồ sơ đã có, số điện thoại hồ sơ đó che bớt) hoặc "Hai người khác nhau"; phải chọn hết mới gửi. Gửi `POST /excel-jobs/{id}/resolve-duplicates` (`resolveExcelJobDuplicates`), BE tạo tác vụ import mới chỉ xử lý các dòng đó; tác vụ mới được theo dõi ở khay, job cũ hết `duplicates`.
+- Test: `excel-jobs-tray.test.tsx` (mở hộp thoại, bắt chọn hết, payload quyết định).
