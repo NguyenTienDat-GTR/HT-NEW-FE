@@ -119,6 +119,48 @@ describe("ExcelJobsTray", () => {
     expect(screen.getByText("Huynh trưởng")).toBeInTheDocument();
   });
 
+  it("import xong còn hồ sơ nghi trùng thì mở hộp thoại, bắt chọn hết rồi gửi quyết định và theo dõi tác vụ mới", async () => {
+    const duplicates = [
+      { sheet: "Dữ liệu", row: 3, holyName: "Phêrô", fullName: "Nguyễn Văn An", birthDate: "07/03/1995", parish: "Bà Lụa", phone: "0944000002", existing: [{ id: "leader-1", maskedPhone: "*******567" }] },
+      { sheet: "Dữ liệu", row: 4, holyName: "Maria", fullName: "Trần Thị Bình", birthDate: "21/11/1998", parish: "Búng", phone: "0944000003", existing: [{ id: "leader-2", maskedPhone: "*******568" }] },
+    ];
+    const done = makeJob({ id: "job-4", kind: "IMPORT_LEADERS", importJob: true, label: "Import hồ sơ huynh trưởng", status: "SUCCEEDED", created: 1, resultMessage: "Đã import 1 huynh trưởng", duplicates });
+    const next = makeJob({ id: "job-5", kind: "IMPORT_LEADERS", importJob: true, label: "Import hồ sơ huynh trưởng", status: "QUEUED" });
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.endsWith("/job-4/resolve-duplicates")) return envelope(next, 202);
+      if (url.endsWith("/job-5")) return envelope(next);
+      return envelope(done);
+    });
+    excelJobsStore.getState().track(makeJob({ id: "job-4", kind: "IMPORT_LEADERS", importJob: true, label: "Import hồ sơ huynh trưởng", status: "RUNNING" }));
+    renderTray();
+
+    expect(await screen.findByText("Xác nhận hồ sơ nghi trùng")).toBeInTheDocument();
+    expect(toastMock.warning).toHaveBeenCalledWith(expect.stringContaining("2 hồ sơ nghi trùng"), expect.anything());
+    const confirm = screen.getByRole("button", { name: "Xác nhận và tiếp tục import" });
+    expect(confirm).toBeDisabled();
+
+    // Dòng 1: cùng một người với hồ sơ đã có; dòng 2: hai người khác nhau.
+    const radios = screen.getAllByRole("radio");
+    fireEvent.click(radios[0]);
+    expect(confirm).toBeDisabled();
+    fireEvent.click(radios[3]);
+    expect(confirm).toBeEnabled();
+    fireEvent.click(confirm);
+
+    await waitFor(() => expect(screen.queryByText("Xác nhận hồ sơ nghi trùng")).toBeNull());
+    const call = fetchMock.mock.calls.find((item) => String(item[0]).endsWith("/job-4/resolve-duplicates"));
+    expect(JSON.parse(String((call?.[1] as RequestInit).body))).toEqual({
+      decisions: [
+        { sheet: "Dữ liệu", row: 3, sameLeaderId: "leader-1" },
+        { sheet: "Dữ liệu", row: 4, sameLeaderId: null },
+      ],
+    });
+    // Tác vụ xử lý quyết định hiện ở khay; job cũ không còn nút xác nhận.
+    expect(excelJobsStore.getState().jobs.map((job) => job.id)).toContain("job-5");
+    expect(excelJobsStore.getState().jobs.find((job) => job.id === "job-4")?.duplicates).toBeNull();
+  });
+
   it("giữ tác vụ trong sessionStorage để tải lại trang vẫn thấy", () => {
     excelJobsStore.getState().track(makeJob({ status: "SUCCEEDED", downloadable: true, fileName: "a.xlsx" }));
     expect(JSON.parse(window.sessionStorage.getItem("ht.excel-jobs") ?? "[]")[0].id).toBe("job-1");
