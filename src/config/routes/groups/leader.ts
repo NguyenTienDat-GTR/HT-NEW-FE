@@ -1,6 +1,9 @@
 import { Stairs, UsersThree } from "@phosphor-icons/react";
 import { route, type RouteGroup } from "../route-config";
 
+// Quyền sửa hồ sơ và quyền chỉ sửa ngày sinh cùng đòi vai trò quản trị đơn vị (khớp kiểm tra vai trò ở backend).
+const LEADER_ADMIN_ROLES = ["ADMIN_DIOCESE", "ROLE_ADMIN_DIOCESE", "ADMIN_DEANERY", "ROLE_ADMIN_DEANERY", "ADMIN_PARISH", "ROLE_ADMIN_PARISH"];
+
 export const leaderRouteGroup: RouteGroup = {
     moduleName: "leader",
     label: "Huynh trưởng",
@@ -21,12 +24,14 @@ export const leaderRouteGroup: RouteGroup = {
         // fullName/deaneryName chỉ có ở response, không phải thuộc tính entity nên không tìm trực tiếp được: tìm theo họ tên ghép, tên thánh, email, số điện thoại, giáo xứ, giáo hạt.
         searchFields: ["lastName+firstName", "holyName", "email", "phoneNumber", "parish.name", "parish.deanery.name"],
         permissionPrefixes: ["organization.leader.read."],
-        actionPermissionPrefixes: ["organization.leader.create.", "organization.leader.update.", "organization.leader.toggle."],
+        actionPermissionPrefixes: ["organization.leader.create.", "organization.leader.update.", "organization.leader.update_birth_date.", "organization.leader.toggle."],
         primaryActionLabel: "Thêm huynh trưởng",
         createPath: "/leaders/new",
         detailPath: "/leaders/profiles/:id",
         actions: {
-          edit: { label: "Sửa", permissionPrefixes: ["organization.leader.update."], requiredRoles: ["ADMIN_DIOCESE", "ROLE_ADMIN_DIOCESE", "ADMIN_DEANERY", "ROLE_ADMIN_DEANERY", "ADMIN_PARISH", "ROLE_ADMIN_PARISH"] },
+          edit: { label: "Sửa", permissionPrefixes: ["organization.leader.update."], requiredRoles: LEADER_ADMIN_ROLES },
+          // Quyền riêng: chỉ sửa ngày sinh, không mở được form sửa hồ sơ.
+          editBirthDate: { label: "Sửa ngày sinh", permissionPrefixes: ["organization.leader.update_birth_date."], requiredRoles: LEADER_ADMIN_ROLES },
         },
         filterLabels: ["Giáo hạt", "Giáo xứ / giáo họ / giáo điểm", "Cấp HT", "Trạng thái"],
         workflowHint: "Khi chỉnh sửa, hệ thống không gửi lại họ tên, ngày sinh hoặc cấp huynh trưởng.",

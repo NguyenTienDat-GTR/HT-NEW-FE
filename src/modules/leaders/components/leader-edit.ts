@@ -43,6 +43,18 @@ export function canTransferLeader(user: AuthUser | null | undefined) {
     return hasAnyPermission(user, ["organization.leader.transfer.diocese", "organization.leader.transfer.deanery"]);
 }
 
+// Ngày theo giờ máy người dùng, dạng yyyy-MM-dd như ô nhập ngày.
+export function todayDateText(now: Date = new Date()) {
+    return now.toLocaleDateString("sv-SE");
+}
+
+// Kiểm tra ngày sinh (yyyy-MM-dd) trước khi gửi; trả về thông báo lỗi hoặc null nếu hợp lệ.
+export function validateBirthDate(value: string, today: string = todayDateText()) {
+    if (!value.trim()) return "Vui lòng nhập ngày sinh";
+    if (value > today) return "Ngày sinh không được sau ngày hiện tại";
+    return null;
+}
+
 export function valuesFromLeader(leader: LeaderDetail): LeaderEditValues {
     return {
         holyName: leader.holyName ?? "",

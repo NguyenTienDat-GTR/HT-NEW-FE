@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { emptyLeaderEditValues, toLeaderUpdatePayload, validateLeaderEdit, valuesFromLeader } from "@/modules/leaders/components/leader-edit";
+import { emptyLeaderEditValues, toLeaderUpdatePayload, validateBirthDate, validateLeaderEdit, valuesFromLeader } from "@/modules/leaders/components/leader-edit";
 import type { LeaderDetail } from "@/modules/leaders/components/leader-detail-utils";
 
 describe("leader edit mappers", () => {
@@ -28,5 +28,14 @@ describe("leader edit mappers", () => {
       phoneNumber: "090",
       imageAssetId: "img-1",
     });
+  });
+});
+
+describe("validateBirthDate", () => {
+  it("requires a value and rejects dates after today", () => {
+    expect(validateBirthDate("", "2026-11-12")).toBe("Vui lòng nhập ngày sinh");
+    expect(validateBirthDate("2026-11-13", "2026-11-12")).toBe("Ngày sinh không được sau ngày hiện tại");
+    expect(validateBirthDate("2026-11-12", "2026-11-12")).toBeNull();
+    expect(validateBirthDate("2000-01-01", "2026-11-12")).toBeNull();
   });
 });
