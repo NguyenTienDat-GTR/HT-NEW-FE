@@ -6,6 +6,8 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Panel } from "@/components/ui/panel";
 import { apiFetch, type PageResponse } from "@/lib/api/client";
+import { useAuthStore } from "@/lib/auth/auth-store";
+import { hasPermission } from "@/lib/auth/permissions";
 import { cn } from "@/lib/utils";
 import { AlertsPanel } from "@/modules/analytics/components/alerts-panel";
 import { BarList, FunnelChart, type BarItem } from "@/modules/analytics/components/charts";
@@ -51,8 +53,12 @@ export function DashboardView() {
   const isParish = data?.scope === "parish";
   const scopes = useScopes();
   const options = useFilterOptions(filters.scope || data?.scope || "", Boolean(data) && !systemWide);
+  const user = useAuthStore((state) => state.user);
   const workQueue = useWorkQueue(filters.scope, Boolean(data) && !systemWide && !isParish);
-  const openCourses = useOpenCourses(filters.scope, isParish);
+  // Giáo xứ luôn có mục này; giáo hạt và giáo phận chỉ khi tài khoản có quyền gửi đăng ký của đúng cấp đó (BE cũng chặn theo quyền này).
+  const registerPermission = data?.scope === "deanery" ? "training.participation.submit.deanery" : data?.scope === "diocese" ? "training.participation.submit.diocese" : null;
+  const showOpenCourses = isParish || (registerPermission !== null && hasPermission(user, registerPermission));
+  const openCourses = useOpenCourses(filters.scope, showOpenCourses);
   const notifications = useQuery({ queryKey: dashboardQueries.notifications.key, queryFn: () => apiFetch<PageResponse<NotificationItem>>(dashboardQueries.notifications.path) });
 
   const rows = useMemo(() => toChartRows(data?.trends, data?.previousTrends), [data?.trends, data?.previousTrends]);
@@ -105,7 +111,7 @@ export function DashboardView() {
           ) : isParish ? (
             <>
               <div className="grid grid-cols-1 gap-4 lg:gap-6 xl:grid-cols-3">
-                <SectionCard className="xl:col-span-2" description="Khóa của giáo hạt và giáo phận đang nhận đăng ký. Bấm vào khóa để sang khóa đó và đăng ký tham dự." title="Khóa huấn luyện đang mở đăng ký" tone="var(--viz-3)">
+                <SectionCard className="xl:col-span-2" description="Khóa của giáo hạt và giáo phận đang nhận đăng ký. Bấm vào khóa để sang khóa đó và đăng ký tham dự." title="Khóa đang mở đăng ký" tone="var(--viz-3)">
                   <OpenCourses courses={openCourses.data} loading={openCourses.isLoading} />
                 </SectionCard>
                 <SectionCard delay={80} description="Tự động phát hiện từ dữ liệu của giáo xứ." title="Điểm cần chú ý" tone="var(--viz-4)">
@@ -160,6 +166,20 @@ export function DashboardView() {
                   <AlertsPanel alerts={data.alerts ?? []} />
                 </SectionCard>
               </div>
+
+              {showOpenCourses ? (
+                <SectionCard
+                  description={
+                    data.scope === "diocese"
+                      ? "Khóa của giáo phận đang nhận đăng ký. Bấm vào khóa để sang khóa đó và đăng ký tham dự."
+                      : "Khóa của giáo hạt và giáo phận đang nhận đăng ký. Bấm vào khóa để sang khóa đó và đăng ký tham dự."
+                  }
+                  title="Khóa đang mở đăng ký"
+                  tone="var(--viz-3)"
+                >
+                  <OpenCourses courses={openCourses.data} loading={openCourses.isLoading} />
+                </SectionCard>
+              ) : null}
 
               <div className="grid grid-cols-1 gap-4 lg:gap-6 xl:grid-cols-3">
                 <SectionCard busy={busy} className="xl:col-span-2" description="Theo ngày bắt đầu khóa. Đường nét đứt là kỳ liền trước cùng độ dài." title="Hoạt động huấn luyện theo kỳ">

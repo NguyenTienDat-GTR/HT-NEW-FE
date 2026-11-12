@@ -509,3 +509,8 @@ BE tương ứng: `BE/project.md` mục "Training Course Registration Control an
 
 ## feat/cap-do-dat-duoc-import-excel
 - `resource-list-runtime.tsx`: mô tả hộp thoại "Nhập excel danh sách tham dự": khóa quá khứ có thêm cột Cấp độ đạt được (tùy chọn); khóa thường nhắc xóa các dòng ví dụ ở cả hai sheet. Không đổi logic.
+
+## feat/open-courses-deanery-diocese
+- Tổng quan (`dashboard-view.tsx`): giáo hạt và giáo phận có khung "Khóa đang mở đăng ký" (tiêu đề này dùng chung cả giáo xứ) như giáo xứ khi tài khoản có `training.participation.submit.deanery` / `submit.diocese` (xếp full chiều rộng dưới hàng Việc cần xử lý + Điểm cần chú ý); giáo xứ giữ nguyên chỗ cũ. `useOpenCourses` chỉ gọi khi có quyền.
+- `open-courses.tsx` thành slider ngang cuộn theo nhóm: `scroll-snap`, số thẻ mỗi nhóm theo bề rộng khung bằng container query (1 / 2 từ 36rem / 3 từ 64rem), mũi tên + chấm tròn (quá 7 nhóm thì hiện "n / tổng"), phím mũi tên, `aria-live`; không thêm thư viện. Khung chỉ cao bằng thẻ cao nhất nên thêm khóa không làm tăng chiều cao. Tính nhóm / trang ở `open-courses-slider.ts`.
+- Test: `open-courses-slider.test.ts`, `open-courses.test.tsx`.
