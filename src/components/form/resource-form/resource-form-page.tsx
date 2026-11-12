@@ -24,7 +24,7 @@ import { resolveRouteForUser } from "@/modules/workspace/super-admin-route-overr
 import { FormSections } from "./form-sections";
 import { LeaderFormLayout } from "./leader-form-layout";
 import { getFormSpec } from "./registry";
-import type { FormFieldSpec, ResourceFormMode } from "./types";
+import { applyDefaultsFromValues, type FormFieldSpec, type ResourceFormMode } from "./types";
 import { invalidateDataQueries } from "@/lib/api/query-keys";
 
 type FormValue = string | string[] | number | boolean | null | undefined;
@@ -75,7 +75,9 @@ export function ResourceFormPage({
     mode === "create"
       ? { ...(spec?.getInitialValues?.(user) ?? {}), ...(prefillCourseCode && spec?.fields.some((field) => field.name === "courseCode") ? { courseCode: prefillCourseCode } : {}) }
       : {};
-  const baseValues = mode === "edit" ? { ...initialValues, ...values } : { ...createDefaults, ...values };
+  // Khi tạo mới, trường có giá trị mặc định suy ra từ trường khác (vd. năm tổ chức theo ngày bắt đầu) tự điền cho tới khi người dùng sửa.
+  const baseValues =
+    mode === "edit" ? { ...initialValues, ...values } : applyDefaultsFromValues(spec?.fields ?? [], { ...createDefaults, ...values }, values);
   // Cờ "khóa có cấp chứng nhận" lấy từ loại khóa; đã bật thì không tắt lại được.
   const certificateLocked = mode === "edit" && effectiveRoute.kind === "course-types" && initialValues.hasCertificate === true;
   const mergedValues: Record<string, unknown> =

@@ -62,6 +62,9 @@ export type FormFieldSpec = {
   requiredWhen?: (values: Record<string, unknown>, mode: ResourceFormMode) => boolean;
   readOnlyWhen?: (values: Record<string, unknown>, mode: ResourceFormMode) => boolean;
   readOnlyOnCreate?: boolean;
+  // Giá trị mặc định tính từ các trường khác (chỉ khi tạo mới): hiển thị và gửi đi cho tới khi người dùng tự sửa trường này.
+  // Trả về undefined nếu chưa tính được (ví dụ chưa chọn ngày bắt đầu).
+  defaultFromValues?: (values: Record<string, unknown>) => unknown;
   // Kiểm tra giá trị của trường dựa trên các trường khác; trả về thông báo lỗi hoặc undefined nếu hợp lệ.
   validate?: (value: unknown, values: Record<string, unknown>) => string | undefined;
   // Nhãn hiển thị của giá trị hiện tại khi giá trị chưa có trong danh sách lựa chọn tải từ API (ví dụ tên khóa được truyền từ trang trước).
@@ -125,6 +128,20 @@ const unitTypeLabels: Record<string, string> = {
 
 export function unitTypeSelectOptions(values: string[]): Option[] {
   return values.map((value) => ({ value, label: unitTypeLabels[value] ?? value }));
+}
+
+// Điền giá trị mặc định cho các trường chưa được người dùng sửa (key không có trong `touched`).
+// Trường đã sửa, kể cả xóa trắng, giữ nguyên để người dùng không bị ghi đè khi đổi trường nguồn.
+export function applyDefaultsFromValues(fields: FormFieldSpec[], current: Record<string, unknown>, touched: Record<string, unknown>) {
+  let result = current;
+  for (const field of fields) {
+    if (!field.defaultFromValues || field.name in touched) continue;
+    const derived = field.defaultFromValues(current);
+    if (derived === undefined) continue;
+    if (result === current) result = { ...current };
+    result[field.name] = derived;
+  }
+  return result;
 }
 
 export function compactPayload(values: Record<string, unknown>) {
