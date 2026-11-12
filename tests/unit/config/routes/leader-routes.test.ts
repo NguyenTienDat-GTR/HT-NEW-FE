@@ -42,4 +42,17 @@ describe("leader routes", () => {
       ),
     ).toBe(true);
   });
+
+  it("allows birth-date-only edit with its own permission, independent of the profile edit permission", () => {
+    const route = findRoute("/leaders/profiles");
+    const birthDateOnly = { username: "parish-admin", roles: ["ADMIN_PARISH"], permissions: ["organization.leader.update_birth_date.parish"] };
+
+    expect(canUseAction(birthDateOnly, route?.actions?.editBirthDate)).toBe(true);
+    expect(canUseAction(birthDateOnly, route?.actions?.edit)).toBe(false);
+    expect(
+      canUseAction({ username: "parish-admin", roles: ["ADMIN_PARISH"], permissions: ["organization.leader.update.parish"] }, route?.actions?.editBirthDate),
+    ).toBe(false);
+    // Có quyền nhưng không phải quản trị đơn vị thì không sửa được.
+    expect(canUseAction({ username: "leader", roles: ["LEADER"], permissions: ["organization.leader.update_birth_date.parish"] }, route?.actions?.editBirthDate)).toBe(false);
+  });
 });

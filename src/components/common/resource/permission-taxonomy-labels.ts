@@ -62,6 +62,7 @@ const taxonomyLabels: Record<PermissionTaxonomyKind, Record<string, string>> = {
     toggle: "Đổi trạng thái",
     transfer: "Chuyển đơn vị",
     update: "Cập nhật",
+    update_birth_date: "Sửa ngày sinh",
   },
   scope: {
     all: "Toàn hệ thống",

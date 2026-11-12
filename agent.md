@@ -524,3 +524,8 @@ BE tương ứng: `BE/project.md` mục "Training Course Registration Control an
 - Test: `score-table-layout.test.tsx`, `score-entry.test.ts`, `training-workflow-routes.test.ts` (mục team filter).
 - Đổi tab (nhất là Chấm điểm) làm trang nhảy lên đầu: `useResourceQueryState` nhớ bộ lọc / trang / sắp xếp theo từng tab trong sessionStorage, vào tab bằng URL trần `?tab=...` thì khôi phục và tự `router.replace` lên URL; lệnh này không có `scroll: false` nên Next.js 16 kéo trang lên đầu khi đầu trang không còn trong khung nhìn. Sửa: cập nhật tự động đó dùng `{ scroll: false }`. Các thao tác do người dùng chủ động (`commit`: lọc, sắp xếp, đổi trang) giữ hành vi cũ. Test: `use-resource-query-state.test.tsx`.
 - Nhãn thống kê thiếu điểm ở tab Chấm điểm (`score-stats.tsx`) thu nhỏ: cao 28px (trước 36px), chữ 11px kể cả số đếm (trước số 14px), khoảng cách 6px, không xuống dòng trong nhãn, tên cột điểm cắt ở `max-w-28` (đủ tên ở `title`). Test: `score-stats.test.tsx`.
+
+## feature/leader-birth-date-permission
+- Trang chi tiết huynh trưởng có nút **Sửa ngày sinh** (`leader-birth-date-dialog.tsx`) gọi `PATCH /leaders/:id/birth-date`, chỉ gửi `birthDate`; hiện khi có quyền `organization.leader.update_birth_date.*` và vai trò quản trị đơn vị (action `editBirthDate` trong `groups/leader.ts`, dùng chung `LEADER_ADMIN_ROLES` với action `edit`). Độc lập với quyền sửa hồ sơ: chỉ có quyền ngày sinh thì không thấy nút Sửa thông tin hồ sơ.
+- Kiểm tra ngày sinh dùng `validateBirthDate` / `todayDateText` trong `leader-edit.ts` (bắt buộc, không sau hôm nay). Nhãn action `update_birth_date` = "Sửa ngày sinh" trong `permission-taxonomy-labels.ts`.
+- Test: `leader-birth-date-dialog.test.tsx`, `leader-edit.test.ts`, `leader-routes.test.ts`.
