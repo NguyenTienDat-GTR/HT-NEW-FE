@@ -47,9 +47,9 @@ e2e                kiểm thử Playwright
 
 ## Quy trình nhánh và phát hành
 
-1. Tạo nhánh từ `main`, mở PR vào `test`. Merge xong, workflow `CD test` đưa lên môi trường test.
-2. Thử ổn trên test thì mở PR `test` -> `main`. Merge xong, workflow `CD` đưa lên production.
-3. PR vào `main` chỉ được tạo từ nhánh `test` (CI có job `source-branch` kiểm tra).
+1. Tạo nhánh từ `main`, mở PR thẳng vào `main` (không còn nhánh `test` và môi trường test).
+2. Thử các luồng bị ảnh hưởng ở máy local (BE local dùng database local).
+3. CI (`check`) đạt thì chủ repo merge. Merge xong, workflow `CD` đưa lên production.
 
 ## Tài liệu khác
 
