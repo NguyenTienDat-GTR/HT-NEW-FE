@@ -9,7 +9,7 @@
 - Thay đổi của BE chỉ ghi ở `BE/project.md`.
 - BẮT BUỘC chia nhỏ code theo từng module, feature, component để tái sử dụng; tránh để một file code thủ công quá dài hoặc gom nhiều trách nhiệm không cùng phạm vi.
 - Mọi thông báo hiển thị cho người dùng viết bằng tiếng Việt; lưu file UTF-8.
-- Trước khi mở PR: `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`. PR mở vào `test` trước, thử trên môi trường test rồi mới mở PR `test` -> `main`.
+- Trước khi mở PR: `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`. PR mở thẳng vào `main` (không còn nhánh `test` và môi trường test): thử ở máy local trước, chủ repo là người merge.
 
 ## Kiến trúc FE
 
@@ -529,3 +529,7 @@ BE tương ứng: `BE/project.md` mục "Training Course Registration Control an
 - Trang chi tiết huynh trưởng có nút **Sửa ngày sinh** (`leader-birth-date-dialog.tsx`) gọi `PATCH /leaders/:id/birth-date`, chỉ gửi `birthDate`; hiện khi có quyền `organization.leader.update_birth_date.*` và vai trò quản trị đơn vị (action `editBirthDate` trong `groups/leader.ts`, dùng chung `LEADER_ADMIN_ROLES` với action `edit`). Độc lập với quyền sửa hồ sơ: chỉ có quyền ngày sinh thì không thấy nút Sửa thông tin hồ sơ.
 - Kiểm tra ngày sinh dùng `validateBirthDate` / `todayDateText` trong `leader-edit.ts` (bắt buộc, không sau hôm nay). Nhãn action `update_birth_date` = "Sửa ngày sinh" trong `permission-taxonomy-labels.ts`.
 - Test: `leader-birth-date-dialog.test.tsx`, `leader-edit.test.ts`, `leader-routes.test.ts`.
+
+## chore/remove-test-env
+- Bỏ môi trường test: xóa workflow `cd-test.yml` (build image `:test`, deploy `fe-test`) và `sync-test.yml`; CI chỉ chạy cho PR vào `main`, bỏ job `source-branch`.
+- Quy trình mới: nhánh từ `main` -> PR thẳng vào `main` -> thử ở máy local -> chủ repo merge -> `CD` deploy production. Mẫu PR và `README.md` cập nhật theo.
