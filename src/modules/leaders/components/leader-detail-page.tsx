@@ -23,6 +23,7 @@ import { invalidateDataQueries } from "@/lib/api/query-keys";
 import { actorLabel, formatDate, genderLabel, type LeaderDetail, type RankHistoryRow } from "./leader-detail-utils";
 import { canTransferLeader, emptyLeaderEditValues, leaderEditableFields, toLeaderUpdatePayload, validateLeaderEdit, valuesFromLeader, type LeaderEditValues } from "./leader-edit";
 import { SectionCard, ProfileField, MetaText, HeaderFact, LevelBadge, StatusBadge, LeaderDetailSkeleton } from "./leader-detail-ui";
+import { LeaderBirthDateDialog } from "./leader-birth-date-dialog";
 import { LeaderTransferDialog } from "./leader-transfer-dialog";
 import { CourseTab, CertificateTab, AccountTab, RankHistoryPanel } from "./leader-detail-tabs";
 
@@ -57,6 +58,7 @@ export function LeaderDetailPage({id, route}: LeaderDetailPageProps) {
 
     const leader = leaderQuery.data;
     const canEdit = canUseAction(user, route.actions?.edit);
+    const canEditBirthDate = canUseAction(user, route.actions?.editBirthDate);
     const mutation = useMutation({
         mutationFn: async () => {
             const nextErrors = validateLeaderEdit(editValues);
@@ -150,6 +152,14 @@ export function LeaderDetailPage({id, route}: LeaderDetailPageProps) {
                                 queryClient.setQueryData(["leader-detail-page", id], updated);
                                 setEditValues(valuesFromLeader(updated));
                             }}
+                        />
+                    ) : null}
+
+                    {canEditBirthDate && activeTab === "profile" && !editingProfile ? (
+                        <LeaderBirthDateDialog
+                            leader={leader}
+                            leaderId={id}
+                            onUpdated={(updated) => queryClient.setQueryData(["leader-detail-page", id], updated)}
                         />
                     ) : null}
 
