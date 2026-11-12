@@ -13,7 +13,8 @@ import { useEmbeddedResource, resourceActionHref, withReturnTo } from "./embedde
 import { fillRoute, getResourceId, isAwaitingApproval, isReapprovable } from "./resource-actions";
 import { canActOnCourse, type CourseAction } from "@/modules/training-courses/course-permissions";
 import { canEditRow, canResetPasswordRow, canToggleRow, isPermanentlyRevokedAssignment } from "./resource-row-permissions";
-import type { ScoreEntry, ScoreNotes } from "./score-entry";
+import { scoreColumnLabel, scoreColumnWidthClass, scoreComponentCaption, type ScoreEntry, type ScoreNotes } from "./score-entry";
+import { cn } from "@/lib/utils";
 import { ScoreNoteAction } from "./score-note-action";
 import { canCreateExceptionCertificate, ExceptionCertificateAction } from "./exception-certificate-action";
 import { useIsDesktop } from "@/lib/use-media-query";
@@ -81,8 +82,15 @@ export function ResourceTable({
     );
   }
 
+  // Bảng chấm điểm có thể rất rộng vì nhiều cột điểm: ghim STT + Huynh trưởng bên trái và Thao tác bên phải,
+  // cuộn ngang ở khung bảng (không làm tràn trang), tiêu đề không xuống dòng. Có cột chọn thì không ghim vì lệch vị trí ghim.
+  const freezeLeader = Boolean(scoreEntry) && !selection;
+  const leaderLeft = embedded ? "left-12" : "left-0";
+  const headerLabel = (column: string) =>
+    route.kind === "leaders" && column === "fullName" ? "Huynh trưởng" : scoreEntry ? scoreColumnLabel(column, columnLabels[column] ?? column) : (columnLabels[column] ?? column);
+
   return (
-    <div className="max-w-full overflow-x-auto">
+    <div className={cn("max-w-full overflow-x-auto", scoreEntry && "max-h-[70vh] overflow-y-auto")}>
       <table className={`w-full border-separate border-spacing-0 text-left text-sm ${scoreEntry ? "" : "min-w-270"}`}>
         <thead>
           <tr className="bg-slate-50">
@@ -98,14 +106,24 @@ export function ResourceTable({
                 />
               </th>
             ) : null}
-            {embedded ? <th className="sticky top-0 z-10 h-10 w-12 border-b border-border bg-slate-50 px-3 text-xs font-semibold uppercase tracking-wide text-text-secondary">STT</th> : null}
+            {embedded ? (
+              <th className={cn("sticky top-0 h-10 w-12 border-b border-border bg-slate-50 px-3 text-xs font-semibold uppercase tracking-wide text-text-secondary", freezeLeader ? "left-0 z-20 min-w-12 max-w-12" : "z-10")}>STT</th>
+            ) : null}
             {visibleColumns.map((column) => (
-              <th className={`sticky top-0 z-10 h-10 border-b border-border bg-slate-50 text-xs font-semibold uppercase tracking-wide text-text-secondary ${scoreEntry ? "px-2" : "px-3"} ${scoreEntry && column === "leaderFullName" ? "min-w-40" : ""}`} key={column}>
+              <th
+                className={cn(
+                  "sticky top-0 h-10 border-b border-border bg-slate-50 text-xs font-semibold uppercase tracking-wide text-text-secondary",
+                  scoreEntry ? "px-2" : "px-3",
+                  scoreEntry && `whitespace-nowrap ${scoreColumnWidthClass(column)}`,
+                  freezeLeader && column === "leaderFullName" ? `${leaderLeft} z-20 shadow-(--shadow-table-sticky-left)` : "z-10",
+                )}
+                key={column}
+              >
                 {route.sortFields?.[column] === null ? (
-                  <span className="inline-flex h-8 items-center px-1">{route.kind === "leaders" && column === "fullName" ? "Huynh trưởng" : (columnLabels[column] ?? column)}</span>
+                  <span className="inline-flex h-8 items-center px-1">{headerLabel(column)}</span>
                 ) : (
-                  <button className="inline-flex h-8 cursor-pointer items-center gap-1 rounded-lg px-1 transition-colors hover:text-primary" onClick={() => sort(column)} type="button">
-                    {route.kind === "leaders" && column === "fullName" ? "Huynh trưởng" : (columnLabels[column] ?? column)}
+                  <button className={cn("inline-flex h-8 cursor-pointer items-center gap-1 rounded-lg px-1 transition-colors hover:text-primary", scoreEntry && "whitespace-nowrap")} onClick={() => sort(column)} type="button">
+                    {headerLabel(column)}
                     {sortBy === column ? (
                       <span className="inline-flex items-center gap-0.5 text-xs text-primary">
                         <CaretDownIcon className={sortDirection === "ASC" ? "rotate-180" : undefined} size={12} weight="bold" />
@@ -117,18 +135,20 @@ export function ResourceTable({
               </th>
             ))}
             {scoreEntry?.components.map((component) => (
-              <th className="sticky top-0 z-10 h-10 min-w-24 border-b border-border bg-slate-50 px-2 text-xs font-semibold uppercase leading-tight tracking-wide text-text-secondary" key={component.id}>
-                <span className="block">{component.name}</span>
-                <span className="block text-[10px] font-normal normal-case leading-tight text-muted">
-                  Tối đa {Number(component.maxScore)}
-                  {component.includeInFinal === false ? " · không tính tổng" : ` · hệ số ${Number(component.coefficient ?? 1)}`}
-                </span>
+              <th
+                className="sticky top-0 z-10 h-10 w-32 min-w-32 border-b border-border bg-slate-50 px-2 align-middle text-xs font-semibold uppercase leading-tight tracking-wide text-text-secondary"
+                key={component.id}
+                title={`${component.name} · ${scoreComponentCaption(component)}`}
+              >
+                {/* Tên cột điểm dài thì cắt ở hai dòng (tên đầy đủ ở tooltip), không làm cao hay rộng thêm cột. */}
+                <span className="line-clamp-2 break-words">{component.name}</span>
+                <span className="block text-[10px] font-normal normal-case leading-tight text-muted">{scoreComponentCaption(component)}</span>
               </th>
             ))}
-            <th className="h-11 border-b border-border bg-slate-50 px-3 text-right text-xs font-semibold uppercase tracking-wide text-text-secondary">Thao tác</th>
+            <th className="sticky right-0 top-0 z-20 h-11 whitespace-nowrap border-b border-border bg-slate-50 px-3 text-right text-xs font-semibold uppercase tracking-wide text-text-secondary shadow-(--shadow-table-sticky)">Thao tác</th>
           </tr>
         </thead>
-        <tbody>{isLoading ? <ResourceTableSkeleton columns={visibleColumns} size={size} /> : <ResourceRows columns={visibleColumns} indexOffset={embedded ? page * size : undefined} route={route} rows={rows} scoreEntry={scoreEntry} cellEditors={cellEditors} selection={selection} onExportRow={onExportRow} exportingRow={exportingRow} />}</tbody>
+        <tbody>{isLoading ? <ResourceTableSkeleton columns={visibleColumns} size={size} /> : <ResourceRows columns={visibleColumns} indexOffset={embedded ? page * size : undefined} route={route} rows={rows} scoreEntry={scoreEntry} cellEditors={cellEditors} selection={selection} onExportRow={onExportRow} exportingRow={exportingRow} freezeLeader={freezeLeader} leaderLeft={leaderLeft} />}</tbody>
       </table>
     </div>
   );
@@ -170,10 +190,15 @@ function ResourceRows({
   indexOffset,
   onExportRow,
   exportingRow,
+  freezeLeader = false,
+  leaderLeft = "left-0",
 }: {
   cellEditors?: Record<string, (row: Record<string, unknown>) => React.ReactNode>;
   // Có giá trị thì hiển thị cột STT bắt đầu từ offset (số hàng của các trang trước).
   indexOffset?: number;
+  // Bảng chấm điểm: ghim cột STT và Huynh trưởng bên trái khi cuộn ngang (leaderLeft là vị trí ghim của cột Huynh trưởng).
+  freezeLeader?: boolean;
+  leaderLeft?: string;
   scoreEntry?: ScoreEntry;
   columns: string[];
   route: RouteConfig;
@@ -202,9 +227,19 @@ function ResourceRows({
           ) : null}
         </td>
       ) : null}
-      {indexOffset !== undefined ? <td className="h-14 w-12 border-b border-slate-100 px-3 align-middle text-muted">{indexOffset + rowIndex + 1}</td> : null}
+      {indexOffset !== undefined ? (
+        <td className={cn("h-14 w-12 border-b border-slate-100 px-3 align-middle text-muted", freezeLeader && "sticky left-0 z-1 min-w-12 max-w-12 bg-white transition-colors group-hover:bg-slate-50")}>{indexOffset + rowIndex + 1}</td>
+      ) : null}
       {columns.map((column) => (
-        <td className={`h-14 border-b border-slate-100 align-middle ${scoreEntry ? "px-2 py-1" : "px-3"} ${scoreEntry && column === "leaderFullName" ? "min-w-40" : ""}`} key={column}>
+        <td
+          className={cn(
+            "h-14 border-b border-slate-100 align-middle",
+            scoreEntry ? "px-2 py-1" : "px-3",
+            scoreEntry && scoreColumnWidthClass(column),
+            freezeLeader && column === "leaderFullName" && `${leaderLeft} sticky z-1 bg-white shadow-(--shadow-table-sticky-left) transition-colors group-hover:bg-slate-50`,
+          )}
+          key={column}
+        >
           {route.kind === "leaders" && column === "fullName" ? <LeaderIdentity row={row} /> : cellEditors?.[column] ? cellEditors[column](row) : <ResourceCell column={column} displayMode={scoreEntry ? "detail" : "table"} fullNames={route.kind === "leaders"} fullText={route.kind === "dioceses" || route.kind === "deaneries"} row={row} value={row[column]} />}
           {flagged && column === "leaderFullName" ? <span className="mt-1 inline-block rounded-md bg-warning/20 px-1.5 py-0.5 text-[11px] font-semibold text-warning">Chứng nhận ngoại lệ · cần lý do duyệt</span> : null}
         </td>
@@ -214,7 +249,7 @@ function ResourceRows({
         const editable = Boolean(rowId) && scoreEntry.isEditable(row);
         const invalid = scoreEntry.isInvalid(component, value);
         return (
-          <td className="h-14 min-w-24 border-b border-slate-100 px-2 align-middle" key={component.id}>
+          <td className="h-14 w-32 min-w-32 border-b border-slate-100 px-2 align-middle" key={component.id}>
             {editable && rowId ? (
               <input
                 aria-label={`${component.name} của ${String(row.leaderFullName ?? "")}`}

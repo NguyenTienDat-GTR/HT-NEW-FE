@@ -33,6 +33,40 @@ export type ScoreEntry = {
   onChange: (rowId: string, row: Record<string, unknown>, componentId: string, value: string) => void;
 };
 
+// Tiêu đề cột gọn cho bảng chấm điểm: bảng đã dài ngang vì nhiều cột điểm nên tiêu đề dài như
+// "Giáo xứ / giáo họ / giáo điểm" bị bóp thành nhiều dòng và đè lên dòng dữ liệu.
+const SCORE_TABLE_LABELS: Record<string, string> = {
+  parishName: "Giáo xứ",
+  leaderParishName: "Giáo xứ",
+};
+
+export function scoreColumnLabel(column: string, fallback: string): string {
+  return SCORE_TABLE_LABELS[column] ?? fallback;
+}
+
+// Độ rộng tối thiểu từng cột của bảng chấm điểm: chữ dài xuống dòng trong cột thay vì bóp cột,
+// tổng bề rộng vượt khung thì bảng cuộn ngang (cột Huynh trưởng và Thao tác được ghim).
+const SCORE_TABLE_COLUMN_WIDTHS: Record<string, string> = {
+  leaderFullName: "min-w-44",
+  parishName: "min-w-40",
+  leaderParishName: "min-w-40",
+  deaneryName: "min-w-32",
+  leaderDeaneryName: "min-w-32",
+  totalScore: "min-w-20 whitespace-nowrap",
+  passed: "min-w-24 whitespace-nowrap",
+  finalResult: "min-w-40 whitespace-nowrap",
+};
+
+export function scoreColumnWidthClass(column: string): string {
+  return SCORE_TABLE_COLUMN_WIDTHS[column] ?? "min-w-24";
+}
+
+// Chú thích dưới tên cột điểm: điểm tối đa và hệ số (hoặc không tính vào tổng kết).
+export function scoreComponentCaption(component: ScoreComponent): string {
+  const max = `Tối đa ${Number(component.maxScore)}`;
+  return component.includeInFinal === false ? `${max} · không tính tổng` : `${max} · hệ số ${Number(component.coefficient ?? 1)}`;
+}
+
 export function originalNote(row: Record<string, unknown>): string {
   return typeof row.scoreNote === "string" ? row.scoreNote : "";
 }

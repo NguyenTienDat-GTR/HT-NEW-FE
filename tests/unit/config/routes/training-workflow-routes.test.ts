@@ -63,3 +63,29 @@ describe("unit filter cascading", () => {
     }
   });
 });
+
+describe("team filter", () => {
+  it("lets the scoring tab filter by team the same way the team tab does", async () => {
+    const { findRoute } = await import("@/config/routes/routes");
+
+    const scoreTeam = findRoute("/training/scores")?.filters?.find((filter) => filter.key === "teamName");
+    const teamTab = findRoute("/training/teams")?.filters?.find((filter) => filter.key === "teamName");
+
+    expect(scoreTeam).toMatchObject({
+      label: "Đội",
+      type: "select",
+      optionsEndpoint: "/training/courses/:courseCode/teams/options",
+      optionValue: "teamName",
+      optionLabel: "teamName",
+    });
+    expect(scoreTeam).toEqual(teamTab);
+  });
+
+  it("keeps the existing score filters and does not add a team filter to the registration tabs", async () => {
+    const { findRoute } = await import("@/config/routes/routes");
+
+    expect((findRoute("/training/scores")?.filters ?? []).map((filter) => filter.key)).toEqual(expect.arrayContaining(["course.courseCode", "result", "leader.parish.deanery.id", "leader.parish.id", "teamName"]));
+    expect((findRoute("/training/registrations")?.filters ?? []).some((filter) => filter.key === "teamName")).toBe(false);
+    expect((findRoute("/training/approvals")?.filters ?? []).some((filter) => filter.key === "teamName")).toBe(false);
+  });
+});
