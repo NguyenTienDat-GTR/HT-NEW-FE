@@ -533,3 +533,7 @@ BE tương ứng: `BE/project.md` mục "Training Course Registration Control an
 ## chore/remove-test-env
 - Bỏ môi trường test: xóa workflow `cd-test.yml` (build image `:test`, deploy `fe-test`) và `sync-test.yml`; CI chỉ chạy cho PR vào `main`, bỏ job `source-branch`.
 - Quy trình mới: nhánh từ `main` -> PR thẳng vào `main` -> thử ở máy local -> chủ repo merge -> `CD` deploy production. Mẫu PR và `README.md` cập nhật theo.
+
+## feat/header-help-link
+- Header (`app-shell.tsx`) có nút dấu chấm hỏi tròn (`Question` của Phosphor) ngay sau nút quét QR, mở trang hướng dẫn `https://nguyentiendat-gtr.github.io/HT-NEW-HuongDan/` ở tab mới (`header-help-link.tsx`, hằng `USER_GUIDE_URL`). Mọi tài khoản đều thấy, không cần quyền. Test: `tests/unit/modules/workspace/header-help-link.test.tsx`.
+- Sửa popover chọn thời gian của `FilterBar` (dùng chung cho Tổng quan và Phân tích): hai ô date "Từ ngày" / "Đến ngày" xếp dọc, mỗi ô rộng hết popover và có nhãn hiện sẵn (trước xếp hai cột nên mỗi ô chỉ ~90px, năm bị cắt thành `01/01/20` và icon lịch đè lên). Popover giới hạn `max-h` theo chiều cao khả dụng và cuộn bên trong để không bị cắt trên màn hình thấp.

@@ -22,6 +22,7 @@ import { QuickSearchMobile } from "@/modules/search/components/quick-search-mobi
 import { HeaderScanButton } from "@/modules/qr-scan/components/header-scan-button";
 import { AccountMenu } from "@/modules/account/components/account-menu";
 import { PROFILE_PATH } from "@/modules/account/account-display";
+import { HeaderHelpLink } from "@/modules/workspace/components/header-help-link";
 import { useNotificationsSocket } from "@/modules/workspace/hooks/notifications-socket";
 import { AppVersion } from "@/components/common/app-version";
 
@@ -155,6 +156,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <div className="flex shrink-0 items-center gap-2">
               <QuickSearchMobile />
               <HeaderScanButton />
+              <HeaderHelpLink />
               <NotificationPopover />
               <span aria-hidden className="mx-1 hidden h-6 w-px bg-border sm:block" />
               <AccountMenu loggingOut={isLoggingOut} onLogout={logout} />
