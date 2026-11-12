@@ -1,5 +1,28 @@
 import { describe, expect, it } from "vitest";
-import { isInvalidScore, originalScore, runWithConcurrency, sameScore } from "@/components/common/resource/score-entry";
+import { isInvalidScore, originalScore, runWithConcurrency, sameScore, scoreColumnLabel, scoreColumnWidthClass, scoreComponentCaption } from "@/components/common/resource/score-entry";
+
+describe("score table layout helpers", () => {
+  it("shortens the parish header to just Giáo xứ and leaves other labels alone", () => {
+    expect(scoreColumnLabel("parishName", "Giáo xứ / giáo họ / giáo điểm")).toBe("Giáo xứ");
+    expect(scoreColumnLabel("leaderParishName", "Giáo xứ / giáo họ / giáo điểm")).toBe("Giáo xứ");
+    expect(scoreColumnLabel("deaneryName", "Giáo hạt")).toBe("Giáo hạt");
+  });
+
+  it("gives every column a minimum width so long text wraps instead of crushing the column", () => {
+    expect(scoreColumnWidthClass("leaderFullName")).toContain("min-w-");
+    expect(scoreColumnWidthClass("parishName")).toContain("min-w-");
+    // Cột lạ vẫn có độ rộng tối thiểu mặc định.
+    expect(scoreColumnWidthClass("somethingElse")).toBe("min-w-24");
+    // Nhãn kết quả không xuống dòng.
+    expect(scoreColumnWidthClass("finalResult")).toContain("whitespace-nowrap");
+  });
+
+  it("writes the score column caption with max score and coefficient or exclusion", () => {
+    expect(scoreComponentCaption({ id: "a", name: "A", maxScore: "10", coefficient: 2 })).toBe("Tối đa 10 · hệ số 2");
+    expect(scoreComponentCaption({ id: "a", name: "A", maxScore: 10 })).toBe("Tối đa 10 · hệ số 1");
+    expect(scoreComponentCaption({ id: "a", name: "A", maxScore: 10, includeInFinal: false })).toBe("Tối đa 10 · không tính tổng");
+  });
+});
 
 describe("score entry helpers", () => {
   it("reads the saved score of a component from the row", () => {

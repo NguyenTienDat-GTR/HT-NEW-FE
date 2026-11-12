@@ -50,6 +50,25 @@ export function registrationNotAfterStart(value: unknown, values: Record<string,
   return value.slice(0, 10) > values.startDate ? "Thời gian đăng ký không được sau ngày bắt đầu khóa" : undefined;
 }
 
+const HOST_YEAR_MIN = 1900;
+const HOST_YEAR_MAX = 2200;
+
+// Năm của ngày bắt đầu (yyyy-mm-dd) làm năm tổ chức mặc định; chưa chọn ngày thì chưa có mặc định.
+export function hostYearFromStartDate(startDate: unknown): number | undefined {
+  if (typeof startDate !== "string" || !/^\d{4}-\d{2}-\d{2}/.test(startDate)) return undefined;
+  return Number(startDate.slice(0, 4));
+}
+
+// Năm tổ chức phải là số nguyên trong khoảng BE chấp nhận; để trống thì để quy tắc bắt buộc xử lý.
+export function hostYearRangeError(value: unknown) {
+  if (value === undefined || value === null || value === "") return undefined;
+  const year = Number(value);
+  if (!Number.isInteger(year) || year < HOST_YEAR_MIN || year > HOST_YEAR_MAX) {
+    return `Năm tổ chức phải là số nguyên từ ${HOST_YEAR_MIN} đến ${HOST_YEAR_MAX}`;
+  }
+  return undefined;
+}
+
 // Sao chép danh sách tham dự từ khóa nguồn cần quyền duyệt đăng ký; khóa đã kết thúc hoặc ngừng hoạt động thì không sao chép được.
 const canCopyParticipants = (values: Record<string, unknown>, mode: string, user?: AuthUser | null) =>
   hasPermissionPrefix(user ?? useAuthStore.getState().user, "training.participation.approve.") &&
@@ -255,7 +274,6 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
         readOnlyWhen: lockedByParticipations,
         section: "Thông tin khóa",
       },
-      { name: "hostYear", label: "Năm tổ chức", type: "number", readOnlyWhen: lockedByParticipations, section: "Thông tin khóa" },
       {
         name: "yearsActive",
         label: "Số năm hoạt động",
@@ -266,8 +284,22 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
         section: "Thông tin khóa",
       },
       { name: "location", label: "Địa điểm", section: "Thông tin khóa" },
-      { name: "startDate", label: "Ngày bắt đầu", type: "date", required: true, section: "Thời gian" },
-      { name: "endDate", label: "Ngày kết thúc", type: "date", required: true, section: "Thời gian" },
+      { name: "startDate", label: "Ngày bắt đầu", type: "date", required: true, section: "Thời gian tổ chức" },
+      { name: "endDate", label: "Ngày kết thúc", type: "date", required: true, section: "Thời gian tổ chức" },
+      {
+        name: "hostYear",
+        label: "Năm tổ chức",
+        type: "number",
+        // Bắt buộc khi tạo khóa (mã chứng nhận sinh từ năm tổ chức); khóa cũ chưa có năm vẫn sửa được mà không bị ép nhập.
+        requiredWhen: (_values, mode) => mode === "create",
+        min: HOST_YEAR_MIN,
+        // Mặc định là năm của ngày bắt đầu; người dùng sửa tay thì giữ giá trị đã nhập.
+        defaultFromValues: (values) => hostYearFromStartDate(values.startDate),
+        validate: hostYearRangeError,
+        readOnlyWhen: lockedByParticipations,
+        helper: "Dùng để sinh mã chứng nhận. Mặc định là năm của ngày bắt đầu, có thể đổi nếu khác năm. Khóa đã có hồ sơ tham gia thì không đổi được.",
+        section: "Thời gian tổ chức",
+      },
       {
         name: "registrationEnabled",
         label: "Mở đăng ký",

@@ -70,8 +70,10 @@ export function useResourceQueryState(route: RouteConfig, fixedFilters: Record<s
   );
 
   // Đưa bộ lọc khôi phục lên URL để liên kết và nút tải lại khớp với những gì đang hiển thị.
+  // Đây là cập nhật tự động (người dùng chỉ vừa mở danh sách hoặc đổi tab): phải giữ nguyên vị trí cuộn, nếu không
+  // Next.js kéo trang lên đầu mỗi khi vào một tab đã từng đổi bộ lọc / trang / sắp xếp trong khi đang cuộn xuống.
   useEffect(() => {
-    if (restoredFromStorage) router.replace(`${pathname}?${searchParams.toString()}` as Route);
+    if (restoredFromStorage) router.replace(`${pathname}?${searchParams.toString()}` as Route, { scroll: false });
   }, [pathname, restoredFromStorage, router, searchParams]);
 
   useEffect(() => {

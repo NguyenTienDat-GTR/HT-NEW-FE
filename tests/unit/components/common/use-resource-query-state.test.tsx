@@ -39,6 +39,25 @@ describe("useResourceQueryState filter persistence", () => {
     expect(second.result.current.queryString).toContain("NAM");
   });
 
+  it("puts the restored filters on the URL without scrolling the page back to the top", () => {
+    const first = renderHook(() => useResourceQueryState(route));
+    act(() => first.result.current.updateFilter("gender", "NAM"));
+    first.unmount();
+
+    // Đổi sang tab khác rồi quay lại: URL trần, bộ lọc được khôi phục và đưa lên URL.
+    currentSearch = "";
+    replace.mockClear();
+    renderHook(() => useResourceQueryState(route));
+
+    expect(replace).toHaveBeenCalledTimes(1);
+    expect(replace).toHaveBeenCalledWith(expect.stringContaining("gender=NAM"), { scroll: false });
+  });
+
+  it("does not touch the URL when nothing was restored", () => {
+    renderHook(() => useResourceQueryState(route));
+    expect(replace).not.toHaveBeenCalled();
+  });
+
   it("keeps the filters when a modal link only adds the detail parameter", () => {
     const first = renderHook(() => useResourceQueryState(route));
     act(() => first.result.current.updateFilter("gender", "NU"));
