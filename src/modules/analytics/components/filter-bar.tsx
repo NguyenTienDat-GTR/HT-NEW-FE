@@ -140,7 +140,12 @@ export function FilterBar({ filters, onChange, options, scope, scopes, visible =
             </button>
           </Popover.Trigger>
           <Popover.Portal>
-            <Popover.Content align="start" className="z-50 w-64 rounded-xl border border-border bg-white p-1.5 shadow-[var(--shadow-elevated)] data-[state=open]:animate-[account-menu-in_160ms_ease-out]" sideOffset={6}>
+            <Popover.Content
+              align="start"
+              className="z-50 max-h-(--radix-popover-content-available-height) w-64 overflow-y-auto rounded-xl border border-border bg-white p-1.5 shadow-[var(--shadow-elevated)] data-[state=open]:animate-[account-menu-in_160ms_ease-out]"
+              collisionPadding={8}
+              sideOffset={6}
+            >
               <ul>
                 {datePresets.map((preset) => (
                   <li key={preset.id}>
@@ -160,9 +165,16 @@ export function FilterBar({ filters, onChange, options, scope, scopes, visible =
               </ul>
               <div className="mt-1.5 border-t border-border p-2.5">
                 <p className="mb-2 text-xs font-medium text-text-secondary">Khoảng tùy chọn</p>
-                <div className="grid grid-cols-2 gap-2">
-                  <input aria-label="Từ ngày" className={cn(fieldClass, "px-2 text-[13px]")} max={filters.toDate || undefined} onChange={(event) => set({ preset: "custom", fromDate: event.target.value })} type="date" value={filters.fromDate} />
-                  <input aria-label="Đến ngày" className={cn(fieldClass, "px-2 text-[13px]")} min={filters.fromDate || undefined} onChange={(event) => set({ preset: "custom", toDate: event.target.value })} type="date" value={filters.toDate} />
+                {/* Hai ô xếp dọc, mỗi ô rộng hết popover: xếp hai cột thì mỗi ô chỉ còn ~90px, năm bị cắt và icon lịch đè lên chữ. */}
+                <div className="grid gap-2">
+                  <label className="block min-w-0">
+                    <span className="mb-1 block text-xs text-muted">Từ ngày</span>
+                    <input className={fieldClass} max={filters.toDate || undefined} onChange={(event) => set({ preset: "custom", fromDate: event.target.value })} type="date" value={filters.fromDate} />
+                  </label>
+                  <label className="block min-w-0">
+                    <span className="mb-1 block text-xs text-muted">Đến ngày</span>
+                    <input className={fieldClass} min={filters.fromDate || undefined} onChange={(event) => set({ preset: "custom", toDate: event.target.value })} type="date" value={filters.toDate} />
+                  </label>
                 </div>
               </div>
             </Popover.Content>
