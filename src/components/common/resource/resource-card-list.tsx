@@ -5,7 +5,7 @@ import type { RouteConfig } from "@/config/routes/routes";
 import { cn } from "@/lib/utils";
 import { columnLabels, ResourceCell } from "./resource-format";
 import { getResourceId } from "./resource-actions";
-import type { ScoreEntry } from "./score-entry";
+import { scoreColumnLabel, type ScoreEntry } from "./score-entry";
 
 type Row = Record<string, unknown>;
 type Selection = { selectedIds: string[]; selectableIds: string[]; onToggle: (id: string) => void; onToggleAll: (on: boolean) => void };
@@ -121,7 +121,7 @@ export function ResourceCardList({
                     .filter((column) => !(leaders && column === "holyName"))
                     .map((column) => (
                       <div className="min-w-0" key={column}>
-                        <dt className="text-[11px] font-semibold uppercase tracking-wide text-text-secondary">{columnLabels[column] ?? column}</dt>
+                        <dt className="text-[11px] font-semibold uppercase tracking-wide text-text-secondary">{scoreEntry ? scoreColumnLabel(column, columnLabels[column] ?? column) : (columnLabels[column] ?? column)}</dt>
                         <dd className="mt-0.5 min-w-0 text-foreground [overflow-wrap:anywhere]">
                           {cellEditors?.[column] ? cellEditors[column](row) : <ResourceCell column={column} displayMode="detail" fullNames={leaders} row={row} value={row[column]} />}
                         </dd>

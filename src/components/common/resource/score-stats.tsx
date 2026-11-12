@@ -51,7 +51,7 @@ export function ScoreStats({
   });
 
   if (query.isLoading) {
-    return <div className="h-9 w-72 rounded-lg bg-surface-2 motion-safe:animate-pulse" />;
+    return <div className="h-7 w-60 rounded-md bg-surface-2 motion-safe:animate-pulse" />;
   }
   if (query.isError || !query.data) return null;
 
@@ -70,24 +70,25 @@ export function ScoreStats({
   const total = rows.length;
 
   return (
-    <div aria-label="Thống kê nhập điểm" className="flex flex-wrap items-center gap-2" role="group">
+    <div aria-label="Thống kê nhập điểm" className="flex flex-wrap items-center gap-1.5" role="group">
       <Chip tone={missingPeople === 0 ? "success" : missingPeople === total ? "danger" : "warning"}>
         <span className="font-medium">Chưa nhập đủ điểm</span>
-        <span className="text-sm font-bold">{missingPeople}</span>
+        <span className="font-bold">{missingPeople}</span>
         <span className="font-medium opacity-80">/ {total} người</span>
       </Chip>
       {missingByComponent.map(({ component, missing }) => (
         <Chip key={component.id} tone={missing === 0 ? "success" : missing === total ? "danger" : "warning"}>
-          <span className="max-w-40 truncate font-medium" title={component.name}>
+          <span className="max-w-28 truncate font-medium" title={component.name}>
             {component.name}
           </span>
-          <span className="text-sm font-bold">{missing === 0 ? "Đủ" : `Thiếu ${missing}`}</span>
+          <span className="font-bold">{missing === 0 ? "Đủ" : `Thiếu ${missing}`}</span>
         </Chip>
       ))}
     </div>
   );
 }
 
+// Nhãn thống kê gọn (cao 28px, chữ 11px): có thể có rất nhiều cột điểm nên mỗi nhãn chỉ chiếm chỗ vừa đủ, không dài ra thành nhiều hàng.
 function Chip({ tone, children }: { tone: Tone; children: React.ReactNode }) {
-  return <span className={cn("inline-flex min-h-9 items-center gap-1.5 rounded-lg border px-3 py-1 text-xs", toneClass[tone])}>{children}</span>;
+  return <span className={cn("inline-flex min-h-7 items-center gap-1 whitespace-nowrap rounded-md border px-2 py-0.5 text-[11px] leading-4", toneClass[tone])}>{children}</span>;
 }

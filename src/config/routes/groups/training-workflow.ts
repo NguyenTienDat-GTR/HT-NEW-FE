@@ -74,18 +74,18 @@ const participantFilters: RouteFilterConfig[] = [
   ...unitFilters,
 ];
 
-// Chia đội: như danh sách tham dự, thêm bộ lọc theo đội (danh sách đội của khóa lấy từ API, :courseCode được thay bằng khóa đang xem).
-const teamFilters: RouteFilterConfig[] = [
-  ...participantFilters,
-  {
-    key: "teamName",
-    label: "Đội",
-    type: "select",
-    optionsEndpoint: "/training/courses/:courseCode/teams/options",
-    optionValue: "teamName",
-    optionLabel: "teamName",
-  },
-];
+// Lọc theo đội (danh sách đội của khóa lấy từ API, :courseCode được thay bằng khóa đang xem): dùng ở tab Chia đội và tab Chấm điểm.
+const teamFilter: RouteFilterConfig = {
+  key: "teamName",
+  label: "Đội",
+  type: "select",
+  optionsEndpoint: "/training/courses/:courseCode/teams/options",
+  optionValue: "teamName",
+  optionLabel: "teamName",
+};
+
+// Chia đội: như danh sách tham dự, thêm bộ lọc theo đội.
+const teamFilters: RouteFilterConfig[] = [...participantFilters, teamFilter];
 
 // Kết quả theo điểm: Đạt khi điểm tổng kết từ điểm đạt của khóa trở lên, còn lại (kể cả chưa chấm) là Không đạt.
 const scoreFilters: RouteFilterConfig[] = [
@@ -100,6 +100,7 @@ const scoreFilters: RouteFilterConfig[] = [
     ],
   },
   ...unitFilters,
+  teamFilter,
 ];
 
 const certificateApprovalFilters: RouteFilterConfig[] = [
@@ -248,7 +249,7 @@ export const trainingWorkflowRouteGroup: RouteGroup = {
           },
         },
         primaryActionLabel: "Chấm điểm",
-        filterLabels: ["Khóa huấn luyện", "Kết quả", "Chứng nhận"],
+        filterLabels: ["Khóa huấn luyện", "Kết quả", "Chứng nhận", "Đội"],
         workflowHint: "Request score phải gửi đúng và đủ component của formula, không vượt maxScore.",
       }),
       route({
