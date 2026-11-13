@@ -15,6 +15,7 @@ import { hasPermissionPrefix, isSuperAdmin } from "@/lib/auth/permissions";
 import { createExcelExportJob } from "@/lib/jobs/excel-jobs-client";
 import { excelJobsStore } from "@/lib/jobs/excel-jobs-store";
 import { cn } from "@/lib/utils";
+import { groupExportColumns } from "./excel-export-groups";
 
 // Endpoint danh sách -> tên file xuất. Chỉ các danh sách có endpoint `/export` ở backend mới có nút xuất.
 export const EXCEL_EXPORT_FILES: Record<string, string> = {
@@ -42,6 +43,27 @@ const EXPORT_KINDS: Record<string, string> = {
   "/certificates": "EXPORT_CERTIFICATES",
 };
 
+// Cột tick sẵn khi mở hộp thoại lần đầu (tên cột đúng như backend trả về). Khóa theo tab của khóa huấn luyện, không có tab thì theo endpoint.
+// Luôn có tên thánh, họ và tên, giáo xứ, số điện thoại; còn lại tùy nội dung tab. Không cột nào khớp (backend đổi tên cột) thì chọn tất cả.
+const BASE_COLUMNS = ["Tên thánh", "Họ và tên", "Số điện thoại", "Giáo xứ / giáo họ / giáo điểm"];
+const DEFAULT_COLUMNS: Record<string, string[]> = {
+  "tab:registrations": [...BASE_COLUMNS, "Giáo hạt", "Ngày đăng ký", "Trạng thái duyệt đăng ký", "Ghi chú"],
+  "tab:approvals": [...BASE_COLUMNS, "Giáo hạt", "Ngày đăng ký", "Trạng thái duyệt đăng ký", "Lý do ngoại lệ", "Nhận xét"],
+  "tab:participations": [...BASE_COLUMNS, "Giáo hạt", "Trạng thái tham dự", "Tổng điểm", "Đạt / Không đạt", "Ghi chú"],
+  "tab:teams": [...BASE_COLUMNS, "Giáo hạt", "Đội"],
+  "tab:scores": [...BASE_COLUMNS, "Điểm thành phần", "Tổng điểm", "Kết quả", "Đạt / Không đạt", "Nhận xét"],
+  "tab:certificate-approvals": [...BASE_COLUMNS, "Khóa huấn luyện", "Tổng điểm", "Điểm đạt", "Kết quả", "Trạng thái duyệt"],
+  "/training/participations": [...BASE_COLUMNS, "Giáo hạt", "Khóa huấn luyện", "Ngày đăng ký", "Trạng thái duyệt đăng ký"],
+  "/training/participants": [...BASE_COLUMNS, "Giáo hạt", "Khóa huấn luyện", "Trạng thái tham dự", "Tổng điểm", "Đạt / Không đạt"],
+  "/training/participants/teams": [...BASE_COLUMNS, "Giáo hạt", "Đội"],
+  "/certificates": [...BASE_COLUMNS, "Khóa huấn luyện", "Tổng điểm", "Kết quả", "Trạng thái duyệt"],
+  "/training/courses": ["Tên khóa", "Loại khóa", "Năm tổ chức", "Đơn vị tổ chức", "Địa điểm", "Ngày bắt đầu", "Ngày kết thúc", "Số tham dự viên", "Trạng thái đăng ký", "Trạng thái tổ chức"],
+};
+
+function defaultColumnsFor(endpoint: string, tab?: string) {
+  return (tab ? DEFAULT_COLUMNS[`tab:${tab}`] : undefined) ?? DEFAULT_COLUMNS[endpoint];
+}
+
 // Danh sách đăng ký của một khóa còn xuất được theo mẫu Excel của giáo phận.
 const TEMPLATE_ENDPOINT = "/training/participations";
 
@@ -68,13 +90,14 @@ function courseCodeOf(queryString: string) {
   }
 }
 
-function storageKey(endpoint: string) {
-  return `excel-export-columns:${endpoint}`;
+// v2: bản trước lưu cả trường hợp "chọn tất cả" theo mặc định cũ nên bỏ đi để lần đầu hiện cột mặc định mới; từ đây nhớ riêng từng tab.
+function storageKey(endpoint: string, tab?: string) {
+  return `excel-export-columns:v2:${endpoint}${tab ? `:${tab}` : ""}`;
 }
 
-function readStoredColumns(endpoint: string): string[] | null {
+function readStoredColumns(endpoint: string, tab?: string): string[] | null {
   try {
-    const raw = window.localStorage.getItem(storageKey(endpoint));
+    const raw = window.localStorage.getItem(storageKey(endpoint, tab));
     const parsed = raw ? JSON.parse(raw) : null;
     return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === "string") : null;
   } catch {
@@ -82,16 +105,16 @@ function readStoredColumns(endpoint: string): string[] | null {
   }
 }
 
-function storeColumns(endpoint: string, columns: string[]) {
+function storeColumns(endpoint: string, columns: string[], tab?: string) {
   try {
-    window.localStorage.setItem(storageKey(endpoint), JSON.stringify(columns));
+    window.localStorage.setItem(storageKey(endpoint, tab), JSON.stringify(columns));
   } catch {
     // không lưu được lựa chọn: lần sau chọn lại
   }
 }
 
 // Xuất chạy nền: hộp thoại chọn cột (và cách xuất theo mẫu), rồi tạo tác vụ và trả quyền điều khiển ngay; tiến độ và nút tải về nằm ở khay tác vụ.
-export function ExcelExportButton({ endpoint, queryString, empty = false }: { endpoint: string; queryString: string; empty?: boolean }) {
+export function ExcelExportButton({ endpoint, queryString, empty = false, tab }: { endpoint: string; queryString: string; empty?: boolean; tab?: string }) {
   const [open, setOpen] = useState(false);
   const fallbackName = EXCEL_EXPORT_FILES[endpoint];
   if (!fallbackName) return null;
@@ -104,12 +127,12 @@ export function ExcelExportButton({ endpoint, queryString, empty = false }: { en
           Xuất Excel
         </Button>
       </Tip>
-      {open ? <ExcelExportDialog endpoint={endpoint} onClose={() => setOpen(false)} queryString={queryString} /> : null}
+      {open ? <ExcelExportDialog endpoint={endpoint} onClose={() => setOpen(false)} queryString={queryString} tab={tab} /> : null}
     </>
   );
 }
 
-function ExcelExportDialog({ endpoint, queryString, onClose }: { endpoint: string; queryString: string; onClose: () => void }) {
+function ExcelExportDialog({ endpoint, queryString, onClose, tab }: { endpoint: string; queryString: string; onClose: () => void; tab?: string }) {
   const user = useAuthStore((state) => state.user);
   const kind = EXPORT_KINDS[endpoint];
   const courseCode = endpoint === TEMPLATE_ENDPOINT ? courseCodeOf(queryString) : null;
@@ -129,16 +152,30 @@ function ExcelExportDialog({ endpoint, queryString, onClose }: { endpoint: strin
     staleTime: 60 * 60 * 1000,
   });
   const allColumns = useMemo(() => columnsQuery.data ?? [], [columnsQuery.data]);
-  // Lựa chọn lần trước (chỉ giữ cột còn tồn tại); chưa từng chọn thì chọn tất cả.
+  // Cột mặc định của tab (đúng thứ tự file, chỉ giữ cột còn tồn tại); tab chưa khai báo hoặc không khớp cột nào thì là tất cả.
+  const defaultColumns = useMemo(() => {
+    const wanted = defaultColumnsFor(endpoint, tab) ?? [];
+    const matched = allColumns.filter((column) => wanted.includes(column));
+    return matched.length ? matched : allColumns;
+  }, [endpoint, tab, allColumns]);
+  // Lựa chọn lần trước của đúng tab này (chỉ giữ cột còn tồn tại); chưa từng chọn thì dùng cột mặc định.
   const chosen = useMemo(() => {
     if (selected) return selected;
-    const stored = typeof window === "undefined" ? null : readStoredColumns(endpoint);
+    const stored = typeof window === "undefined" ? null : readStoredColumns(endpoint, tab);
     const kept = stored?.filter((column) => allColumns.includes(column)) ?? [];
-    return kept.length ? kept : allColumns;
-  }, [selected, endpoint, allColumns]);
+    return kept.length ? kept : defaultColumns;
+  }, [selected, endpoint, tab, allColumns, defaultColumns]);
+
+  // Cột chia theo nhóm thông tin; endpoint không chia nhóm thì một khối không tiêu đề.
+  const columnGroups = useMemo<{ title?: string; columns: string[] }[]>(() => groupExportColumns(endpoint, allColumns) ?? [{ columns: allColumns }], [endpoint, allColumns]);
 
   function toggle(column: string) {
     setSelected((chosen.includes(column) ? chosen.filter((item) => item !== column) : [...chosen, column]));
+  }
+
+  // Chọn / bỏ chọn cả nhóm: đã chọn đủ thì bỏ cả nhóm, còn lại thì chọn đủ nhóm.
+  function toggleGroup(columns: string[]) {
+    setSelected(columns.every((column) => chosen.includes(column)) ? chosen.filter((item) => !columns.includes(item)) : [...chosen, ...columns.filter((column) => !chosen.includes(column))]);
   }
 
   async function submit() {
@@ -154,7 +191,7 @@ function ExcelExportDialog({ endpoint, queryString, onClose }: { endpoint: strin
         allColumns.filter((column) => chosen.includes(column)).forEach((column) => extra.append("columns", column));
       }
       path = buildExportPath(endpoint, queryString, extra);
-      storeColumns(endpoint, chosen);
+      storeColumns(endpoint, chosen, tab);
     }
     setExporting(true);
     let key = keys.current.get(path);
@@ -237,6 +274,11 @@ function ExcelExportDialog({ endpoint, queryString, onClose }: { endpoint: strin
                     Cột xuất ra <span className="font-normal text-muted">({chosen.length}/{allColumns.length})</span>
                   </p>
                   <div className="flex gap-2">
+                    {defaultColumns.length < allColumns.length ? (
+                      <Button onClick={() => setSelected(defaultColumns)} size="sm" type="button" variant="ghost">
+                        Mặc định
+                      </Button>
+                    ) : null}
                     <Button onClick={() => setSelected(allColumns)} size="sm" type="button" variant="ghost">
                       Chọn tất cả
                     </Button>
@@ -250,15 +292,33 @@ function ExcelExportDialog({ endpoint, queryString, onClose }: { endpoint: strin
                 ) : columnsQuery.isError ? (
                   <p className="text-sm text-danger">{getApiErrorMessage(columnsQuery.error)}</p>
                 ) : (
-                  <div className="grid gap-1 sm:grid-cols-2">
-                    {allColumns.map((column) => (
-                      <label className="flex min-h-9 cursor-pointer items-center gap-2.5 rounded-md px-2 text-sm text-foreground hover:bg-surface-1" key={column}>
-                        <input checked={chosen.includes(column)} className="h-4 w-4 accent-primary" onChange={() => toggle(column)} type="checkbox" />
-                        {column}
-                      </label>
-                    ))}
+                  <div className="space-y-3">
+                    {columnGroups.map((group) => {
+                      const picked = group.columns.filter((column) => chosen.includes(column)).length;
+                      return (
+                        <fieldset className="rounded-lg border border-border p-2" key={group.title ?? "all"}>
+                          {group.title ? (
+                            <legend className="px-1">
+                              <label className="flex cursor-pointer items-center gap-2 text-sm font-semibold text-foreground">
+                                <GroupCheckbox checked={picked === group.columns.length} indeterminate={picked > 0 && picked < group.columns.length} onChange={() => toggleGroup(group.columns)} />
+                                {group.title} <span className="font-normal text-muted">({picked}/{group.columns.length})</span>
+                              </label>
+                            </legend>
+                          ) : null}
+                          <div className="grid gap-1 sm:grid-cols-2">
+                            {group.columns.map((column) => (
+                              <label className="flex min-h-9 cursor-pointer items-center gap-2.5 rounded-md px-2 text-sm text-foreground hover:bg-surface-1" key={column}>
+                                <input checked={chosen.includes(column)} className="h-4 w-4 accent-primary" onChange={() => toggle(column)} type="checkbox" />
+                                {column}
+                              </label>
+                            ))}
+                          </div>
+                        </fieldset>
+                      );
+                    })}
                   </div>
                 )}
+                {chosen.includes("Điểm thành phần") ? <p className="mt-2 text-sm text-muted">Điểm thành phần được tách thành mỗi thành phần một cột.</p> : null}
                 {listInvalid ? <p className="mt-2 text-sm text-danger">Chọn ít nhất một cột để xuất</p> : null}
               </div>
             ) : (
@@ -330,6 +390,11 @@ function ExcelExportDialog({ endpoint, queryString, onClose }: { endpoint: strin
       </Dialog.Portal>
     </Dialog.Root>
   );
+}
+
+// Ô chọn cả nhóm: trạng thái "một phần" khi chỉ chọn vài cột trong nhóm.
+function GroupCheckbox({ checked, indeterminate, onChange }: { checked: boolean; indeterminate: boolean; onChange: () => void }) {
+  return <input checked={checked} className="h-4 w-4 accent-primary" onChange={onChange} ref={(element) => { if (element) element.indeterminate = indeterminate; }} type="checkbox" />;
 }
 
 function Choice({ checked, label, hint, name, onChange }: { checked: boolean; label: string; hint?: string; name: string; onChange: () => void }) {
