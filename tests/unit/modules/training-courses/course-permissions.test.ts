@@ -88,6 +88,15 @@ describe("course tabs follow the course owner", () => {
     expect(canRegisterCourse(deaneryAndParishAdmin, otherDeaneryCourse)).toBe(false);
   });
 
+  it("shows the registration tab of a diocese course to a deanery account that can only read, never other deaneries' courses or a diocese admin on a deanery course", () => {
+    const reader = user(["training.participation.read.deanery"]);
+    expect(canUseCourseTab(reader, dioceseCourse, "registrations")).toBe(true);
+    expect(canUseCourseTab(reader, otherDeaneryCourse, "registrations")).toBe(false);
+    expect(canUseCourseTab(reader, { ...dioceseCourse, dioceseId: "dio-2" }, "registrations")).toBe(false);
+    const dioceseReader = user(["training.participation.read.diocese"]);
+    expect(canUseCourseTab(dioceseReader, ownDeaneryCourse, "registrations")).toBe(false);
+  });
+
   it("lets a parish account register for a diocese course and read its own records, but not work the course", () => {
     expect(visible(parishReader, dioceseCourse)).toEqual(["registrations", "participations"]);
     expect(canRegisterCourse(parishReader, dioceseCourse)).toBe(true);

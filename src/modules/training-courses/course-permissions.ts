@@ -77,6 +77,14 @@ function canRegisterForCourse(user: AuthUser, course: CourseOwnerFields) {
   );
 }
 
+// Tài khoản giáo hạt xem được danh sách đăng ký của huynh trưởng thuộc giáo hạt mình ở khóa giáo phận (cùng giáo phận),
+// dù không có quyền gửi đăng ký. Khóa của giáo hạt khác thì không (BE cũng lọc theo giáo hạt của huynh trưởng).
+function canReadOwnDeaneryRegistrations(user: AuthUser, course: CourseOwnerFields) {
+  if (isDeaneryManagedCourse(course)) return false;
+  const sameDiocese = !course.dioceseId || !user.dioceseId || course.dioceseId === user.dioceseId;
+  return sameDiocese && (hasPermission(user, "training.participation.read.deanery") || hasPermission(user, "training.participation.approve.deanery") || hasPermission(user, "training.participation.score.deanery"));
+}
+
 export type CourseTabKey = "registrations" | "approvals" | "participations" | "teams" | "attendance" | "scores" | "certificate-approvals";
 
 /**
@@ -89,7 +97,7 @@ export function canUseCourseTab(user: AuthUser | null | undefined, course: Cours
   if (!course) return true;
   switch (tab) {
     case "registrations":
-      return canRegisterForCourse(user, course) || hasPermission(user, "training.participation.read.parish");
+      return canRegisterForCourse(user, course) || hasPermission(user, "training.participation.read.parish") || canReadOwnDeaneryRegistrations(user, course);
     case "approvals":
       return canActOnCourse(user, course, "approve");
     case "participations":
