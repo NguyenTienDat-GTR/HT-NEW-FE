@@ -54,7 +54,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     steps:
-      # compose.prod.yaml và .env do CD của repo BE đưa lên server; FE chỉ pull và khởi động lại service fe.
+      # Server production là VPS do người khác quản. compose và .env do họ giữ; FE chỉ pull và khởi động lại service fe.
       - name: Mở cầu nối SSH qua Cloudflare Tunnel (cổng 22 của server đã đóng với internet)
         env:
           CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
@@ -85,19 +85,33 @@ jobs:
         env:
           GHCR_USER: ${{ github.actor }}
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          DEPLOY_DIR: ${{ vars.DEPLOY_DIR || '/home/ubuntu/ht' }}
+          DEPLOY_DIR: ${{ vars.DEPLOY_DIR || '/opt/ht' }}
+          COMPOSE_FILE: ${{ vars.COMPOSE_FILE }}
+          FE_SERVICE: ${{ vars.FE_SERVICE || 'fe' }}
         with:
           host: 172.17.0.1
           port: 2222
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          envs: GHCR_USER,GHCR_TOKEN,DEPLOY_DIR
+          envs: GHCR_USER,GHCR_TOKEN,DEPLOY_DIR,COMPOSE_FILE,FE_SERVICE
           script_stop: true
           script: |
             set -e
             cd "$DEPLOY_DIR"
+            # COMPOSE_FILE để trống thì docker compose tự tìm compose.yaml / docker-compose.yml trong thư mục.
+            DC="docker compose"
+            if [ -n "$COMPOSE_FILE" ]; then DC="docker compose -f $COMPOSE_FILE"; fi
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
-            docker compose -f compose.prod.yaml pull fe
-            docker compose -f compose.prod.yaml up -d --no-deps fe
+            $DC pull "$FE_SERVICE"
+            $DC up -d --no-deps "$FE_SERVICE"
             docker logout ghcr.io
+            sleep 15
+            cid="$($DC ps -q "$FE_SERVICE")"
+            status="$(docker inspect -f '{{.State.Status}}' "$cid" 2>/dev/null || echo missing)"
+            echo "$FE_SERVICE: $status"
+            if [ "$status" != "running" ]; then
+              $DC logs --tail=100 "$FE_SERVICE"
+              exit 1
+            fi
+            echo "Deploy FE OK"
             docker image prune -f
