@@ -481,7 +481,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
   const exportEndpoint = config.exportEndpoint ?? effectiveRoute.endpoint;
   const excelExportButton =
     exportEndpoint && EXCEL_EXPORT_FILES[exportEndpoint] ? (
-      <ExcelExportButton empty={query.isLoading || query.isError || rows.length === 0} endpoint={exportEndpoint} queryString={queryState.queryString} />
+      <ExcelExportButton empty={query.isLoading || query.isError || rows.length === 0} endpoint={exportEndpoint} queryString={queryState.queryString} tab={embedded?.tab} />
     ) : null;
   // Import Excel: hồ sơ huynh trưởng (quyền tạo huynh trưởng) và danh sách tham dự của khóa quá khứ (quyền riêng do super-admin cấp).
   // Khóa quá khứ: quyền create_past do super-admin cấp; khóa thường: người duyệt đăng ký (khóa chưa kết thúc).

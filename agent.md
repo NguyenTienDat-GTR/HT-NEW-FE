@@ -558,3 +558,8 @@ BE tương ứng: `BE/project.md` mục "Training Course Registration Control an
 - Tab Xem trước có nút "Tải file xem trước": gửi mẫu đang soạn + dữ liệu minh họa (`buildPreviewPayload`) lên `POST /training/registration-template/preview`, BE dựng bằng đúng bộ dựng khi xuất thật.
 - Vị trí ảnh: KHÔNG dùng getter/setter `col`/`row` của exceljs cho neo ảnh (nó quy đổi phần lệch trong ô bằng độ rộng ký tự x 10000, sai so với EMU thật, ảnh bị lệch khi mở bằng Excel). Dùng `anchorIndex`/`setAnchorIndex` trong `spreadsheet-editor.tsx` (EMU = px x 9525). Mẫu đã lưu bằng bản cũ có thể thấy logo lệch trái so với lúc soạn: kéo lại rồi lưu.
 - Test: thêm nhóm "page setup" trong `sheet-model.test.ts`.
+
+## feat/xuat-excel-cot-diem-thanh-phan
+- Hộp thoại "Xuất Excel" (`excel-export-button.tsx`) nhận thêm `tab` (từ `embedded?.tab` của tab trong khóa) và tick sẵn **cột mặc định theo tab** (`DEFAULT_COLUMNS`: khóa `tab:<key>` hoặc theo endpoint). Luôn có Tên thánh, Họ và tên, Số điện thoại, Giáo xứ; còn lại tùy tab (đăng ký, duyệt đăng ký, danh sách tham dự, chia đội, chấm điểm có thêm Điểm thành phần, duyệt chứng nhận). Không cột mặc định nào khớp tên cột BE thì chọn tất cả. Có nút "Mặc định" cạnh "Chọn tất cả". Tên cột trong `DEFAULT_COLUMNS` phải đúng tiêu đề cột ở BE (`TrainingExcelExports`).
+- Lựa chọn cột được nhớ riêng từng tab, khóa localStorage `excel-export-columns:v2:<endpoint>[:<tab>]` (bản v1 lưu "tất cả" nên bỏ).
+- Hộp thoại chọn cột chia **nhóm thông tin** (`excel-export-groups.ts`: Huynh trưởng, Đơn vị, Đăng ký tham dự, Điểm và kết quả...), mỗi nhóm có ô chọn cả nhóm (trạng thái "một phần"). Cột backend thêm mới chưa khai báo rơi vào nhóm "Khác"; endpoint chưa khai báo (giáo phận / giáo hạt / giáo xứ) hiện phẳng như cũ.
