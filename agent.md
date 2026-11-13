@@ -566,3 +566,6 @@ BE tương ứng: `BE/project.md` mục "Training Course Registration Control an
 
 ## feat/tab-dang-ky-xem-theo-pham-vi
 - Tab "Đăng ký tham dự" của khóa giáo phận hiện cho tài khoản giáo hạt chỉ có quyền đọc/duyệt/chấm (không cần quyền gửi đăng ký) trong cùng giáo phận: `canReadOwnDeaneryRegistrations` trong `course-permissions.ts`. Khóa của giáo hạt khác và tài khoản giáo phận trên khóa giáo hạt vẫn không thấy tab. BE lọc danh sách theo giáo hạt của huynh trưởng.
+
+## fix/modal-xuat-theo-mau-giao-xu
+- Hộp thoại "Xuất Excel" của danh sách đăng ký: thanh tab đổi thành hai thẻ chọn "Kiểu file" (Danh sách thường / Theo mẫu đăng ký). Tùy chọn khi xuất theo mẫu theo cấp tài khoản (`excel-export-scope.ts`: `exportLevelOf` theo hậu tố quyền `training.participation.*`, `templateGroupOptions`): giáo xứ không có tùy chọn nào, xuất thẳng một danh sách (groupBy=NONE); giáo hạt chỉ có "Không gom" / "Theo giáo xứ"; giáo phận và super admin đủ ba cách. "Cách chia" chỉ hiện khi có gom nhóm.
