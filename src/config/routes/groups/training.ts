@@ -1,4 +1,4 @@
-import { GraduationCap, IdentificationBadge, ListChecks } from "@phosphor-icons/react";
+import { FileXls, GraduationCap, IdentificationBadge, ListChecks } from "@phosphor-icons/react";
 import { route, type RouteGroup } from "../route-config";
 
 export const trainingRouteGroup: RouteGroup = {
@@ -36,6 +36,19 @@ export const trainingRouteGroup: RouteGroup = {
         columns: [],
         permissionPrefixes: ["training.badge_config.read."],
         actionPermissionPrefixes: ["training.badge_config.create.", "training.badge_config.update.", "training.badge_config.delete."],
+      }),
+      route({
+        path: "/training/registration-template",
+        moduleName: "training.registration-template",
+        title: "Mẫu danh sách đăng ký",
+        subtitle: "Soạn mẫu Excel danh sách đăng ký tham dự của giáo phận / giáo hạt ngay trên trang (chỉnh cỡ ô, gõ chữ, định dạng, kéo thả trường). Dùng khi xuất danh sách đăng ký của từng khóa; mỗi cấp một mẫu.",
+        endpoint: "/training/registration-template",
+        idField: "dioceseId",
+        kind: "registration-template",
+        icon: FileXls,
+        columns: [],
+        permissionPrefixes: ["training.registration_template.update."],
+        actionPermissionPrefixes: ["training.registration_template.update."],
       }),
       route({
         path: "/training/courses",

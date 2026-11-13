@@ -23,6 +23,7 @@ const ResourceFormPage = dynamic(() => import("@/components/form/resource-form/r
 const CertificateDetailPage = dynamic(() => import("@/modules/certificates/components/certificate-detail-page").then((m) => m.CertificateDetailPage), { ssr: false, loading: () => <ViewSkeleton /> });
 const CertificateConfigView = dynamic(() => import("@/modules/certificates/components/certificate-config-view").then((m) => m.CertificateConfigView), { ssr: false, loading: () => <ViewSkeleton /> });
 const CrossDeaneryView = dynamic(() => import("@/modules/cross-deanery/components/cross-deanery-view").then((m) => m.CrossDeaneryView), { ssr: false, loading: () => <ViewSkeleton /> });
+const RegistrationTemplateView = dynamic(() => import("@/modules/registration-template/components/registration-template-view").then((m) => m.RegistrationTemplateView), { ssr: false, loading: () => <ViewSkeleton /> });
 const BadgeConfigView = dynamic(() => import("@/modules/badges/components/badge-config-view").then((m) => m.BadgeConfigView), { ssr: false, loading: () => <ViewSkeleton /> });
 const MyPermissionsView = dynamic(() => import("@/modules/permissions/components/my-permissions-view").then((m) => m.MyPermissionsView), { ssr: false, loading: () => <ViewSkeleton /> });
 const LeaderLevelsView = dynamic(() => import("@/modules/leader-levels/components/leader-levels-view").then((m) => m.LeaderLevelsView), { ssr: false, loading: () => <ViewSkeleton /> });
@@ -101,6 +102,8 @@ function renderWorkspaceView(view: WorkspaceViewKey, route: RouteConfig, params:
       return <CrossDeaneryView />;
     case "badge-config":
       return <BadgeConfigView route={route} />;
+    case "registration-template":
+      return <RegistrationTemplateView route={route} />;
     case "leader-levels":
       return <LeaderLevelsView route={route} />;
     case "my-permissions":

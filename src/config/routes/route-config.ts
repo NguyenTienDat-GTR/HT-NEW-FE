@@ -19,6 +19,7 @@ export type ResourceKind =
   | "certificates"
   | "certificate-config"
   | "badge-config"
+  | "registration-template"
   | "cross-deanery"
   | "leader-levels"
   | "accounts"

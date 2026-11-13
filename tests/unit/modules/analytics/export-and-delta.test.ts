@@ -68,7 +68,7 @@ describe("workbook content", () => {
     });
     const sheet = workbook.getWorksheet("Hồ sơ đăng ký");
     expect(sheet).toBeDefined();
-    expect(sheet!.getCell("A1").value).toBe("Danh sách hồ sơ đăng ký khóa huấn luyện");
+    expect(sheet!.getCell("A1").value).toBe("DANH SÁCH HỒ SƠ ĐĂNG KÝ KHÓA HUẤN LUYỆN");
     expect(sheet!.getCell("A2").value).toBe("Phạm vi: Hồ sơ đăng ký · Nữ");
     expect(sheet!.getCell("A3").value).toBe("Khoảng thời gian: 01/11/2025 – 22/10/2026");
     expect(sheet!.getCell("A4").value).toBe("Ngày xuất: 22/10/2026 09:05");
@@ -78,6 +78,22 @@ describe("workbook content", () => {
     expect(sheet!.getCell("C8").value).toBe("Đạt");
     expect(sheet!.getCell("D8").value).toBe(7.33);
     expect(sheet!.columnCount).toBe(4);
+  });
+
+  it("puts the diocese / deanery lines above the title when given", async () => {
+    const { buildWorkbook } = await import("@/modules/analytics/excel");
+    const workbook = await buildWorkbook({
+      dataset: "participations",
+      columns: ["leaderName"],
+      rows: [],
+      unitLines: ["GIÁO PHẬN PHÚ CƯỜNG", "GIÁO HẠT THỦ DẦU MỘT"],
+      period: null,
+      generatedAt: new Date(2026, 9, 22, 9, 5),
+    });
+    const sheet = workbook.getWorksheet("Hồ sơ đăng ký")!;
+    expect(sheet.getCell("A1").value).toBe("GIÁO PHẬN PHÚ CƯỜNG");
+    expect(sheet.getCell("A2").value).toBe("GIÁO HẠT THỦ DẦU MỘT");
+    expect(sheet.getCell("A4").value).toBe("DANH SÁCH HỒ SƠ ĐĂNG KÝ KHÓA HUẤN LUYỆN");
   });
 });
 

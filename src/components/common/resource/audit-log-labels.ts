@@ -70,6 +70,6 @@ export function auditTargetText(row: Record<string, unknown>) {
 /** Các loại đối tượng có thể gặp trong nhật ký, dùng cho bộ lọc. */
 export const AUDIT_RESOURCE_KEYS = [
   "diocese", "deanery", "parish", "leader", "leader_level", "position", "executive_board_assignment",
-  "course", "course_type", "score_component", "requirement", "participation", "certificate", "certificate_config",
+  "course", "course_type", "score_component", "requirement", "participation", "certificate", "certificate_config", "registration_template",
   "account", "role", "permission", "notification", "audit_log", "analytics", "auth",
 ] as const;

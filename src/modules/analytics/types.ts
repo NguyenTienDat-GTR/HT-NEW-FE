@@ -91,6 +91,8 @@ export type RecordsResponse = {
   total: number;
   page: number;
   size: number;
+  /** Chỉ có ở bản xuất: dòng GIÁO PHẬN / GIÁO HẠT / GIÁO XỨ cho phần đầu file. */
+  unitLines?: string[] | null;
 };
 
 /** Trạng thái bộ lọc ở FE: chuỗi rỗng nghĩa là không lọc. */
