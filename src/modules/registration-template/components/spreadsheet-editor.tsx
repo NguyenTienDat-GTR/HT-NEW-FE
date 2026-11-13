@@ -36,6 +36,24 @@ const applyAnchor = (target: AnchorLike, a: Anchor4) => {
   target.nativeRowOff = a[3];
 };
 
+/**
+ * Vị trí ngắt trang như Excel: ngắt ở RANH GIỚI cột / dòng cuối cùng còn nằm trong vùng in (không cắt ngang cột), cột / dòng nào
+ * vượt quá thì chuyển hẳn sang trang kế. offsets: vị trí cộng dồn (offsets[0] = 0); size: bề rộng / cao vùng in.
+ */
+function snapBreaks(offsets: number[], size: number, max: number): number[] {
+  const out: number[] = [];
+  let limit = size;
+  for (let i = 1; i < offsets.length && out.length < max; i++) {
+    if (offsets[i] > limit) {
+      const previous = offsets[i - 1];
+      const brk = previous > (out[out.length - 1] ?? 0) ? previous : offsets[i];
+      out.push(brk);
+      limit = brk + size;
+    }
+  }
+  return out;
+}
+
 const EMU_PER_PX = 9525;
 
 /**
@@ -1075,13 +1093,28 @@ export const SpreadsheetEditor = forwardRef<SpreadsheetHandle, { workbook: Workb
   const printable = printableSize(paperId, orientation, sheet.pageSetup?.margins);
   const pageLines = (() => {
     if (preview || !showBreaks) return { v: [] as number[], h: [] as number[] };
-    const width = colOffsets[cols] ?? 0;
-    const height = rowOffsets[rows] ?? 0;
-    const v: number[] = [];
-    const h: number[] = [];
-    for (let x = printable.w; x < width && v.length < 8; x += printable.w) v.push(x);
-    for (let y = printable.h; y < height && h.length < 12; y += printable.h) h.push(y);
-    return { v, h };
+    return { v: snapBreaks(colOffsets.slice(0, cols + 1), printable.w, 8), h: snapBreaks(rowOffsets.slice(0, rows + 1), printable.h, 12) };
+  })();
+  // Nội dung (chữ hoặc ảnh) nằm sau mép phải trang 1 sẽ in sang trang khác: báo để người dùng canh lại.
+  const pageOverflow = (() => {
+    const edge = pageLines.v[0];
+    if (edge === undefined) return null;
+    let column: number | null = null;
+    for (let c = 1; c <= cols && column === null; c++) {
+      if (colOffsets[c - 1] < edge) continue;
+      for (let r = 1; r <= rows; r++) {
+        if (textOf(sheet.getCell(r, c))) {
+          column = c;
+          break;
+        }
+      }
+    }
+    const image = images.some((item) => {
+      const left = posAt(colOffsets, item.range.tl.col);
+      const width = item.range.ext?.width ?? (item.range.br ? posAt(colOffsets, item.range.br.col) - left : 80);
+      return left + width > edge + 1;
+    });
+    return column === null && !image ? null : { column, image };
   })();
   const at = posAt;
 
@@ -1408,6 +1441,13 @@ export const SpreadsheetEditor = forwardRef<SpreadsheetHandle, { workbook: Workb
           />
         </div>
       ) : null}
+      {pageOverflow ? (
+        <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs leading-5 text-red-800" role="alert">
+          <strong>Nội dung vượt khổ giấy:</strong>{" "}
+          {pageOverflow.column !== null ? `từ cột ${colLetter(pageOverflow.column)} trở đi` : "ảnh"}
+          {pageOverflow.column !== null && pageOverflow.image ? " và ảnh" : ""} nằm sau đường nét đứt xanh nên sẽ in sang trang khác. Thu hẹp cột, chọn khổ giấy lớn hơn hoặc đổi sang hướng ngang.
+        </p>
+      ) : null}
       <input accept="image/png,image/jpeg,image/gif" className="hidden" onChange={onImageFile} ref={imageInput} type="file" />
       <div className="min-h-0">
         <div
@@ -1636,6 +1676,9 @@ export const SpreadsheetEditor = forwardRef<SpreadsheetHandle, { workbook: Workb
                   />
                 ) : null}
               </div>
+            ) : null}
+            {pageLines.v.length ? (
+              <div className="pointer-events-none absolute z-[3] bg-slate-500/10" style={{ left: chromeW + pageLines.v[0], top: chromeH, width: Math.max(0, colOffsets[cols] - pageLines.v[0]), height: rowOffsets[rows] }} title="Ngoài trang in đầu tiên" />
             ) : null}
             {pageLines.v.map((x) => (
               <div className="pointer-events-none absolute z-[4] border-l-2 border-dashed border-blue-500/80" key={`pv${x}`} style={{ left: chromeW + x, top: chromeH, height: rowOffsets[rows] }} title="Mép trang in" />
