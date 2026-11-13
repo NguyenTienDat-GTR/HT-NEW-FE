@@ -1421,7 +1421,8 @@ export const SpreadsheetEditor = forwardRef<SpreadsheetHandle, { workbook: Workb
           tabIndex={0}
         >
           <div className="relative w-max" data-sheet-wrap="" style={{ zoom: zoom / 100 }}>
-            <table className="border-separate border-spacing-0 select-none" style={{ tableLayout: "fixed" }}>
+            {/* Chiều rộng tổng phải đặt rõ: tableLayout fixed với width auto vẫn bị trình duyệt giãn cột theo nội dung (vd. email dài ở tab Xem trước). */}
+            <table className="border-separate border-spacing-0 select-none" style={{ tableLayout: "fixed", width: 40 + Array.from({ length: cols }, (_, index) => colPx(sheet.getColumn(index + 1).width)).reduce((sum, width) => sum + width, 0) }}>
               <colgroup>
                 <col style={{ width: 40 }} />
                 {Array.from({ length: cols }, (_, index) => (
