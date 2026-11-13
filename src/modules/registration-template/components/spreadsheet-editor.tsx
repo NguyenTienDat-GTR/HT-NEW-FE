@@ -1,14 +1,17 @@
 "use client";
 
-import { ArrowsInSimple, ArrowsOutSimple, Eye, Keyboard, PencilSimple } from "@phosphor-icons/react";
+import { ArrowsInSimple, ArrowsOutSimple, DownloadSimple, Eye, Keyboard, PencilSimple } from "@phosphor-icons/react";
 import type { Cell, Workbook, Worksheet } from "exceljs";
 import { Fragment, forwardRef, type ReactNode, useCallback, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { TemplateField } from "../api";
 import { Toolbar } from "./ribbon";
-import { PREVIEW_ROWS, sampleText } from "../sample-data";
-import { cellAddress, changeCase, colLetter, parseMerge, splitTokens, type CaseMode, type MergeRange, type TokenMod } from "../sheet-model";
+import { toast } from "sonner";
+import { getApiErrorMessage } from "@/lib/api/client";
+import { downloadTemplatePreview } from "../api";
+import { buildPreviewPayload, PREVIEW_ROWS, sampleText } from "../sample-data";
+import { applyPageSetup, cellAddress, changeCase, colLetter, defaultPageSetup, parseMerge, printableSize, splitTokens, type CaseMode, type MergeRange, type TokenMod } from "../sheet-model";
 
 export type SpreadsheetHandle = { getBuffer: () => Promise<ArrayBuffer> };
 
@@ -32,6 +35,29 @@ const applyAnchor = (target: AnchorLike, a: Anchor4) => {
   target.nativeRow = a[2];
   target.nativeRowOff = a[3];
 };
+
+const EMU_PER_PX = 9525;
+
+/**
+ * Vị trí neo ảnh dạng chỉ số ô thập phân (2.5 = giữa ô thứ 3). Phần lệch trong ô trong file Excel tính bằng EMU thật (px x 9525);
+ * getter/setter `col`/`row` của exceljs quy đổi sai tỉ lệ (độ rộng ký tự x 10000) nên ảnh bị lệch khi mở bằng Excel, vì vậy tự quy đổi ở đây.
+ */
+function anchorIndex(sheet: Worksheet, anchor: AnchorLike, axis: "col" | "row"): number {
+  if (axis === "col") return anchor.nativeCol + anchor.nativeColOff / (colPx(sheet.getColumn(anchor.nativeCol + 1).width) * EMU_PER_PX);
+  return anchor.nativeRow + anchor.nativeRowOff / (rowPx(sheet.findRow(anchor.nativeRow + 1)?.height) * EMU_PER_PX);
+}
+
+function setAnchorIndex(sheet: Worksheet, anchor: AnchorLike, axis: "col" | "row", value: number) {
+  const whole = Math.max(0, Math.floor(value));
+  const fraction = Math.max(0, value - whole);
+  if (axis === "col") {
+    anchor.nativeCol = whole;
+    anchor.nativeColOff = Math.round(fraction * colPx(sheet.getColumn(whole + 1).width) * EMU_PER_PX);
+  } else {
+    anchor.nativeRow = whole;
+    anchor.nativeRowOff = Math.round(fraction * rowPx(sheet.findRow(whole + 1)?.height) * EMU_PER_PX);
+  }
+}
 
 function setSheetMedia(sheet: Worksheet, media: unknown[]) {
   (sheet as unknown as { _media: unknown[] })._media = media;
@@ -156,6 +182,8 @@ export const SpreadsheetEditor = forwardRef<SpreadsheetHandle, { workbook: Workb
   const [menu, setMenu] = useState<{ x: number; y: number; kind: "cell" | "col" | "row" } | null>(null);
   const [sizeDialog, setSizeDialog] = useState<{ kind: "col" | "row"; value: string } | null>(null);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [showBreaks, setShowBreaks] = useState(true);
+  const [downloading, setDownloading] = useState(false);
   const [painter, setPainter] = useState<unknown>(null);
   const painterRef = useRef<unknown>(null);
   const fillDrag = useRef(false);
@@ -183,7 +211,11 @@ export const SpreadsheetEditor = forwardRef<SpreadsheetHandle, { workbook: Workb
   const imageInput = useRef<HTMLInputElement>(null);
   const [resizeCount, forceResize] = useState(0);
 
-  useImperativeHandle(ref, () => ({ getBuffer: async () => (await workbook.xlsx.writeBuffer()) as ArrayBuffer }), [workbook]);
+  useImperativeHandle(ref, () => ({ getBuffer: async () => {
+      defaultPageSetup(workbook.worksheets[0]);
+      return (await workbook.xlsx.writeBuffer()) as ArrayBuffer;
+    },
+  }), [workbook]);
 
   const rows = Math.min(MAX_ROWS, Math.max(sheet.rowCount + 15, 40));
   const cols = Math.min(MAX_COLS, Math.max(sheet.columnCount + 2, 10));
@@ -695,6 +727,27 @@ export const SpreadsheetEditor = forwardRef<SpreadsheetHandle, { workbook: Workb
     setEditing({ row: target.row, col: target.col, text: `${textOf(sheet.getCell(target.row, target.col))}\n`, mode: "edit" });
   }
 
+  function setPage(patch: { paperSize?: number; orientation?: "portrait" | "landscape" }) {
+    if (readOnly) return;
+    applyPageSetup(sheet, patch);
+    setTick((value) => value + 1);
+    onDirty?.();
+  }
+
+  async function downloadPreview() {
+    setDownloading(true);
+    try {
+      defaultPageSetup(workbook.worksheets[0]);
+      const buffer = (await workbook.xlsx.writeBuffer()) as ArrayBuffer;
+      const name = await downloadTemplatePreview(buffer, buildPreviewPayload(fields));
+      toast.success(`Đã tải file xem trước: ${name}`);
+    } catch (error) {
+      toast.error(getApiErrorMessage(error), { duration: 10000 });
+    } finally {
+      setDownloading(false);
+    }
+  }
+
   const arrowStep: Record<string, [number, number]> = { ArrowDown: [1, 0], ArrowUp: [-1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1] };
   const FONT_STEPS = [8, 9, 10, 11, 12, 13, 14, 16, 18, 20, 24, 28, 32, 36, 48];
 
@@ -867,13 +920,13 @@ export const SpreadsheetEditor = forwardRef<SpreadsheetHandle, { workbook: Workb
         h = Math.max(16, h);
         const left = resize.dx < 0 ? resize.left + (resize.width - w) : resize.left;
         const top = resize.dy < 0 ? resize.top + (resize.height - h) : resize.top;
-        item.range.tl.col = indexAt(cOff, left);
-        item.range.tl.row = indexAt(rOff, top);
+        setAnchorIndex(sheet, item.range.tl, "col", indexAt(cOff, left));
+        setAnchorIndex(sheet, item.range.tl, "row", indexAt(rOff, top));
         if (item.range.ext) {
           item.range.ext = { width: w, height: h };
         } else if (item.range.br) {
-          item.range.br.col = indexAt(cOff, left + w);
-          item.range.br.row = indexAt(rOff, top + h);
+          setAnchorIndex(sheet, item.range.br, "col", indexAt(cOff, left + w));
+          setAnchorIndex(sheet, item.range.br, "row", indexAt(rOff, top + h));
         }
         forceResize((value) => value + 1);
         return;
@@ -886,11 +939,11 @@ export const SpreadsheetEditor = forwardRef<SpreadsheetHandle, { workbook: Workb
         const z = zoomRef.current;
         const newCol = indexAt(cOff, posAt(cOff, imgDrag.col) + (event.clientX - imgDrag.startX) / z);
         const newRow = indexAt(rOff, posAt(rOff, imgDrag.row) + (event.clientY - imgDrag.startY) / z);
-        item.range.tl.col = newCol;
-        item.range.tl.row = newRow;
+        setAnchorIndex(sheet, item.range.tl, "col", newCol);
+        setAnchorIndex(sheet, item.range.tl, "row", newRow);
         if (item.range.br && imgDrag.brCol !== undefined && imgDrag.brRow !== undefined) {
-          item.range.br.col = imgDrag.brCol + (newCol - imgDrag.col);
-          item.range.br.row = imgDrag.brRow + (newRow - imgDrag.row);
+          setAnchorIndex(sheet, item.range.br, "col", imgDrag.brCol + (newCol - imgDrag.col));
+          setAnchorIndex(sheet, item.range.br, "row", imgDrag.brRow + (newRow - imgDrag.row));
         }
         forceResize((value) => value + 1);
         return;
@@ -962,7 +1015,12 @@ export const SpreadsheetEditor = forwardRef<SpreadsheetHandle, { workbook: Workb
     void tick;
     return sheet.getImages().map((item, index) => {
       const media = workbook.getImage(Number(item.imageId));
-      const range = item.range as unknown as { tl: { col: number; row: number }; br?: { col: number; row: number }; ext?: { width: number; height: number } };
+      const real = item.range as unknown as MediaLike["range"];
+      const range = {
+        tl: { col: anchorIndex(sheet, real.tl, "col"), row: anchorIndex(sheet, real.tl, "row") },
+        br: real.br ? { col: anchorIndex(sheet, real.br, "col"), row: anchorIndex(sheet, real.br, "row") } : undefined,
+        ext: real.ext,
+      };
       return { index, media, range };
     });
   }, [sheet, workbook, tick]);
@@ -1011,6 +1069,20 @@ export const SpreadsheetEditor = forwardRef<SpreadsheetHandle, { workbook: Workb
   const colOffsets = useMeasured && measure ? measure.cols : computedColOffsets;
   const chromeW = measure?.w ?? 40;
   const chromeH = measure?.h ?? 24;
+  // Khổ giấy / hướng in lưu trong chính file Excel (thiết lập trang); mặc định A4 dọc. Mép trang in vẽ nét đứt xanh như Excel.
+  const paperId = sheet.pageSetup?.paperSize ?? 9;
+  const orientation: "portrait" | "landscape" = sheet.pageSetup?.orientation === "landscape" ? "landscape" : "portrait";
+  const printable = printableSize(paperId, orientation, sheet.pageSetup?.margins);
+  const pageLines = (() => {
+    if (preview || !showBreaks) return { v: [] as number[], h: [] as number[] };
+    const width = colOffsets[cols] ?? 0;
+    const height = rowOffsets[rows] ?? 0;
+    const v: number[] = [];
+    const h: number[] = [];
+    for (let x = printable.w; x < width && v.length < 8; x += printable.w) v.push(x);
+    for (let y = printable.h; y < height && h.length < 12; y += printable.h) h.push(y);
+    return { v, h };
+  })();
   const at = posAt;
 
   const imageUrls = useMemo(() => {
@@ -1240,7 +1312,14 @@ export const SpreadsheetEditor = forwardRef<SpreadsheetHandle, { workbook: Workb
             <Eye size={15} /> Xem trước
           </button>
         </div>
-        {preview ? <span className="text-xs text-muted">Dữ liệu minh họa: dòng bảng được nhân lên {PREVIEW_ROWS} người như khi xuất thật.</span> : null}
+        {preview ? (
+          <>
+            <span className="text-xs text-muted">Dữ liệu minh họa: dòng bảng được nhân lên {PREVIEW_ROWS} người như khi xuất thật.</span>
+            <Button loading={downloading} onClick={() => void downloadPreview()} size="sm" title="Tải file Excel có dữ liệu mẫu, dựng bằng đúng bộ dựng khi xuất thật" type="button" variant="outline">
+              <DownloadSimple size={16} /> Tải file xem trước
+            </Button>
+          </>
+        ) : null}
         <div className="ml-auto flex flex-wrap items-center gap-2">
           {!fullscreen ? (
             <div className="flex items-center gap-1" title="Tăng / giảm chiều cao khung chỉnh sửa">
@@ -1291,6 +1370,12 @@ export const SpreadsheetEditor = forwardRef<SpreadsheetHandle, { workbook: Workb
           onField={(key, mod) => addToken(key, undefined, undefined, mod)}
           onShift={shiftSheet}
           onLineBreak={insertLineBreak}
+          onOrientation={(value) => setPage({ orientation: value })}
+          onPaper={(id) => setPage({ paperSize: id })}
+          onShowBreaks={setShowBreaks}
+          orientation={orientation}
+          paperId={paperId}
+          showBreaks={showBreaks}
           onPainter={startPainter}
           painterActive={Boolean(painter)}
           vertical={active.alignment?.vertical}
@@ -1551,6 +1636,12 @@ export const SpreadsheetEditor = forwardRef<SpreadsheetHandle, { workbook: Workb
                 ) : null}
               </div>
             ) : null}
+            {pageLines.v.map((x) => (
+              <div className="pointer-events-none absolute z-[4] border-l-2 border-dashed border-blue-500/80" key={`pv${x}`} style={{ left: chromeW + x, top: chromeH, height: rowOffsets[rows] }} title="Mép trang in" />
+            ))}
+            {pageLines.h.map((y) => (
+              <div className="pointer-events-none absolute z-[4] border-t-2 border-dashed border-blue-500/80" key={`ph${y}`} style={{ left: chromeW, top: chromeH + y, width: colOffsets[cols] }} title="Mép trang in" />
+            ))}
             {moveDelta && !preview && (moveDelta.dr !== 0 || moveDelta.dc !== 0) ? (
               <div
                 className="pointer-events-none absolute z-[6] border-2 border-dashed border-primary bg-primary/10"

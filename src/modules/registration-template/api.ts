@@ -1,4 +1,4 @@
-import { apiDownload, apiFetch, downloadFile } from "@/lib/api/client";
+import { apiDownload, apiFetch, downloadFile, parseContentDispositionFilename } from "@/lib/api/client";
 
 export type TemplateFieldKind = "CELL" | "COLUMN";
 
@@ -53,4 +53,25 @@ export async function fetchTemplateBuffer(unit?: TemplateUnit) {
 
 export function downloadTemplateFile(fileName: string, unit?: TemplateUnit) {
   return downloadFile(withUnit(`${BASE}/file`, unit), fileName);
+}
+
+export type PreviewPayload = { values: Record<string, string>; rows: Record<string, string>[] };
+
+/** Tải file xem trước: mẫu đang soạn (chưa cần lưu) điền dữ liệu minh họa, dựng ở backend bằng đúng bộ dựng khi xuất thật. */
+export async function downloadTemplatePreview(buffer: ArrayBuffer, payload: PreviewPayload) {
+  const form = new FormData();
+  form.append("file", new File([buffer], "mau-danh-sach-dang-ky.xlsx", { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
+  form.append("data", new Blob([JSON.stringify(payload)], { type: "application/json" }));
+  const response = await apiDownload(`${BASE}/preview`, { method: "POST", body: form });
+  const blob = await response.blob();
+  const name = parseContentDispositionFilename(response.headers.get("content-disposition")) ?? "xem-truoc-mau-danh-sach-dang-ky.xlsx";
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = name;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+  return name;
 }

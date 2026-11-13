@@ -24,7 +24,7 @@ import {
   type TemplateUnitType,
 } from "../api";
 import { useDesignerFullscreen } from "@/modules/layout-config/wysiwyg/use-fullscreen";
-import { starterLayout } from "../sheet-model";
+import { defaultPageSetup, starterLayout } from "../sheet-model";
 import { SpreadsheetEditor, type SpreadsheetHandle } from "./spreadsheet-editor";
 
 const QUERY_KEY = "registration-template";
@@ -34,6 +34,8 @@ async function loadWorkbook(buffer?: ArrayBuffer): Promise<Workbook> {
   const workbook = new ExcelJS.Workbook();
   if (buffer) await workbook.xlsx.load(buffer);
   if (!workbook.worksheets.length) workbook.addWorksheet("Danh sách đăng ký");
+  // Mặc định A4 dọc nếu mẫu chưa có thiết lập trang.
+  defaultPageSetup(workbook.worksheets[0]);
   return workbook;
 }
 

@@ -85,3 +85,38 @@ describe("title case and field examples", () => {
     expect(sampleFor("khongCo")).toBe("");
   });
 });
+
+describe("page setup", () => {
+  it("computes the printable area of A4 portrait and landscape at 96 dpi", async () => {
+    const { printableSize } = await import("@/modules/registration-template/sheet-model");
+    const portrait = printableSize(9, "portrait");
+    const landscape = printableSize(9, "landscape");
+    expect(Math.round(portrait.w)).toBe(659);
+    expect(Math.round(portrait.h)).toBe(979);
+    expect(Math.round(landscape.w)).toBe(988);
+    expect(Math.round(landscape.h)).toBe(650);
+  });
+
+  it("defaults a template without page setup to A4 portrait and keeps an existing orientation", async () => {
+    const ExcelJS = (await import("exceljs")).default;
+    const { defaultPageSetup } = await import("@/modules/registration-template/sheet-model");
+    const sheet = new ExcelJS.Workbook().addWorksheet("x");
+    defaultPageSetup(sheet);
+    expect(sheet.pageSetup.paperSize).toBe(9);
+    expect(sheet.pageSetup.orientation).toBe("portrait");
+    sheet.pageSetup.orientation = "landscape";
+    defaultPageSetup(sheet);
+    expect(sheet.pageSetup.orientation).toBe("landscape");
+  });
+
+  it("builds the preview payload with one value per cell field and sample rows for column fields", async () => {
+    const { buildPreviewPayload } = await import("@/modules/registration-template/sample-data");
+    const payload = buildPreviewPayload([
+      { key: "tenKhoa", kind: "CELL" },
+      { key: "hoVaTen", kind: "COLUMN" },
+    ]);
+    expect(payload.values.tenKhoa).toContain("Sa Mạc");
+    expect(payload.rows).toHaveLength(5);
+    expect(payload.rows[0].hoVaTen).not.toBe(payload.rows[1].hoVaTen);
+  });
+});
