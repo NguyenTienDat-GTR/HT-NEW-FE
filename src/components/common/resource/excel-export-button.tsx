@@ -16,6 +16,7 @@ import { createExcelExportJob } from "@/lib/jobs/excel-jobs-client";
 import { excelJobsStore } from "@/lib/jobs/excel-jobs-store";
 import { cn } from "@/lib/utils";
 import { groupExportColumns } from "./excel-export-groups";
+import { exportLevelOf, templateGroupOptions, type TemplateGroupBy } from "./excel-export-scope";
 
 // Endpoint danh sách -> tên file xuất. Chỉ các danh sách có endpoint `/export` ở backend mới có nút xuất.
 export const EXCEL_EXPORT_FILES: Record<string, string> = {
@@ -67,7 +68,8 @@ function defaultColumnsFor(endpoint: string, tab?: string) {
 // Danh sách đăng ký của một khóa còn xuất được theo mẫu Excel của giáo phận.
 const TEMPLATE_ENDPOINT = "/training/participations";
 
-type GroupBy = "NONE" | "DEANERY" | "PARISH";
+type GroupBy = TemplateGroupBy;
+const GROUP_LABELS: Record<GroupBy, string> = { NONE: "Không gom", DEANERY: "Theo giáo hạt", PARISH: "Theo giáo xứ" };
 type Layout = "SINGLE_SHEET" | "SHEET_PER_GROUP" | "FILE_PER_GROUP";
 
 // Bỏ phân trang: file xuất luôn chứa toàn bộ kết quả của bộ lọc/tìm kiếm/sắp xếp đang dùng (không lọc thì xuất tất cả).
@@ -138,7 +140,10 @@ function ExcelExportDialog({ endpoint, queryString, onClose, tab }: { endpoint: 
   const courseCode = endpoint === TEMPLATE_ENDPOINT ? courseCodeOf(queryString) : null;
   const canConfigureTemplate = isSuperAdmin(user) || hasPermissionPrefix(user, "training.registration_template.update.");
   const [mode, setMode] = useState<"list" | "template">("list");
+  // Tùy chọn gom nhóm theo cấp tài khoản: giáo xứ xuất thẳng một danh sách, giáo hạt không gom theo giáo hạt.
+  const groupOptions = templateGroupOptions(exportLevelOf(user));
   const [groupBy, setGroupBy] = useState<GroupBy>("PARISH");
+  const effectiveGroupBy: GroupBy = groupOptions.length === 0 ? "NONE" : groupOptions.includes(groupBy) ? groupBy : "PARISH";
   const [layout, setLayout] = useState<Layout>("SHEET_PER_GROUP");
   const [selected, setSelected] = useState<string[] | null>(null);
   const [exporting, setExporting] = useState(false);
@@ -182,8 +187,8 @@ function ExcelExportDialog({ endpoint, queryString, onClose, tab }: { endpoint: 
     const extra = new URLSearchParams();
     let path: string;
     if (mode === "template") {
-      extra.set("groupBy", groupBy);
-      extra.set("layout", groupBy === "NONE" ? "SINGLE_SHEET" : layout);
+      extra.set("groupBy", effectiveGroupBy);
+      extra.set("layout", effectiveGroupBy === "NONE" ? "SINGLE_SHEET" : layout);
       path = buildExportPath(endpoint, queryString, extra, "/template-export");
     } else {
       // Chọn đủ mọi cột thì không gửi danh sách cột (backend hiểu là tất cả).
@@ -243,28 +248,19 @@ function ExcelExportDialog({ endpoint, queryString, onClose, tab }: { endpoint: 
 
           <div className="min-h-0 flex-1 overflow-y-auto p-5">
             {courseCode ? (
-              <div className="mb-4 inline-flex rounded-lg border border-border bg-surface-1 p-1" role="tablist">
-                {(
-                  [
-                    ["list", "Danh sách thường"],
-                    ["template", "Theo mẫu đăng ký"],
-                  ] as const
-                ).map(([value, label]) => (
-                  <button
-                    aria-selected={mode === value}
-                    className={cn(
-                      "h-9 rounded-md px-3 text-sm font-semibold transition-colors",
-                      mode === value ? "bg-white text-primary shadow-sm" : "text-text-secondary hover:text-foreground",
-                    )}
-                    key={value}
-                    onClick={() => setMode(value)}
-                    role="tab"
-                    type="button"
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
+              <fieldset className="mb-5">
+                <legend className="mb-2 text-sm font-semibold text-foreground">Kiểu file</legend>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <Choice checked={mode === "list"} hint="Bảng danh sách, tự chọn các cột cần xuất" label="Danh sách thường" name="exportMode" onChange={() => setMode("list")} />
+                  <Choice
+                    checked={mode === "template"}
+                    hint={groupOptions.length === 0 ? "Điền danh sách vào mẫu của đơn vị tổ chức khóa, xuất ngay" : "Điền danh sách vào mẫu Excel của đơn vị tổ chức khóa"}
+                    label="Theo mẫu đăng ký"
+                    name="exportMode"
+                    onChange={() => setMode("template")}
+                  />
+                </div>
+              </fieldset>
             ) : null}
 
             {mode === "list" ? (
@@ -323,48 +319,46 @@ function ExcelExportDialog({ endpoint, queryString, onClose, tab }: { endpoint: 
               </div>
             ) : (
               <div className="space-y-5">
-                <fieldset>
-                  <legend className="mb-2 text-sm font-semibold text-foreground">Gom danh sách</legend>
-                  <div className="grid gap-1 sm:grid-cols-3">
-                    {(
-                      [
-                        ["NONE", "Không gom"],
-                        ["DEANERY", "Theo giáo hạt"],
-                        ["PARISH", "Theo giáo xứ"],
-                      ] as const
-                    ).map(([value, label]) => (
-                      <Choice checked={groupBy === value} key={value} label={label} name="groupBy" onChange={() => setGroupBy(value)} />
-                    ))}
-                  </div>
-                </fieldset>
-                <fieldset disabled={groupBy === "NONE"}>
-                  <legend className={cn("mb-2 text-sm font-semibold", groupBy === "NONE" ? "text-muted" : "text-foreground")}>Cách chia</legend>
-                  <div className="grid gap-1">
-                    <Choice
-                      checked={layout === "SINGLE_SHEET"}
-                      hint="Một bảng chung, có dòng tên giáo hạt / giáo xứ ngăn giữa các nhóm"
-                      label="Gom trong một sheet"
-                      name="layout"
-                      onChange={() => setLayout("SINGLE_SHEET")}
-                    />
-                    <Choice
-                      checked={layout === "SHEET_PER_GROUP"}
-                      hint="Mỗi sheet là một bản mẫu đã điền tên đơn vị, STT đánh lại từ 1"
-                      label="Mỗi nhóm một sheet"
-                      name="layout"
-                      onChange={() => setLayout("SHEET_PER_GROUP")}
-                    />
-                    <Choice
-                      checked={layout === "FILE_PER_GROUP"}
-                      hint="Tải về file .zip gồm nhiều file Excel, mỗi nhóm một file"
-                      label="Mỗi nhóm một file (.zip)"
-                      name="layout"
-                      onChange={() => setLayout("FILE_PER_GROUP")}
-                    />
-                  </div>
-                </fieldset>
+                {groupOptions.length > 0 ? (
+                  <fieldset>
+                    <legend className="mb-2 text-sm font-semibold text-foreground">Gom danh sách</legend>
+                    <div className={cn("grid gap-1", groupOptions.length > 2 ? "sm:grid-cols-3" : "sm:grid-cols-2")}>
+                      {groupOptions.map((value) => (
+                        <Choice checked={effectiveGroupBy === value} key={value} label={GROUP_LABELS[value]} name="groupBy" onChange={() => setGroupBy(value)} />
+                      ))}
+                    </div>
+                  </fieldset>
+                ) : null}
+                {effectiveGroupBy !== "NONE" ? (
+                  <fieldset>
+                    <legend className="mb-2 text-sm font-semibold text-foreground">Cách chia</legend>
+                    <div className="grid gap-1">
+                      <Choice
+                        checked={layout === "SINGLE_SHEET"}
+                        hint={`Một bảng chung, có dòng tên ${effectiveGroupBy === "DEANERY" ? "giáo hạt" : "giáo xứ"} ngăn giữa các nhóm`}
+                        label="Gom trong một sheet"
+                        name="layout"
+                        onChange={() => setLayout("SINGLE_SHEET")}
+                      />
+                      <Choice
+                        checked={layout === "SHEET_PER_GROUP"}
+                        hint="Mỗi sheet là một bản mẫu đã điền tên đơn vị, STT đánh lại từ 1"
+                        label="Mỗi nhóm một sheet"
+                        name="layout"
+                        onChange={() => setLayout("SHEET_PER_GROUP")}
+                      />
+                      <Choice
+                        checked={layout === "FILE_PER_GROUP"}
+                        hint="Tải về file .zip gồm nhiều file Excel, mỗi nhóm một file"
+                        label="Mỗi nhóm một file (.zip)"
+                        name="layout"
+                        onChange={() => setLayout("FILE_PER_GROUP")}
+                      />
+                    </div>
+                  </fieldset>
+                ) : null}
                 <p className="text-sm leading-6 text-muted">
-                  Danh sách theo đúng bộ lọc đang chọn ở tab.{" "}
+                  Danh sách theo đúng bộ lọc đang chọn ở tab{groupOptions.length === 0 ? ", không cần chọn thêm: bấm Xuất để tải file." : "."}{" "}
                   {canConfigureTemplate ? (
                     <Link className="font-semibold text-primary underline-offset-2 hover:underline" href="/training/registration-template">
                       Cấu hình mẫu danh sách đăng ký
