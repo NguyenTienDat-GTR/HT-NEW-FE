@@ -546,3 +546,9 @@ BE tương ứng: `BE/project.md` mục "Training Course Registration Control an
 - Xuất Excel ở trang thống kê (`modules/analytics/excel.ts`) thêm dòng giáo phận/giáo hạt/giáo xứ trên tiêu đề.
 - Ghi chú sửa lỗi hay gặp: lớp chữ tràn phủ lên ô bên cạnh phải `pointer-events: none`; vị trí viền chọn/ảnh đo từ DOM (kích thước thập phân chia mức thu phóng) chứ không tính từ số ước lượng.
 - Test: `tests/unit/modules/registration-template/sheet-model.test.ts`, `tests/unit/modules/analytics/export-and-delta.test.ts`.
+
+## chore/cd-vps-moi — CD không còn deploy, VPS tự cập nhật (2026-11-13)
+
+- Production chạy trên VPS Windows do người khác quản (tunnel Cloudflare `qlht-173`). Job `deploy` (SSH vào EC2 AWS) đã bỏ khỏi `.github/workflows/cd.yml`: CD chỉ chạy test, build và đẩy image `latest` lên GHCR.
+- Trên VPS, container `watchtower` (chủ VPS cài) định kỳ kiểm tra GHCR, thấy image mới của service có nhãn `com.centurylinklabs.watchtower.enable=true` thì pull và khởi động lại. Package GHCR (`ht-new`, `ht-new-fe`) cần để public hoặc VPS có token đọc.
+- Secret `PROD_ENV_FILE`, `SSH_USER`, `SSH_PRIVATE_KEY`, `CF_ACCESS_CLIENT_ID/SECRET` không còn được workflow dùng. `.env` production do chủ VPS giữ.
