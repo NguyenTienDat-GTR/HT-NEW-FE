@@ -547,7 +547,8 @@ BE tương ứng: `BE/project.md` mục "Training Course Registration Control an
 - Ghi chú sửa lỗi hay gặp: lớp chữ tràn phủ lên ô bên cạnh phải `pointer-events: none`; vị trí viền chọn/ảnh đo từ DOM (kích thước thập phân chia mức thu phóng) chứ không tính từ số ước lượng.
 - Test: `tests/unit/modules/registration-template/sheet-model.test.ts`, `tests/unit/modules/analytics/export-and-delta.test.ts`.
 
-## chore/cd-vps-moi — CD deploy sang VPS mới (2026-11-13)
+## chore/cd-vps-moi — CD không còn deploy, VPS tự cập nhật (2026-11-13)
 
-- Production chuyển sang VPS do người khác quản. Job `deploy` trong `.github/workflows/cd.yml` vẫn mở cầu SSH qua `ssh.clead.io.vn`, rồi `pull` + `up -d --no-deps <service fe>` và kiểm tra container chạy. compose và `.env` do chủ VPS giữ.
-- Repo variables tùy chọn: `DEPLOY_DIR` (mặc định `/opt/ht`), `COMPOSE_FILE` (trống = tự tìm), `FE_SERVICE` (mặc định `fe`). Cần secret `SSH_USER`, `SSH_PRIVATE_KEY`; route `ssh.clead.io.vn` phải trỏ vào tunnel của VPS mới.
+- Production chạy trên VPS Windows do người khác quản (tunnel Cloudflare `qlht-173`). Job `deploy` (SSH vào EC2 AWS) đã bỏ khỏi `.github/workflows/cd.yml`: CD chỉ chạy test, build và đẩy image `latest` lên GHCR.
+- Trên VPS, container `watchtower` (chủ VPS cài) định kỳ kiểm tra GHCR, thấy image mới của service có nhãn `com.centurylinklabs.watchtower.enable=true` thì pull và khởi động lại. Package GHCR (`ht-new`, `ht-new-fe`) cần để public hoặc VPS có token đọc.
+- Secret `PROD_ENV_FILE`, `SSH_USER`, `SSH_PRIVATE_KEY`, `CF_ACCESS_CLIENT_ID/SECRET` không còn được workflow dùng. `.env` production do chủ VPS giữ.
