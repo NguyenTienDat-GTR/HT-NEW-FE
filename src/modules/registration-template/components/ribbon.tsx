@@ -29,7 +29,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import type { TemplateField } from "../api";
 import { hintFor, sampleFor } from "../sample-data";
-import type { CaseMode, TokenMod } from "../sheet-model";
+import { PAPERS, type CaseMode, type TokenMod } from "../sheet-model";
 
 type FontStyle = NonNullable<Cell["font"]>;
 type BorderMode = "all" | "outer" | "none" | "bottom";
@@ -284,6 +284,12 @@ export function Toolbar({
   onLineBreak,
   onPainter,
   painterActive,
+  paperId,
+  orientation,
+  showBreaks,
+  onPaper,
+  onOrientation,
+  onShowBreaks,
 }: {
   font: FontStyle;
   horizontal?: string;
@@ -310,6 +316,12 @@ export function Toolbar({
   onPainter: () => void;
   onLineBreak: () => void;
   painterActive: boolean;
+  paperId: number;
+  orientation: "portrait" | "landscape";
+  showBreaks: boolean;
+  onPaper: (id: number) => void;
+  onOrientation: (value: "portrait" | "landscape") => void;
+  onShowBreaks: (value: boolean) => void;
 }) {
   const name = font.name ?? DEFAULT_NAME;
   const size = font.size ?? DEFAULT_SIZE;
@@ -513,6 +525,28 @@ export function Toolbar({
               </div>
             )}
           </Menu>
+        </Row>
+      </Group>
+
+      <Group label="Trang in">
+        <Row>
+          <select aria-label="Khổ giấy" className="h-7 w-20 rounded border border-input bg-white px-1 text-sm" onChange={(event) => onPaper(Number(event.target.value))} title="Khổ giấy" value={paperId}>
+            {PAPERS.map((paper) => (
+              <option key={paper.id} value={paper.id}>
+                {paper.label}
+              </option>
+            ))}
+          </select>
+          <select aria-label="Hướng giấy" className="h-7 w-20 rounded border border-input bg-white px-1 text-sm" onChange={(event) => onOrientation(event.target.value as "portrait" | "landscape")} title="Hướng giấy" value={orientation}>
+            <option value="portrait">Dọc</option>
+            <option value="landscape">Ngang</option>
+          </select>
+        </Row>
+        <Row>
+          <label className="flex cursor-pointer items-center gap-1.5 px-1 text-xs font-semibold text-foreground" title="Hiện đường nét đứt xanh là mép trang in; nội dung nằm ngoài đường này sẽ bị tràn sang trang khác">
+            <input checked={showBreaks} className="h-3.5 w-3.5 accent-primary" onChange={(event) => onShowBreaks(event.target.checked)} type="checkbox" />
+            Đường ngắt trang
+          </label>
         </Row>
       </Group>
 

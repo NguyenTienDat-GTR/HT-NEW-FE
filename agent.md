@@ -552,3 +552,9 @@ BE tương ứng: `BE/project.md` mục "Training Course Registration Control an
 - Production chạy trên VPS Windows do người khác quản (tunnel Cloudflare `qlht-173`). Job `deploy` (SSH vào EC2 AWS) đã bỏ khỏi `.github/workflows/cd.yml`: CD chỉ chạy test, build và đẩy image `latest` lên GHCR.
 - Trên VPS, container `watchtower` (chủ VPS cài) định kỳ kiểm tra GHCR, thấy image mới của service có nhãn `com.centurylinklabs.watchtower.enable=true` thì pull và khởi động lại. Package GHCR (`ht-new`, `ht-new-fe`) cần để public hoặc VPS có token đọc.
 - Secret `PROD_ENV_FILE`, `SSH_USER`, `SSH_PRIVATE_KEY`, `CF_ACCESS_CLIENT_ID/SECRET` không còn được workflow dùng. `.env` production do chủ VPS giữ.
+
+## feat/mau-dang-ky-kho-giay
+- Mẫu danh sách đăng ký: chọn **khổ giấy** (A4 mặc định, A3, A5, Letter, Legal) và **hướng giấy** ở nhóm "Trang in" trên ribbon; lưu trong thiết lập trang của chính file Excel (`sheet.pageSetup`, `sheet-model.ts`: `PAPERS`, `defaultPageSetup`, `applyPageSetup`, `printableSize`). Lưới vẽ đường nét đứt xanh ở mép trang in (vùng in = khổ giấy trừ lề mặc định Excel, 96 dpi, tỉ lệ 100%); có ô bật/tắt "Đường ngắt trang". Bố cục gợi ý đặt A4 ngang.
+- Tab Xem trước có nút "Tải file xem trước": gửi mẫu đang soạn + dữ liệu minh họa (`buildPreviewPayload`) lên `POST /training/registration-template/preview`, BE dựng bằng đúng bộ dựng khi xuất thật.
+- Vị trí ảnh: KHÔNG dùng getter/setter `col`/`row` của exceljs cho neo ảnh (nó quy đổi phần lệch trong ô bằng độ rộng ký tự x 10000, sai so với EMU thật, ảnh bị lệch khi mở bằng Excel). Dùng `anchorIndex`/`setAnchorIndex` trong `spreadsheet-editor.tsx` (EMU = px x 9525). Mẫu đã lưu bằng bản cũ có thể thấy logo lệch trái so với lúc soạn: kéo lại rồi lưu.
+- Test: thêm nhóm "page setup" trong `sheet-model.test.ts`.

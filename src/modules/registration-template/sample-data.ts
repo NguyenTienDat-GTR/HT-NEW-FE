@@ -25,6 +25,7 @@ const CELL_SAMPLES: Record<string, string> = {
   tenNhom: "Giáo xứ Phú Hòa",
   soNguoi: "5",
   tenKhoa: "Khóa huấn luyện Sa Mạc cấp II/2027",
+  capDoYeuCau: "Cấp I",
   maKhoa: "SM2-2027",
   loaiKhoa: "Sa Mạc cấp II",
   namToChuc: "2027",
@@ -41,7 +42,7 @@ const CELL_SAMPLES: Record<string, string> = {
 const NAMES = ["Nguyễn Văn An", "Trần Thị Bình", "Lê Hoàng Cường", "Phạm Thị Dung", "Võ Minh Đạt"];
 
 /** Giá trị minh họa của trường cột cho dòng thứ k (từ 0). */
-function columnSample(key: string, k: number): string {
+export function columnSample(key: string, k: number): string {
   switch (key) {
     case "stt":
       return String(k + 1);
@@ -119,6 +120,7 @@ const FIELD_HINTS: Record<string, string> = {
   loaiHoDiem: SUB_UNIT_HINT,
   tenHoDiem: SUB_UNIT_HINT,
   tenNhom: "Tên giáo hạt hoặc giáo xứ của nhóm đang xuất.",
+  capDoYeuCau: "Cấp độ huynh trưởng cần có để đăng ký khóa; để trống nếu khóa không yêu cầu cấp độ.",
   ngayXuat: "Ngày xuất file, dạng dd/MM/yyyy.",
   ngay: "Ngày xuất file, dạng số.",
   thang: "Tháng xuất file, dạng số.",
@@ -136,3 +138,14 @@ export function sampleFor(key: string, mod?: string): string {
 }
 
 export const PREVIEW_ROWS = 5;
+
+/** Dữ liệu minh họa gửi cho backend dựng file xem trước: giá trị của mọi trường ô và PREVIEW_ROWS dòng của bảng. */
+export function buildPreviewPayload(fields: { key: string; kind: string }[]) {
+  const values: Record<string, string> = {};
+  for (const field of fields) {
+    if (field.kind === "CELL") values[field.key] = sampleFor(field.key);
+  }
+  const columns = fields.filter((field) => field.kind === "COLUMN");
+  const rows = Array.from({ length: PREVIEW_ROWS }, (_, k) => Object.fromEntries(columns.map((field) => [field.key, columnSample(field.key, k)])));
+  return { values, rows };
+}

@@ -75,10 +75,12 @@ export function changeCase(text: string, mode: CaseMode): string {
 
 /** Bố cục gợi ý theo mẫu danh sách đăng ký thường dùng; toàn bộ là trường động nên dùng được cho mọi khóa và cấp. */
 export function starterLayout(sheet: import("exceljs").Worksheet) {
-  const widths = [6, 13, 28, 13, 9, 11, 16, 26, 22];
+  // Vừa khổ A4 ngang (vùng in rộng khoảng 988px).
+  const widths = [6, 12, 24, 12, 8, 10, 14, 22, 18];
   widths.forEach((width, index) => {
     sheet.getColumn(index + 1).width = width;
   });
+  sheet.pageSetup = { ...(sheet.pageSetup ?? {}), paperSize: 9 as never, orientation: "landscape", margins: { left: 0.7, right: 0.7, top: 0.75, bottom: 0.75, header: 0.3, footer: 0.3 } };
   const thin = { style: "thin" as const };
   const box = { top: thin, left: thin, bottom: thin, right: thin };
   const font = (size: number, bold = false) => ({ name: "Times New Roman", size, bold });
@@ -119,4 +121,44 @@ export function starterLayout(sheet: import("exceljs").Worksheet) {
   put("F14", "……………, ngày {{ngay}} tháng {{thang}} năm {{nam}}", { merge: "F14:I14", align: "center" });
   put("B15", "XÁC NHẬN CỦA XỨ ĐOÀN TRƯỞNG", { merge: "B15:C15", bold: true, align: "center" });
   put("F15", "CHUẨN NHẬN CỦA CHA TUYÊN ÚY", { merge: "F15:I15", bold: true, align: "center" });
+}
+
+/** Khổ giấy hỗ trợ: id theo mã PaperSize của Excel; kích thước mm theo chiều dọc. */
+export const PAPERS = [
+  { id: 9, label: "A4", w: 210, h: 297 },
+  { id: 8, label: "A3", w: 297, h: 420 },
+  { id: 11, label: "A5", w: 148, h: 210 },
+  { id: 1, label: "Letter", w: 215.9, h: 279.4 },
+  { id: 5, label: "Legal", w: 215.9, h: 355.6 },
+] as const;
+
+export const DEFAULT_PAPER_ID = 9;
+const DEFAULT_MARGINS = { left: 0.7, right: 0.7, top: 0.75, bottom: 0.75, header: 0.3, footer: 0.3 };
+
+/** Mẫu chưa có thiết lập trang thì đặt mặc định A4 dọc, lề thường của Excel. */
+export function defaultPageSetup(sheet: import("exceljs").Worksheet) {
+  const current = sheet.pageSetup ?? {};
+  sheet.pageSetup = {
+    ...current,
+    paperSize: (current.paperSize ?? DEFAULT_PAPER_ID) as never,
+    orientation: current.orientation === "landscape" ? "landscape" : "portrait",
+    margins: { ...DEFAULT_MARGINS, ...(current.margins ?? {}) },
+  };
+}
+
+/** Vùng in được (px ở 96 dpi, như Excel ở tỉ lệ 100%) của khổ giấy sau khi trừ lề. */
+export function printableSize(paperId: number, orientation: "portrait" | "landscape", margins?: Partial<typeof DEFAULT_MARGINS>) {
+  const paper = PAPERS.find((item) => item.id === paperId) ?? PAPERS[0];
+  const [wMm, hMm] = orientation === "landscape" ? [paper.h, paper.w] : [paper.w, paper.h];
+  const m = { ...DEFAULT_MARGINS, ...(margins ?? {}) };
+  return {
+    w: Math.max(100, (wMm / 25.4 - m.left - m.right) * 96),
+    h: Math.max(100, (hMm / 25.4 - m.top - m.bottom) * 96),
+  };
+}
+
+/** Ghi khổ giấy / hướng in vào thiết lập trang của sheet (mặc định A4 dọc cho phần chưa có). */
+export function applyPageSetup(sheet: import("exceljs").Worksheet, patch: { paperSize?: number; orientation?: "portrait" | "landscape" }) {
+  const current = sheet.pageSetup ?? {};
+  sheet.pageSetup = { ...current, ...(patch.orientation ? { orientation: patch.orientation } : {}), paperSize: (patch.paperSize ?? current.paperSize ?? DEFAULT_PAPER_ID) as never };
 }
