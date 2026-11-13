@@ -205,6 +205,7 @@ export function RecordsDrawer({
         columns: selected,
         rows: all.rows,
         scopeTitle: target.title,
+        unitLines: all.unitLines ?? [],
         // Danh sách huynh trưởng là ảnh chụp hiện tại nên không gắn khoảng thời gian.
         period: target.dataset === "leaders" ? null : effectiveRange(filters),
         generatedAt: new Date(),

@@ -19,6 +19,7 @@ const taxonomyLabels: Record<PermissionTaxonomyKind, Record<string, string>> = {
     badge_config: "Cấu hình thẻ tham dự",
     certificate: "Chứng nhận",
     certificate_config: "Cấu hình chứng nhận",
+    registration_template: "File xuất danh sách đăng ký",
     leader_level: "Cấp độ huynh trưởng",
     course: "Khóa huấn luyện",
     dashboard: "Dashboard phân tích",

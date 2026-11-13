@@ -10,6 +10,8 @@ export type ExcelExportInput = {
   rows: Record<string, RecordCell>[];
   /** Phần tử biểu đồ đang xem (vd. "Hồ sơ đăng ký · Nữ"); rỗng nghĩa là toàn bộ. */
   scopeTitle?: string;
+  /** Dòng GIÁO PHẬN / GIÁO HẠT / GIÁO XỨ đặt trên tiêu đề (theo bộ lọc, không lọc thì theo đơn vị của tài khoản). */
+  unitLines?: string[];
   /** Khoảng thời gian đã áp dụng; danh sách huynh trưởng là ảnh chụp hiện tại nên bỏ trống. */
   period?: { from: string; to: string } | null;
   generatedAt?: Date;
@@ -40,6 +42,7 @@ export type SheetPreview = {
   fileName: string;
   sheetName: string;
   title: string;
+  unitLines: string[];
   infoLines: string[];
   headers: string[];
   rows: string[][];
@@ -55,7 +58,8 @@ export function buildSheetPreview(input: ExcelExportInput, limit = 12): SheetPre
   return {
     fileName: excelFileName(input.dataset, input.scopeTitle, generatedAt),
     sheetName: sanitizeSheetName(meta.sheet),
-    title: meta.title,
+    title: meta.title.toLocaleUpperCase("vi-VN"),
+    unitLines: input.unitLines ?? [],
     infoLines: infoLinesOf(input, generatedAt),
     headers: input.columns.map(columnLabel),
     rows,
@@ -91,11 +95,19 @@ export async function buildWorkbook(input: ExcelExportInput) {
 
   const infoLines = infoLinesOf(input, generatedAt);
 
-  const titleRow = sheet.addRow([meta.title]);
+  for (const line of input.unitLines ?? []) {
+    const row = sheet.addRow([line]);
+    sheet.mergeCells(row.number, 1, row.number, lastColumn);
+    row.getCell(1).font = { name: "Calibri", size: 12, bold: true };
+    row.getCell(1).alignment = { vertical: "middle", horizontal: "center" };
+  }
+  if (input.unitLines?.length) sheet.addRow([]);
+
+  const titleRow = sheet.addRow([meta.title.toLocaleUpperCase("vi-VN")]);
   sheet.mergeCells(titleRow.number, 1, titleRow.number, lastColumn);
   titleRow.height = 30;
   titleRow.getCell(1).font = { name: "Calibri", size: 16, bold: true, color: { argb: "FF1E40AF" } };
-  titleRow.getCell(1).alignment = { vertical: "middle" };
+  titleRow.getCell(1).alignment = { vertical: "middle", horizontal: "center" };
   for (const line of infoLines) {
     const row = sheet.addRow([line]);
     sheet.mergeCells(row.number, 1, row.number, lastColumn);

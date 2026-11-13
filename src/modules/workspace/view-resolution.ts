@@ -13,6 +13,7 @@ export type WorkspaceViewKey =
   | "certificate-config"
   | "cross-deanery"
   | "badge-config"
+  | "registration-template"
   | "leader-levels"
   | "my-permissions"
   | "resource";
@@ -40,6 +41,7 @@ const STANDALONE_VIEWS: Partial<Record<ResourceKind, WorkspaceViewKey>> = {
   "certificate-config": "certificate-config",
   "cross-deanery": "cross-deanery",
   "badge-config": "badge-config",
+  "registration-template": "registration-template",
   "leader-levels": "leader-levels",
   "my-permissions": "my-permissions",
 };

@@ -41,7 +41,12 @@ export function ExportPreview({ preview, exporting, onBack, onDownload }: Export
                 </div>
                 <div className="overflow-x-auto bg-white">
                   <div className="w-max min-w-full">
-                    <p className="px-3 pb-1 pt-3 text-base font-bold text-[#1e40af]">{preview.title}</p>
+                    {preview.unitLines.map((line) => (
+                      <p className="px-3 pt-1 text-center text-sm font-bold text-foreground first:pt-3" key={line}>
+                        {line}
+                      </p>
+                    ))}
+                    <p className="px-3 pb-1 pt-3 text-center text-base font-bold text-[#1e40af]">{preview.title}</p>
                     {preview.infoLines.map((line) => (
                       <p className="px-3 text-xs text-text-secondary" key={line}>
                         {line}
