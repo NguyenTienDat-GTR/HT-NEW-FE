@@ -1,6 +1,20 @@
 import type { PageResponse } from "@/lib/api/client";
 import { formatPermissionTaxonomyValue } from "@/components/common/resource/permission-taxonomy-labels";
-import type { Option } from "./types";
+import type { AuthUser } from "@/lib/auth/auth-store";
+import type { FormFieldSpec, Option } from "./types";
+
+/**
+ * Endpoint + khóa giá trị / nhãn để tải lựa chọn của một trường. Thứ tự ưu tiên: endpoint phụ thuộc trường khác,
+ * nguồn riêng theo tài khoản (khi tài khoản không đọc được endpoint chung), endpoint theo tài khoản, rồi cấu hình gốc của trường.
+ */
+export function resolveOptionSource(field: FormFieldSpec, values: Record<string, unknown>, user: AuthUser | null) {
+  const source = field.optionSourceForUser?.(user);
+  return {
+    optionsEndpoint: field.buildOptionsEndpoint?.(values) ?? source?.endpoint ?? field.optionsEndpointForUser?.(user) ?? field.optionsEndpoint,
+    optionValue: source?.optionValue ?? field.optionValue,
+    optionLabel: source?.optionLabel ?? field.optionLabel,
+  };
+}
 
 export function rowsFromResponse<T extends Record<string, unknown>>(data: PageResponse<T> | T[] | undefined): T[] {
   if (!data) return [];

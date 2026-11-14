@@ -141,7 +141,9 @@ export function MyProfilePage() {
         />
       )}
       <ChangePasswordDialog onOpenChange={setPasswordOpen} open={passwordOpen} />
-      {editOpen && leader ? <EditProfileDialog leader={leader} onClose={() => setEditOpen(false)} /> : null}
+      {editOpen && leader ? (
+        <EditProfileDialog canEditBirthDate={profile.canEditBirthDate === true} leader={leader} onClose={() => setEditOpen(false)} />
+      ) : null}
       {profile.hasLeader ? null : <ChangeEmailDialog currentEmail={profile.email} onOpenChange={setEmailOpen} open={emailOpen} />}
     </div>
   );

@@ -36,6 +36,8 @@ export type MyProfile = {
   roles: MyRole[];
   email: string | null;
   hasLeader: boolean;
+  /** Tài khoản có quyền sửa ngày sinh trong hồ sơ của chính mình (BE tính theo quyền và phạm vi). Thiếu = không có quyền. */
+  canEditBirthDate?: boolean;
   // Ảnh đại diện của tài khoản không gắn huynh trưởng (tài khoản gắn huynh trưởng dùng ảnh trong hồ sơ huynh trưởng).
   imageUrl?: string | null;
   imageThumbUrl?: string | null;
@@ -76,9 +78,10 @@ function postJson<T>(path: string, body: unknown) {
   return apiFetch<T>(path, { method: "POST", body: JSON.stringify(body) });
 }
 
+// Các trường sửa được giống khi quản trị sửa hồ sơ huynh trưởng (tên thánh, giới tính, email, số điện thoại, ảnh);
+// birthDate chỉ được nhận khi tài khoản có quyền sửa ngày sinh. Không có họ và tên.
 export type MyProfileUpdate = Partial<{
   holyName: string;
-  fullName: string;
   birthDate: string;
   gender: string;
   email: string;
@@ -90,7 +93,7 @@ export type MyProfileUpdate = Partial<{
 }>;
 
 export const profileApi = {
-  // Chỉ gửi các trường đổi. Giáo xứ / giáo hạt không sửa được ở đây.
+  // Chỉ gửi các trường đổi. Họ và tên / giáo xứ / giáo hạt không sửa được ở đây.
   update: (changes: MyProfileUpdate) => apiFetch<MyProfile>("/auth/me/profile", { method: "PUT", body: JSON.stringify(changes) }),
 };
 

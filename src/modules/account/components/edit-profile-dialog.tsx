@@ -11,6 +11,7 @@ import { MediaImage } from "@/components/common/media-image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { getApiErrorMessage } from "@/lib/api/client";
+import { displayValue, formatDate } from "@/modules/leaders/components/leader-detail-utils";
 import { myProfileQueryKey, profileApi, type MyLeaderProfile, type MyProfileUpdate } from "../account-api";
 import { FormError } from "./change-password-steps";
 import { PasswordField } from "./password-field";
@@ -19,9 +20,10 @@ import { invalidateDataQueries } from "@/lib/api/query-keys";
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_PATTERN = /^0\d{9}$/;
 
+// Các trường sửa được giống khi quản trị sửa hồ sơ huynh trưởng: tên thánh, giới tính, email, số điện thoại, ảnh.
+// Họ và tên không sửa được; ngày sinh chỉ sửa được khi tài khoản có quyền sửa ngày sinh.
 type Draft = {
   holyName: string;
-  fullName: string;
   birthDate: string;
   gender: string;
   email: string;
@@ -31,7 +33,6 @@ type Draft = {
 function draftFrom(leader: MyLeaderProfile): Draft {
   return {
     holyName: leader.holyName ?? "",
-    fullName: leader.fullName ?? "",
     birthDate: leader.birthDate ?? "",
     gender: leader.gender ?? "",
     email: leader.email ?? "",
@@ -39,12 +40,14 @@ function draftFrom(leader: MyLeaderProfile): Draft {
   };
 }
 
-export function validateDraft(draft: Draft, today = new Date().toISOString().slice(0, 10)) {
+/** Ngày sinh chỉ được kiểm tra khi tài khoản có quyền sửa: không có quyền thì ô đó chỉ để xem, không chặn việc lưu. */
+export function validateDraft(draft: Draft, canEditBirthDate: boolean, today = new Date().toISOString().slice(0, 10)) {
   const errors: Partial<Record<keyof Draft, string>> = {};
   if (!draft.holyName.trim()) errors.holyName = "Vui lòng nhập tên thánh";
-  if (!draft.fullName.trim()) errors.fullName = "Vui lòng nhập họ và tên";
-  if (!draft.birthDate) errors.birthDate = "Vui lòng chọn ngày sinh";
-  else if (draft.birthDate >= today) errors.birthDate = "Ngày sinh phải là một ngày trong quá khứ";
+  if (canEditBirthDate) {
+    if (!draft.birthDate) errors.birthDate = "Vui lòng chọn ngày sinh";
+    else if (draft.birthDate >= today) errors.birthDate = "Ngày sinh phải là một ngày trong quá khứ";
+  }
   if (!draft.gender) errors.gender = "Vui lòng chọn giới tính";
   if (!EMAIL_PATTERN.test(draft.email.trim())) errors.email = "Email không hợp lệ";
   if (!draft.phoneNumber.trim()) errors.phoneNumber = "Số điện thoại là bắt buộc";
@@ -52,32 +55,46 @@ export function validateDraft(draft: Draft, today = new Date().toISOString().sli
   return errors;
 }
 
-/** Chỉ gửi các trường thật sự đổi: backend chỉ kiểm tra trùng email / số điện thoại khi hai giá trị này đổi. */
+/**
+ * Chỉ gửi các trường thật sự đổi: backend chỉ kiểm tra trùng email / số điện thoại khi hai giá trị này đổi.
+ * Ngày sinh chỉ gửi khi tài khoản có quyền sửa ngày sinh (backend cũng từ chối nếu không có quyền).
+ */
 export function buildProfileChanges(
   leader: MyLeaderProfile,
   draft: Draft,
   avatar: { assetId: string | null },
   currentPassword: string,
+  canEditBirthDate: boolean,
 ): MyProfileUpdate {
   const original = draftFrom(leader);
   const changes: MyProfileUpdate = {};
-  const text = (key: "holyName" | "fullName" | "email" | "phoneNumber") => {
+  const text = (key: "holyName" | "email" | "phoneNumber") => {
     const value = draft[key].trim();
     if (value !== original[key].trim()) changes[key] = value;
   };
   text("holyName");
-  text("fullName");
   text("email");
   text("phoneNumber");
-  if (draft.birthDate !== original.birthDate) changes.birthDate = draft.birthDate;
+  if (canEditBirthDate && draft.birthDate !== original.birthDate) changes.birthDate = draft.birthDate;
   if (draft.gender !== original.gender) changes.gender = draft.gender;
   if (avatar.assetId) changes.imageAssetId = avatar.assetId;
   if (changes.email) changes.currentPassword = currentPassword;
   return changes;
 }
 
-/** Tự sửa thông tin cá nhân. Giáo xứ / giáo hạt chỉ xem: do quản trị viên điều chuyển. */
-export function EditProfileDialog({ leader, onClose }: { leader: MyLeaderProfile; onClose: () => void }) {
+/**
+ * Tự sửa thông tin cá nhân, cùng các trường với sửa hồ sơ huynh trưởng. Họ và tên, giáo xứ, giáo hạt chỉ xem (do quản trị viên quản lý / điều chuyển);
+ * ngày sinh chỉ sửa được khi tài khoản có quyền sửa ngày sinh, còn lại chỉ xem.
+ */
+export function EditProfileDialog({
+  leader,
+  canEditBirthDate,
+  onClose,
+}: {
+  leader: MyLeaderProfile;
+  canEditBirthDate: boolean;
+  onClose: () => void;
+}) {
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState<Draft>(() => draftFrom(leader));
   const [avatarUrl, setAvatarUrl] = useState<string | null>(leader.imageUrl ?? null);
@@ -89,8 +106,8 @@ export function EditProfileDialog({ leader, onClose }: { leader: MyLeaderProfile
   const [showErrors, setShowErrors] = useState(false);
   const [consent, setConsent] = useState(false);
 
-  const errors = validateDraft(draft);
-  const changes = buildProfileChanges(leader, draft, avatar, password);
+  const errors = validateDraft(draft, canEditBirthDate);
+  const changes = buildProfileChanges(leader, draft, avatar, password, canEditBirthDate);
   const emailChanging = Boolean(changes.email);
   const hasChanges = Object.keys(changes).filter((key) => key !== "currentPassword").length > 0;
   const needsPassword = emailChanging && !password;
@@ -136,7 +153,8 @@ export function EditProfileDialog({ leader, onClose }: { leader: MyLeaderProfile
               <div>
                 <Dialog.Title className="text-lg font-semibold text-foreground">Chỉnh sửa hồ sơ cá nhân</Dialog.Title>
                 <Dialog.Description className="mt-0.5 text-sm leading-5 text-text-secondary">
-                  Giáo xứ và giáo hạt do quản trị viên điều chuyển nên không sửa ở đây.
+                  Họ và tên, giáo xứ và giáo hạt do quản trị viên quản lý nên không sửa ở đây.
+                  {canEditBirthDate ? "" : " Ngày sinh chỉ sửa được khi tài khoản có quyền sửa ngày sinh."}
                 </Dialog.Description>
               </div>
             </div>
@@ -175,8 +193,9 @@ export function EditProfileDialog({ leader, onClose }: { leader: MyLeaderProfile
 
             <div className="grid gap-4 sm:grid-cols-2">
               <TextField error={fieldError("holyName")} id="profile-holy-name" label="Tên thánh" maxLength={50} onChange={(v) => set("holyName", v)} value={draft.holyName} />
-              <TextField error={fieldError("fullName")} id="profile-full-name" label="Họ và tên" maxLength={200} onChange={(v) => set("fullName", v)} value={draft.fullName} />
-              <TextField error={fieldError("birthDate")} id="profile-birth-date" label="Ngày sinh" onChange={(v) => set("birthDate", v)} type="date" value={draft.birthDate} />
+              {canEditBirthDate ? (
+                <TextField error={fieldError("birthDate")} id="profile-birth-date" label="Ngày sinh" onChange={(v) => set("birthDate", v)} type="date" value={draft.birthDate} />
+              ) : null}
               <div>
                 <label className="block text-sm font-semibold text-foreground" htmlFor="profile-gender">
                   Giới tính
@@ -199,6 +218,16 @@ export function EditProfileDialog({ leader, onClose }: { leader: MyLeaderProfile
             </div>
 
             <dl className="grid gap-3 rounded-lg bg-surface-1 p-3 text-sm sm:grid-cols-2">
+              <div>
+                <dt className="text-xs text-muted">Họ và tên</dt>
+                <dd className="font-medium text-foreground">{displayValue(leader.fullName)}</dd>
+              </div>
+              {canEditBirthDate ? null : (
+                <div>
+                  <dt className="text-xs text-muted">Ngày sinh</dt>
+                  <dd className="font-medium text-foreground">{formatDate(leader.birthDate)}</dd>
+                </div>
+              )}
               <div>
                 <dt className="text-xs text-muted">Giáo xứ / giáo họ / giáo điểm</dt>
                 <dd className="font-medium text-foreground">{leader.parishName ?? "—"}</dd>

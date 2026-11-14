@@ -35,6 +35,9 @@ export type FormFieldSpec = {
   buildOptionsEndpoint?: (values: Record<string, unknown>) => string | undefined;
   // Endpoint lấy lựa chọn phụ thuộc tài khoản (ví dụ chỉ loại khóa thuộc cấp quản lý của mình).
   optionsEndpointForUser?: (user: AuthUser | null) => string | undefined;
+  // Nguồn lựa chọn thay thế khi tài khoản không đọc được endpoint chung (ví dụ tài khoản giáo xứ không có quyền đọc danh sách giáo hạt
+  // nên lấy giáo hạt từ chính dòng giáo xứ của mình, kèm khóa giá trị / nhãn tương ứng). Trả về undefined thì dùng cấu hình của trường.
+  optionSourceForUser?: (user: AuthUser | null) => { endpoint: string; optionValue: string; optionLabel: string } | undefined;
   optionValue?: string;
   optionLabel?: string;
   optionLabelFields?: string[];
