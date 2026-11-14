@@ -404,7 +404,7 @@ function WorkflowBadge({ value }: { value: string }) {
   return <Badge tone={tone}>{label}</Badge>;
 }
 
-function ManagementLevelBadge({ level }: { level: "DIOCESE" | "DEANERY" }) {
+export function ManagementLevelBadge({ level }: { level: "DIOCESE" | "DEANERY" }) {
   const className = level === "DEANERY" ? "border-transparent bg-sky-100 text-sky-800" : "border-transparent bg-violet-100 text-violet-800";
   return <Badge className={className}>{level === "DEANERY" ? "Giáo hạt" : "Giáo phận"}</Badge>;
 }

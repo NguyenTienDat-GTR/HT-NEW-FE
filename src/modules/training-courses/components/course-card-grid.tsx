@@ -3,7 +3,7 @@
 import { CalendarBlank, Clock, MapPin, UsersThree } from "@phosphor-icons/react";
 import type { Route } from "next";
 import Link from "next/link";
-import { Badge } from "@/components/common/resource/resource-format";
+import { Badge, ManagementLevelBadge } from "@/components/common/resource/resource-format";
 import { fillRoute, getResourceId } from "@/components/common/resource/resource-actions";
 import { RowActions } from "@/components/common/resource/resource-table";
 import type { RouteConfig } from "@/config/routes/routes";
@@ -66,6 +66,7 @@ function CourseCard({ route, row }: { route: RouteConfig; row: Record<string, un
     >
       <div className="flex flex-1 flex-col gap-4 p-5">
         <div className="flex flex-wrap items-center gap-1.5">
+          {row.managementUnitType === "DIOCESE" || row.managementUnitType === "DEANERY" ? <ManagementLevelBadge level={row.managementUnitType} /> : null}
           {typeName ? <Badge tone="info">{typeName}</Badge> : null}
           <Badge tone={organizingStateTones[organizing]}>{organizingStateLabels[organizing]}</Badge>
           {disabled ? <Badge tone="danger">Đã vô hiệu hóa</Badge> : null}
