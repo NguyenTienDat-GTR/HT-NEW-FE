@@ -21,6 +21,7 @@ import { CourseTypeRequirements } from "@/modules/training-courses/components/co
 import { CertificateConfigPicker } from "@/modules/certificates/components/certificate-config-picker";
 import { cn } from "@/lib/utils";
 import { resolveRouteForUser } from "@/modules/workspace/super-admin-route-overrides";
+import { resolveOptionSource } from "./api-utils";
 import { FormSections } from "./form-sections";
 import { LeaderFormLayout } from "./leader-form-layout";
 import { getFormSpec } from "./registry";
@@ -101,7 +102,7 @@ export function ResourceFormPage({
     .filter((field) => field.visibleWhen?.(mergedValues, mode, user) ?? true)
     .map((field) => ({
       ...field,
-      optionsEndpoint: field.buildOptionsEndpoint?.(mergedValues) ?? field.optionsEndpointForUser?.(user) ?? field.optionsEndpoint,
+      ...resolveOptionSource(field, mergedValues, user),
       required: field.requiredWhen?.(mergedValues, mode) ?? field.required,
       readOnlyOnEdit: field.readOnlyOnEdit || (field.readOnlyWhen?.(mergedValues, mode) ?? false),
       // Khóa được chọn sẵn từ tab của khóa: hiện tên khóa (không phải mã) kể cả khi khóa không nằm trong danh sách lựa chọn.

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { AuthUser } from "@/lib/auth/auth-store";
 import { personnelFormSpecs } from "@/modules/leaders/form-specs";
 
 const spec = personnelFormSpecs.find((item) => item.kind === "leaders")!;
@@ -36,8 +37,35 @@ describe("leader form spec", () => {
     expect(payload.imageAssetId).toBe("asset-2");
   });
 
-  it("preselects the deanery of a deanery-scoped user", () => {
-    expect(spec.getInitialValues!({ username: "a", roles: [], permissions: [], deaneryId: "d9" })).toEqual({ deaneryId: "d9" });
-    expect(spec.getInitialValues!({ username: "a", roles: [], permissions: [] })).toEqual({});
+  const account = (roles: string[], units: Partial<AuthUser> = {}): AuthUser => ({ username: "a", roles, permissions: [], ...units });
+
+  it("preselects only the deanery for a deanery-level account", () => {
+    expect(spec.getInitialValues!(account(["ADMIN_DEANERY"], { deaneryId: "d9", parishId: "p9" }))).toEqual({ deaneryId: "d9" });
+    expect(spec.getInitialValues!(account(["ROLE_ADMIN_DEANERY"], { deaneryId: "d9" }))).toEqual({ deaneryId: "d9" });
+    expect(spec.getInitialValues!(account(["ADMIN_DEANERY"]))).toEqual({});
+  });
+
+  it("preselects both the deanery and the parish for a parish-level account", () => {
+    expect(spec.getInitialValues!(account(["ADMIN_PARISH"], { deaneryId: "d9", parishId: "p9" }))).toEqual({ deaneryId: "d9", parishId: "p9" });
+    expect(spec.getInitialValues!(account(["ADMIN_PARISH"], { parishId: "p9" }))).toEqual({ parishId: "p9" });
+  });
+
+  it("preselects nothing for a diocese-level account, even when its linked leader gives it a deanery and a parish", () => {
+    expect(spec.getInitialValues!(account(["ADMIN_DIOCESE"], { dioceseId: "g1", deaneryId: "d9", parishId: "p9" }))).toEqual({});
+    expect(spec.getInitialValues!(account(["SUPER_ADMIN"], { deaneryId: "d9", parishId: "p9" }))).toEqual({});
+    expect(spec.getInitialValues!(account(["ADMIN_DIOCESE", "ADMIN_PARISH"], { deaneryId: "d9", parishId: "p9" }))).toEqual({});
+    expect(spec.getInitialValues!(null)).toEqual({});
+  });
+
+  it("reads the deanery from the account's own parish row when the account cannot list deaneries", () => {
+    const source = field("deaneryId").optionSourceForUser!;
+    expect(source({ ...account(["ADMIN_PARISH"]), permissions: ["organization.parish.read.parish"] })).toEqual({
+      endpoint: "/parishes",
+      optionValue: "deaneryId",
+      optionLabel: "deaneryName",
+    });
+    expect(source({ ...account(["ADMIN_DEANERY"]), permissions: ["organization.deanery.read.deanery"] })).toBeUndefined();
+    expect(source({ ...account(["ADMIN_DIOCESE"]), permissions: ["organization.deanery.read.diocese"] })).toBeUndefined();
+    expect(source({ ...account(["SUPER_ADMIN"]), permissions: ["organization.deanery.read.all"] })).toBeUndefined();
   });
 });

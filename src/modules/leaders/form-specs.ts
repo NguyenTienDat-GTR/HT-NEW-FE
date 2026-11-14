@@ -1,4 +1,6 @@
 import { compactPayload, type ResourceFormSpec } from "@/components/form/resource-form/types";
+import type { AuthUser } from "@/lib/auth/auth-store";
+import { hasPermissionPrefix, hasRole } from "@/lib/auth/permissions";
 import { leaderLevelSelect } from "@/modules/organizations/form-specs";
 import { withFilters } from "@/lib/api/filters";
 import { parishOptionLabel } from "./parish-option-label";
@@ -7,6 +9,20 @@ const genderOptions = [
   { value: "NAM", label: "Nam" },
   { value: "NU", label: "Nữ" },
 ];
+
+/**
+ * Giáo hạt / giáo xứ chọn sẵn khi thêm huynh trưởng, theo cấp của tài khoản: giáo xứ → cả giáo hạt và giáo xứ của mình,
+ * giáo hạt → giáo hạt của mình, giáo phận (và quản trị hệ thống) → không chọn sẵn.
+ * Dựa vào vai trò chứ không dựa vào mã đơn vị trong phiên: tài khoản giáo phận có gắn huynh trưởng vẫn có giáo hạt / giáo xứ của huynh trưởng đó.
+ */
+export function leaderScopeDefaults(user: AuthUser | null): Record<string, unknown> {
+  if (!user || hasRole(user, "SUPER_ADMIN") || hasRole(user, "ADMIN_DIOCESE")) return {};
+  if (hasRole(user, "ADMIN_DEANERY")) return user.deaneryId ? { deaneryId: user.deaneryId } : {};
+  if (hasRole(user, "ADMIN_PARISH")) {
+    return { ...(user.deaneryId ? { deaneryId: user.deaneryId } : {}), ...(user.parishId ? { parishId: user.parishId } : {}) };
+  }
+  return {};
+}
 
 export const personnelFormSpecs: ResourceFormSpec[] = [
   {
@@ -30,6 +46,10 @@ export const personnelFormSpecs: ResourceFormSpec[] = [
         type: "select",
         required: true,
         optionsEndpoint: "/deaneries",
+        // Tài khoản giáo xứ không có quyền đọc danh sách giáo hạt (gọi /deaneries bị từ chối nên chỉ còn mã UUID):
+        // lấy giáo hạt từ chính dòng giáo xứ của mình, dòng đó có sẵn mã và tên giáo hạt.
+        optionSourceForUser: (user) =>
+          hasPermissionPrefix(user, "organization.deanery.read.") ? undefined : { endpoint: "/parishes", optionValue: "deaneryId", optionLabel: "deaneryName" },
         optionValue: "id",
         optionLabel: "name",
         section: "Phạm vi",
@@ -50,7 +70,7 @@ export const personnelFormSpecs: ResourceFormSpec[] = [
       },
       { name: "leaderLevel", label: "Cấp huynh trưởng", type: "select", required: true, ...leaderLevelSelect, readOnlyOnEdit: true, section: "Phạm vi" },
     ],
-    getInitialValues: (user) => (user?.deaneryId ? { deaneryId: user.deaneryId } : {}),
+    getInitialValues: leaderScopeDefaults,
     // Id ảnh vừa tải lên không phải trường nhìn thấy nhưng phải gửi cùng hồ sơ.
     extraValueNames: ["imageAssetId"],
     mapSubmit: (values, mode) => {

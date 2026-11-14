@@ -425,7 +425,8 @@ function OptionControl({
     currentValue,
     // Ô phụ thuộc trường khác (đổi giáo hạt → danh sách giáo xứ): giá trị cũ không còn trong danh sách thì bị xóa, không giữ lại hiển thị mã.
     Boolean(field.optionsEndpoint && !field.options && (field.searchable || field.currentLabel || !field.buildOptionsEndpoint)),
-    field.currentLabel || (pickedOption?.value === currentValue ? pickedOption.label : undefined),
+    // Đang tải danh sách thì chưa biết tên của giá trị hiện tại: hiện "Đang tải…" thay vì mã UUID.
+    field.currentLabel || (pickedOption?.value === currentValue ? pickedOption.label : undefined) || (query.isLoading ? "Đang tải…" : undefined),
   );
   const handleSearchableChange = (next: FormValue) => {
     const picked = options.find((option) => option.value === String(next ?? ""));
