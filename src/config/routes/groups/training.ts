@@ -60,7 +60,7 @@ export const trainingRouteGroup: RouteGroup = {
         idField: "courseCode",
         kind: "courses",
         icon: GraduationCap,
-        columns: ["courseName", "courseTypeName", "hostYear", "approvedParticipantCount", "registrationStatus", "organizingStatus", "status"],
+        columns: ["courseName", "courseTypeName", "managementUnitType", "hostYear", "approvedParticipantCount", "registrationStatus", "organizingStatus", "status"],
         // Số tham dự viên đã duyệt là cột tính ra ở response, không sắp xếp được.
         sortFields: { courseTypeName: "courseType.typeName" },
         searchFields: ["courseName", "location"],

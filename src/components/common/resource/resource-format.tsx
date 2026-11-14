@@ -246,6 +246,8 @@ export function ResourceCell({ column, row, value, displayMode = "table", fullNa
     }
     if (holy) return <TextValue full={full}>{name}</TextValue>;
   }
+  // Cấp quản lý của khóa / loại khóa: nhãn màu theo cấp (giáo phận tím, giáo hạt xanh trời) để phân biệt ngay ở danh sách.
+  if (column === "managementUnitType" && (value === "DIOCESE" || value === "DEANERY")) return <ManagementLevelBadge level={value} />;
   if (column === "ownerUnitType") return <TextValue full={full}>{courseTypeOwnerLabel(row)}</TextValue>;
   if (column === "resource" && typeof value === "string") return <TextValue full={full}>{formatPermissionTaxonomyValue("resource", value) ?? value}</TextValue>;
   if (column === "resourceName") {
@@ -400,6 +402,11 @@ function WorkflowBadge({ value }: { value: string }) {
     .replace("CANCELLED", "Đã hủy")
     .replace("NOT_REQUIRED", "Không yêu cầu");
   return <Badge tone={tone}>{label}</Badge>;
+}
+
+export function ManagementLevelBadge({ level }: { level: "DIOCESE" | "DEANERY" }) {
+  const className = level === "DEANERY" ? "border-transparent bg-sky-100 text-sky-800" : "border-transparent bg-violet-100 text-violet-800";
+  return <Badge className={className}>{level === "DEANERY" ? "Giáo hạt" : "Giáo phận"}</Badge>;
 }
 
 function LeaderLevelBadge({ value }: { value: string }) {
