@@ -32,7 +32,7 @@ export const BADGE_SAMPLE_SETS: BadgeSampleSet[] = [
       holyName: "Phêrô Phaolô",
       leaderName: "Nguyễn Trần Lê Hoàng Thiên Ân",
       leaderFullName: "Phêrô Phaolô Nguyễn Trần Lê Hoàng Thiên Ân",
-      leaderParishName: "hánh Giuse Thợ",
+      leaderParishName: "Thánh Giuse Thợ",
       leaderSubUnitName: "Thánh Tâm Chúa Giêsu An Phú Đông",
       teamName: "Đội Thánh Giuse Thợ",
       courseName: "Khóa huấn luyện Dự trưởng Thiếu nhi Thánh Thể giáo phận Phú Cường năm 2026 - Đợt 3",
