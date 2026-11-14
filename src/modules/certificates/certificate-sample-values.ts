@@ -7,10 +7,10 @@ export const CERTIFICATE_SAMPLE_VALUES: Record<string, string> = {
   leaderBirthDate: "26/12/1988",
   leaderGender: "Nam",
   // Giáo xứ luôn là giáo xứ mẹ; giáo họ / giáo điểm nằm ở hai trường riêng.
-  leaderParishName: "Giáo xứ Chánh Tòa",
-  leaderSubUnitName: "Giáo họ Hiệp An",
-  leaderUnitFullName: "Giáo họ Hiệp An – Giáo xứ Chánh Tòa",
-  leaderDeaneryName: "Giáo hạt Thủ Dầu Một",
+  leaderParishName: "Chánh Tòa",
+  leaderSubUnitName: "Hiệp An",
+  leaderUnitFullName: "Hiệp An – Chánh Tòa",
+  leaderDeaneryName: "Thủ Dầu Một",
   leaderDioceseName: "Phú Cường",
   leaderLevel: "Huynh trưởng xứ",
   courseName: "Khóa Dự trưởng 2026 - Đợt 3",
@@ -34,7 +34,7 @@ export const CERTIFICATE_SAMPLE_SETS: SampleSet[] = [
   {
     id: "giaoxu",
     label: "Giáo xứ",
-    values: { ...CERTIFICATE_SAMPLE_VALUES, leaderSubUnitName: "", leaderUnitFullName: "Giáo xứ Chánh Tòa" },
+    values: { ...CERTIFICATE_SAMPLE_VALUES, leaderSubUnitName: "", leaderUnitFullName: "Chánh Tòa" },
   },
   {
     id: "long",
