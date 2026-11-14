@@ -4,6 +4,7 @@ import { ArrowCounterClockwise, ArrowRight, CalendarCheck, Certificate, Clipboar
 import type { Route } from "next";
 import Link from "next/link";
 import { cn, viNumber } from "@/lib/utils";
+import { dashboardHref } from "@/modules/analytics/dashboard-links";
 import { workQueueMeta } from "@/modules/analytics/labels";
 import type { WorkQueueItem } from "@/modules/analytics/types";
 
@@ -31,7 +32,7 @@ export function WorkQueue({ items }: { items: WorkQueueItem[] }) {
               "analytics-rise group relative rounded-xl border bg-white p-4 transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-[var(--shadow-elevated)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary",
               hasWork ? "border-border" : "border-border opacity-80",
             )}
-            href={item.href as Route}
+            href={(dashboardHref(item.key, item.href) ?? item.href) as Route}
             key={item.key}
             style={{ animationDelay: `${index * 50}ms` }}
           >

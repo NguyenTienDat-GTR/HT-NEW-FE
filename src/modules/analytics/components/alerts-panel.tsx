@@ -4,6 +4,7 @@ import { ArrowRight, CheckCircle, Info, Warning, WarningOctagon } from "@phospho
 import type { Route } from "next";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { dashboardHref } from "@/modules/analytics/dashboard-links";
 import { alertMeta, severityMeta } from "@/modules/analytics/labels";
 import type { Alert, AlertSeverity } from "@/modules/analytics/types";
 
@@ -65,8 +66,8 @@ export function AlertsPanel({ alerts }: { alerts: Alert[] }) {
                   </ul>
                 ) : null}
               </div>
-              {alert.href ? (
-                <Link aria-label={`Xử lý: ${meta.title}`} className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-muted transition-colors hover:bg-primary-soft hover:text-primary" href={alert.href as Route}>
+              {dashboardHref(alert.key, alert.href) ? (
+                <Link aria-label={`Xử lý: ${meta.title}`} className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-muted transition-colors after:absolute after:inset-0 after:content-[''] hover:bg-primary-soft hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary" href={dashboardHref(alert.key, alert.href) as Route}>
                   <ArrowRight className="h-4 w-4" weight="bold" />
                 </Link>
               ) : null}
