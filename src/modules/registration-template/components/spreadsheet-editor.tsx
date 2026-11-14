@@ -12,6 +12,8 @@ import { getApiErrorMessage } from "@/lib/api/client";
 import { downloadTemplatePreview } from "../api";
 import { buildPreviewPayload, PREVIEW_ROWS, sampleText } from "../sample-data";
 import { applyPageSetup, cellAddress, changeCase, colLetter, defaultPageSetup, parseMerge, printableSize, splitTokens, type CaseMode, type MergeRange, type TokenMod } from "../sheet-model";
+import { ownStyle } from "../cell-style";
+import { charsOfValue, clearFormat, expandToTokens, hasOverrides, isFormatActive, isRichText, mapRunText, patchChars, patchRuns, syncChars, toggleFormat, valueOfChars, type CharFonts, type RunFont, type StyleKey } from "../rich-text";
 
 export type SpreadsheetHandle = { getBuffer: () => Promise<ArrayBuffer> };
 
@@ -172,6 +174,24 @@ function borderCss(side?: { style?: string; color?: { argb?: string } }) {
   return `${width}px solid ${argb(side.color) ?? "#000"}`;
 }
 
+/** Font đầy đủ của ô (font mặc định + font riêng của ô): nền để so định dạng từng đoạn chữ. */
+function baseFontOf(cell: Cell): RunFont {
+  return { ...DEFAULT_FONT, ...(cell.font ?? {}) } as RunFont;
+}
+
+function runCss(font: RunFont | undefined): React.CSSProperties {
+  if (!font) return {};
+  const css: React.CSSProperties = {};
+  if (font.bold !== undefined) css.fontWeight = font.bold ? 700 : 400;
+  if (font.italic !== undefined) css.fontStyle = font.italic ? "italic" : "normal";
+  if (font.underline !== undefined) css.textDecoration = font.underline && font.underline !== "none" ? "underline" : "none";
+  if (font.size) css.fontSize = `${Math.round(font.size * (4 / 3))}px`;
+  if (font.name) css.fontFamily = `"${font.name}", serif`;
+  const color = argb(font.color);
+  if (color) css.color = color;
+  return css;
+}
+
 function textOf(cell: Cell) {
   const value = cell.value as unknown;
   if (value === null || value === undefined) return "";
@@ -193,7 +213,11 @@ export const SpreadsheetEditor = forwardRef<SpreadsheetHandle, { workbook: Workb
   const sheet: Worksheet = workbook.worksheets[0] ?? workbook.addWorksheet("Mẫu");
   const [tick, setTick] = useState(0);
   const [sel, setSel] = useState<Sel>({ ar: 1, ac: 1, r1: 1, c1: 1, r2: 1, c2: 1 });
-  const [editing, setEditing] = useState<{ row: number; col: number; text: string; bar?: boolean; mode?: "enter" | "edit" } | null>(null);
+  // fmt: định dạng từng ký tự của chữ ở thời điểm `fmt.text` (đồng bộ lại theo chữ hiện tại khi dùng); chưa có thì lấy từ giá trị ô.
+  // fmtDirty: đã đổi định dạng một phần chữ nên phải ghi lại ô dù chữ không đổi.
+  const [editing, setEditing] = useState<{ row: number; col: number; text: string; bar?: boolean; mode?: "enter" | "edit"; fmt?: { text: string; chars: CharFonts }; fmtDirty?: boolean } | null>(null);
+  // Vùng chữ đang bôi đen trong ô / thanh công thức khi sửa (chỉ để hiện trạng thái nút đậm / nghiêng / gạch chân; lúc bấm nút đọc lại trực tiếp từ ô nhập).
+  const [textSel, setTextSel] = useState<{ start: number; end: number } | null>(null);
   const [preview, setPreview] = useState(false);
   const [zoom, setZoom] = useState(100);
   const zoomRef = useRef(1);
@@ -368,20 +392,85 @@ export const SpreadsheetEditor = forwardRef<SpreadsheetHandle, { workbook: Workb
   const font = { ...DEFAULT_FONT, ...(active.font ?? {}) } as NonNullable<Cell["font"]>;
 
   // ---- định dạng ----
-  function setFont(patch: Partial<NonNullable<Cell["font"]>>) {
-    mutate(() => forEachSelected((cell) => (cell.font = { ...DEFAULT_FONT, ...(cell.font ?? {}), ...patch })));
+  // Ô đang sửa: chữ + định dạng từng ký tự đã đồng bộ với chữ hiện tại; vùng bôi đen trong ô (hoặc thanh công thức), null nếu chỉ có con trỏ.
+  function editChars(state = editing): { text: string; chars: CharFonts } | null {
+    if (!state) return null;
+    const cell = sheet.getCell(state.row, state.col);
+    const basis = state.fmt ?? charsOfValue(cell.value, textOf(cell));
+    return { text: state.text, chars: syncChars(basis.text, state.text, basis.chars) };
   }
-  function toggleFont(key: "bold" | "italic" | "underline") {
-    const next = !font[key];
-    setFont({ [key]: next } as Partial<NonNullable<Cell["font"]>>);
+  function editSelection(): { start: number; end: number } | null {
+    if (!editing) return null;
+    const input: HTMLTextAreaElement | HTMLInputElement | null = editing.bar ? (document.querySelector("[data-formula-bar]") as HTMLInputElement | null) : editor.current;
+    if (!input || input.selectionStart === null || input.selectionEnd === null || input.selectionStart === input.selectionEnd) return null;
+    return { start: Math.min(input.selectionStart, input.selectionEnd), end: Math.max(input.selectionStart, input.selectionEnd) };
+  }
+
+  // Trạng thái nút đậm / nghiêng / gạch chân: đang sửa thì theo phần bôi đen (không bôi đen thì cả ô), không thì theo cả ô (bật khi mọi đoạn đều bật).
+  function formatState(key: StyleKey): boolean {
+    const cell = editing ? sheet.getCell(editing.row, editing.col) : active;
+    const base = baseFontOf(cell);
+    const synced = editing ? editChars(editing) : null;
+    const { text, chars } = synced ?? charsOfValue(cell.value, textOf(cell));
+    const selection = editing ? textSel : null;
+    const start = selection ? Math.min(selection.start, text.length) : 0;
+    const end = selection ? Math.min(selection.end, text.length) : text.length;
+    return isFormatActive(chars, base, start, end, key);
+  }
+
+  function setFont(patch: Partial<NonNullable<Cell["font"]>>) {
+    mutate(() =>
+      forEachSelected((cell) => {
+        ownStyle(cell);
+        cell.font = { ...DEFAULT_FONT, ...(cell.font ?? {}), ...patch };
+        // Ô đã có định dạng từng đoạn: đổi cả ô thì đổi luôn font của các đoạn.
+        cell.value = patchRuns(cell.value, patch as RunFont);
+      }),
+    );
+    // Đang sửa ô: định dạng riêng của từng ký tự (nếu đã có) cũng đổi theo.
+    setEditing((current) => {
+      const synced = editChars(current);
+      return current && current.fmt && synced ? { ...current, fmt: { text: synced.text, chars: patchChars(synced.chars, patch as RunFont) } } : current;
+    });
+  }
+  // In đậm / nghiêng / gạch chân: có chữ bôi đen trong ô đang sửa thì chỉ áp cho phần bôi đen; không bôi đen thì áp cho cả ô (chỉ ô đang sửa / các ô đang chọn).
+  function toggleFont(key: StyleKey) {
+    if (editing && !readOnly) {
+      const cell = sheet.getCell(editing.row, editing.col);
+      const base = baseFontOf(cell);
+      const synced = editChars(editing);
+      if (!synced) return;
+      const selection = editSelection();
+      if (selection) {
+        const range = expandToTokens(synced.text, selection.start, selection.end);
+        setEditing({ ...editing, fmt: { text: synced.text, chars: toggleFormat(synced.chars, base, range.start, range.end, key) }, fmtDirty: true });
+        const input: HTMLTextAreaElement | HTMLInputElement | null = editing.bar ? (document.querySelector("[data-formula-bar]") as HTMLInputElement | null) : editor.current;
+        requestAnimationFrame(() => {
+          input?.focus({ preventScroll: true });
+          input?.setSelectionRange(range.start, range.end);
+        });
+        return;
+      }
+      const next = !isFormatActive(synced.chars, base, 0, synced.text.length, key);
+      mutate(() => {
+        ownStyle(cell);
+        cell.font = { ...base, [key]: next };
+        cell.value = patchRuns(cell.value, { [key]: next } as RunFont);
+      });
+      setEditing((current) => (current ? { ...current, fmt: { text: synced.text, chars: clearFormat(synced.chars, key) }, fmtDirty: true } : current));
+      return;
+    }
+    const target = sheet.getCell(sel.ar, sel.ac);
+    const { text, chars } = charsOfValue(target.value, textOf(target));
+    setFont({ [key]: !isFormatActive(chars, baseFontOf(target), 0, text.length, key) } as Partial<NonNullable<Cell["font"]>>);
   }
   function setAlign(patch: Partial<NonNullable<Cell["alignment"]>>) {
-    mutate(() => forEachSelected((cell) => (cell.alignment = { ...(cell.alignment ?? {}), ...patch })));
+    mutate(() => forEachSelected((cell) => (ownStyle(cell).alignment = { ...(cell.alignment ?? {}), ...patch })));
   }
   function setFill(hex: string | null) {
     mutate(() =>
       forEachSelected((cell) => {
-        cell.fill = hex ? { type: "pattern", pattern: "solid", fgColor: { argb: toArgb(hex) } } : { type: "pattern", pattern: "none" };
+        ownStyle(cell).fill = hex ? { type: "pattern", pattern: "solid", fgColor: { argb: toArgb(hex) } } : { type: "pattern", pattern: "none" };
       }),
     );
   }
@@ -389,6 +478,7 @@ export const SpreadsheetEditor = forwardRef<SpreadsheetHandle, { workbook: Workb
     const thin = { style: "thin" as const, color: { argb: "FF000000" } };
     mutate(() =>
       forEachSelected((cell, r, c) => {
+        ownStyle(cell);
         if (mode === "none") {
           cell.border = {};
         } else if (mode === "all") {
@@ -438,19 +528,12 @@ export const SpreadsheetEditor = forwardRef<SpreadsheetHandle, { workbook: Workb
       editing && !editing.bar ? editor.current : editing?.bar ? (document.querySelector("[data-formula-bar]") as HTMLInputElement | null) : null;
     if (editing && input && input.selectionStart !== null && input.selectionEnd !== null && input.selectionStart !== input.selectionEnd) {
       const text = editing.text;
-      let start = input.selectionStart;
-      let end = input.selectionEnd;
       // Bôi đen chạm vào một phần của {{trường}} thì lấy trọn trường đó.
-      for (const match of text.matchAll(/\{\{[^}]*\}\}/g)) {
-        const from = match.index ?? 0;
-        const to = from + match[0].length;
-        if (from < end && to > start) {
-          start = Math.min(start, from);
-          end = Math.max(end, to);
-        }
-      }
+      const { start, end } = expandToTokens(text, input.selectionStart, input.selectionEnd);
       const replaced = changeCase(text.slice(start, end), mode);
-      setEditing({ ...editing, text: text.slice(0, start) + replaced + text.slice(end) });
+      // Giữ định dạng từng ký tự: gắn lại fmt theo chữ cũ để đồng bộ với chữ mới (cùng độ dài thì giữ nguyên).
+      const synced = editChars(editing);
+      setEditing({ ...editing, fmt: synced ?? editing.fmt, text: text.slice(0, start) + replaced + text.slice(end) });
       caret.current = { row: editing.row, col: editing.col, start, end: start + replaced.length };
       requestAnimationFrame(() => {
         input.focus({ preventScroll: true });
@@ -461,7 +544,9 @@ export const SpreadsheetEditor = forwardRef<SpreadsheetHandle, { workbook: Workb
     mutate(() =>
       forEachSelected((cell) => {
         const text = textOf(cell);
-        if (text) cell.value = changeCase(text, mode);
+        if (!text) return;
+        // Ô có định dạng từng đoạn thì đổi chữ từng đoạn để giữ định dạng.
+        cell.value = isRichText(cell.value) ? mapRunText(cell.value, (part) => changeCase(part, mode)) : changeCase(text, mode);
       }),
     );
   }
@@ -663,15 +748,18 @@ export const SpreadsheetEditor = forwardRef<SpreadsheetHandle, { workbook: Workb
   // ---- nhập liệu ----
   function commitEdit(refocus = true) {
     if (!editing) return;
-    const { row, col, text } = editing;
+    const { row, col, text, fmtDirty } = editing;
+    const synced = editChars(editing);
+    setTextSel(null);
     setEditing(null);
     const current = textOf(sheet.getCell(row, col));
-    if (text !== current) {
+    if (text !== current || fmtDirty) {
       mutate(() => {
         const cell = sheet.getCell(row, col);
-        cell.value = text === "" ? null : text;
+        // Có định dạng riêng cho một phần chữ thì lưu thành rich text, không thì chữ thường.
+        cell.value = text === "" ? null : synced ? valueOfChars(text, synced.chars, baseFontOf(cell)) : text;
         // Ô có xuống dòng thì tự bật bọc chữ để thấy các dòng (như Excel).
-        if (text.includes("\n") && !cell.alignment?.wrapText) cell.alignment = { ...(cell.alignment ?? {}), wrapText: true };
+        if (text.includes("\n") && !cell.alignment?.wrapText) ownStyle(cell).alignment = { ...(cell.alignment ?? {}), wrapText: true };
       });
     }
     if (refocus) requestAnimationFrame(focusEditor);
@@ -679,7 +767,8 @@ export const SpreadsheetEditor = forwardRef<SpreadsheetHandle, { workbook: Workb
   function startEdit(row: number, col: number, initial?: string) {
     if (readOnly || preview) return;
     const target = masterOf(row, col);
-    setEditing({ row: target.row, col: target.col, text: initial ?? textOf(sheet.getCell(target.row, target.col)), mode: initial === undefined ? "edit" : "enter" });
+    // Gõ đè nội dung ô: chữ mới theo font của ô (không kế thừa định dạng từng đoạn của chữ cũ).
+    setEditing({ row: target.row, col: target.col, text: initial ?? textOf(sheet.getCell(target.row, target.col)), mode: initial === undefined ? "edit" : "enter", ...(initial === undefined ? {} : { fmt: { text: "", chars: [] } }) });
   }
   function addToken(key: string, row = sel.ar, col = sel.ac, mod?: TokenMod) {
     const token = mod ? `{{${key}|${mod}}}` : `{{${key}}}`;
@@ -862,7 +951,7 @@ export const SpreadsheetEditor = forwardRef<SpreadsheetHandle, { workbook: Workb
   // Gõ khi chưa sửa = bắt đầu chế độ gõ (thay nội dung ô) ngay trên chính ô nhập này nên bộ gõ tiếng Việt không bị gián đoạn.
   function onEditorChange(event: React.ChangeEvent<HTMLTextAreaElement>) {
     const text = event.target.value;
-    setEditing(editing && !editing.bar ? { ...editing, text } : { row: barCell.row, col: barCell.col, text, mode: "enter" });
+    setEditing(editing && !editing.bar ? { ...editing, text } : { row: barCell.row, col: barCell.col, text, mode: "enter", fmt: { text: "", chars: [] } });
   }
 
   // Phím trong ô nhập khi đang sửa: Enter / Tab chốt và di chuyển; ở chế độ gõ mới (không phải F2 / bấm đúp) mũi tên chốt và di chuyển như Excel.
@@ -876,8 +965,15 @@ export const SpreadsheetEditor = forwardRef<SpreadsheetHandle, { workbook: Workb
     }
     if (!editing || editing.bar) return; // chưa sửa: để lưới xử lý (di chuyển, xóa, phím tắt)
     event.stopPropagation();
+    // Ctrl + B / I / U khi đang sửa: định dạng phần bôi đen (không bôi đen thì cả ô), như Excel.
+    if ((event.ctrlKey || event.metaKey) && !event.shiftKey && !event.altKey && ["b", "i", "u"].includes(event.key.toLowerCase())) {
+      event.preventDefault();
+      toggleFont(event.key.toLowerCase() === "b" ? "bold" : event.key.toLowerCase() === "i" ? "italic" : "underline");
+      return;
+    }
     const arrows: Record<string, [number, number]> = { ArrowDown: [1, 0], ArrowUp: [-1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1] };
     if (event.key === "Escape") {
+      setTextSel(null);
       setEditing(null);
       return;
     }
@@ -1282,9 +1378,17 @@ export const SpreadsheetEditor = forwardRef<SpreadsheetHandle, { workbook: Workb
     latest.current = { applyFill, applyPainter, applyMove, colOffsets, rowOffsets };
   });
 
+  function trackSelection(element: HTMLTextAreaElement | HTMLInputElement) {
+    const start = element.selectionStart ?? 0;
+    const end = element.selectionEnd ?? 0;
+    const next = start === end ? null : { start: Math.min(start, end), end: Math.max(start, end) };
+    setTextSel((current) => (current === next || (current && next && current.start === next.start && current.end === next.end) ? current : next));
+  }
+
   function rememberCaret(event: React.SyntheticEvent<HTMLTextAreaElement>) {
     if (!editing || editing.bar) return;
     const element = event.currentTarget;
+    trackSelection(element);
     caret.current = { row: editing.row, col: editing.col, start: element.selectionStart, end: element.selectionEnd };
   }
 
@@ -1385,7 +1489,7 @@ export const SpreadsheetEditor = forwardRef<SpreadsheetHandle, { workbook: Workb
         <Toolbar
           canRedo={canHistory.redo}
           canUndo={canHistory.undo}
-          font={font}
+          font={{ ...font, bold: formatState("bold"), italic: formatState("italic"), underline: formatState("underline") }}
           horizontal={active.alignment?.horizontal}
           isMerged={isMerged}
           onAlign={setAlign}
@@ -1428,6 +1532,7 @@ export const SpreadsheetEditor = forwardRef<SpreadsheetHandle, { workbook: Workb
             onBlur={() => editing?.bar && commitEdit(false)}
             onChange={(event) => setEditing({ ...(editing ?? { row: barCell.row, col: barCell.col }), text: event.target.value, bar: editing?.bar ?? true })}
             onFocus={() => !editing && !readOnly && setEditing({ row: barCell.row, col: barCell.col, text: textOf(sheet.getCell(barCell.row, barCell.col)), bar: true })}
+            onSelect={(event) => editing?.bar && trackSelection(event.currentTarget)}
             onKeyDown={(event) => {
               if (event.key === "Enter") {
                 event.preventDefault();
@@ -1537,16 +1642,22 @@ export const SpreadsheetEditor = forwardRef<SpreadsheetHandle, { workbook: Workb
                           else if (align.horizontal === "center") spillLeft = spillRight = Math.min(left, right);
                         }
                         const spill = spillLeft + spillRight > 0;
-                        const content = (preview ? [{ text: shown } as { text: string; key?: string; mod?: TokenMod }] : splitTokens(text)).map((part, index) =>
-                          part.key ? (
-                            <span className="rounded bg-primary/10 px-0.5 font-sans text-[0.8em] font-semibold text-primary" key={index} title={part.text}>
-                              {label.get(part.key) ?? part.text}
-                              {part.mod === "upper" ? " · HOA" : part.mod === "lower" ? " · thường" : part.mod === "title" ? " · Hoa đầu" : ""}
-                            </span>
-                          ) : (
-                            <span key={index}>{part.text}</span>
-                          ),
-                        );
+                        const runs = isRichText(cell.value) ? cell.value.richText : null;
+                        const renderParts = (runText: string, runStyle: React.CSSProperties | undefined, base: string) =>
+                          (preview ? [{ text: sampleText(runText, k) } as { text: string; key?: string; mod?: TokenMod }] : splitTokens(runText)).map((part, index) =>
+                            part.key ? (
+                              <span className="rounded bg-primary/10 px-0.5 font-sans text-[0.8em] font-semibold text-primary" key={`${base}${index}`} title={part.text}>
+                                {label.get(part.key) ?? part.text}
+                                {part.mod === "upper" ? " · HOA" : part.mod === "lower" ? " · thường" : part.mod === "title" ? " · Hoa đầu" : ""}
+                              </span>
+                            ) : (
+                              <span key={`${base}${index}`} style={runStyle}>
+                                {part.text}
+                              </span>
+                            ),
+                          );
+                        // Ô có định dạng riêng từng đoạn: mỗi đoạn mang font đầy đủ của nó (đậm / nghiêng / gạch chân theo đoạn).
+                        const content = runs ? runs.flatMap((run, runIndex) => renderParts(run.text, runCss(run.font as RunFont | undefined), `${runIndex}:`)) : renderParts(text, undefined, "");
                         return (
                           <td
                             className={cn("relative border-b border-r border-slate-200 px-1 leading-snug", spill ? "overflow-visible" : "overflow-hidden", selected(r, c) && !(sel.ar === r && sel.ac === c) && "bg-primary-soft/60")}
@@ -1598,9 +1709,9 @@ export const SpreadsheetEditor = forwardRef<SpreadsheetHandle, { workbook: Workb
                             style={{
                               fontFamily: `"${cellFont.name ?? DEFAULT_FONT.name}", serif`,
                               fontSize: `${Math.round((cellFont.size ?? DEFAULT_FONT.size) * (4 / 3))}px`,
-                              fontWeight: cellFont.bold ? 700 : 400,
-                              fontStyle: cellFont.italic ? "italic" : "normal",
-                              textDecoration: cellFont.underline ? "underline" : undefined,
+                              fontWeight: runs ? 400 : cellFont.bold ? 700 : 400,
+                              fontStyle: runs ? "normal" : cellFont.italic ? "italic" : "normal",
+                              textDecoration: !runs && cellFont.underline ? "underline" : undefined,
                               color: argb(cellFont.color) ?? "#111",
                               background: fill,
                               textAlign: align.horizontal === "center" ? "center" : align.horizontal === "right" ? "right" : "left",
@@ -1722,11 +1833,50 @@ export const SpreadsheetEditor = forwardRef<SpreadsheetHandle, { workbook: Workb
                   const height = rowOffsets[span?.r2 ?? at0.row] - rowOffsets[at0.row - 1];
                   const lines = (editing?.text ?? "").split("\n");
                   const wide = Math.min(560, lines.reduce((max, line) => Math.max(max, line.length), 0) * px * 0.58 + 18);
+                  const boxWidth = Math.max(width, wide);
+                  const boxHeight = Math.max(height, lines.length * px * 1.4 + 8);
+                  const fontCss = { fontFamily: `"${efont.name ?? DEFAULT_FONT.name}", serif`, fontSize: `${px}px` };
+                  // Ô đang sửa có định dạng riêng từng đoạn: vẽ chữ đã định dạng bên dưới ô nhập (chữ trong ô nhập để trong suốt, vẫn nhận gõ / bôi đen / con trỏ).
+                  const edit = showEditor ? editChars(editing) : null;
+                  const baseFont = baseFontOf(ecell);
+                  const mirror = edit && hasOverrides(edit.chars, baseFont) ? edit : null;
+                  const mirrorRuns: { text: string; font: RunFont | undefined }[] = [];
+                  if (mirror) {
+                    for (let i = 0; i < mirror.text.length; i++) {
+                      const last = mirrorRuns[mirrorRuns.length - 1];
+                      if (last && last.font === mirror.chars[i]) last.text += mirror.text[i];
+                      else mirrorRuns.push({ text: mirror.text[i], font: mirror.chars[i] });
+                    }
+                  }
+                  const effective = (font: RunFont | undefined, key: StyleKey) => (font && key in font ? font[key] : baseFont[key]);
                   return (
+                    <>
+                    {mirror ? (
+                      <div
+                        aria-hidden
+                        className="pointer-events-none absolute z-[19] overflow-hidden bg-white p-1 leading-snug"
+                        style={{ left, top, width: boxWidth, height: boxHeight, whiteSpace: "pre-wrap", overflowWrap: "break-word", color: argb(efont.color) ?? "#111", ...fontCss }}
+                      >
+                        {mirrorRuns.map((run, index) => (
+                          <span
+                            key={index}
+                            style={{
+                              // In đậm giả (đổ bóng) trong lúc sửa để độ rộng chữ khớp ô nhập, con trỏ và vùng bôi đen không lệch; lưu xong hiển thị đậm thật.
+                              fontWeight: 400,
+                              textShadow: effective(run.font, "bold") ? "0.5px 0 0 currentColor, -0.5px 0 0 currentColor" : undefined,
+                              fontStyle: effective(run.font, "italic") ? "italic" : "normal",
+                              textDecoration: effective(run.font, "underline") && effective(run.font, "underline") !== "none" ? "underline" : "none",
+                            }}
+                          >
+                            {run.text}
+                          </span>
+                        ))}
+                      </div>
+                    ) : null}
                     <textarea
                       aria-label="Ô nhập liệu"
                       autoComplete="off"
-                      className={cn("absolute resize-none border-0 p-1 leading-snug", showEditor ? "z-20 bg-white outline outline-2 outline-primary" : "pointer-events-none opacity-0")}
+                      className={cn("absolute resize-none border-0 p-1 leading-snug", showEditor ? cn("z-20 outline outline-2 outline-primary", mirror ? "bg-transparent" : "bg-white") : "pointer-events-none opacity-0")}
                       onBlur={onEditorBlur}
                       onChange={onEditorChange}
                       onClick={rememberCaret}
@@ -1742,18 +1892,19 @@ export const SpreadsheetEditor = forwardRef<SpreadsheetHandle, { workbook: Workb
                           ? {
                               left,
                               top,
-                              width: Math.max(width, wide),
-                              height: Math.max(height, lines.length * px * 1.4 + 8),
-                              fontFamily: `"${efont.name ?? DEFAULT_FONT.name}", serif`,
-                              fontSize: `${px}px`,
-                              fontWeight: efont.bold ? 700 : 400,
-                              fontStyle: efont.italic ? "italic" : "normal",
-                              color: argb(efont.color) ?? "#111",
+                              width: boxWidth,
+                              height: boxHeight,
+                              ...fontCss,
+                              fontWeight: efont.bold && !mirror ? 700 : 400,
+                              fontStyle: efont.italic && !mirror ? "italic" : "normal",
+                              color: mirror ? "transparent" : (argb(efont.color) ?? "#111"),
+                              caretColor: argb(efont.color) ?? "#111",
                             }
                           : { left, top, width: 1, height: 1 }
                       }
                       value={showEditor && editing ? editing.text : ""}
                     />
+                    </>
                   );
                 })()
               : null}
