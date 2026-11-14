@@ -585,3 +585,7 @@ BE tương ứng: `BE/project.md` mục "Training Course Registration Control an
 - Thêm huynh trưởng (`modules/leaders/form-specs.ts`): giáo hạt / giáo xứ chọn sẵn theo **cấp tài khoản** (`leaderScopeDefaults`, dựa vào vai trò): giáo xứ → cả giáo hạt và giáo xứ của mình; giáo hạt → giáo hạt của mình; giáo phận / quản trị hệ thống → không chọn sẵn. Không dùng thẳng `user.deaneryId` vì BE suy ra mã đơn vị cả từ huynh trưởng gắn với tài khoản, nên tài khoản giáo phận có huynh trưởng từng bị chọn sẵn giáo hạt.
 - Ô Giáo hạt từng hiện UUID với tài khoản giáo xứ: vai trò này không có quyền `organization.deanery.read.*` nên `/deaneries` bị từ chối, danh sách rỗng và ô chỉ còn giá trị chọn sẵn (mã). Thêm `optionSourceForUser` vào `FormFieldSpec` (+ `resolveOptionSource` ở `api-utils.ts`, dùng trong `resource-form-page.tsx`): tài khoản không đọc được giáo hạt thì lấy lựa chọn từ `/parishes` (dòng giáo xứ của chính mình có `deaneryId` / `deaneryName`). Ô chọn từ API cũng hiện "Đang tải…" thay vì mã trong lúc danh sách chưa tải xong (`form-controls.tsx`).
 - Test: `tests/unit/modules/leaders/form-specs.test.ts`, `tests/unit/components/form/option-control-labels.test.tsx`.
+
+## feat/nhan-cap-quan-ly-khoa
+
+- Danh sách khóa huấn luyện (`/training/courses`) thêm cột "Cấp quản lý" (`managementUnitType`) hiện nhãn màu theo cấp: giáo phận tím, giáo hạt xanh trời (`ManagementLevelBadge` trong `resource-format.tsx`, cùng màu với nhãn cấp ở ô chọn khóa tiên quyết). Cột này ở danh sách loại khóa cũng dùng nhãn màu.
