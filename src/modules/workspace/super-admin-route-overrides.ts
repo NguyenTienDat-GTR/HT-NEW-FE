@@ -142,6 +142,7 @@ function accountPermissionFilters(): RouteFilterConfig[] {
       optionValue: "username",
       optionLabel: "username",
     },
+    rolePermissionValidityFilter(),
     ...permissionTaxonomyFilters(),
   ];
 }
