@@ -105,9 +105,23 @@ function rolePermissionFiltersForUser(user: AuthUser | null): RouteFilterConfig[
           type: "text",
           placeholder: "Lọc theo mã vai trò",
         },
+    rolePermissionValidityFilter(),
     ...rolePermissionUnitFilters(user),
     ...permissionTaxonomyFilters(),
   ];
+}
+
+// Lọc theo tình trạng quyền: còn hiệu lực, hoặc hết hiệu lực (đã thu hồi, hết hạn hoặc quyền bị vô hiệu hóa).
+export function rolePermissionValidityFilter(): RouteFilterConfig {
+  return {
+    key: "validity",
+    label: "Tình trạng quyền",
+    type: "select",
+    options: [
+      { value: "ACTIVE", label: "Còn hiệu lực" },
+      { value: "INACTIVE", label: "Hết hiệu lực" },
+    ],
+  };
 }
 
 // Lọc theo nơi áp dụng: superadmin chọn giáo phận; admin giáo phận chọn giáo hạt rồi giáo xứ; admin giáo hạt chọn giáo xứ.

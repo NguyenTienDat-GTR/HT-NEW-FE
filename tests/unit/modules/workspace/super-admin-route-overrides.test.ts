@@ -55,4 +55,11 @@ describe("resolveRouteForUser", () => {
     expect(route.filters?.some((filter) => filter.key === "effect")).toBe(false);
     expect(route.filters).toEqual(expect.arrayContaining([expect.objectContaining({ key: "permission.scope.scopeCode", type: "select" })]));
   });
+
+  it("có bộ lọc tình trạng quyền (còn / hết hiệu lực) cho cả superadmin và admin cấp dưới", () => {
+    const filterFor = (user: AuthUser) => resolveRouteForUser(rolePermissionRoute, user).filters?.find((filter) => filter.key === "validity");
+    const expected = { type: "select", options: [{ value: "ACTIVE", label: "Còn hiệu lực" }, { value: "INACTIVE", label: "Hết hiệu lực" }] };
+    expect(filterFor(adminUser(["system.role_permission.read.diocese"]))).toMatchObject(expected);
+    expect(filterFor({ username: "sa", roles: ["SUPER_ADMIN"], permissions: [] })).toMatchObject(expected);
+  });
 });
