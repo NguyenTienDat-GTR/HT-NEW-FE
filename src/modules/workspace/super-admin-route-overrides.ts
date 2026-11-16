@@ -1,5 +1,5 @@
 import type { AuthUser } from "@/lib/auth/auth-store";
-import { hasPermissionPrefix, isSuperAdmin } from "@/lib/auth/permissions";
+import { hasPermissionPrefix, hasRole, isSuperAdmin } from "@/lib/auth/permissions";
 import type { RouteConfig } from "@/config/routes/routes";
 import { deaneryUnitFilter, parishUnitFilter, type RouteFilterConfig } from "@/config/routes/route-config";
 
@@ -52,7 +52,7 @@ export function resolveRouteForUser(route: RouteConfig, user: AuthUser | null): 
       return {
         ...route,
         subtitle: "Phân quyền hoặc thu hồi quyền cho vai trò do super-admin quản lý.",
-        columns: ["roleName", "permissionName", "validity", "assignedAt", "expiresAt"],
+        columns: ["roleName", "permissionName", "scopeName", "validity", "assignedAt", "expiresAt"],
         primaryActionLabel: "Phân quyền",
         filters: rolePermissionFiltersForUser(user),
       };
@@ -105,8 +105,17 @@ function rolePermissionFiltersForUser(user: AuthUser | null): RouteFilterConfig[
           type: "text",
           placeholder: "Lọc theo mã vai trò",
         },
+    ...rolePermissionUnitFilters(user),
     ...permissionTaxonomyFilters(),
   ];
+}
+
+// Lọc theo nơi áp dụng: superadmin chọn giáo phận; admin giáo phận chọn giáo hạt rồi giáo xứ; admin giáo hạt chọn giáo xứ.
+function rolePermissionUnitFilters(user: AuthUser | null): RouteFilterConfig[] {
+  if (isSuperAdmin(user)) return [dioceseFilter()];
+  if (hasRole(user, "ADMIN_DIOCESE")) return [deaneryFilter(), parishFilter("deaneryId")];
+  if (hasRole(user, "ADMIN_DEANERY")) return [parishFilter()];
+  return [];
 }
 
 function accountPermissionFilters(): RouteFilterConfig[] {

@@ -10,7 +10,7 @@ import type { FormFieldSpec, Option } from "./types";
 export function resolveOptionSource(field: FormFieldSpec, values: Record<string, unknown>, user: AuthUser | null) {
   const source = field.optionSourceForUser?.(user);
   return {
-    optionsEndpoint: field.buildOptionsEndpoint?.(values) ?? source?.endpoint ?? field.optionsEndpointForUser?.(user) ?? field.optionsEndpoint,
+    optionsEndpoint: field.buildOptionsEndpoint?.(values, user) ?? source?.endpoint ?? field.optionsEndpointForUser?.(user) ?? field.optionsEndpoint,
     optionValue: source?.optionValue ?? field.optionValue,
     optionLabel: source?.optionLabel ?? field.optionLabel,
   };

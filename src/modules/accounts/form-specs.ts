@@ -1,4 +1,4 @@
-import { compactPayload, type ResourceFormSpec } from "@/components/form/resource-form/types";
+import { compactPayload, type FormFieldSpec, type ResourceFormSpec } from "@/components/form/resource-form/types";
 import { hasRole, isSuperAdmin } from "@/lib/auth/permissions";
 import type { AuthUser } from "@/lib/auth/auth-store";
 import { leaderLevelName } from "@/modules/leader-levels/leader-level-store";
@@ -16,6 +16,95 @@ function canPickDeanery(user: AuthUser | null | undefined) {
 
 function canPickParish(user: AuthUser | null | undefined) {
   return hasRole(user, "ADMIN_DIOCESE") || hasRole(user, "ADMIN_DEANERY");
+}
+
+// Phân quyền vai trò theo đơn vị: vai trò admin cấp dưới được admin cấp trên chỉnh riêng theo giáo hạt / giáo xứ,
+// superadmin chỉnh riêng theo giáo phận. Tên trường có tiền tố unit để không lẫn với các trường khác của form.
+const SUBORDINATE_ADMIN_ROLES = ["ADMIN_DEANERY", "ADMIN_PARISH"];
+
+function unitScopeEnabled(values: Record<string, unknown>, user: AuthUser | null | undefined) {
+  const role = text(values.roleCode);
+  if (!role) return false;
+  if (isSuperAdmin(user)) return true;
+  if (hasRole(user, "ADMIN_DIOCESE")) return SUBORDINATE_ADMIN_ROLES.includes(role);
+  if (hasRole(user, "ADMIN_DEANERY")) return role === "ADMIN_PARISH";
+  return false;
+}
+
+const unitScopeFields: FormFieldSpec[] = [
+  {
+    name: "unitDioceseId",
+    label: "Giáo phận áp dụng",
+    type: "select",
+    optionsEndpoint: "/dioceses",
+    optionValue: "id",
+    optionLabel: "name",
+    clearable: true,
+    emptyOptionLabel: "Tất cả giáo phận (mặc định chung)",
+    helper: "Để trống: thay đổi áp dụng cho mọi giáo phận. Chọn một giáo phận: chỉ giáo phận đó bị ảnh hưởng.",
+    visibleWhen: (values, _mode, user) => isSuperAdmin(user) && unitScopeEnabled(values, user),
+    section: "Nơi áp dụng",
+  },
+  {
+    name: "unitDeaneryId",
+    label: "Giáo hạt áp dụng",
+    type: "select",
+    optionsEndpoint: "/deaneries",
+    optionValue: "id",
+    optionLabel: "name",
+    clearable: true,
+    emptyOptionLabel: "Cả giáo phận của bạn",
+    helper: "Để trống: áp dụng cho cả giáo phận của bạn. Chọn một giáo hạt: chỉ giáo hạt đó bị ảnh hưởng.",
+    visibleWhen: (values, _mode, user) => !isSuperAdmin(user) && hasRole(user, "ADMIN_DIOCESE") && unitScopeEnabled(values, user),
+    section: "Nơi áp dụng",
+  },
+  {
+    name: "unitParishId",
+    label: "Giáo xứ áp dụng",
+    type: "select",
+    optionsEndpoint: "/parishes",
+    buildOptionsEndpoint: (values) => {
+      const deanery = text(values.unitDeaneryId);
+      return deanery ? withFilters("/parishes", { "deanery.id": deanery }) : "/parishes";
+    },
+    optionValue: "id",
+    optionLabel: "name",
+    clearable: true,
+    emptyOptionLabel: "Cả giáo hạt đã chọn",
+    helper: "Để trống: áp dụng cho cả giáo hạt. Chọn một giáo xứ: chỉ giáo xứ đó bị ảnh hưởng.",
+    visibleWhen: (values, _mode, user) =>
+      !isSuperAdmin(user) &&
+      unitScopeEnabled(values, user) &&
+      ((hasRole(user, "ADMIN_DIOCESE") && text(values.roleCode) === "ADMIN_PARISH" && Boolean(text(values.unitDeaneryId))) ||
+        hasRole(user, "ADMIN_DEANERY")),
+    section: "Nơi áp dụng",
+  },
+];
+
+/** Tham số đơn vị gửi kèm khi lấy danh sách quyền gán / thu hồi được (chỉ khi các ô tương ứng đang hiện). */
+function unitQuery(values: Record<string, unknown>, user: AuthUser | null | undefined): Record<string, string> {
+  if (!unitScopeEnabled(values, user)) return {};
+  const query: Record<string, string> = {};
+  if (isSuperAdmin(user)) {
+    if (text(values.unitDioceseId)) query.dioceseId = text(values.unitDioceseId);
+    return query;
+  }
+  if (text(values.unitDeaneryId) && hasRole(user, "ADMIN_DIOCESE")) query.deaneryId = text(values.unitDeaneryId);
+  if (text(values.unitParishId)) query.parishId = text(values.unitParishId);
+  return query;
+}
+
+/** Đổi tên các trường đơn vị thành tên API (dioceseId / deaneryId / parishId); trường ẩn đã bị bỏ trước khi vào đây. */
+export function mapRolePermissionUnitPayload(values: Record<string, unknown>): Record<string, unknown> {
+  const payload = compactPayload(values);
+  const unitIds: Record<string, string> = {};
+  if (text(payload.unitDioceseId)) unitIds.dioceseId = text(payload.unitDioceseId);
+  if (text(payload.unitDeaneryId)) unitIds.deaneryId = text(payload.unitDeaneryId);
+  if (text(payload.unitParishId)) unitIds.parishId = text(payload.unitParishId);
+  delete payload.unitDioceseId;
+  delete payload.unitDeaneryId;
+  delete payload.unitParishId;
+  return { ...payload, ...unitIds };
 }
 
 function text(value: unknown) {
@@ -292,12 +381,13 @@ export const systemFormSpecs: ResourceFormSpec[] = [
         readOnlyOnEdit: true,
         section: "Thiết lập",
       },
+      ...unitScopeFields,
       {
         name: "permissionCodes",
         label: "Danh sách quyền chưa gán",
         type: "checkbox-list",
         required: true,
-        buildOptionsEndpoint: (values) => buildTargetOptionsEndpoint("/system/role-permissions/assignable-permissions", "roleCode", values.roleCode),
+        buildOptionsEndpoint: (values, user) => buildTargetOptionsEndpoint("/system/role-permissions/assignable-permissions", "roleCode", values.roleCode, unitQuery(values, user)),
         optionValue: "permissionCode",
         optionLabel: "permissionName",
         readOnlyOnEdit: true,
@@ -307,7 +397,7 @@ export const systemFormSpecs: ResourceFormSpec[] = [
       { name: "assignedAt", label: "Ngày gán", type: "datetime", section: "Thời hạn" },
       { name: "expiresAt", label: "Ngày hết hạn", type: "datetime", clearable: true, section: "Thời hạn" },
     ],
-    mapSubmit: (values) => compactPayload(values),
+    mapSubmit: (values) => mapRolePermissionUnitPayload(values),
   },
   {
     kind: "role-permissions",
@@ -327,19 +417,20 @@ export const systemFormSpecs: ResourceFormSpec[] = [
         optionLabel: "roleName",
         section: "Thiết lập",
       },
+      ...unitScopeFields,
       {
         name: "permissionCodes",
         label: "Danh sách quyền đã phân",
         type: "checkbox-list",
         required: true,
-        buildOptionsEndpoint: (values) => buildTargetOptionsEndpoint("/system/role-permissions/revocable-permissions", "roleCode", values.roleCode),
+        buildOptionsEndpoint: (values, user) => buildTargetOptionsEndpoint("/system/role-permissions/revocable-permissions", "roleCode", values.roleCode, unitQuery(values, user)),
         optionValue: "permissionCode",
         optionLabel: "permissionName",
-        helper: "Chọn vai trò trước để hiển thị các quyền đã phân mà bạn được phép thu hồi.",
+        helper: "Chọn vai trò (và nơi áp dụng) trước để hiển thị các quyền đã phân mà bạn được phép thu hồi.",
         section: "Quyền đã phân",
       },
     ],
-    mapSubmit: (values) => compactPayload(values),
+    mapSubmit: (values) => mapRolePermissionUnitPayload(values),
   },
   {
     kind: "role-permissions",

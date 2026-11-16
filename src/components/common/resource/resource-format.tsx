@@ -76,6 +76,9 @@ export const columnLabels: Record<string, string> = {
   dioceseName: "Giáo phận",
   displayOrder: "Thứ tự",
   validity: "Tình trạng quyền",
+  scopeName: "Nơi áp dụng",
+  entryType: "Loại phân quyền",
+  scopeLevel: "Cấp áp dụng",
   eligible:"Đủ điều kiện",
   email: "Email",
   endDate: "Ngày kết thúc",
@@ -184,6 +187,12 @@ const genderLabels: Record<string, string> = {
   NU: "Nữ",
 };
 
+const rolePermissionEntryTypeLabels: Record<string, string> = {
+  DEFAULT: "Mặc định chung",
+  UNIT_GRANT: "Cấp riêng cho đơn vị",
+  UNIT_EXCLUDE: "Thu hồi riêng cho đơn vị",
+};
+
 const unitTypeLabels: Record<string, string> = {
   DIOCESE: "Giáo phận",
   DEANERY: "Giáo hạt",
@@ -261,6 +270,7 @@ export function ResourceCell({ column, row, value, displayMode = "table", fullNa
   if (column === "status" && value === true && row.effectiveStatus === false) return <Badge tone="warning">Ngưng theo đơn vị cha</Badge>;
   if (column === "status" && typeof value === "boolean") return <StatusBadge active={value} />;
   if (column === "validity" && typeof value === "string") return <PermissionValidityBadge validity={value} />;
+  if (column === "entryType" && typeof value === "string") return <TextValue full={full}>{rolePermissionEntryTypeLabels[value] ?? value}</TextValue>;
   if ((column === "gender" || column === "leaderGender") && typeof value === "string") return <TextValue full={full}>{genderLabels[value] ?? value}</TextValue>;
   if (["moduleCode", "resourceCode", "actionCode", "scopeCode"].includes(column) && typeof value === "string") {
     return <TextValue full={full}>{formatPermissionTaxonomyValue(permissionTaxonomyKindFromColumn(column), value) ?? value}</TextValue>;

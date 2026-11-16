@@ -195,7 +195,7 @@ export const systemRouteGroup: RouteGroup = {
       idField: "id",
       kind: "role-permissions",
       icon: LockKey,
-      columns: ["roleName", "permissionName", "validity", "assignedAt", "expiresAt"],
+      columns: ["roleName", "permissionName", "scopeName", "validity", "assignedAt", "expiresAt"],
       sortFields: { roleName: "role.roleName", permissionName: "permission.permissionName" },
       searchFields: [
         "role.roleCode",

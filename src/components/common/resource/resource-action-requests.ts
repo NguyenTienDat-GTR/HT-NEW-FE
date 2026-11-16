@@ -33,6 +33,18 @@ export type ActionRequest = {
 
 type ActionRequestBuilder = (input: ResourceRowActionInput, ctx: ResourceActionContext) => ActionRequest;
 
+/**
+ * Phân quyền riêng theo đơn vị (UNIT_GRANT): thu hồi phải gửi đúng đơn vị của dòng để chỉ thu hồi ở đó.
+ * Dòng mặc định không gửi đơn vị (thu hồi mặc định chung, áp dụng mọi giáo phận).
+ */
+export function rolePermissionUnitBody(row: Record<string, unknown> | undefined): Record<string, string> {
+  if (!row || row.entryType !== "UNIT_GRANT") return {};
+  if (row.scopeLevel === "DIOCESE" && typeof row.dioceseId === "string") return { dioceseId: row.dioceseId };
+  if (row.scopeLevel === "DEANERY" && typeof row.deaneryId === "string") return { deaneryId: row.deaneryId };
+  if (row.scopeLevel === "PARISH" && typeof row.parishId === "string") return { parishId: row.parishId };
+  return {};
+}
+
 const itemPath = (ctx: ResourceActionContext, id: string, suffix = "") => `${ctx.route.endpoint}/${encodeURIComponent(id)}${suffix}`;
 
 // Mỗi thao tác trên dòng là một mục trong bảng này: thêm thao tác mới không cần sửa các mục khác (OCP).
@@ -41,7 +53,7 @@ const REQUEST_BUILDERS: Record<ResourceRowAction, ActionRequestBuilder> = {
   resetPassword: ({ id }, ctx) => ({ path: itemPath(ctx, id, "/reset-password"), method: "POST", idempotent: true }),
   revokePermission: ({ id }, ctx) => {
     const row = ctx.rowById(id);
-    const target = ctx.route.kind === "role-permissions" ? { roleCode: row?.roleCode } : { username: row?.username };
+    const target = ctx.route.kind === "role-permissions" ? { roleCode: row?.roleCode, ...rolePermissionUnitBody(row) } : { username: row?.username };
     return { path: `${ctx.route.endpoint}/revoke`, method: "POST", body: { ...target, permissionCodes: [row?.permissionCode] }, idempotent: false };
   },
   // Thu hồi / cấp lại / duyệt / từ chối dùng Idempotency-Key.

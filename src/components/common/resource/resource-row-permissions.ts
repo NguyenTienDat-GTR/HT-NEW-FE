@@ -17,6 +17,8 @@ export function isPermanentlyRevokedAssignment(route: RouteConfig, row: Row) {
 function isSystemRoleRow(route: RouteConfig, row: Row) {
   if (route.kind === "roles") return row.isSystem === true;
   if (route.kind !== "role-permissions") return false;
+  // Quyền cấp riêng cho vai trò tại một đơn vị do cấp quản lý đơn vị đó chỉnh được; BE quyết định qua revocable.
+  if (row.entryType === "UNIT_GRANT") return false;
   return row.roleIsSystem === true || (typeof row.roleCode === "string" && systemRoleCodes.has(row.roleCode));
 }
 
