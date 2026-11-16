@@ -101,6 +101,10 @@ describe("role-permission form specs theo đơn vị", () => {
   const visible = (spec: typeof assignSpec, name: string, values: Record<string, unknown>, roles: string[]) =>
     spec.fields.find((field) => field.name === name)!.visibleWhen!(values, "create", user(roles));
 
+  it("superadmin không có nơi áp dụng cho vai trò SUPER_ADMIN", () => {
+    expect(visible(assignSpec, "unitDioceseIds", { roleCode: "SUPER_ADMIN" }, ["SUPER_ADMIN"])).toBe(false);
+  });
+
   it("superadmin chỉ thấy ô giáo phận", () => {
     const values = { roleCode: "ADMIN_DIOCESE" };
     expect(visible(assignSpec, "unitDioceseIds", values, ["SUPER_ADMIN"])).toBe(true);

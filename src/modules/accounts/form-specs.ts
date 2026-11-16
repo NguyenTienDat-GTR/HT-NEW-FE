@@ -25,7 +25,8 @@ const SUBORDINATE_ADMIN_ROLES = ["ADMIN_DEANERY", "ADMIN_PARISH"];
 function unitScopeEnabled(values: Record<string, unknown>, user: AuthUser | null | undefined) {
   const role = text(values.roleCode);
   if (!role) return false;
-  if (isSuperAdmin(user)) return true;
+  // SUPER_ADMIN không thuộc giáo phận nào nên không có ngoại lệ theo giáo phận.
+  if (isSuperAdmin(user)) return role !== "SUPER_ADMIN";
   if (hasRole(user, "ADMIN_DIOCESE")) return SUBORDINATE_ADMIN_ROLES.includes(role);
   if (hasRole(user, "ADMIN_DEANERY")) return role === "ADMIN_PARISH";
   return false;
