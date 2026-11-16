@@ -99,8 +99,18 @@ export const systemRouteGroup: RouteGroup = {
         edit: { label: "Sửa", permissionPrefixes: ["system.permission.update."], requiredRoles: ["SUPER_ADMIN", "ROLE_SUPER_ADMIN"] },
         toggle: { label: "Đổi trạng thái", permissionPrefixes: ["system.permission.toggle."], requiredRoles: ["SUPER_ADMIN", "ROLE_SUPER_ADMIN"] },
       },
-      filterLabels: ["Phân hệ", "Đối tượng", "Thao tác", "Phạm vi"],
+      filterLabels: ["Trạng thái", "Phân hệ", "Đối tượng", "Thao tác", "Phạm vi"],
       filters: [
+        {
+          key: "status",
+          label: "Trạng thái",
+          type: "select",
+          options: [
+            { value: "all", label: "Tất cả" },
+            { value: "active", label: "Đang hoạt động" },
+            { value: "inactive", label: "Tạm ngưng" },
+          ],
+        },
         {
           key: "module.moduleCode",
           label: "Phân hệ",
@@ -293,7 +303,7 @@ export const systemRouteGroup: RouteGroup = {
         revoke: { label: "Thu hồi quyền", permissionPrefixes: ["system.account_permission.manage."], route: "/system/account-permissions/revoke" },
       },
       primaryActionLabel: "Phân quyền",
-      filterLabels: ["Tài khoản", "Phân hệ", "Đối tượng", "Thao tác", "Phạm vi"],
+      filterLabels: ["Tài khoản", "Tình trạng quyền", "Phân hệ", "Đối tượng", "Thao tác", "Phạm vi"],
       filters: [
         {
           key: "account.username",
@@ -302,6 +312,15 @@ export const systemRouteGroup: RouteGroup = {
           optionsEndpoint: "/system/accounts/permission-targets",
           optionValue: "username",
           optionLabel: "username",
+        },
+        {
+          key: "validity",
+          label: "Tình trạng quyền",
+          type: "select",
+          options: [
+            { value: "ACTIVE", label: "Còn hiệu lực" },
+            { value: "INACTIVE", label: "Hết hiệu lực" },
+          ],
         },
         {
           key: "permission.module.moduleCode",

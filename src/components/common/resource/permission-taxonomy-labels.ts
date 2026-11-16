@@ -33,12 +33,10 @@ const taxonomyLabels: Record<PermissionTaxonomyKind, Record<string, string>> = {
     participation: "Tham dự khóa",
     permission: "Quyền hạn",
     position: "Chức vụ",
-    requirement: "Điều kiện khóa",
     course_type: "Loại khóa huấn luyện",
     role: "Vai trò",
     role_permission: "Phân quyền vai trò",
     score_component: "Thành phần điểm",
-    score_formula: "Công thức điểm",
     session: "Phiên đăng nhập",
   },
   action: {
