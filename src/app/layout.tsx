@@ -1,15 +1,9 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans } from "next/font/google";
+// Font tự host (gói fontsource, có sẵn tập ký tự latin + tiếng Việt): build không còn gọi mạng tới Google Fonts.
+import "@fontsource-variable/plus-jakarta-sans/wght.css";
 import { Toaster } from "sonner";
 import { AppProviders } from "@/components/providers/app-providers";
 import "./globals.css";
-
-const plusJakartaSans = Plus_Jakarta_Sans({
-  subsets: ["latin", "vietnamese"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-sans",
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: "C-LEAD",
@@ -23,7 +17,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="vi">
-      <body className={plusJakartaSans.variable}>
+      <body>
         <AppProviders>
           {children}
           <Toaster position="top-right" richColors closeButton />

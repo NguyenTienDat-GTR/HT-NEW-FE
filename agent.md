@@ -597,3 +597,6 @@ BE tương ứng: `BE/project.md` mục "Training Course Registration Control an
 - Form tạo huynh trưởng: ô Họ và tên báo lỗi ngay khi chỉ nhập một từ (BE từ chối vì họ lót bắt buộc); trước đây lỗi này hiện thành "dữ liệu bị xung đột".
 - Nơi áp dụng ở form gán / thu hồi quyền vai trò là ô chọn nhiều có tìm kiếm (`unitDioceseIds` / `unitDeaneryIds` / `unitParishIds`, gửi `dioceseIds` / `deaneryIds` / `parishIds`; danh sách quyền gán / thu hồi được nhận id cách nhau bằng dấu phẩy). Ô giáo xứ lọc theo các giáo hạt đã chọn.
 - Bộ lọc: màn Quyền hạn có bộ lọc Trạng thái (đang hoạt động / tạm ngưng); màn Phân quyền tài khoản có bộ lọc Tình trạng quyền (còn / hết hiệu lực, khóa `validity`, BE lọc sau khi tính tình trạng). Hai đối tượng phân loại `requirement` và `score_formula` bị V142 tắt nên biến khỏi mọi bộ lọc dùng taxonomy; nhãn của chúng đã bỏ khỏi `permission-taxonomy-labels.ts`.
+
+## fix/font-tu-host
+- Font Plus Jakarta Sans chuyển từ `next/font/google` sang gói tự host `@fontsource-variable/plus-jakarta-sans` (import ở `app/layout.tsx`, family "Plus Jakarta Sans Variable" ở `styles/tokens.css`): `npm run build` (CI, Docker) không còn tải font từ Google nên không còn fail khi mạng tới Google chập chờn. `--font-body` / `--font-display` không còn tham chiếu `--font-sans` (vòng với `@theme`).
