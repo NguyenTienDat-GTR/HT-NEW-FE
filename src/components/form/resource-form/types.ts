@@ -25,6 +25,8 @@ export type FormFieldSpec = {
   required?: boolean;
   helper?: string;
   placeholder?: string;
+  // Gợi ý trong ô tìm kiếm của ô chọn nhiều có tìm kiếm (mặc định "Tìm theo tên hoặc tài khoản", dành cho danh sách người nhận).
+  searchPlaceholder?: string;
   // Nhãn của lựa chọn trống trong ô chọn một giá trị (mặc định "Chọn"), dùng khi bỏ trống là một lựa chọn có nghĩa.
   emptyOptionLabel?: string;
   min?: number;

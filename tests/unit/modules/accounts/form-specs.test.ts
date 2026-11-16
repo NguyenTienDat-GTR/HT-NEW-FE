@@ -103,37 +103,38 @@ describe("role-permission form specs theo đơn vị", () => {
 
   it("superadmin chỉ thấy ô giáo phận", () => {
     const values = { roleCode: "ADMIN_DIOCESE" };
-    expect(visible(assignSpec, "unitDioceseId", values, ["SUPER_ADMIN"])).toBe(true);
-    expect(visible(assignSpec, "unitDeaneryId", values, ["SUPER_ADMIN"])).toBe(false);
-    expect(visible(assignSpec, "unitParishId", values, ["SUPER_ADMIN"])).toBe(false);
+    expect(visible(assignSpec, "unitDioceseIds", values, ["SUPER_ADMIN"])).toBe(true);
+    expect(visible(assignSpec, "unitDeaneryIds", values, ["SUPER_ADMIN"])).toBe(false);
+    expect(visible(assignSpec, "unitParishIds", values, ["SUPER_ADMIN"])).toBe(false);
   });
 
   it("admin giáo phận chọn giáo hạt cho cả hai vai trò cấp dưới và giáo xứ cho ADMIN_PARISH sau khi chọn giáo hạt", () => {
-    expect(visible(assignSpec, "unitDioceseId", { roleCode: "ADMIN_DEANERY" }, ["ADMIN_DIOCESE"])).toBe(false);
-    expect(visible(assignSpec, "unitDeaneryId", { roleCode: "ADMIN_DEANERY" }, ["ADMIN_DIOCESE"])).toBe(true);
-    expect(visible(assignSpec, "unitParishId", { roleCode: "ADMIN_DEANERY", unitDeaneryId: "x" }, ["ADMIN_DIOCESE"])).toBe(false);
-    expect(visible(assignSpec, "unitParishId", { roleCode: "ADMIN_PARISH" }, ["ADMIN_DIOCESE"])).toBe(false);
-    expect(visible(assignSpec, "unitParishId", { roleCode: "ADMIN_PARISH", unitDeaneryId: "x" }, ["ADMIN_DIOCESE"])).toBe(true);
+    expect(visible(assignSpec, "unitDioceseIds", { roleCode: "ADMIN_DEANERY" }, ["ADMIN_DIOCESE"])).toBe(false);
+    expect(visible(assignSpec, "unitDeaneryIds", { roleCode: "ADMIN_DEANERY" }, ["ADMIN_DIOCESE"])).toBe(true);
+    expect(visible(assignSpec, "unitParishIds", { roleCode: "ADMIN_DEANERY", unitDeaneryIds: ["x"] }, ["ADMIN_DIOCESE"])).toBe(false);
+    expect(visible(assignSpec, "unitParishIds", { roleCode: "ADMIN_PARISH" }, ["ADMIN_DIOCESE"])).toBe(false);
+    expect(visible(assignSpec, "unitParishIds", { roleCode: "ADMIN_PARISH", unitDeaneryIds: [] }, ["ADMIN_DIOCESE"])).toBe(false);
+    expect(visible(assignSpec, "unitParishIds", { roleCode: "ADMIN_PARISH", unitDeaneryIds: ["x"] }, ["ADMIN_DIOCESE"])).toBe(true);
   });
 
   it("vai trò tự tạo không có nơi áp dụng; admin giáo hạt chỉ chọn giáo xứ cho ADMIN_PARISH", () => {
-    expect(visible(assignSpec, "unitDeaneryId", { roleCode: "CUSTOM" }, ["ADMIN_DIOCESE"])).toBe(false);
-    expect(visible(assignSpec, "unitParishId", { roleCode: "ADMIN_PARISH" }, ["ADMIN_DEANERY"])).toBe(true);
-    expect(visible(assignSpec, "unitParishId", { roleCode: "CUSTOM" }, ["ADMIN_DEANERY"])).toBe(false);
+    expect(visible(assignSpec, "unitDeaneryIds", { roleCode: "CUSTOM" }, ["ADMIN_DIOCESE"])).toBe(false);
+    expect(visible(assignSpec, "unitParishIds", { roleCode: "ADMIN_PARISH" }, ["ADMIN_DEANERY"])).toBe(true);
+    expect(visible(assignSpec, "unitParishIds", { roleCode: "CUSTOM" }, ["ADMIN_DEANERY"])).toBe(false);
   });
 
   it("danh sách quyền gán / thu hồi được gửi kèm đơn vị đã chọn", () => {
     const permissions = (spec: typeof assignSpec) => spec.fields.find((field) => field.name === "permissionCodes")!;
-    expect(permissions(assignSpec).buildOptionsEndpoint!({ roleCode: "ADMIN_DIOCESE", unitDioceseId: "d1" }, user(["SUPER_ADMIN"])))
-      .toBe("/system/role-permissions/assignable-permissions?roleCode=ADMIN_DIOCESE&dioceseId=d1");
-    expect(permissions(revokeSpec).buildOptionsEndpoint!({ roleCode: "ADMIN_PARISH", unitDeaneryId: "g1", unitParishId: "x1" }, user(["ADMIN_DIOCESE"])))
-      .toBe("/system/role-permissions/revocable-permissions?roleCode=ADMIN_PARISH&deaneryId=g1&parishId=x1");
+    expect(permissions(assignSpec).buildOptionsEndpoint!({ roleCode: "ADMIN_DIOCESE", unitDioceseIds: ["d1", "d2"] }, user(["SUPER_ADMIN"])))
+      .toBe("/system/role-permissions/assignable-permissions?roleCode=ADMIN_DIOCESE&dioceseIds=d1%2Cd2");
+    expect(permissions(revokeSpec).buildOptionsEndpoint!({ roleCode: "ADMIN_PARISH", unitDeaneryIds: ["g1"], unitParishIds: ["x1", "x2"] }, user(["ADMIN_DIOCESE"])))
+      .toBe("/system/role-permissions/revocable-permissions?roleCode=ADMIN_PARISH&deaneryIds=g1&parishIds=x1%2Cx2");
     expect(permissions(revokeSpec).buildOptionsEndpoint!({ roleCode: "ADMIN_DIOCESE" }, user(["SUPER_ADMIN"])))
       .toBe("/system/role-permissions/revocable-permissions?roleCode=ADMIN_DIOCESE");
   });
 
   it("đổi tên các trường đơn vị khi gửi", () => {
-    expect(mapRolePermissionUnitPayload({ roleCode: "ADMIN_PARISH", unitDeaneryId: "g1", unitParishId: "", permissionCodes: ["a"] }))
-      .toEqual({ roleCode: "ADMIN_PARISH", deaneryId: "g1", permissionCodes: ["a"] });
+    expect(mapRolePermissionUnitPayload({ roleCode: "ADMIN_PARISH", unitDeaneryIds: ["g1", "g2"], unitParishIds: [], permissionCodes: ["a"] }))
+      .toEqual({ roleCode: "ADMIN_PARISH", deaneryIds: ["g1", "g2"], permissionCodes: ["a"] });
   });
 });
