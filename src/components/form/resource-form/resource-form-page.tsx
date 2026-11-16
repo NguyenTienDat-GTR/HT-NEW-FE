@@ -321,6 +321,13 @@ function nextValuesForField(current: Record<string, unknown>, fieldName: string,
     // Đổi tư cách gửi thì phạm vi huynh trưởng đổi theo: lập lại cả hai danh sách (khóa không còn hợp lệ sẽ tự bỏ chọn).
     return { ...current, senderType: value, leaderIds: [], exceptionLeaders: [] };
   }
+  // Phân quyền vai trò: đổi vai trò hoặc nơi áp dụng thì lập lại nơi áp dụng cấp dưới và danh sách quyền đã tick.
+  if (fieldName === "unitDioceseIds") return { ...current, unitDioceseIds: value, unitDeaneryIds: [], unitParishIds: [], permissionCodes: [] };
+  if (fieldName === "unitDeaneryIds") return { ...current, unitDeaneryIds: value, unitParishIds: [], permissionCodes: [] };
+  if (fieldName === "unitParishIds") return { ...current, unitParishIds: value, permissionCodes: [] };
+  if (fieldName === "roleCode" && Array.isArray(mergedValues.permissionCodes)) {
+    return { ...current, roleCode: value, unitDioceseIds: [], unitDeaneryIds: [], unitParishIds: [], permissionCodes: [] };
+  }
   if (fieldName !== "roleCodes") {
     return { ...current, [fieldName]: value };
   }

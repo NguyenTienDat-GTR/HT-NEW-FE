@@ -704,7 +704,7 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
       <ConfirmActionDialog
         action="withdraw"
         confirmLabel="Thu hồi"
-        description="Quyền bị thu hồi vĩnh viễn và không bật lại được; muốn cấp lại phải phân quyền mới."
+        description={revokePermissionDescription(effectiveRoute.kind, revokePermissionId ? rowById(revokePermissionId) : undefined)}
         loading={actionMutation.isPending}
         onClose={closeQueryDialog}
         onConfirm={() => revokePermissionId && actionMutation.mutate({ action: "revokePermission", id: revokePermissionId })}
@@ -762,4 +762,15 @@ export function ResourceListRuntime({ route, config }: ResourceListRuntimeProps)
       />
     </div>
   );
+}
+
+// Lời xác nhận thu hồi quyền của vai trò: nói rõ thu hồi cho tất cả giáo phận (mặc định) hay chỉ tại một đơn vị.
+function revokePermissionDescription(kind: string, row: Record<string, unknown> | undefined) {
+  if (kind === "role-permissions" && row?.entryType === "UNIT_GRANT") {
+    return `Quyền cấp riêng cho vai trò chỉ tại ${String(row.scopeName ?? "đơn vị này")} sẽ bị thu hồi; các nơi khác không bị ảnh hưởng. Muốn cấp lại phải phân quyền mới.`;
+  }
+  if (kind === "role-permissions") {
+    return "Quyền bị thu hồi khỏi vai trò ở TẤT CẢ giáo phận (bộ quyền mặc định chung) và không bật lại được; muốn cấp lại phải phân quyền mới. Muốn chỉ thu hồi ở một giáo phận, giáo hạt hoặc giáo xứ, hãy dùng nút \"Thu hồi quyền\" và chọn nơi áp dụng.";
+  }
+  return "Quyền bị thu hồi vĩnh viễn và không bật lại được; muốn cấp lại phải phân quyền mới.";
 }

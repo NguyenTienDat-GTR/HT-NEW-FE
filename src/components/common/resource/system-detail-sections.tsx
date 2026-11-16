@@ -128,6 +128,8 @@ const rolePermissionSections: DetailSection[] = [
     fields: [
       { key: "roleName", label: "Vai trò" },
       { key: "permissionName", label: "Quyền", wide: true },
+      { key: "scopeName", label: "Nơi áp dụng" },
+      { key: "entryType", label: "Loại phân quyền" },
       { key: "validity", label: "Tình trạng quyền" },
       { key: "conditions", label: "Điều kiện áp dụng", wide: true, visible: (row) => hasText(row.conditions) },
     ],

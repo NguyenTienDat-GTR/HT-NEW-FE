@@ -502,6 +502,7 @@ function OptionControl({
         onChange={onChange}
         options={options}
         placeholder={field.placeholder}
+        searchPlaceholder={field.searchPlaceholder}
         readonly={readonly || query.isLoading}
         value={Array.isArray(value) ? value : []}
       />
@@ -873,6 +874,7 @@ function SearchableMultiSelect({
   onChange,
   options,
   placeholder,
+  searchPlaceholder,
   readonly,
   value,
 }: {
@@ -880,6 +882,7 @@ function SearchableMultiSelect({
   onChange: (value: FormValue) => void;
   options: Option[];
   placeholder?: string;
+  searchPlaceholder?: string;
   readonly?: boolean;
   value: string[];
 }) {
@@ -953,7 +956,7 @@ function SearchableMultiSelect({
       </button>
       {open && !readonly ? (
         <div className="absolute z-30 mt-1 w-full rounded-[8px] border border-border bg-white p-2 shadow-lg">
-          <Input autoFocus className="h-9" onChange={(event) => setSearch(event.target.value)} placeholder="Tìm theo tên hoặc tài khoản" value={search} />
+          <Input autoFocus className="h-9" onChange={(event) => setSearch(event.target.value)} placeholder={searchPlaceholder ?? "Tìm theo tên hoặc tài khoản"} value={search} />
           <div className="mt-2 flex items-center justify-between text-xs text-muted">
             <span>Đã chọn {selectedOptions.length}/{options.length}</span>
             {filteredOptions.length > 0 ? (

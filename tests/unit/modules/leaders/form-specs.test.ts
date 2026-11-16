@@ -69,3 +69,14 @@ describe("leader form spec", () => {
     expect(source({ ...account(["SUPER_ADMIN"]), permissions: ["organization.deanery.read.all"] })).toBeUndefined();
   });
 });
+
+describe("họ và tên huynh trưởng", () => {
+  it("từ chối tên chỉ một từ và nhận tên đủ họ tên", async () => {
+    const { personnelFormSpecs } = await import("@/modules/leaders/form-specs");
+    const spec = personnelFormSpecs.find((item) => item.actionType === "create" || item.fields.some((field) => field.name === "fullName"))!;
+    const validate = spec.fields.find((field) => field.name === "fullName")!.validate!;
+    expect(validate("dfdf", {})).toContain("họ và tên");
+    expect(validate("Nguyễn Văn An", {})).toBeUndefined();
+    expect(validate("", {})).toBeUndefined();
+  });
+});

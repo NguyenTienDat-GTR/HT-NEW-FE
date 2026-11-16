@@ -60,6 +60,25 @@ describe("buildActionRequest", () => {
   });
 });
 
+describe("revokePermission theo đơn vị", () => {
+  const roleContext = (row: Record<string, unknown>) => context({ route: { endpoint: "/system/role-permissions", kind: "role-permissions" } as unknown as RouteConfig, rowById: () => row });
+
+  it("thu hồi dòng mặc định không gửi đơn vị", () => {
+    const row = { roleCode: "ADMIN_PARISH", permissionCode: "p.read", entryType: "DEFAULT" };
+    expect(buildActionRequest({ action: "revokePermission", id: "x" }, roleContext(row)).body).toEqual({ roleCode: "ADMIN_PARISH", permissionCodes: ["p.read"] });
+  });
+
+  it("thu hồi quyền cấp riêng gửi đúng đơn vị của dòng", () => {
+    const base = { roleCode: "ADMIN_PARISH", permissionCode: "p.read", entryType: "UNIT_GRANT" };
+    expect(buildActionRequest({ action: "revokePermission", id: "x" }, roleContext({ ...base, scopeLevel: "DIOCESE", dioceseId: "d1" })).body)
+      .toEqual({ roleCode: "ADMIN_PARISH", dioceseId: "d1", permissionCodes: ["p.read"] });
+    expect(buildActionRequest({ action: "revokePermission", id: "x" }, roleContext({ ...base, scopeLevel: "DEANERY", dioceseId: "d1", deaneryId: "de1" })).body)
+      .toEqual({ roleCode: "ADMIN_PARISH", deaneryId: "de1", permissionCodes: ["p.read"] });
+    expect(buildActionRequest({ action: "revokePermission", id: "x" }, roleContext({ ...base, scopeLevel: "PARISH", dioceseId: "d1", deaneryId: "de1", parishId: "p1" })).body)
+      .toEqual({ roleCode: "ADMIN_PARISH", parishId: "p1", permissionCodes: ["p.read"] });
+  });
+});
+
 describe("actionSuccessMessage", () => {
   it("uses the masked email for password resets and fixed text otherwise", () => {
     expect(actionSuccessMessage("resetPassword", { maskedEmail: "a***@x.com" })).toContain("a***@x.com");

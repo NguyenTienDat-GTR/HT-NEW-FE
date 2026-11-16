@@ -25,6 +25,8 @@ export type FormFieldSpec = {
   required?: boolean;
   helper?: string;
   placeholder?: string;
+  // Gợi ý trong ô tìm kiếm của ô chọn nhiều có tìm kiếm (mặc định "Tìm theo tên hoặc tài khoản", dành cho danh sách người nhận).
+  searchPlaceholder?: string;
   // Nhãn của lựa chọn trống trong ô chọn một giá trị (mặc định "Chọn"), dùng khi bỏ trống là một lựa chọn có nghĩa.
   emptyOptionLabel?: string;
   min?: number;
@@ -32,7 +34,7 @@ export type FormFieldSpec = {
   registrationList?: { mode: "standard" | "exception"; courseField: string; otherField: string; senderField?: string };
   options?: Option[];
   optionsEndpoint?: string;
-  buildOptionsEndpoint?: (values: Record<string, unknown>) => string | undefined;
+  buildOptionsEndpoint?: (values: Record<string, unknown>, user?: AuthUser | null) => string | undefined;
   // Endpoint lấy lựa chọn phụ thuộc tài khoản (ví dụ chỉ loại khóa thuộc cấp quản lý của mình).
   optionsEndpointForUser?: (user: AuthUser | null) => string | undefined;
   // Nguồn lựa chọn thay thế khi tài khoản không đọc được endpoint chung (ví dụ tài khoản giáo xứ không có quyền đọc danh sách giáo hạt

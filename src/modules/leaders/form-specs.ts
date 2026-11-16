@@ -33,7 +33,15 @@ export const personnelFormSpecs: ResourceFormSpec[] = [
     description: "Hồ sơ huynh trưởng theo giáo xứ / giáo họ / giáo điểm, cấp hiện tại và thông tin liên hệ.",
     fields: [
       { name: "holyName", label: "Tên thánh", required: true, section: "Thông tin cá nhân" },
-      { name: "fullName", label: "Họ và tên", required: true, readOnlyOnEdit: true, section: "Thông tin cá nhân" },
+      {
+        name: "fullName",
+        label: "Họ và tên",
+        required: true,
+        readOnlyOnEdit: true,
+        // Họ lót là bắt buộc: tên chỉ một từ bị BE từ chối, nên báo ngay ở form.
+        validate: (value) => (typeof value === "string" && value.trim() && value.trim().split(/\s+/).length < 2 ? "Họ và tên phải gồm cả họ và tên (ví dụ: Nguyễn Văn An)" : undefined),
+        section: "Thông tin cá nhân",
+      },
       { name: "birthDate", label: "Ngày sinh", type: "date", required: true, readOnlyOnEdit: true, section: "Thông tin cá nhân" },
       { name: "gender", label: "Giới tính", type: "select", required: true, options: genderOptions, section: "Thông tin cá nhân" },
       { name: "email", label: "Email", type: "email", clearable: true, section: "Thông tin liên hệ" },
