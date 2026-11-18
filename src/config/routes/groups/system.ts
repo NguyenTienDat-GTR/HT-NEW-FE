@@ -373,7 +373,7 @@ export const systemRouteGroup: RouteGroup = {
       // Ô tìm kiếm chung tìm theo tên đối tượng (huynh trưởng, khóa, giáo xứ, chứng nhận…), tài khoản và mã; không cần nhập UUID.
       searchFields: ["resourceName", "username", "resourceId"],
       permissionPrefixes: ["system.audit_log.read."],
-      filterLabels: ["Người thực hiện", "Phân hệ", "Hành động", "Thời gian"],
+      filterLabels: ["Thao tác", "Đối tượng", "Mã kết quả HTTP", "Cấp đơn vị"],
     }),
   ],
 };
