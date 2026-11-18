@@ -600,3 +600,7 @@ BE tương ứng: `BE/project.md` mục "Training Course Registration Control an
 
 ## fix/font-tu-host
 - Font Plus Jakarta Sans chuyển từ `next/font/google` sang gói tự host `@fontsource-variable/plus-jakarta-sans` (import ở `app/layout.tsx`, family "Plus Jakarta Sans Variable" ở `styles/tokens.css`): `npm run build` (CI, Docker) không còn tải font từ Google nên không còn fail khi mạng tới Google chập chờn. `--font-body` / `--font-display` không còn tham chiếu `--font-sans` (vòng với `@theme`).
+
+## fix/nhat-ky-he-thong-viet-hoa
+- Nhật ký hệ thống: bảng hiện đủ nội dung các cột (không cắt "..."; `ResourceRows` bật `fullText` cho `route.kind === "audit-logs"`, chữ 13px, ô tự xuống dòng). Bỏ bộ lọc "Người thực hiện" (đã có ô tìm kiếm theo tài khoản / tên đối tượng / mã).
+- Việt hóa: `audit-log-labels.ts` có thêm nhãn cho mọi thao tác ít gặp (`AUDIT_EXTRA_OPERATION_LABELS`, không đưa vào bộ lọc), thao tác lạ hiện "Thao tác khác" thay vì chữ tiếng Anh; `auditMessageText` dựng "Nội dung" từ thao tác + loại đối tượng + tên đối tượng (không hiện dòng `GET /api/...` do BE ghi); `auditMethodText` đổi GET/POST/... thành "Xem dữ liệu (GET)"…; "Phân hệ" ở chi tiết dùng nhãn taxonomy. `permission-taxonomy-labels.ts` thêm nhãn các khóa đối tượng ghi theo đường dẫn API (`account_roles`, `role_permissions`, `requirement`, `badges`, `media`…).

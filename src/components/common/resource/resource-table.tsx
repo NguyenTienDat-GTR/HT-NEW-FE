@@ -235,12 +235,14 @@ function ResourceRows({
           className={cn(
             "h-14 border-b border-slate-100 align-middle",
             scoreEntry ? "px-2 py-1" : "px-3",
+            // Nhật ký hệ thống: chữ nhỏ hơn và hiện đủ nội dung (xuống dòng) thay vì cắt "...".
+            route.kind === "audit-logs" && "py-2 text-[13px] leading-5",
             scoreEntry && scoreColumnWidthClass(column),
             freezeLeader && column === "leaderFullName" && `${leaderLeft} sticky z-1 bg-white shadow-(--shadow-table-sticky-left) transition-colors group-hover:bg-slate-50`,
           )}
           key={column}
         >
-          {route.kind === "leaders" && column === "fullName" ? <LeaderIdentity row={row} /> : cellEditors?.[column] ? cellEditors[column](row) : <ResourceCell column={column} displayMode={scoreEntry ? "detail" : "table"} fullNames={route.kind === "leaders"} fullText={route.kind === "dioceses" || route.kind === "deaneries"} row={row} value={row[column]} />}
+          {route.kind === "leaders" && column === "fullName" ? <LeaderIdentity row={row} /> : cellEditors?.[column] ? cellEditors[column](row) : <ResourceCell column={column} displayMode={scoreEntry ? "detail" : "table"} fullNames={route.kind === "leaders"} fullText={route.kind === "dioceses" || route.kind === "deaneries" || route.kind === "audit-logs"} row={row} value={row[column]} />}
           {flagged && column === "leaderFullName" ? <span className="mt-1 inline-block rounded-md bg-warning/20 px-1.5 py-0.5 text-[11px] font-semibold text-warning">Chứng nhận ngoại lệ · cần lý do duyệt</span> : null}
         </td>
       ))}

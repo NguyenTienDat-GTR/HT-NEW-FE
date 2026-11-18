@@ -1,4 +1,4 @@
-import { auditOperationLabel, auditStatusText } from "./audit-log-labels";
+import { auditMessageText, auditMethodText, auditOperationLabel, auditStatusText } from "./audit-log-labels";
 import { formatPermissionTaxonomyValue } from "./permission-taxonomy-labels";
 import { ResourceCell } from "./resource-format";
 import { AUDIT_SECTION, hasText, type DetailField, type DetailSection } from "./detail-section-types";
@@ -170,19 +170,19 @@ const auditLogSections: DetailSection[] = [
       { key: "loggedAt", label: "Thời gian" },
       { key: "username", label: "Tài khoản thực hiện" },
       { key: "operation", label: "Thao tác", value: (row) => (hasText(row.operation) ? auditOperationLabel(String(row.operation)) : String(row.action ?? "")) },
-      { key: "module", label: "Phân hệ", visible: (row) => hasText(row.module) },
+      { key: "module", label: "Phân hệ", value: (row) => formatPermissionTaxonomyValue("module", String(row.module ?? "")) ?? String(row.module ?? ""), visible: (row) => hasText(row.module) },
       { key: "resource", label: "Loại đối tượng", value: (row) => formatPermissionTaxonomyValue("resource", String(row.resource ?? "")) ?? String(row.resource ?? ""), visible: (row) => hasText(row.resource) },
       { key: "resourceName", label: "Tên đối tượng", visible: (row) => hasText(row.resourceName) },
       { key: "resourceId", label: "Mã đối tượng", visible: (row) => hasText(row.resourceId) },
       { key: "unitType", label: "Cấp đơn vị", value: (row) => mapped(UNIT_TYPE_LABELS, row.unitType), visible: (row) => hasText(row.unitType) },
-      { key: "message", label: "Nội dung", wide: true, visible: (row) => hasText(row.message) },
+      { key: "message", label: "Nội dung", wide: true, value: (row) => auditMessageText(row), visible: (row) => auditMessageText(row) !== "" },
       { key: "errorMessage", label: "Thông báo lỗi", wide: true, visible: (row) => hasText(row.errorMessage) },
     ],
   },
   {
     title: "Yêu cầu kỹ thuật",
     fields: [
-      { key: "httpMethod", label: "Phương thức" },
+      { key: "httpMethod", label: "Phương thức", value: (row) => auditMethodText(String(row.httpMethod ?? "")) },
       { key: "requestPath", label: "Đường dẫn", wide: true },
       { key: "statusCode", label: "Mã phản hồi HTTP", value: (row) => (typeof row.statusCode === "number" ? `${row.statusCode} · ${auditStatusText(row.statusCode)}` : "") },
       { key: "durationMs", label: "Thời gian xử lý", value: (row) => (typeof row.durationMs === "number" ? `${row.durationMs} ms` : ""), visible: (row) => typeof row.durationMs === "number" },

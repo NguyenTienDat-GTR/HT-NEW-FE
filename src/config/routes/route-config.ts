@@ -386,7 +386,6 @@ function inferRouteFilters(config: RouteConfig): RouteFilterConfig[] {
       filters.push({ key: "eventType", label: "Loại thông báo", type: "text", placeholder: "Lọc theo event type" });
       break;
     case "audit-logs":
-      filters.push({ key: "username", label: "Người thực hiện", type: "text", placeholder: "Lọc theo tài khoản" });
       filters.push({ key: "operation", label: "Thao tác", type: "select", options: Object.entries(AUDIT_OPERATION_LABELS).map(([value, label]) => ({ value, label })) });
       filters.push({
         key: "resource",
