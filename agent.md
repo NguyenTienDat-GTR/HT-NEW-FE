@@ -617,3 +617,6 @@ BE tương ứng: `BE/project.md` mục "Training Course Registration Control an
 ## feat/giam-sat-he-thong
 - Màn "Giám sát hệ thống" (`/system/monitoring`, `kind: "monitoring"`, `modules/monitoring`): cảnh báo bất thường 60 phút gần nhất, 8 ô số liệu có so sánh kỳ trước, biểu đồ lưu lượng / lỗi và từ chối / P95, bảng IP, tài khoản, API gọi nhiều và API chậm. Chọn khoảng 1 giờ đến 10 ngày, tự làm mới mỗi phút. Chỉ hiện với quyền `system.audit_log.read.all`.
 - Dữ liệu từ `GET /system/monitoring/overview?hours=` (xem mục cùng tên trong `BE/project.md`). `lib/api/schema.d.ts` chưa sinh lại; kiểu nằm ở `modules/monitoring/types.ts`. Test: `tests/unit/modules/monitoring/monitoring-view.test.tsx`.
+
+## fix/permissions-list-overflow
+- "Quyền của tôi" (`my-permissions-view.tsx`): bộ lọc xếp lưới, bảng `table-fixed` xuống dòng nội dung dài; dưới `md` chuyển sang danh sách thẻ kèm ô sắp xếp (không cuộn ngang); hộp chi tiết cuộn được. Danh sách quyền hạn / quyền vai trò / quyền tài khoản dùng `fullText` và `wrap-anywhere` để mã quyền dài không làm bảng rộng ra.
