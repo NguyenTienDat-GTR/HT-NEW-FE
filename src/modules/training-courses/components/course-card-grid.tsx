@@ -7,9 +7,9 @@ import { Badge, ManagementLevelBadge } from "@/components/common/resource/resour
 import { fillRoute, getResourceId } from "@/components/common/resource/resource-actions";
 import { RowActions } from "@/components/common/resource/resource-table";
 import type { RouteConfig } from "@/config/routes/routes";
-import { formatVietnamDate, formatVietnamDateTime } from "@/lib/date-format";
+import { formatVietnamDateTime } from "@/lib/date-format";
 import { cn } from "@/lib/utils";
-import { organizingStateLabels, organizingStateTones, registrationStateLabels, registrationStateTones, resolveOrganizingState, resolveRegistrationState } from "../registration-state";
+import { formatCourseMoment, organizingStateLabels, organizingStateTones, registrationStateLabels, registrationStateTones, resolveOrganizingState, resolveRegistrationState } from "../registration-state";
 
 type CardProps = { rows: Record<string, unknown>[]; route: RouteConfig; isLoading: boolean };
 
@@ -50,8 +50,8 @@ function CourseCard({ route, row }: { route: RouteConfig; row: Record<string, un
   const name = typeof row.courseName === "string" && row.courseName ? row.courseName : "Khóa huấn luyện";
   const typeName = typeof row.courseTypeName === "string" ? row.courseTypeName : "";
   const location = typeof row.location === "string" ? row.location : "";
-  const startDate = typeof row.startDate === "string" ? formatVietnamDate(row.startDate) : null;
-  const endDate = typeof row.endDate === "string" ? formatVietnamDate(row.endDate) : null;
+  const startDate = formatCourseMoment(row, "start");
+  const endDate = formatCourseMoment(row, "end");
   const registrationEnd = row.registrationEnabled !== false && typeof row.registrationEndAt === "string" ? formatVietnamDateTime(row.registrationEndAt) : null;
   const approved = typeof row.approvedParticipantCount === "number" ? row.approvedParticipantCount : null;
   const hostYear = typeof row.hostYear === "number" || typeof row.hostYear === "string" ? String(row.hostYear) : "";

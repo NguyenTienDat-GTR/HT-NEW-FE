@@ -620,3 +620,7 @@ BE tương ứng: `BE/project.md` mục "Training Course Registration Control an
 
 ## fix/permissions-list-overflow
 - "Quyền của tôi" (`my-permissions-view.tsx`): bộ lọc xếp lưới, bảng `table-fixed` xuống dòng nội dung dài; dưới `md` chuyển sang danh sách thẻ kèm ô sắp xếp (không cuộn ngang); hộp chi tiết cuộn được. Danh sách quyền hạn / quyền vai trò / quyền tài khoản dùng `fullText` và `wrap-anywhere` để mã quyền dài không làm bảng rộng ra.
+## feat/export-sort-and-course-time
+- Form khóa thường (`training-courses/form-specs.ts`) thêm ô "Giờ bắt đầu", "Giờ kết thúc" (`type: "time"`, bắt buộc; thêm `"time"` vào `FieldType`). Quy tắc: giờ kết thúc sau giờ bắt đầu (`endNotBeforeStart`), thời gian đăng ký không sau giờ bắt đầu (`registrationNotAfterStart`). Khóa quá khứ vẫn chỉ ngày.
+- `registration-state.ts`: trạng thái tổ chức, kết thúc, đang diễn ra tính theo ngày + giờ (giờ Việt Nam; khóa cũ chưa có giờ = 00:00 - 23:59). Thêm `courseAttendanceOpensAtMs` (sớm hơn giờ bắt đầu 2 tiếng, khớp BE), `formatCourseMoment`, `isPastCourseEnd`. Thông tin khóa và thẻ khóa hiện "Bắt đầu / Kết thúc" kèm giờ; lý do chưa điểm danh được nêu giờ mở.
+- Sắp xếp khi xuất Excel do BE xử lý (FE chỉ gửi `sortBy` khi người dùng bấm tiêu đề cột). `schema.d.ts` thêm tay `startTime`, `endTime` cho 3 schema khóa (chưa sinh lại vì bản sinh hiện tại lệch cả file). Test: `tests/unit/modules/training-courses/course-time.test.ts`, cập nhật `course-copy-form`, `course-host-year`, `course-detail-attendance-tab`.
