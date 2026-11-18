@@ -242,7 +242,7 @@ function ResourceRows({
           )}
           key={column}
         >
-          {route.kind === "leaders" && column === "fullName" ? <LeaderIdentity row={row} /> : cellEditors?.[column] ? cellEditors[column](row) : <ResourceCell column={column} displayMode={scoreEntry ? "detail" : "table"} fullNames={route.kind === "leaders"} fullText={route.kind === "dioceses" || route.kind === "deaneries" || route.kind === "audit-logs"} row={row} value={row[column]} />}
+          {route.kind === "leaders" && column === "fullName" ? <LeaderIdentity row={row} /> : cellEditors?.[column] ? cellEditors[column](row) : <ResourceCell column={column} displayMode={scoreEntry ? "detail" : "table"} fullNames={route.kind === "leaders"} fullText={route.kind === "dioceses" || route.kind === "deaneries" || route.kind === "audit-logs" || route.kind === "permissions" || route.kind === "role-permissions" || route.kind === "account-permissions"} row={row} value={row[column]} />}
           {flagged && column === "leaderFullName" ? <span className="mt-1 inline-block rounded-md bg-warning/20 px-1.5 py-0.5 text-[11px] font-semibold text-warning">Chứng nhận ngoại lệ · cần lý do duyệt</span> : null}
         </td>
       ))}
