@@ -5,6 +5,7 @@ import type {
   AttendanceSummary,
   BadgeExportOptions,
   BadgeJob,
+  FeeResult,
   InvitationJob,
   InvitationOptions,
   ParticipantDetail,
@@ -52,6 +53,12 @@ export function lookupAttendance(courseCode: string | undefined, token: string) 
 
 export function setCheckedIn(courseCode: string, participationId: string, checkedIn: boolean) {
   return apiMutation<ScanResult>(`${base(courseCode)}/attendance/participants/${encodeURIComponent(participationId)}`, "PUT", { checkedIn });
+}
+
+// Ghi nhận đã đóng / chưa đóng lệ phí. Gửi trạng thái ĐÍCH (không phải "đảo") và không dùng khóa idempotency theo ý định:
+// gửi lặp hay retry đều cho cùng kết quả, còn tích - bỏ tích - tích lại cùng một người vẫn là ba yêu cầu khác nhau.
+export function setFeePaid(courseCode: string, participationId: string, paid: boolean) {
+  return apiMutation<FeeResult>(`${base(courseCode)}/attendance/participants/${encodeURIComponent(participationId)}/fee`, "PUT", { paid });
 }
 
 // Gửi email thông tin tham dự chạy nền: tạo job rồi hỏi trạng thái tới khi xong. Kết quả liệt kê hồ sơ không gửi được.

@@ -2,20 +2,24 @@
 
 import * as Dialog from "@radix-ui/react-dialog";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowRight, CheckCircle, ImageSquare, QrCode, Warning, X } from "@phosphor-icons/react";
+import { ArrowRight, CheckCircle, Coins, ImageSquare, QrCode, Warning, X } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { apiFetch, getApiErrorMessage } from "@/lib/api/client";
+import { formatVnd } from "@/lib/money";
 import { cn } from "@/lib/utils";
 import { certificateDetailHref } from "@/modules/certificates/scan-utils";
 import { classifyScan } from "@/modules/qr-scan/scan-payload";
 import { useQrCamera } from "@/modules/qr-scan/use-qr-camera";
 import { lookupAttendance, scanAttendance } from "../api";
 import { explainRejectedScan, LEGACY_ATTENDANCE_MESSAGE } from "../attendance-token";
+import type { FeePaymentQueue } from "../fee-payment-queue";
 import { INITIAL_SCAN_FLOW, scanFlowReducer } from "../scan-flow";
 import { markScanned, shouldProcessScan, type ScanGateState } from "../scan-gate";
+import type { ScanResult } from "../types";
+import { useFeePayments } from "../use-fee-payments";
 import { invalidateDataQueries } from "@/lib/api/query-keys";
 
 // Quét mã QR: quét -> hiện người được quét -> người dùng bấm "Xác nhận điểm danh" (hoặc "Bỏ qua") -> thành công thì "Quét tiếp".
@@ -52,6 +56,37 @@ export function AttendanceScannerDialog({ courseCode, courseName, open, onOpenCh
   );
 }
 
+// Lệ phí của người vừa quét (chỉ khóa có thu lệ phí): số tiền và nút "Đã đóng tiền" bấm là tự lưu, bấm lại để bỏ.
+// Lỗi lưu được báo bằng thông báo lỗi và ô trở về như cũ (xem fee-payment-queue).
+function ScanFee({ person, queue }: { person: ScanResult; queue: FeePaymentQueue }) {
+  if (!person.feeEnabled || !person.courseCode) return null;
+  const serverPaid = Boolean(person.feePaidAt);
+  const snapshotAt = person.fetchedAt ?? 0;
+  const paid = queue.paidOf(person.participationId, serverPaid, snapshotAt);
+  const busy = queue.busy(person.participationId);
+  const label = [person.holyName, person.fullName].filter(Boolean).join(" ");
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-white px-3 py-2">
+      <div className="min-w-0">
+        <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">Lệ phí</p>
+        <p className="text-base font-bold tabular-nums text-foreground">{typeof person.feeAmount === "number" ? formatVnd(person.feeAmount) : "—"}</p>
+      </div>
+      <Button
+        aria-busy={busy || undefined}
+        aria-pressed={paid}
+        className={cn("min-w-[10.5rem]", paid && "border-success bg-success hover:border-success hover:bg-success/90", busy && "opacity-80")}
+        onClick={() => queue.toggle(person.participationId, !paid, { paid: serverPaid, snapshotAt }, { label, context: person.courseCode ?? "" })}
+        size="lg"
+        type="button"
+        variant={paid ? "primary" : "outline"}
+      >
+        {paid ? <CheckCircle size={20} weight="fill" /> : <Coins size={20} />}
+        Đã đóng tiền
+      </Button>
+    </div>
+  );
+}
+
 function Scanner({ courseCode, onClose }: { courseCode?: string; onClose: () => void }) {
   const universal = !courseCode;
   const queryClient = useQueryClient();
@@ -64,15 +99,18 @@ function Scanner({ courseCode, onClose }: { courseCode?: string; onClose: () => 
   }, [flow]);
   const [manual, setManual] = useState("");
 
+  // Đóng lệ phí ghi nhận ngay ở màn quét (khóa có thu lệ phí): dùng chung hàng đợi tự lưu với tab Thẻ & điểm danh.
+  const fees = useFeePayments({ keepOptimistic: true });
+
   const lookup = useMutation({
     mutationFn: (token: string) => lookupAttendance(courseCode, token),
-    onSuccess: (person) => dispatch({ type: "looked-up", person }),
+    onSuccess: (person) => dispatch({ type: "looked-up", person: { ...person, fetchedAt: Date.now() } }),
     onError: (error) => dispatch({ type: "failed", message: getApiErrorMessage(error) }),
   });
   const confirm = useMutation({
     mutationFn: (token: string) => scanAttendance(courseCode, token),
     onSuccess: async (person) => {
-      dispatch({ type: "confirmed", person });
+      dispatch({ type: "confirmed", person: { ...person, fetchedAt: Date.now() } });
       await invalidateDataQueries(queryClient);
     },
     onError: (error) => dispatch({ type: "failed", message: getApiErrorMessage(error) }),
@@ -170,6 +208,7 @@ function Scanner({ courseCode, onClose }: { courseCode?: string; onClose: () => 
           <p className="text-lg font-bold text-foreground">{name}</p>
           {place ? <p className="text-sm text-text-secondary">{place}</p> : null}
           {universal && person?.courseName ? <p className="text-sm font-medium text-foreground">Khóa: {person.courseName}</p> : null}
+          {person ? <ScanFee person={person} queue={fees} /> : null}
           <div className="flex flex-wrap gap-2 pt-1">
             <Button
               loading={flow.step === "confirming"}
@@ -203,6 +242,7 @@ function Scanner({ courseCode, onClose }: { courseCode?: string; onClose: () => 
               </p>
             </div>
           </div>
+          {person ? <ScanFee person={person} queue={fees} /> : null}
           <Button onClick={() => dispatch({ type: "next" })} type="button">
             <ArrowRight size={16} /> Quét tiếp
           </Button>

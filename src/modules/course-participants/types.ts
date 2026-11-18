@@ -11,6 +11,14 @@ export type AttendanceSummary = {
   invitationPending: number;
   invitationFailed: number;
   withoutEmail: number;
+  // Lệ phí (khóa có thu lệ phí): số tiền tính trên danh sách tham dự hiện tại. Tùy chọn để tương thích BE cũ.
+  feeEnabled?: boolean;
+  feeAmount?: number | null;
+  feeTotal?: number;
+  feePaidTotal?: number;
+  feeRemaining?: number;
+  feePaidCount?: number;
+  feeUnpaidCount?: number;
 };
 
 export type InvitationFilter = "SENT" | "PENDING" | "FAILED" | "NO_EMAIL";
@@ -28,6 +36,8 @@ export type ParticipantRow = {
   invitationError?: string | null;
   checkedInAt?: string | null;
   checkedInBy?: string | null;
+  // Thời điểm ghi nhận đã đóng lệ phí; null = chưa đóng.
+  feePaidAt?: string | null;
 };
 
 export type ScanStatus = "CHECKED_IN" | "ALREADY_CHECKED_IN" | "CHECK_IN_CANCELLED" | "READY";
@@ -43,7 +53,16 @@ export type ScanResult = {
   deaneryName?: string | null;
   teamName?: string | null;
   checkedInAt?: string | null;
+  // Khóa có thu lệ phí: số tiền mỗi người và thời điểm người này đã đóng (null = chưa đóng).
+  feeEnabled?: boolean;
+  feeAmount?: number | null;
+  feePaidAt?: string | null;
+  // Chỉ phía trình duyệt: thời điểm lấy kết quả này, để biết bản lạc quan của lệ phí còn hiệu lực hay đã cũ.
+  fetchedAt?: number;
 };
+
+// Kết quả ghi nhận đóng lệ phí của một hồ sơ.
+export type FeeResult = { participationId: string; feePaid: boolean; feePaidAt?: string | null; feePaidBy?: string | null };
 
 export type InvitationIssue = {
   participationId?: string | null;

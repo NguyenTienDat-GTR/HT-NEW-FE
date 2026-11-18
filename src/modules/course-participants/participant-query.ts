@@ -7,9 +7,11 @@ export type ParticipantQueryState = {
   team: string;
   checkedIn: "" | "true" | "false";
   invitation: "" | InvitationFilter;
+  // Lọc theo lệ phí: "true" = đã đóng, "false" = chưa đóng, "" = tất cả.
+  feePaid: "" | "true" | "false";
 };
 
-export const EMPTY_PARTICIPANT_QUERY: ParticipantQueryState = { page: 0, size: 20, search: "", team: "", checkedIn: "", invitation: "" };
+export const EMPTY_PARTICIPANT_QUERY: ParticipantQueryState = { page: 0, size: 20, search: "", team: "", checkedIn: "", invitation: "", feePaid: "" };
 
 export const PARTICIPANT_PAGE_SIZES = [20, 50, 100];
 
@@ -20,11 +22,12 @@ export function buildParticipantParams(state: ParticipantQueryState): string {
   if (state.team) params.set("team", state.team);
   if (state.checkedIn) params.set("checkedIn", state.checkedIn);
   if (state.invitation) params.set("invitation", state.invitation);
+  if (state.feePaid) params.set("feePaid", state.feePaid);
   return params.toString();
 }
 
 export function activeFilterCount(state: ParticipantQueryState): number {
-  return [state.team, state.checkedIn, state.invitation].filter(Boolean).length;
+  return [state.team, state.checkedIn, state.invitation, state.feePaid].filter(Boolean).length;
 }
 
 // Body xuất thẻ: bỏ trường rỗng để BE dùng mặc định (cấu hình chung của khóa, cả danh sách tham dự).

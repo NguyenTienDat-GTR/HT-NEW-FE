@@ -215,13 +215,14 @@ describe("pollUntilDone", () => {
 describe("participant query", () => {
   it("serialises only the active conditions", () => {
     expect(buildParticipantParams(EMPTY_PARTICIPANT_QUERY)).toBe("page=0&size=20");
-    const params = new URLSearchParams(buildParticipantParams({ page: 2, size: 50, search: "  Nguyễn  ", team: "Đội 1", checkedIn: "false", invitation: "FAILED" }));
+    const params = new URLSearchParams(buildParticipantParams({ page: 2, size: 50, search: "  Nguyễn  ", team: "Đội 1", checkedIn: "false", invitation: "FAILED", feePaid: "false" }));
     expect(params.get("page")).toBe("2");
     expect(params.get("size")).toBe("50");
     expect(params.get("search")).toBe("Nguyễn");
     expect(params.get("team")).toBe("Đội 1");
     expect(params.get("checkedIn")).toBe("false");
     expect(params.get("invitation")).toBe("FAILED");
+    expect(params.get("feePaid")).toBe("false");
   });
 
   it("never sends a negative page", () => {
@@ -232,6 +233,7 @@ describe("participant query", () => {
     expect(activeFilterCount(EMPTY_PARTICIPANT_QUERY)).toBe(0);
     expect(activeFilterCount({ ...EMPTY_PARTICIPANT_QUERY, search: "x" })).toBe(0);
     expect(activeFilterCount({ ...EMPTY_PARTICIPANT_QUERY, team: "Đội 1", checkedIn: "true", invitation: "SENT" })).toBe(3);
+    expect(activeFilterCount({ ...EMPTY_PARTICIPANT_QUERY, feePaid: "false" })).toBe(1);
   });
 });
 

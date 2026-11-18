@@ -43,6 +43,7 @@ import { CourseTeamsView } from "@/modules/training-teams/components/course-team
 import { AutoSendBanner } from "@/modules/course-participants/components/auto-send-banner";
 import { CourseParticipantsHub } from "@/modules/course-participants/components/course-participants-hub";
 import { PrerequisiteCopyDialog } from "@/modules/prerequisite-copy/components/prerequisite-copy-dialog";
+import { formatVnd } from "@/lib/money";
 import { useSessionState } from "@/lib/use-session-state";
 import { useIsDesktop } from "@/lib/use-media-query";
 import { CourseConditionList, courseConditionItems } from "@/modules/training-courses/components/course-conditions";
@@ -73,7 +74,7 @@ const pastSummaryGroups: SummaryGroup[] = [
 const CONFIG_GROUP_TITLE = "Cấu hình";
 
 const summaryGroups: SummaryGroup[] = [
-  { title: "Thông tin chung", columns: ["courseTypeName", "managementUnitType", "hostYear", "passingScore", "location", "targetDeaneries"] },
+  { title: "Thông tin chung", columns: ["courseTypeName", "managementUnitType", "hostYear", "passingScore", "feeAmount", "location", "targetDeaneries"] },
   { title: "Thời gian", columns: ["startDate", "endDate", "registrationPeriod"] },
   { title: "Trạng thái", columns: ["registrationStatus", "organizingStatus"] },
   { title: "Cấu hình", columns: ["autoApproveEligible", "scoreVisible", "attendanceEnabled", "autoSendInvitation", "openToOtherDeaneries"] },
@@ -463,6 +464,9 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
                     attendanceClosedReason: attendanceClosedReason(course),
                     canManage,
                     canScan,
+                    feeEnabled: course.feeEnabled === true,
+                    feeAmount: typeof course.feeAmount === "number" ? course.feeAmount : null,
+                    ended: isCourseEnded(course),
                   }}
                   search={search}
                 />
@@ -511,6 +515,9 @@ function SummaryValue({ column, course }: { column: string; course: Record<strin
   }
   if (column === "managementUnitType") {
     return <span>{managementLevelLabel(course)}</span>;
+  }
+  if (column === "feeAmount") {
+    return <span className="tabular-nums">{course.feeEnabled === true && typeof course.feeAmount === "number" ? `${formatVnd(course.feeAmount)}/người` : "Không thu"}</span>;
   }
   if (column === "registrationPeriod") {
     if (course.registrationEnabled === false) return <span>Không mở đăng ký</span>;
@@ -568,6 +575,7 @@ const summaryLabels: Record<string, string> = {
   resultingLevelName: "Cấp độ đạt được",
   hostYear: "Năm tổ chức",
   passingScore: "Điểm đạt",
+  feeAmount: "Lệ phí",
   autoApproveEligible: "Tự động duyệt hồ sơ hợp lệ",
   scoreVisible: "Hiển thị điểm của khóa",
   attendanceEnabled: "Bật điểm danh bằng QR",

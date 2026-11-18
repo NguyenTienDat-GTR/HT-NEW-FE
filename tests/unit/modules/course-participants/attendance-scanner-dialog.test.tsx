@@ -1,6 +1,7 @@
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { toast } from "sonner";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useAuthStore } from "@/lib/auth/auth-store";
 import { HeaderScanButton } from "@/modules/qr-scan/components/header-scan-button";
@@ -9,6 +10,7 @@ import { INITIAL_SCAN_FLOW, scanFlowReducer, type ScanFlowState } from "@/module
 import type { ScanResult } from "@/modules/course-participants/types";
 
 vi.mock("jsqr", () => ({ default: vi.fn(() => null) }));
+vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn(), info: vi.fn(), loading: vi.fn(() => "t"), dismiss: vi.fn(), message: vi.fn() } }));
 const push = vi.fn();
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push, replace: vi.fn() }) }));
 
@@ -284,5 +286,134 @@ describe("HeaderScanButton", () => {
     wrap(<HeaderScanButton />);
     fireEvent.click(screen.getByRole("button", { name }));
     expect(await screen.findByText(/mã QR trên chứng nhận để mở trang chi tiết/)).toBeInTheDocument();
+  });
+});
+
+describe("lệ phí ở màn quét", () => {
+  const feePerson = (status: ScanResult["status"], extra: Partial<ScanResult> = {}) =>
+    person(status, { courseCode: "KH-1", courseName: "Khóa 1", feeEnabled: true, feeAmount: 150000, feePaidAt: null, ...extra });
+  const paidButton = () => screen.getByRole("button", { name: /Đã đóng tiền/ });
+
+  type FeeCall = { url: string; paid: boolean };
+  function mockFeeApi(lookupPerson: ScanResult, feeResponse: (call: FeeCall) => Response = (call) => envelope({ participationId: "p1", feePaid: call.paid, feePaidAt: call.paid ? "2026-11-18T01:00:00Z" : null, feePaidBy: "admin" })) {
+    const feeCalls: FeeCall[] = [];
+    const calls: string[] = [];
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+      const url = String(input);
+      if (url.endsWith("/fee") && init?.method === "PUT") {
+        const call = { url: url.replace("/backend/api", ""), paid: (JSON.parse(String(init.body)) as { paid: boolean }).paid };
+        feeCalls.push(call);
+        return feeResponse(call);
+      }
+      calls.push(url.split("/attendance/")[1] ?? url);
+      if (url.endsWith("/attendance/lookup")) return envelope(lookupPerson);
+      if (url.endsWith("/attendance/scan")) return envelope({ ...lookupPerson, status: "CHECKED_IN", checkedInAt: "2026-11-18T01:30:00Z" });
+      return envelope({});
+    });
+    return { feeCalls, calls };
+  }
+
+  beforeEach(() => vi.mocked(toast.error).mockClear());
+
+  it("hiện số tiền và nút Đã đóng tiền ở bước xác nhận khi khóa thu lệ phí", async () => {
+    mockFeeApi(feePerson("READY"));
+    open();
+    submit(TOKEN);
+    expect(await screen.findByText("150.000 ₫")).toBeInTheDocument();
+    expect(paidButton()).toHaveAttribute("aria-pressed", "false");
+  });
+
+  it("khóa không thu lệ phí thì không có phần lệ phí", async () => {
+    mockFeeApi(feePerson("READY", { feeEnabled: false, feeAmount: null }));
+    open();
+    submit(TOKEN);
+    await screen.findByText("Giuse Nguyễn An");
+    expect(screen.queryByText("Lệ phí")).toBeNull();
+    expect(screen.queryByRole("button", { name: /Đã đóng tiền/ })).toBeNull();
+  });
+
+  it("bấm Đã đóng tiền là lưu ngay (trạng thái đích) mà không cần điểm danh, chạm lại để bỏ", async () => {
+    const { feeCalls, calls } = mockFeeApi(feePerson("READY"));
+    open();
+    submit(TOKEN);
+    await screen.findByText("150.000 ₫");
+
+    fireEvent.click(paidButton());
+    expect(paidButton()).toHaveAttribute("aria-pressed", "true");
+    await waitFor(() => expect(feeCalls).toEqual([{ url: "/training/courses/KH-1/attendance/participants/p1/fee", paid: true }]));
+    expect(calls).toEqual(["lookup"]);
+    expect(toast.error).not.toHaveBeenCalled();
+
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    fireEvent.click(paidButton());
+    expect(paidButton()).toHaveAttribute("aria-pressed", "false");
+    await waitFor(() => expect(feeCalls.map((call) => call.paid)).toEqual([true, false]));
+  });
+
+  it("trạng thái vẫn giữ nguyên sau khi hàng đợi rảnh và làm mới dữ liệu (không tự quay về như tra cứu cũ)", async () => {
+    const { feeCalls } = mockFeeApi(feePerson("READY"));
+    open();
+    submit(TOKEN);
+    await screen.findByText("150.000 ₫");
+
+    fireEvent.click(paidButton());
+    await waitFor(() => expect(feeCalls).toHaveLength(1));
+    // Hàng đợi rảnh sau 600ms rồi làm mới dữ liệu: kết quả tra cứu cũ của màn quét vẫn nói "chưa đóng".
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    expect(paidButton()).toHaveAttribute("aria-pressed", "true");
+
+    // Bỏ tích cũng không bị quay lại sau khi rảnh.
+    fireEvent.click(paidButton());
+    await waitFor(() => expect(feeCalls.map((call) => call.paid)).toEqual([true, false]));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    expect(paidButton()).toHaveAttribute("aria-pressed", "false");
+  });
+
+  it("người đã đóng từ trước hiện sẵn trạng thái đã đóng", async () => {
+    mockFeeApi(feePerson("READY", { feePaidAt: "2026-11-17T01:00:00Z" }));
+    open();
+    submit(TOKEN);
+    await screen.findByText("150.000 ₫");
+    expect(paidButton()).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("vẫn ghi nhận được sau khi điểm danh xong và với người đã điểm danh trước đó", async () => {
+    const { feeCalls } = mockFeeApi(feePerson("READY"));
+    open();
+    submit(TOKEN);
+    fireEvent.click(await screen.findByRole("button", { name: /Xác nhận điểm danh/ }));
+    expect(await screen.findByText("Giuse Nguyễn An đã điểm danh thành công")).toBeInTheDocument();
+    expect(paidButton()).toHaveAttribute("aria-pressed", "false");
+    fireEvent.click(paidButton());
+    await waitFor(() => expect(feeCalls).toHaveLength(1));
+    cleanup();
+
+    mockFeeApi(feePerson("ALREADY_CHECKED_IN", { checkedInAt: "2026-11-18T01:30:00Z" }));
+    open();
+    submit(TOKEN);
+    expect(await screen.findByText("Giuse Nguyễn An đã điểm danh trước đó")).toBeInTheDocument();
+    expect(paidButton()).toBeInTheDocument();
+  });
+
+  it("lưu lỗi thì trả nút về như cũ và báo lỗi, không mất người đang quét", async () => {
+    mockFeeApi(feePerson("READY"), () => envelope("Khóa đã kết thúc nên không thể cập nhật lệ phí", 409));
+    open();
+    submit(TOKEN);
+    await screen.findByText("150.000 ₫");
+    fireEvent.click(paidButton());
+    await waitFor(() => expect(toast.error).toHaveBeenCalledTimes(1));
+    expect(vi.mocked(toast.error).mock.calls[0][0]).toBe("Không lưu được lệ phí của Giuse Nguyễn An: Khóa đã kết thúc nên không thể cập nhật lệ phí");
+    await waitFor(() => expect(paidButton()).toHaveAttribute("aria-pressed", "false"));
+    expect(screen.getByText("Giuse Nguyễn An")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Xác nhận điểm danh/ })).toBeInTheDocument();
+  });
+
+  it("nút quét ở header lấy khóa từ kết quả quét để ghi nhận lệ phí", async () => {
+    const { feeCalls } = mockFeeApi(feePerson("READY", { courseCode: "KH-9" }));
+    wrap(<AttendanceScannerDialog onOpenChange={() => undefined} open />);
+    submit(TOKEN);
+    await screen.findByText("150.000 ₫");
+    fireEvent.click(paidButton());
+    await waitFor(() => expect(feeCalls).toEqual([{ url: "/training/courses/KH-9/attendance/participants/p1/fee", paid: true }]));
   });
 });
