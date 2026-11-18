@@ -17,6 +17,7 @@ import type { AuthUser } from "@/lib/auth/auth-store";
 import { cn } from "@/lib/utils";
 import { optionFromRow, rowsFromResponse } from "./api-utils";
 import { RegistrationListField, registrationEntries } from "./registration-list-field";
+import { MoneyControl } from "./money-field";
 import { ScoreComponentsField } from "./score-components-field";
 import { CourseCopySourcesField, copyModeValue, selectedCodes, targetYearOf } from "./course-copy-sources-field";
 import { PrerequisiteTypeField, type CourseLevel } from "./prerequisite-type-field";
@@ -72,6 +73,7 @@ export function FormField({ field, value, values, user, mode, onChange, onFieldC
           {field.clearLabel ?? "Xóa giá trị khi lưu"}
         </label>
       ) : null}
+      {field.note?.(values ?? {}, mode) ? <p className="text-xs leading-5 text-muted">{field.note(values ?? {}, mode)}</p> : null}
       {dynamicHelper?.invalid ? <p className="text-xs font-semibold leading-5 text-danger">{dynamicHelper.text}</p> : null}
       {error ? <p className="text-xs font-semibold text-danger">{error}</p> : null}
     </div>
@@ -292,6 +294,10 @@ function DayMonthControl({ id, value, readonly, onChange }: { id: string; value:
 
 const dayMonthControl: ControlRenderer = (props) => <DayMonthControl id={props.id} onChange={props.onChange} readonly={props.readonly} value={props.value} />;
 
+const moneyControl: ControlRenderer = ({ field, id, value, readonly, onChange }) => (
+  <MoneyControl id={id} onChange={onChange} placeholder={field.placeholder} readonly={readonly} value={value} />
+);
+
 const imageControl: ControlRenderer = ({ id, value, readonly, onChange }) => {
   return <ImagePickerControl id={id} onChange={onChange} readonly={readonly} value={value} />;
 };
@@ -325,6 +331,7 @@ const CONTROL_RENDERERS: Record<string, ControlRenderer> = {
   switch: switchControl,
   image: imageControl,
   daymonth: dayMonthControl,
+  money: moneyControl,
 };
 
 function renderControl(props: ControlProps) {

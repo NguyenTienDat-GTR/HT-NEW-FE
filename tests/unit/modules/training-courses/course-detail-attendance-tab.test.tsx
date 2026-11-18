@@ -137,6 +137,47 @@ describe("course detail: Thẻ & điểm danh tab", () => {
     expect(await screen.findByText("Bật điểm danh bằng QR")).toBeInTheDocument();
     expect(screen.getByText("Tự gửi email khi duyệt")).toBeInTheDocument();
   });
+
+  it("shows the fee per person in the course information, or that nothing is charged", async () => {
+    login(APPROVER);
+    mockApi({ ...baseCourse, feeEnabled: true, feeAmount: 150000 });
+    const first = renderPage();
+    expect(await screen.findByText("Lệ phí")).toBeInTheDocument();
+    expect(screen.getByText("150.000 ₫/người")).toBeInTheDocument();
+    first.unmount();
+
+    mockApi({ ...baseCourse, feeEnabled: false, feeAmount: null });
+    renderPage();
+    expect(await screen.findByText("Lệ phí")).toBeInTheDocument();
+    expect(screen.getByText("Không thu")).toBeInTheDocument();
+  });
+
+  it("adds the fee strip, filter and column to the tab only when the course charges a fee", async () => {
+    login(APPROVER);
+    currentTab = "attendance";
+    mockApi({ ...baseCourse, feeEnabled: true, feeAmount: 150000 }, { feeEnabled: true, feeAmount: 150000, feePaidCount: 3 });
+    const first = renderPage();
+    expect(await screen.findByLabelText("Tổng hợp lệ phí")).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "Đã đóng tiền" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Lọc theo lệ phí")).toBeInTheDocument();
+    first.unmount();
+
+    mockApi({ ...baseCourse, feeEnabled: false, feeAmount: null });
+    renderPage();
+    expect(await screen.findByText("Danh sách tham dự", { selector: "h2" })).toBeInTheDocument();
+    expect(screen.queryByLabelText("Tổng hợp lệ phí")).toBeNull();
+    expect(screen.queryByRole("columnheader", { name: "Đã đóng tiền" })).toBeNull();
+    expect(screen.queryByLabelText("Lọc theo lệ phí")).toBeNull();
+  });
+
+  it("freezes the fee column once the course has ended", async () => {
+    login(APPROVER);
+    currentTab = "attendance";
+    mockApi({ ...baseCourse, feeEnabled: true, feeAmount: 150000, startDate: dayOffset(-5), endDate: dayOffset(-1) }, { feeEnabled: true, feeAmount: 150000 });
+    renderPage();
+    expect(await screen.findByLabelText("Tổng hợp lệ phí")).toBeInTheDocument();
+    expect(screen.queryByLabelText(/Đã đóng lệ phí/)).toBeNull();
+  });
 });
 
 describe("course detail: banner for approved participants never emailed", () => {

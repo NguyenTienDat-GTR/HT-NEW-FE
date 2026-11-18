@@ -3,6 +3,7 @@
 import { ArrowCounterClockwise, Check, EnvelopeSimple, EnvelopeSimpleOpen, Warning } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Pill } from "@/modules/layout-config/form-controls";
+import { cn } from "@/lib/utils";
 import { shortUnitName } from "@/lib/unit-name";
 import type { ParticipantRow } from "../types";
 
@@ -44,6 +45,39 @@ export function InvitationStatus({ row }: { row: ParticipantRow }) {
   );
 }
 
+// Cột "Đã đóng tiền" (chỉ khi khóa thu lệ phí): canMark = có quyền đánh dấu và khóa còn mở; tích là tự lưu (xem fee-payment-queue).
+export type FeeColumn = {
+  canMark: boolean;
+  paidOf: (row: ParticipantRow) => boolean;
+  busyOf: (row: ParticipantRow) => boolean;
+  onToggle: (row: ParticipantRow, paid: boolean) => void;
+};
+
+// Ô tích tự lưu: đổi ngay, không báo thành công; đang chờ lưu thì mờ nhẹ. Người không có quyền (hoặc khóa đã đóng băng) chỉ thấy trạng thái.
+function FeeCell({ fee, row }: { fee: FeeColumn; row: ParticipantRow }) {
+  const paid = fee.paidOf(row);
+  if (!fee.canMark) {
+    return paid ? <Pill tone="success">Đã đóng</Pill> : <span className="text-[12px] text-muted">Chưa đóng</span>;
+  }
+  const busy = fee.busyOf(row);
+  const title = busy ? "Đang lưu…" : paid ? (row.feePaidAt ? `Đã đóng lúc ${formatTime(row.feePaidAt)}` : "Đã đóng") : "Chưa đóng";
+  return (
+    <label
+      className={cn("inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-md transition-colors hover:bg-surface-hover focus-within:bg-surface-hover", busy && "opacity-60")}
+      title={title}
+    >
+      <input
+        aria-busy={busy || undefined}
+        aria-label={`Đã đóng lệ phí: ${row.fullName}`}
+        checked={paid}
+        className="h-5 w-5 cursor-pointer accent-[var(--primary)]"
+        onChange={(event) => fee.onToggle(row, event.target.checked)}
+        type="checkbox"
+      />
+    </label>
+  );
+}
+
 export function ParticipantsTable({
   rows,
   loading,
@@ -51,6 +85,7 @@ export function ParticipantsTable({
   attendanceEnabled,
   canManage,
   togglingId,
+  fee,
   onToggleRow,
   onToggleAll,
   onToggleCheckedIn,
@@ -62,12 +97,14 @@ export function ParticipantsTable({
   attendanceEnabled: boolean;
   canManage: boolean;
   togglingId: string | null;
+  fee?: FeeColumn;
   onToggleRow: (id: string) => void;
   onToggleAll: (checked: boolean) => void;
   onToggleCheckedIn: (row: ParticipantRow) => void;
   onOpenDetail: (row: ParticipantRow) => void;
 }) {
   const allSelected = rows.length > 0 && rows.every((row) => selected.has(row.id));
+  const columnCount = 6 + (attendanceEnabled ? 1 : 0) + (fee ? 1 : 0);
   return (
     <div className="overflow-x-auto">
       <table className="w-full min-w-[820px] text-left text-[13px]">
@@ -82,17 +119,18 @@ export function ParticipantsTable({
             <th className="px-3 py-2.5">Email</th>
             <th className="px-3 py-2.5">Thông tin tham dự</th>
             {attendanceEnabled ? <th className="px-3 py-2.5">Điểm danh</th> : null}
+            {fee ? <th className="whitespace-nowrap px-3 py-2.5 text-center">Đã đóng tiền</th> : null}
           </tr>
         </thead>
         <tbody className="divide-y divide-border">
           {loading && rows.length === 0 ? (
             <tr>
-              <td className="px-3 py-6 text-center text-muted" colSpan={attendanceEnabled ? 7 : 6}>Đang tải danh sách…</td>
+              <td className="px-3 py-6 text-center text-muted" colSpan={columnCount}>Đang tải danh sách…</td>
             </tr>
           ) : null}
           {!loading && rows.length === 0 ? (
             <tr>
-              <td className="px-3 py-8 text-center text-muted" colSpan={attendanceEnabled ? 7 : 6}>Không có hồ sơ nào phù hợp.</td>
+              <td className="px-3 py-8 text-center text-muted" colSpan={columnCount}>Không có hồ sơ nào phù hợp.</td>
             </tr>
           ) : null}
           {rows.map((row) => (
@@ -142,6 +180,11 @@ export function ParticipantsTable({
                       </Button>
                     ) : null}
                   </div>
+                </td>
+              ) : null}
+              {fee ? (
+                <td className="px-3 py-1.5 text-center">
+                  <FeeCell fee={fee} row={row} />
                 </td>
               ) : null}
             </tr>

@@ -5,6 +5,7 @@ import { useAuthStore } from "@/lib/auth/auth-store";
 import { hasPermission, hasPermissionPrefix } from "@/lib/auth/permissions";
 import { leaderLevelSelect } from "@/modules/organizations/form-specs";
 import { withFilters } from "@/lib/api/filters";
+import { MAX_FEE_AMOUNT } from "@/lib/money";
 import { resolveOrganizingState } from "./registration-state";
 
 const unitTypes = unitTypeSelectOptions(["DIOCESE", "DEANERY"]);
@@ -40,6 +41,21 @@ export function courseTypesForDioceseCourse(values: Record<string, unknown>) {
 
 // Khóa đã có hồ sơ tham gia (BE trả hasParticipations ở chi tiết khóa) thì khóa các trường này khi sửa.
 const lockedByParticipations = (values: Record<string, unknown>, mode: string) => mode === "edit" && values.hasParticipations === true;
+
+// Lệ phí khóa lại khi khóa đã có hồ sơ được duyệt đăng ký (BE trả feeLocked ở chi tiết khóa).
+const feeLocked = (values: Record<string, unknown>, mode: string) => mode === "edit" && values.feeLocked === true;
+
+// Chỉ khi khóa thu lệ phí mới nhập lệ phí mỗi người.
+const feeIsOn = (values: Record<string, unknown>) => values.feeEnabled === true;
+
+// Lệ phí mỗi người là số nguyên đồng lớn hơn 0 và không vượt giới hạn BE; để trống thì để quy tắc bắt buộc xử lý.
+export function feeAmountError(value: unknown, values: Record<string, unknown>) {
+  if (values.feeEnabled !== true || value === undefined || value === null || value === "") return undefined;
+  const amount = Number(value);
+  if (!Number.isInteger(amount) || amount <= 0) return "Lệ phí mỗi người phải lớn hơn 0 đồng";
+  if (amount > MAX_FEE_AMOUNT) return "Lệ phí mỗi người không được vượt quá 999.999.999 đồng";
+  return undefined;
+}
 
 // Khóa có mở đăng ký (mặc định mở): chỉ khi mở mới nhập thời gian đăng ký.
 const registrationEnabled = (values: Record<string, unknown>) => values.registrationEnabled !== false;
@@ -257,7 +273,7 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
     createTitle: "Tạo khóa huấn luyện",
     editTitle: "Chỉnh sửa khóa huấn luyện",
     description: "Khóa huấn luyện, thời gian, cửa sổ đăng ký và điểm đạt. Sau khi khóa có hồ sơ tham gia, không đổi được loại khóa, năm tổ chức, số năm hoạt động và điểm đạt.",
-    getInitialValues: () => ({ scoreComponents: [{ ...DEFAULT_SCORE_COMPONENT }], yearsActive: 0, registrationEnabled: true, copyMode: "ALL", autoApproveEligible: false, scoreVisible: false, attendanceEnabled: false, autoSendInvitation: false, openToOtherDeaneries: false }),
+    getInitialValues: () => ({ scoreComponents: [{ ...DEFAULT_SCORE_COMPONENT }], yearsActive: 0, registrationEnabled: true, copyMode: "ALL", autoApproveEligible: false, scoreVisible: false, feeEnabled: false, attendanceEnabled: false, autoSendInvitation: false, openToOtherDeaneries: false }),
     fields: [
       { name: "courseName", label: "Tên khóa", required: true, section: "Thông tin khóa" },
       {
@@ -369,6 +385,27 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
         switchLabels: ["Bật: hiển thị điểm trong chứng nhận và kết quả", "Tắt: chỉ cấp sở hữu khóa hoặc cấp cao hơn xem điểm"],
         helper: "Cấp sở hữu khóa và cấp cao hơn luôn xem được điểm. Bật để các cấp còn lại (giáo xứ, huynh trưởng) cũng thấy điểm trong chứng nhận và tab kết quả của hồ sơ huynh trưởng.",
         section: "Duyệt và hiển thị",
+      },
+      {
+        name: "feeEnabled",
+        label: "Thu lệ phí",
+        type: "switch",
+        switchLabels: ["Bật: mỗi người tham dự đóng lệ phí", "Tắt: khóa không thu lệ phí"],
+        readOnlyWhen: feeLocked,
+        note: (values, mode) => (feeLocked(values, mode) ? "Khóa đã có hồ sơ được duyệt đăng ký nên không thể sửa lệ phí." : undefined),
+        helper: "Bật để ghi nhận ai đã đóng lệ phí ở tab Thẻ & điểm danh và khi quét mã QR. Chỉ đổi được khi khóa chưa có hồ sơ nào được duyệt đăng ký.",
+        section: "Lệ phí",
+      },
+      {
+        name: "feeAmount",
+        label: "Lệ phí mỗi người",
+        type: "money",
+        visibleWhen: feeIsOn,
+        requiredWhen: feeIsOn,
+        readOnlyWhen: feeLocked,
+        validate: feeAmountError,
+        helper: "Số tiền mỗi huynh trưởng trong danh sách tham dự phải đóng (đồng): lớn hơn 0 và tối đa 999.999.999.",
+        section: "Lệ phí",
       },
       {
         name: "attendanceEnabled",

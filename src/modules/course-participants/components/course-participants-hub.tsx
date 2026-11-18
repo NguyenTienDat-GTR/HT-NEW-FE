@@ -19,7 +19,9 @@ import { BadgeExportDialog } from "./badge-export-dialog";
 import { InvitationDialog } from "./invitation-dialog";
 import { InvitationResultDialog } from "./invitation-result-dialog";
 import { ParticipantDetailDrawer } from "./participant-detail-drawer";
-import { ParticipantsTable } from "./participants-table";
+import { FeeSummaryStrip } from "./fee-summary-strip";
+import { ParticipantsTable, type FeeColumn } from "./participants-table";
+import { useFeePayments } from "../use-fee-payments";
 import { invalidateDataQueries } from "@/lib/api/query-keys";
 
 type CourseInfo = {
@@ -36,6 +38,11 @@ type CourseInfo = {
   canManage: boolean;
   // Quyền riêng quét / xác nhận điểm danh (training.attendance.scan.*), không phụ thuộc quyền duyệt đăng ký.
   canScan: boolean;
+  // Khóa thu lệ phí: hiện dải tổng hợp, bộ lọc và cột "Đã đóng tiền". Đánh dấu dùng quyền quét điểm danh, mở từ khi vào danh sách tham dự đến khi khóa kết thúc.
+  feeEnabled?: boolean;
+  feeAmount?: number | null;
+  // Khóa đã kết thúc (thủ công hoặc quá ngày kết thúc).
+  ended?: boolean;
 };
 
 // Tab "Thẻ & điểm danh" của khóa: tổng quan điểm danh / email, danh sách hồ sơ tham dự kèm tình trạng, và các thao tác
@@ -73,6 +80,25 @@ export function CourseParticipantsHub({ course, search }: { course: CourseInfo; 
 
   const summary = summaryQuery.data;
   const rows = listQuery.data?.content ?? [];
+
+  // Đóng lệ phí: tích là tự lưu qua hàng đợi (xem fee-payment-queue). Số liệu tổng hợp cộng thêm phần thay đổi chưa lưu xong.
+  const feeQueue = useFeePayments();
+  const listAt = listQuery.dataUpdatedAt;
+  const summaryAt = summaryQuery.dataUpdatedAt;
+  const feeAmount = summary?.feeAmount ?? course.feeAmount ?? 0;
+  const feeParticipants = summary?.totalParticipants ?? 0;
+  const feePaidCount = Math.min(Math.max((summary?.feePaidCount ?? 0) + feeQueue.delta(summaryAt), 0), feeParticipants);
+  const canMarkFee = Boolean(course.canScan && !course.disabled && !course.finished && !course.ended);
+  const feeColumn: FeeColumn | undefined = course.feeEnabled
+    ? {
+        canMark: canMarkFee,
+        paidOf: (row) => feeQueue.paidOf(row.id, Boolean(row.feePaidAt), listAt),
+        busyOf: (row) => feeQueue.busy(row.id),
+        onToggle: (row, paid) => {
+          feeQueue.toggle(row.id, paid, { paid: Boolean(row.feePaidAt), snapshotAt: listAt }, { label: [row.holyName, row.fullName].filter(Boolean).join(" "), context: courseCode });
+        },
+      }
+    : undefined;
   const totalElements = listQuery.data?.totalElements ?? 0;
   const totalPages = listQuery.data?.totalPages ?? 0;
   const selectedIds = useMemo(() => [...selected], [selected]);
@@ -195,6 +221,8 @@ export function CourseParticipantsHub({ course, search }: { course: CourseInfo; 
           </div>
         </div>
 
+        {course.feeEnabled ? <FeeSummaryStrip amount={feeAmount} loading={summaryQuery.isLoading} paidCount={feePaidCount} participantCount={feeParticipants} /> : null}
+
         <div className="flex flex-col gap-3 border-b border-border px-4 py-3 lg:flex-row lg:items-center">
           <div className="relative min-w-0 flex-1 lg:max-w-[360px]" role="search">
             <MagnifyingGlass aria-hidden className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
@@ -214,6 +242,13 @@ export function CourseParticipantsHub({ course, search }: { course: CourseInfo; 
                 <option value="false">Chưa điểm danh</option>
               </select>
             ) : null}
+            {course.feeEnabled ? (
+              <select aria-label="Lọc theo lệ phí" className={SELECT_CLASS} onChange={(event) => patch({ feePaid: event.target.value as ParticipantQueryState["feePaid"] })} value={state.feePaid}>
+                <option value="">Mọi tình trạng lệ phí</option>
+                <option value="false">Chưa đóng tiền</option>
+                <option value="true">Đã đóng tiền</option>
+              </select>
+            ) : null}
             <select aria-label="Lọc theo email" className={SELECT_CLASS} onChange={(event) => patch({ invitation: event.target.value as "" | InvitationFilter })} value={state.invitation}>
               <option value="">Mọi tình trạng email</option>
               <option value="PENDING">Chưa gửi</option>
@@ -222,7 +257,7 @@ export function CourseParticipantsHub({ course, search }: { course: CourseInfo; 
               <option value="NO_EMAIL">Thiếu / sai email</option>
             </select>
             {filters > 0 ? (
-              <Button onClick={() => patch({ team: "", checkedIn: "", invitation: "" })} type="button" variant="ghost">
+              <Button onClick={() => patch({ team: "", checkedIn: "", invitation: "", feePaid: "" })} type="button" variant="ghost">
                 Xóa lọc ({filters})
               </Button>
             ) : null}
@@ -248,6 +283,7 @@ export function CourseParticipantsHub({ course, search }: { course: CourseInfo; 
           rows={rows}
           selected={selected}
           togglingId={togglingId}
+          fee={feeColumn}
         />
 
         {totalElements > 0 ? (

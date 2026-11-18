@@ -16,7 +16,7 @@ export type Option = {
   taxonomy?: { module?: string; resource?: string; action?: string; scope?: string };
 };
 
-export type FieldType = "text" | "email" | "url" | "image" | "number" | "date" | "daymonth" | "datetime" | "textarea" | "select" | "multiselect" | "checkbox-list" | "radio" | "switch" | "registration-list" | "score-components" | "course-copy" | "account-leader-info" | "prerequisite-type";
+export type FieldType = "text" | "email" | "url" | "image" | "number" | "money" | "date" | "daymonth" | "datetime" | "textarea" | "select" | "multiselect" | "checkbox-list" | "radio" | "switch" | "registration-list" | "score-components" | "course-copy" | "account-leader-info" | "prerequisite-type";
 
 export type FormFieldSpec = {
   name: string;
@@ -66,6 +66,8 @@ export type FormFieldSpec = {
   visibleWhen?: (values: Record<string, unknown>, mode: ResourceFormMode, user?: AuthUser | null) => boolean;
   requiredWhen?: (values: Record<string, unknown>, mode: ResourceFormMode) => boolean;
   readOnlyWhen?: (values: Record<string, unknown>, mode: ResourceFormMode) => boolean;
+  // Dòng ghi chú luôn hiện dưới ô (ví dụ lý do ô đang bị khóa); trả về undefined thì không hiện.
+  note?: (values: Record<string, unknown>, mode: ResourceFormMode) => string | undefined;
   readOnlyOnCreate?: boolean;
   // Giá trị mặc định tính từ các trường khác (chỉ khi tạo mới): hiển thị và gửi đi cho tới khi người dùng tự sửa trường này.
   // Trả về undefined nếu chưa tính được (ví dụ chưa chọn ngày bắt đầu).
