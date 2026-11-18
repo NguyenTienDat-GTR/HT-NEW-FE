@@ -26,6 +26,7 @@ const CrossDeaneryView = dynamic(() => import("@/modules/cross-deanery/component
 const RegistrationTemplateView = dynamic(() => import("@/modules/registration-template/components/registration-template-view").then((m) => m.RegistrationTemplateView), { ssr: false, loading: () => <ViewSkeleton /> });
 const BadgeConfigView = dynamic(() => import("@/modules/badges/components/badge-config-view").then((m) => m.BadgeConfigView), { ssr: false, loading: () => <ViewSkeleton /> });
 const MyPermissionsView = dynamic(() => import("@/modules/permissions/components/my-permissions-view").then((m) => m.MyPermissionsView), { ssr: false, loading: () => <ViewSkeleton /> });
+const MonitoringView = dynamic(() => import("@/modules/monitoring/components/monitoring-view").then((m) => m.MonitoringView), { ssr: false, loading: () => <ViewSkeleton /> });
 const LeaderLevelsView = dynamic(() => import("@/modules/leader-levels/components/leader-levels-view").then((m) => m.LeaderLevelsView), { ssr: false, loading: () => <ViewSkeleton /> });
 const MyProfilePage = dynamic(() => import("@/modules/account/components/my-profile-page").then((m) => m.MyProfilePage), { ssr: false, loading: () => <ViewSkeleton /> });
 const ModuleResourceRenderer = dynamic(() => import("./module-resource-renderer").then((m) => m.ModuleResourceRenderer), { ssr: false, loading: () => <ViewSkeleton /> });
@@ -108,6 +109,8 @@ function renderWorkspaceView(view: WorkspaceViewKey, route: RouteConfig, params:
       return <LeaderLevelsView route={route} />;
     case "my-permissions":
       return <MyPermissionsView />;
+    case "monitoring":
+      return <MonitoringView />;
     case "resource":
       return <ModuleResourceRenderer route={route} />;
   }

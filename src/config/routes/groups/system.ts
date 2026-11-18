@@ -1,4 +1,4 @@
-import { FileText, LockKey, Medal, ShieldCheck } from "@phosphor-icons/react";
+import { FileText, LockKey, Medal, Pulse, ShieldCheck } from "@phosphor-icons/react";
 import { route, type RouteGroup } from "../route-config";
 
 export const systemRouteGroup: RouteGroup = {
@@ -374,6 +374,17 @@ export const systemRouteGroup: RouteGroup = {
       searchFields: ["resourceName", "username", "resourceId"],
       permissionPrefixes: ["system.audit_log.read."],
       filterLabels: ["Thao tác", "Đối tượng", "Mã kết quả HTTP", "Cấp đơn vị"],
+    }),
+    route({
+      path: "/system/monitoring",
+      moduleName: "system.monitoring",
+      title: "Giám sát hệ thống",
+      subtitle: "Lưu lượng API, lỗi và dấu hiệu bất thường.",
+      kind: "monitoring",
+      icon: Pulse,
+      columns: [],
+      // Số liệu gom mọi đơn vị nên chỉ dành cho người xem được nhật ký toàn hệ thống.
+      permissionPrefixes: ["system.audit_log.read.all"],
     }),
   ],
 };
