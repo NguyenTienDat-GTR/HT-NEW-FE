@@ -34,9 +34,9 @@ describe("hostYearRangeError", () => {
 });
 
 describe("course form host year field", () => {
-  it("sits in the organizing-time section next to the start and end dates", () => {
+  it("sits in the organizing-time section next to the start and end times", () => {
     const names = courseSpec.fields.filter((field) => field.section === "Thời gian tổ chức").map((field) => field.name);
-    expect(names).toEqual(["startDate", "endDate", "hostYear"]);
+    expect(names).toEqual(["startDate", "startTime", "endDate", "endTime", "hostYear"]);
     expect(courseSpec.fields.some((field) => field.section === "Thời gian")).toBe(false);
   });
 

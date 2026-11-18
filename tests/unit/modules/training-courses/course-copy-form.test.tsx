@@ -121,11 +121,12 @@ describe("year window and leader picking helpers", () => {
 });
 
 describe("registration window versus the course start date", () => {
-  it("rejects registration times after the course start date but accepts the start date itself", async () => {
+  it("rejects registration times after the course start time but accepts the start time itself", async () => {
     const { registrationNotAfterStart } = await import("@/modules/training-courses/form-specs");
-    const values = { registrationEnabled: true, startDate: "2026-12-10" };
-    expect(registrationNotAfterStart("2026-12-11T08:00", values)).toBe("Thời gian đăng ký không được sau ngày bắt đầu khóa");
-    expect(registrationNotAfterStart("2026-12-10T23:00", values)).toBeUndefined();
+    const values = { registrationEnabled: true, startDate: "2026-12-10", startTime: "08:00" };
+    expect(registrationNotAfterStart("2026-12-11T08:00", values)).toBe("Thời gian đăng ký không được sau thời gian bắt đầu khóa");
+    expect(registrationNotAfterStart("2026-12-10T08:01", values)).toBe("Thời gian đăng ký không được sau thời gian bắt đầu khóa");
+    expect(registrationNotAfterStart("2026-12-10T08:00", values)).toBeUndefined();
     expect(registrationNotAfterStart("2026-12-01T08:00", values)).toBeUndefined();
     // Tắt mở đăng ký hoặc chưa nhập ngày bắt đầu thì không kiểm tra.
     expect(registrationNotAfterStart("2027-01-01T08:00", { registrationEnabled: false, startDate: "2026-12-10" })).toBeUndefined();

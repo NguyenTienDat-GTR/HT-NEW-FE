@@ -60,10 +60,26 @@ export function feeAmountError(value: unknown, values: Record<string, unknown>) 
 // Khóa có mở đăng ký (mặc định mở): chỉ khi mở mới nhập thời gian đăng ký.
 const registrationEnabled = (values: Record<string, unknown>) => values.registrationEnabled !== false;
 
-// Thời gian đăng ký (khi mở đăng ký) không được sau ngày bắt đầu của khóa: khóa tới ngày bắt đầu thì đăng ký tự đóng.
+// Chuyển giá trị ngày giờ của ô nhập (ISO có múi giờ từ BE hoặc "yyyy-MM-ddTHH:mm" đang gõ) sang giờ Việt Nam "yyyy-MM-ddTHH:mm" để so sánh chuỗi.
+function toVietnamLocal(value: string) {
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value)) return value;
+  const time = new Date(value).getTime();
+  return Number.isNaN(time) ? value.slice(0, 16) : new Date(time + 7 * 60 * 60 * 1000).toISOString().slice(0, 16);
+}
+
+// Thời gian đăng ký (khi mở đăng ký) không được sau giờ bắt đầu của khóa: khóa tới giờ bắt đầu thì đăng ký tự đóng.
 export function registrationNotAfterStart(value: unknown, values: Record<string, unknown>) {
   if (values.registrationEnabled === false || typeof value !== "string" || !value || typeof values.startDate !== "string" || !values.startDate) return undefined;
-  return value.slice(0, 10) > values.startDate ? "Thời gian đăng ký không được sau ngày bắt đầu khóa" : undefined;
+  const startTime = typeof values.startTime === "string" && values.startTime ? values.startTime.slice(0, 5) : "00:00";
+  return toVietnamLocal(value) > `${values.startDate}T${startTime}` ? "Thời gian đăng ký không được sau thời gian bắt đầu khóa" : undefined;
+}
+
+// Giờ kết thúc phải sau giờ bắt đầu (cùng ngày) và ngày kết thúc không được trước ngày bắt đầu.
+export function endNotBeforeStart(value: unknown, values: Record<string, unknown>) {
+  if (typeof value !== "string" || !value || typeof values.startDate !== "string" || !values.startDate || typeof values.endDate !== "string" || !values.endDate) return undefined;
+  const start = `${values.startDate}T${typeof values.startTime === "string" && values.startTime ? values.startTime.slice(0, 5) : "00:00"}`;
+  const end = `${values.endDate}T${typeof values.endTime === "string" && values.endTime ? values.endTime.slice(0, 5) : "23:59"}`;
+  return end <= start ? "Thời gian kết thúc phải sau thời gian bắt đầu của khóa" : undefined;
 }
 
 const HOST_YEAR_MIN = 1900;
@@ -301,7 +317,9 @@ export const trainingFormSpecs: ResourceFormSpec[] = [
       },
       { name: "location", label: "Địa điểm", section: "Thông tin khóa" },
       { name: "startDate", label: "Ngày bắt đầu", type: "date", required: true, section: "Thời gian tổ chức" },
+      { name: "startTime", label: "Giờ bắt đầu", type: "time", required: true, section: "Thời gian tổ chức", helper: "Giờ Việt Nam. Điểm danh / quét QR mở sớm hơn giờ bắt đầu 2 tiếng." },
       { name: "endDate", label: "Ngày kết thúc", type: "date", required: true, section: "Thời gian tổ chức" },
+      { name: "endTime", label: "Giờ kết thúc", type: "time", required: true, section: "Thời gian tổ chức", validate: endNotBeforeStart },
       {
         name: "hostYear",
         label: "Năm tổ chức",

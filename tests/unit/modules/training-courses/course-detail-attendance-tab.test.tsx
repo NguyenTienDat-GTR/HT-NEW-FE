@@ -117,7 +117,7 @@ describe("course detail: Thẻ & điểm danh tab", () => {
     mockApi({ ...baseCourse, startDate: dayOffset(2), endDate: dayOffset(5) });
     renderPage();
     expect(await screen.findByText("Danh sách tham dự", { selector: "h2" })).toBeInTheDocument();
-    expect(await screen.findByText(/Khóa chưa diễn ra/)).toBeInTheDocument();
+    expect(await screen.findByText(/Chưa tới giờ điểm danh/)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Quét QR điểm danh/ })).toBeNull();
   });
 

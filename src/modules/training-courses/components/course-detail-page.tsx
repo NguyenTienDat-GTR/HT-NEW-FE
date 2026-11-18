@@ -26,7 +26,10 @@ import { canActOnCourse, canRegisterCourse, canUseCourseTab } from "@/modules/tr
 import { useDebouncedValue } from "@/lib/use-debounced-value";
 import { cn } from "@/lib/utils";
 import {
+  courseAttendanceOpensAtMs,
+  formatCourseMoment,
   isCourseWithinDates,
+  isPastCourseEnd,
   organizingStateLabels,
   organizingStateTones,
   registrationStateLabels,
@@ -75,7 +78,7 @@ const CONFIG_GROUP_TITLE = "Cấu hình";
 
 const summaryGroups: SummaryGroup[] = [
   { title: "Thông tin chung", columns: ["courseTypeName", "managementUnitType", "hostYear", "passingScore", "feeAmount", "location", "targetDeaneries"] },
-  { title: "Thời gian", columns: ["startDate", "endDate", "registrationPeriod"] },
+  { title: "Thời gian", columns: ["startAt", "endAt", "registrationPeriod"] },
   { title: "Trạng thái", columns: ["registrationStatus", "organizingStatus"] },
   { title: "Cấu hình", columns: ["autoApproveEligible", "scoreVisible", "attendanceEnabled", "autoSendInvitation", "openToOtherDeaneries"] },
 ];
@@ -257,7 +260,7 @@ export function CourseDetailPage({ id, route }: { id: string; route: RouteConfig
                 <span className="block text-sm font-semibold text-foreground">Thông tin khóa</span>
                 {infoOpen ? null : (
                   <span className="mt-0.5 block truncate text-xs text-muted">
-                    <SummaryValue column="organizingStatus" course={course} /> · <SummaryValue column="startDate" course={course} /> → <SummaryValue column="endDate" course={course} />
+                    <SummaryValue column="organizingStatus" course={course} /> · <SummaryValue column="startAt" course={course} /> → <SummaryValue column="endAt" course={course} />
                   </span>
                 )}
               </span>
@@ -519,6 +522,9 @@ function SummaryValue({ column, course }: { column: string; course: Record<strin
   if (column === "feeAmount") {
     return <span className="tabular-nums">{course.feeEnabled === true && typeof course.feeAmount === "number" ? `${formatVnd(course.feeAmount)}/người` : "Không thu"}</span>;
   }
+  if (column === "startAt" || column === "endAt") {
+    return <span>{formatCourseMoment(course, column === "startAt" ? "start" : "end") ?? "Chưa có"}</span>;
+  }
   if (column === "registrationPeriod") {
     if (course.registrationEnabled === false) return <span>Không mở đăng ký</span>;
     const start = formatVietnamDateValue(typeof course.registrationStartAt === "string" ? course.registrationStartAt : null);
@@ -550,21 +556,24 @@ function targetDeaneryNames(course: Record<string, unknown>): string[] {
   return items.map((item) => item.name).filter((name): name is string => Boolean(name));
 }
 
-// Điểm danh chỉ mở trong thời gian diễn ra khóa và khi chưa khóa chỉnh sửa điểm (BE cũng kiểm tra khi quét).
+// Điểm danh mở từ 2 tiếng trước giờ bắt đầu tới hết giờ kết thúc và khi chưa khóa chỉnh sửa điểm (BE cũng kiểm tra khi quét).
 function attendanceClosedReason(course: Record<string, unknown>) {
-  const start = typeof course.startDate === "string" ? course.startDate : "";
-  if (!isCourseWithinDates(course)) {
-    return start && new Date().toISOString().slice(0, 10) < start
-      ? `Khóa chưa diễn ra (bắt đầu ngày ${start.split("-").reverse().join("/")}) nên chưa điểm danh được.`
-      : "Khóa không còn trong thời gian diễn ra nên không điểm danh được.";
+  const opensAt = courseAttendanceOpensAtMs(course);
+  const ended = isPastCourseEnd(course);
+  if (opensAt === undefined || (!ended && Date.now() < opensAt)) {
+    const start = formatCourseMoment(course, "start");
+    return start
+      ? `Chưa tới giờ điểm danh (mở sớm hơn giờ bắt đầu 2 tiếng, khóa bắt đầu lúc ${start}) nên chưa điểm danh được.`
+      : "Khóa chưa có ngày bắt đầu nên chưa điểm danh được.";
   }
+  if (ended) return "Khóa không còn trong thời gian diễn ra nên không điểm danh được.";
   if (course.scoreLocked === true) return "Khóa đã khóa chỉnh sửa điểm nên không điểm danh được. Mở chỉnh sửa điểm để tiếp tục.";
   return null;
 }
 
 function scoringWindowHint(course: Record<string, unknown>) {
-  const start = typeof course.startDate === "string" ? course.startDate : "";
-  const end = typeof course.endDate === "string" ? course.endDate : "";
+  const start = formatCourseMoment(course, "start") ?? "";
+  const end = formatCourseMoment(course, "end") ?? "";
   return `Chỉ chấm điểm được khi khóa đang diễn ra${start || end ? ` (${start || "…"} → ${end || "…"})` : ""}.`;
 }
 
@@ -584,6 +593,8 @@ const summaryLabels: Record<string, string> = {
   location: "Địa điểm",
   startDate: "Ngày bắt đầu",
   endDate: "Ngày kết thúc",
+  startAt: "Bắt đầu",
+  endAt: "Kết thúc",
   registrationPeriod: "Ngày đăng ký",
   registrationStatus: "Trạng thái đăng ký",
   organizingStatus: "Trạng thái tổ chức",
