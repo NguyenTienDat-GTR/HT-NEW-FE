@@ -1514,6 +1514,8 @@ export interface components {
             startDate?: string;
             /** Format: date */
             endDate?: string;
+            startTime?: string;
+            endTime?: string;
             /** Format: date-time */
             registrationStartAt?: string;
             /** Format: date-time */
@@ -1534,6 +1536,8 @@ export interface components {
             startDate?: string;
             /** Format: date */
             endDate?: string;
+            startTime?: string;
+            endTime?: string;
             /** Format: date-time */
             registrationStartAt?: string;
             /** Format: date-time */
@@ -2118,6 +2122,8 @@ export interface components {
             startDate?: string;
             /** Format: date */
             endDate?: string;
+            startTime?: string;
+            endTime?: string;
             /** Format: date-time */
             registrationStartAt?: string;
             /** Format: date-time */
