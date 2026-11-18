@@ -600,3 +600,6 @@ BE tương ứng: `BE/project.md` mục "Training Course Registration Control an
 
 ## fix/font-tu-host
 - Font Plus Jakarta Sans chuyển từ `next/font/google` sang gói tự host `@fontsource-variable/plus-jakarta-sans` (import ở `app/layout.tsx`, family "Plus Jakarta Sans Variable" ở `styles/tokens.css`): `npm run build` (CI, Docker) không còn tải font từ Google nên không còn fail khi mạng tới Google chập chờn. `--font-body` / `--font-display` không còn tham chiếu `--font-sans` (vòng với `@theme`).
+
+## feat/thong-ke-cap-do-huynh-truong
+- Chi tiết giáo phận / giáo hạt / giáo xứ có mục mở rộng "Thống kê huynh trưởng theo cấp độ" ngay dưới các ô thống kê (`modules/organizations/components/unit-leader-level-stats.tsx`, gắn ở `unit-detail.tsx`): luôn thu gọn khi vào trang, chỉ gọi `GET /{dioceses|deaneries|parishes}/{id}/leader-level-stats` khi mở; mỗi cấp một dòng (tên, thanh tỉ lệ, số người) theo danh mục cấp độ của giáo phận, kèm tổng. Không hiện ở chế độ `readOnly` (xem đơn vị cấp trên). Test: `tests/unit/modules/organizations/unit-leader-level-stats.test.tsx`.
