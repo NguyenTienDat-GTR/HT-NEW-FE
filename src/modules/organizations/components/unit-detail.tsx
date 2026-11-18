@@ -15,6 +15,7 @@ import { SITE_SUBDOMAIN_PERMISSION } from "../site-subdomain";
 import { SiteSubdomainCard } from "./site-subdomain-card";
 import { isLockedByParent } from "../types";
 import { ParentParishCard } from "./parent-parish-card";
+import { UnitLeaderLevelStatsPanel } from "./unit-leader-level-stats";
 import { UnitStatusHistory } from "./unit-status-history";
 
 export type UnitKind = "dioceses" | "deaneries" | "parishes";
@@ -110,6 +111,7 @@ export function UnitDetail({ kind, id, row, readOnly = false }: { kind: UnitKind
             </div>
           ))}
         </div> : null}
+        {!readOnly ? <UnitLeaderLevelStatsPanel endpoint={`/${kind}`} unitId={id} /> : null}
       </section>
 
       <div className="grid gap-3 md:grid-cols-[3fr_2fr]">
