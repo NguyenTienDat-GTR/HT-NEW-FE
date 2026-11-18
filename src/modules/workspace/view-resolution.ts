@@ -16,6 +16,7 @@ export type WorkspaceViewKey =
   | "registration-template"
   | "leader-levels"
   | "my-permissions"
+  | "monitoring"
   | "resource";
 
 type MatchType = "list" | "detail" | "create" | "edit" | "score" | "matrix" | "revoke";
@@ -44,6 +45,7 @@ const STANDALONE_VIEWS: Partial<Record<ResourceKind, WorkspaceViewKey>> = {
   "registration-template": "registration-template",
   "leader-levels": "leader-levels",
   "my-permissions": "my-permissions",
+  monitoring: "monitoring",
 };
 
 export function resolveWorkspaceView(matchType: MatchType, route: Pick<RouteConfig, "kind">): WorkspaceViewKey {
