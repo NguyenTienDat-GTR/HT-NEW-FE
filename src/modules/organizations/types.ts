@@ -25,6 +25,12 @@ export type UnitStatusHistoryItem = {
   affectedChildUnitCount: number;
 };
 
+// Số huynh trưởng theo cấp độ của một đơn vị (GET /{units}/{id}/leader-level-stats).
+export type UnitLeaderLevelStats = {
+  total: number;
+  levels: { levelCode: string; levelName: string; displayOrder: number; leaderCount: number }[];
+};
+
 // Đơn vị bị khóa suy diễn: chính nó vẫn bật nhưng giáo hạt/giáo phận cha đã tắt.
 export function isLockedByParent(row: Record<string, unknown>) {
   return row.status === true && row.effectiveStatus === false;
