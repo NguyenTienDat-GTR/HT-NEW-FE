@@ -16,6 +16,7 @@ const taxonomyLabels: Record<PermissionTaxonomyKind, Record<string, string>> = {
     account_role: "Vai trò tài khoản",
     attendance: "Điểm danh khóa huấn luyện",
     audit_log: "Nhật ký hệ thống",
+    monitoring: "Giám sát hệ thống",
     badge_config: "Cấu hình thẻ tham dự",
     certificate: "Chứng nhận",
     certificate_config: "Cấu hình chứng nhận",

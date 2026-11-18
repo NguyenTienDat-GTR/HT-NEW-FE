@@ -28,7 +28,8 @@ export type ResourceKind =
   | "account-roles"
   | "role-permissions"
   | "account-permissions"
-  | "audit-logs";
+  | "audit-logs"
+  | "monitoring";
 
 export type ResourceAction = "view" | "create" | "edit" | "toggle" | "submit" | "approve" | "reject" | "revoke" | "reissue" | "withdraw" | "remove" | "score" | "matrix" | "read" | "resetPassword" | "editBirthDate";
 
