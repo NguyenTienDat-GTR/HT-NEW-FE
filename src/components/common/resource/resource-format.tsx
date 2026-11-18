@@ -338,7 +338,7 @@ export function NoteValue({ text }: { text: string }) {
 }
 
 function TextValue({ children, full }: { children: React.ReactNode; full: boolean }) {
-  return <span className={full ? "whitespace-pre-wrap wrap-break-word" : "line-clamp-1 max-w-65"}>{children}</span>;
+  return <span className={full ? "whitespace-pre-wrap wrap-anywhere" : "line-clamp-1 max-w-65"}>{children}</span>;
 }
 
 function ArrayValue({ values }: { values: unknown[] }) {

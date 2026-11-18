@@ -618,6 +618,8 @@ BE tương ứng: `BE/project.md` mục "Training Course Registration Control an
 - Màn "Giám sát hệ thống" (`/system/monitoring`, `kind: "monitoring"`, `modules/monitoring`): cảnh báo bất thường 60 phút gần nhất, 8 ô số liệu có so sánh kỳ trước, biểu đồ lưu lượng / lỗi và từ chối / P95, bảng IP, tài khoản, API gọi nhiều và API chậm. Chọn khoảng 1 giờ đến 10 ngày, tự làm mới mỗi phút. Chỉ hiện với quyền `system.audit_log.read.all`.
 - Dữ liệu từ `GET /system/monitoring/overview?hours=` (xem mục cùng tên trong `BE/project.md`). `lib/api/schema.d.ts` chưa sinh lại; kiểu nằm ở `modules/monitoring/types.ts`. Test: `tests/unit/modules/monitoring/monitoring-view.test.tsx`.
 
+## fix/permissions-list-overflow
+- "Quyền của tôi" (`my-permissions-view.tsx`): bộ lọc xếp lưới, bảng `table-fixed` xuống dòng nội dung dài; dưới `md` chuyển sang danh sách thẻ kèm ô sắp xếp (không cuộn ngang); hộp chi tiết cuộn được. Danh sách quyền hạn / quyền vai trò / quyền tài khoản dùng `fullText` và `wrap-anywhere` để mã quyền dài không làm bảng rộng ra.
 ## feat/export-sort-and-course-time
 - Form khóa thường (`training-courses/form-specs.ts`) thêm ô "Giờ bắt đầu", "Giờ kết thúc" (`type: "time"`, bắt buộc; thêm `"time"` vào `FieldType`). Quy tắc: giờ kết thúc sau giờ bắt đầu (`endNotBeforeStart`), thời gian đăng ký không sau giờ bắt đầu (`registrationNotAfterStart`). Khóa quá khứ vẫn chỉ ngày.
 - `registration-state.ts`: trạng thái tổ chức, kết thúc, đang diễn ra tính theo ngày + giờ (giờ Việt Nam; khóa cũ chưa có giờ = 00:00 - 23:59). Thêm `courseAttendanceOpensAtMs` (sớm hơn giờ bắt đầu 2 tiếng, khớp BE), `formatCourseMoment`, `isPastCourseEnd`. Thông tin khóa và thẻ khóa hiện "Bắt đầu / Kết thúc" kèm giờ; lý do chưa điểm danh được nêu giờ mở.

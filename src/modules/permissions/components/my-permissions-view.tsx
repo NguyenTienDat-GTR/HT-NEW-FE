@@ -14,7 +14,7 @@ import { useMyPermissionFilterOptions, useMyPermissions, type MyPermission } fro
 
 type SourceFilter = "all" | "ROLE" | "ACCOUNT";
 
-const selectClass = "h-10 rounded-lg border border-input bg-white px-3 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-[3px] focus:ring-[var(--primary-ring)]";
+const selectClass = "h-11 w-full min-w-0 truncate rounded-lg border border-input bg-white px-3 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-[3px] focus:ring-[var(--primary-ring)]";
 
 /** Danh sách quyền hiện có của tài khoản đang đăng nhập: chỉ xem; phân trang, sắp xếp, lọc và tìm kiếm do BE xử lý. */
 export function MyPermissionsView() {
@@ -78,12 +78,12 @@ export function MyPermissionsView() {
       </div>
 
       <Panel className="overflow-hidden">
-        <div className="flex flex-col gap-3 border-b border-border p-4 lg:flex-row lg:items-center">
-          <label className="relative block flex-1">
+        <div className="grid gap-3 border-b border-border p-4 sm:grid-cols-2 xl:grid-cols-[minmax(240px,1fr)_repeat(3,minmax(0,200px))]">
+          <label className="relative block min-w-0 sm:col-span-2 xl:col-span-1">
             <span className="sr-only">Tìm quyền</span>
             <MagnifyingGlass className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
             <input
-              className="h-10 w-full rounded-lg border border-input bg-white pl-9 pr-3 text-sm text-foreground placeholder:text-muted focus:border-primary focus:outline-none focus:ring-[3px] focus:ring-[var(--primary-ring)]"
+              className="h-11 w-full min-w-0 rounded-lg border border-input bg-white pl-9 pr-3 text-sm text-foreground placeholder:text-muted focus:border-primary focus:outline-none focus:ring-[3px] focus:ring-[var(--primary-ring)]"
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Tìm theo tên quyền, mô tả, vai trò"
               value={search}
@@ -129,8 +129,72 @@ export function MyPermissionsView() {
         ) : null}
 
         {rows.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[720px] text-left text-sm">
+          <div className="flex items-center gap-2 border-b border-border px-4 py-3 md:hidden">
+            <label className="sr-only" htmlFor="my-permissions-sort">Sắp xếp theo</label>
+            <select
+              className={selectClass}
+              id="my-permissions-sort"
+              onChange={(event) => {
+                setSortBy(event.target.value);
+                setPage(0);
+              }}
+              value={sortBy}
+            >
+              <option value="permissionName">Sắp xếp: Quyền</option>
+              <option value="moduleName">Sắp xếp: Phân hệ</option>
+              <option value="actionName">Sắp xếp: Hành động</option>
+              <option value="scopeName">Sắp xếp: Phạm vi</option>
+              <option value="sourceType">Sắp xếp: Nguồn</option>
+            </select>
+            <button
+              aria-label={sortDirection === "ASC" ? "Đang sắp xếp tăng dần, bấm để đổi sang giảm dần" : "Đang sắp xếp giảm dần, bấm để đổi sang tăng dần"}
+              className="grid h-11 w-11 shrink-0 cursor-pointer place-items-center rounded-lg border border-input bg-white text-sm text-text-secondary hover:bg-surface-hover"
+              onClick={() => {
+                setSortDirection((current) => (current === "ASC" ? "DESC" : "ASC"));
+                setPage(0);
+              }}
+              type="button"
+            >
+              {sortDirection === "ASC" ? "▲" : "▼"}
+            </button>
+          </div>
+        ) : null}
+
+        {rows.length > 0 ? (
+          <ul className="divide-y divide-slate-100 md:hidden">
+            {rows.map((item) => (
+              <li key={`${item.sourceType}-${item.roleCode ?? ""}-${item.permissionCode}`}>
+                <button
+                  className="block w-full min-w-0 cursor-pointer px-4 py-3 text-left hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                  onClick={() => setSelected(item)}
+                  type="button"
+                >
+                  <span className="block break-words text-sm font-medium text-foreground">{item.permissionName ?? item.permissionCode}</span>
+                  {item.resourceName ? <span className="mt-0.5 block break-words text-xs text-muted">{item.resourceName}</span> : null}
+                  <span className="mt-2 flex flex-wrap gap-1.5 text-[11px] font-medium text-text-secondary">
+                    {[item.moduleName, item.actionName, item.scopeName].filter(Boolean).map((text) => (
+                      <span className="max-w-full break-words rounded-md bg-surface-2 px-2 py-0.5" key={text}>
+                        {text}
+                      </span>
+                    ))}
+                    <SourceBadge item={item} />
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+
+        {rows.length > 0 ? (
+          <div className="hidden overflow-x-auto md:block">
+            <table className="w-full table-fixed text-left text-sm">
+              <colgroup>
+                <col className="w-[32%]" />
+                <col className="w-[16%]" />
+                <col className="w-[14%]" />
+                <col className="w-[14%]" />
+                <col className="w-[24%]" />
+              </colgroup>
               <thead className="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-text-secondary">
                 <tr>
                   <SortHeader className="px-5" field="permissionName" label="Quyền" onSort={toggleSort} sortBy={sortBy} sortDirection={sortDirection} />
@@ -144,18 +208,16 @@ export function MyPermissionsView() {
                 {rows.map((item) => (
                   <tr className="cursor-pointer transition-colors hover:bg-slate-50" key={`${item.sourceType}-${item.roleCode ?? ""}-${item.permissionCode}`} onClick={() => setSelected(item)}>
                     <td className="px-5 py-3">
-                      <button className="cursor-pointer text-left font-medium text-foreground" onClick={() => setSelected(item)} type="button">
+                      <button className="max-w-full cursor-pointer break-words text-left font-medium text-foreground" onClick={() => setSelected(item)} type="button">
                         {item.permissionName ?? item.permissionCode}
                       </button>
-                      {item.resourceName ? <p className="text-xs text-muted">{item.resourceName}</p> : null}
+                      {item.resourceName ? <p className="break-words text-xs text-muted">{item.resourceName}</p> : null}
                     </td>
-                    <td className="px-3 py-3 text-text-secondary">{item.moduleName ?? "-"}</td>
-                    <td className="px-3 py-3 text-text-secondary">{item.actionName ?? "-"}</td>
-                    <td className="px-3 py-3 text-text-secondary">{item.scopeName ?? "-"}</td>
+                    <td className="break-words px-3 py-3 text-text-secondary">{item.moduleName ?? "-"}</td>
+                    <td className="break-words px-3 py-3 text-text-secondary">{item.actionName ?? "-"}</td>
+                    <td className="break-words px-3 py-3 text-text-secondary">{item.scopeName ?? "-"}</td>
                     <td className="px-3 py-3">
-                      <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-semibold", item.sourceType === "ROLE" ? "bg-surface-2 text-text-secondary" : "bg-primary-soft text-primary")}>
-                        {item.sourceType === "ROLE" ? `Vai trò ${item.roleName ?? ""}`.trim() : "Quyền riêng"}
-                      </span>
+                      <SourceBadge item={item} />
                     </td>
                   </tr>
                 ))}
@@ -177,6 +239,14 @@ export function MyPermissionsView() {
 
       <PermissionDetailDialog item={selected} onClose={() => setSelected(null)} />
     </div>
+  );
+}
+
+function SourceBadge({ item }: { item: MyPermission }) {
+  return (
+    <span className={cn("inline-block max-w-full break-words rounded-full px-2 py-0.5 text-[11px] font-semibold", item.sourceType === "ROLE" ? "bg-surface-2 text-text-secondary" : "bg-primary-soft text-primary")}>
+      {item.sourceType === "ROLE" ? `Vai trò ${item.roleName ?? ""}`.trim() : "Quyền riêng"}
+    </span>
   );
 }
 
@@ -226,7 +296,7 @@ function PermissionDetailDialog({ item, onClose }: { item: MyPermission | null; 
     <Dialog.Root onOpenChange={(open) => (!open ? onClose() : undefined)} open={Boolean(item)}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-slate-900/40" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[min(520px,calc(100vw-24px))] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-xl border border-border bg-white shadow-[var(--shadow-elevated)] focus:outline-none">
+        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 max-h-[calc(100dvh-24px)] w-[min(520px,calc(100vw-24px))] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-xl border border-border bg-white shadow-[var(--shadow-elevated)] focus:outline-none">
           <div className="flex items-start justify-between gap-3 border-b border-border px-5 py-4">
             <div className="flex min-w-0 items-start gap-3">
               <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary-soft text-primary">
@@ -245,9 +315,9 @@ function PermissionDetailDialog({ item, onClose }: { item: MyPermission | null; 
             {rows
               .filter(([, value]) => value)
               .map(([label, value]) => (
-                <div className="grid grid-cols-[140px_1fr] gap-3 py-2.5 text-sm" key={label}>
+                <div className="grid grid-cols-1 gap-1 py-2.5 text-sm sm:grid-cols-[140px_minmax(0,1fr)] sm:gap-3" key={label}>
                   <dt className="text-text-secondary">{label}</dt>
-                  <dd className="font-medium text-foreground">{value}</dd>
+                  <dd className="min-w-0 break-words font-medium text-foreground">{value}</dd>
                 </div>
               ))}
           </dl>
