@@ -1,6 +1,4 @@
 import type { Metadata } from "next";
-// Font tự host (gói fontsource, có sẵn tập ký tự latin + tiếng Việt): build không còn gọi mạng tới Google Fonts.
-import "@fontsource-variable/plus-jakarta-sans/wght.css";
 import { Toaster } from "sonner";
 import { AppProviders } from "@/components/providers/app-providers";
 import "./globals.css";

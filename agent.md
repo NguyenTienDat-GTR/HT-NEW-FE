@@ -32,7 +32,7 @@
 
 ## Thiết kế
 
-- Giao diện sáng, phông Plus Jakarta Sans, màu chính xanh `#1e40af`, nền slate; chi tiết ở `DESIGN.md`, giá trị thật ở `src/styles/tokens.css`.
+- Giao diện sáng, phông hệ thống Segoe UI / Arial, màu chính xanh `#1e40af`, nền slate; chi tiết ở `DESIGN.md`, giá trị thật ở `src/styles/tokens.css`.
 - Thanh bên 260px / 76px. Nút có các biến thể `primary`, `secondary`, `outline`, `ghost`, `destructive`, `icon`; trạng thái đang xử lý khóa bấm lặp.
 
 ## Nhật ký thay đổi (cũ trước, mới sau)
@@ -624,3 +624,6 @@ BE tương ứng: `BE/project.md` mục "Training Course Registration Control an
 - Form khóa thường (`training-courses/form-specs.ts`) thêm ô "Giờ bắt đầu", "Giờ kết thúc" (`type: "time"`, bắt buộc; thêm `"time"` vào `FieldType`). Quy tắc: giờ kết thúc sau giờ bắt đầu (`endNotBeforeStart`), thời gian đăng ký không sau giờ bắt đầu (`registrationNotAfterStart`). Khóa quá khứ vẫn chỉ ngày.
 - `registration-state.ts`: trạng thái tổ chức, kết thúc, đang diễn ra tính theo ngày + giờ (giờ Việt Nam; khóa cũ chưa có giờ = 00:00 - 23:59). Thêm `courseAttendanceOpensAtMs` (sớm hơn giờ bắt đầu 2 tiếng, khớp BE), `formatCourseMoment`, `isPastCourseEnd`. Thông tin khóa và thẻ khóa hiện "Bắt đầu / Kết thúc" kèm giờ; lý do chưa điểm danh được nêu giờ mở.
 - Sắp xếp khi xuất Excel do BE xử lý (FE chỉ gửi `sortBy` khi người dùng bấm tiêu đề cột). `schema.d.ts` thêm tay `startTime`, `endTime` cho 3 schema khóa (chưa sinh lại vì bản sinh hiện tại lệch cả file). Test: `tests/unit/modules/training-courses/course-time.test.ts`, cập nhật `course-copy-form`, `course-host-year`, `course-detail-attendance-tab`.
+
+## fix/font-tieng-viet-he-thong
+- Font giao diện đổi sang Segoe UI / Arial theo bộ font hệ thống để tránh lỗi hiển thị tiếng Việt từ các tệp subset của Plus Jakarta Sans tự host. Không tải font từ mạng khi build hoặc khi mở trang; các font riêng trong trình thiết kế và mẫu Excel vẫn theo lựa chọn của người dùng.
