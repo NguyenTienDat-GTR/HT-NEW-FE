@@ -15,7 +15,6 @@
     "api:generate": "openapi-typescript openapi/ht-management.json -o src/lib/api/schema.d.ts"
   },
   "dependencies": {
-    "@fontsource-variable/plus-jakarta-sans": "^5.3.0",
     "@hookform/resolvers": "^5.4.0",
     "@mediapipe/tasks-vision": "^1.2.0",
     "@phosphor-icons/react": "^2.1.10",

@@ -86,7 +86,7 @@ export const systemRouteGroup: RouteGroup = {
       path: "/system/permissions",
       moduleName: "system.permission",
       title: "Quyền hạn",
-      subtitle: "Permission code do backend sinh từ module/resource/action/scope.",
+      subtitle: "Mã quyền do hệ thống quy định",
       endpoint: "/system/permissions",
       idField: "permissionCode",
       kind: "permissions",

@@ -27,7 +27,7 @@ Nguồn sự thật là mã nguồn: `src/styles/tokens.css` (biến màu, bo g�
 
 ## Chữ
 
-- Một phông duy nhất: Plus Jakarta Sans (`next/font/google`, subset `latin` + `vietnamese`, độ đậm 400–700), biến `--font-sans`.
+- Một bộ phông hệ thống cho giao diện tiếng Việt: Segoe UI, Arial, sans-serif; `--font-body` và `--font-display` trong `tokens.css`, ánh xạ `--font-sans` cho Tailwind.
 - Cột số, ngày, số điện thoại trong bảng: gắn thuộc tính `data-tnum` để dùng chữ số đều cột.
 
 ## Hình khối và khoảng cách
